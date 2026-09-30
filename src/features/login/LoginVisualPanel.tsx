@@ -1,4 +1,6 @@
 import { PlatformIllustration } from './PlatformIllustration'
+import { AmbientTerms } from './AmbientTerms'
+import { VectorWordmark } from './VectorWordmark'
 import styles from './LoginVisualPanel.module.css'
 
 /**
@@ -10,11 +12,11 @@ export function LoginVisualPanel() {
   return (
     <aside className={styles.panel} aria-label="Super Admin">
       <PanelBackdrop />
+      <AmbientTerms />
 
       <div className={styles.header}>
         <span className={styles.accentBar} aria-hidden="true" />
-        {/* Written in title case and uppercased via CSS so screen readers don't spell it out. */}
-        <p className={styles.title}>Super Admin</p>
+        <VectorWordmark />
         <p className={styles.subtitle}>
           Administração centralizada de
           <br />

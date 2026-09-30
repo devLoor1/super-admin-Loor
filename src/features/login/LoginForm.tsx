@@ -3,6 +3,7 @@ import { ArrowRight, Mail } from 'lucide-react'
 import { FormField } from '../../components/form/FormField'
 import { PasswordField } from '../../components/form/PasswordField'
 import { SecurityNotice } from './SecurityNotice'
+import { TypeOnceHeading } from './TypeOnceHeading'
 import styles from './LoginForm.module.css'
 
 type FieldErrors = {
@@ -52,9 +53,7 @@ export function LoginForm() {
   return (
     <section className={styles.card} aria-labelledby="login-title">
       <header className={styles.header}>
-        <h1 id="login-title" className={styles.title}>
-          Acesso administrativo
-        </h1>
+        <TypeOnceHeading />
         <p className={styles.subtitle}>Entre com suas credenciais para continuar</p>
       </header>
 

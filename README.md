@@ -105,9 +105,9 @@ docs/reference/                     approved concept image
 
 ## Local-only interactions
 
-- Empty e-mail / password → inline errors (cleared as the user types).
+- Empty e-mail / password or malformed e-mail → inline errors (cleared as the user types).
 - Show / hide password.
-- **Entrar** with both fields filled → neutral status message
+- **Entrar** with a valid e-mail and non-empty password → neutral status message
   ("Protótipo visual: a autenticação ainda não está conectada."). No request is made.
 - **Esqueci minha senha** → neutral status message; no flow.
 

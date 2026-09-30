@@ -31,6 +31,7 @@ export function LoginForm() {
 
     const nextErrors: FieldErrors = {}
     if (!email.trim()) nextErrors.email = 'Informe seu e-mail.'
+    else if (emailRef.current?.validity.typeMismatch) nextErrors.email = 'Informe um e-mail válido.'
     if (!password) nextErrors.password = 'Informe sua senha.'
     setErrors(nextErrors)
 
@@ -66,6 +67,7 @@ export function LoginForm() {
             label="E-mail"
             icon={Mail}
             type="email"
+            required
             inputMode="email"
             autoComplete="username"
             spellCheck={false}
@@ -82,6 +84,7 @@ export function LoginForm() {
             id="login-password"
             name="password"
             label="Senha"
+            required
             autoComplete="current-password"
             placeholder="Sua senha"
             value={password}

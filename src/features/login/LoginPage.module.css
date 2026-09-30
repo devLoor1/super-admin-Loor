@@ -1,0 +1,39 @@
+.page {
+  display: grid;
+  /* 47 / 53 split measured from the approved desktop reference. */
+  grid-template-columns: minmax(0, 47fr) minmax(0, 53fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-page-bg);
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The reference places the card ~15px right of the column centre. */
+  padding: 48px clamp(24px, 4vw, 64px) 48px calc(clamp(24px, 4vw, 64px) + 2vw);
+  /* Very soft light falloff so the surface does not read as flat grey. */
+  background:
+    radial-gradient(ellipse 80% 60% at 60% 45%, #fbfbfd 0%, transparent 70%),
+    var(--color-page-bg);
+}
+
+/* Tablet and below: stack — compact panel header on top, form below. */
+@media (max-width: 1023px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .main {
+    align-items: flex-start;
+    padding: 40px 32px 56px;
+  }
+}
+
+@media (max-width: 599px) {
+  .main {
+    padding: 24px 16px 40px;
+  }
+}

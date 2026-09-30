@@ -1,0 +1,159 @@
+/*
+ * Spacing below reproduces the vertical rhythm of the approved card
+ * (measured at the 1440px reference width).
+ */
+.card {
+  width: 100%;
+  max-width: 544px;
+  padding: 50px 55px 37px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+
+.title {
+  font-size: 31px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-text-strong);
+}
+
+.subtitle {
+  font-size: 16.3px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 28px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20.5px;
+}
+
+.submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 49px;
+  margin-top: 22.5px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-accent);
+  box-shadow: var(--shadow-button);
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  transition:
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.submit:hover {
+  background: var(--color-accent-hover);
+}
+
+.submit:active {
+  background: var(--color-accent-active);
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.forgot {
+  justify-self: center;
+  margin-top: 21px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--color-accent-text);
+}
+
+.forgot:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.forgot:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Prototype notice (live region). Collapses to nothing while empty. */
+.notice {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.notice:empty {
+  margin-top: 0;
+}
+
+.security {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Laptop widths where the right column gets narrow. */
+@media (max-width: 1279px) and (min-width: 1024px) {
+  .card {
+    padding-inline: 40px;
+  }
+}
+
+@media (max-width: 599px) {
+  .card {
+    padding: 28px 22px 24px;
+    border-radius: 16px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+  }
+
+  .form {
+    margin-top: 24px;
+  }
+
+  .fields {
+    gap: 18px;
+  }
+
+  .forgot {
+    margin-top: 18px;
+    padding-block: 4px;
+  }
+
+  .security {
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+}

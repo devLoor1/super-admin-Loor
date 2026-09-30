@@ -1,0 +1,111 @@
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--color-text);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  height: 47px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  background: #ffffff;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.control:hover {
+  border-color: var(--color-border-control-hover);
+}
+
+.control:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+
+.control[data-invalid] {
+  border-color: var(--color-danger);
+}
+
+.control[data-invalid]:focus-within {
+  box-shadow: 0 0 0 3px var(--color-danger-ring);
+}
+
+.icon {
+  flex: none;
+  margin-left: 17px;
+  color: var(--color-icon);
+}
+
+.input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0 16px 0 20px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-size: 15.5px;
+  color: var(--color-text-strong);
+  /* The wrapper draws the focus ring. */
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-placeholder);
+  opacity: 1;
+}
+
+.trailingButton {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-icon);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.trailingButton:hover {
+  color: var(--color-text-strong);
+  background: var(--color-surface-muted);
+}
+
+.trailingButton:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.error {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-danger);
+}
+
+@media (max-width: 599px) {
+  .control {
+    height: 48px;
+  }
+
+  /* 16px avoids iOS Safari zooming into the field on focus. */
+  .input {
+    font-size: 16px;
+  }
+}

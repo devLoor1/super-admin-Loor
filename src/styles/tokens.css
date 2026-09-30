@@ -1,0 +1,59 @@
+/*
+ * Prototype visual tokens — Super Admin login.
+ *
+ * These values were sampled from the approved login concept image. They are
+ * NOT the final Loor brand system; treat them as placeholders that a later
+ * design-system phase can replace in one place.
+ */
+:root {
+  /* Typography */
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Institutional (dark) panel */
+  --color-panel-bg: #14161d;
+  --color-panel-bg-top: #1b1d27;
+  --color-panel-bg-bottom: #121419;
+  --color-panel-text: #ffffff;
+  --color-panel-text-muted: #979cac;
+  --color-panel-text-subtle: #7a7f8d;
+
+  /* Light surface */
+  --color-page-bg: #f7f8fa;
+  --color-card-bg: #fbfcfd;
+  --color-border: #e5e7ec;
+  --color-border-control: #dfe2e8;
+  --color-border-control-hover: #c9cdd6;
+  --color-divider: #eaebf0;
+  --color-surface-muted: #eff0f4;
+
+  /* Text hierarchy on light surface */
+  --color-text-strong: #111218;
+  --color-text: #2d3141;
+  --color-text-muted: #6b7184;
+  --color-text-placeholder: #7a8092;
+  --color-icon: #5a5f70;
+
+  /* Restrained indigo / violet accent */
+  --color-accent: #4f47c9;
+  --color-accent-hover: #463ebd;
+  --color-accent-active: #3e36ad;
+  --color-accent-text: #3f37bd;
+  --color-accent-ring: rgb(79 71 201 / 0.2);
+  --color-accent-glow: #8b81ff;
+
+  /* Feedback */
+  --color-danger: #c0344f;
+  --color-danger-ring: rgb(192 52 79 / 0.16);
+
+  /* Shape */
+  --radius-card: 18px;
+  --radius-control: 8px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(17 18 24 / 0.03), 0 18px 48px -18px rgb(17 18 24 / 0.1);
+  --shadow-button: 0 1px 2px rgb(40 34 140 / 0.16);
+
+  /* Motion */
+  --transition-fast: 140ms ease;
+}

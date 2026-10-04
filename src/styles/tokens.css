@@ -104,4 +104,23 @@
   --tone-plum-fg: #eedff9;
   --tone-plum-bg: #241d38;
   --tone-plum-border: #473b6c;
+
+  /* Record status pills (Whitelabels V1). Always shown with a text label —
+     colour is never the only signal. Prototype states, not backend contracts. */
+  --status-success-fg: #8fe6cf;
+  --status-success-dot: #53f2c5;
+  --status-success-bg: rgb(43 196 150 / 0.12);
+  --status-success-border: rgb(83 242 197 / 0.22);
+  --status-warning-fg: #f2c983;
+  --status-warning-dot: #f7bf6d;
+  --status-warning-bg: rgb(247 191 109 / 0.1);
+  --status-warning-border: rgb(247 191 109 / 0.24);
+  --status-neutral-fg: #c9cdf3;
+  --status-neutral-dot: #a4b0ec;
+  --status-neutral-bg: rgb(164 176 236 / 0.08);
+  --status-neutral-border: rgb(164 176 236 / 0.2);
+  --status-muted-fg: #a8b0c2;
+  --status-muted-dot: #7d8597;
+  --status-muted-bg: rgb(125 133 151 / 0.1);
+  --status-muted-border: rgb(125 133 151 / 0.22);
 }

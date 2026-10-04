@@ -36,6 +36,13 @@
   border-color: var(--surface-border-strong);
 }
 
+@container (min-width: 239px) {
+  .card[data-density='compact'] {
+    padding-top: 15px;
+    padding-bottom: 18px;
+  }
+}
+
 .card:has(.open:focus-visible) {
   box-shadow: var(--focus-ring-dark);
 }

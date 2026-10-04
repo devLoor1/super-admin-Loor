@@ -49,8 +49,9 @@ svg {
   display: block;
 }
 
-/* Dashboard prototype uses a dark document surface (no light overscroll). */
-html[data-view='dashboard'] body {
+/* App shell views use a dark document surface (no light overscroll). */
+html[data-view='dashboard'] body,
+html[data-view='whitelabels'] body {
   background: var(--shell-bg);
   color: var(--text-on-dark);
   color-scheme: dark;

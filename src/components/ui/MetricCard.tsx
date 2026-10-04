@@ -1,5 +1,5 @@
 import { ArrowRight, type LucideIcon } from 'lucide-react'
-import { IconTile, type Tone } from '../../components/ui/IconTile'
+import { IconTile, type Tone } from './IconTile'
 import styles from './MetricCard.module.css'
 
 type MetricCardProps = {
@@ -7,15 +7,16 @@ type MetricCardProps = {
   icon: LucideIcon
   tone: Tone
   onOpen: () => void
+  density?: 'default' | 'compact'
 }
 
 /**
  * KPI card in its data-ready state. There is deliberately no value: the card
  * shows "—" (announced as "Sem dados") until a real integration exists.
  */
-export function MetricCard({ label, icon, tone, onOpen }: MetricCardProps) {
+export function MetricCard({ label, icon, tone, onOpen, density = 'default' }: MetricCardProps) {
   return (
-    <article className={styles.card}>
+    <article className={styles.card} data-density={density}>
       <IconTile icon={icon} tone={tone} size="lg" className={styles.tile} />
       <h3 className={styles.label}>{label}</h3>
       <p className={styles.value}>

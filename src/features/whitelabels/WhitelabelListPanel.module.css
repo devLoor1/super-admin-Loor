@@ -1,0 +1,515 @@
+/*
+ * Geometry follows the approved Whitelabels V1 image at 1:1.
+ * The panel is a size container: columns drop out as it narrows
+ * (counts → date → domain → status move into the name cell) instead of
+ * shrinking the table until it is unreadable. Container widths are the
+ * panel's content box (all seven columns need ≥738px, reached at the
+ * 1672px reference viewport).
+ */
+.panel {
+  --bleed: 22px;
+
+  container-type: inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 23px 18px 24px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.018) 0%, rgb(255 255 255 / 0) 40%),
+    #131a28;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.025),
+    0 14px 32px -22px rgb(0 0 0 / 0.7);
+}
+
+/* ---------- Heading ---------- */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heading {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.accentBar {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin-bottom: 8px;
+  border-radius: 2px;
+  background: var(--color-accent-glow);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+  color: var(--text-on-dark);
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 14.5px;
+  line-height: 22px;
+  color: var(--text-on-dark-secondary);
+}
+
+.newButton {
+  margin-top: 10px;
+}
+
+/* ---------- Search + filters ---------- */
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 190px);
+  gap: 16px;
+  margin: 20px 0 18px;
+}
+
+/* ---------- Table ---------- */
+
+.tableArea {
+  flex: 1 1 auto;
+  margin-top: 16px;
+  border-top: 1px solid var(--surface-divider);
+}
+
+.table {
+  width: calc(100% + var(--bleed) * 2);
+  margin: 0 calc(var(--bleed) * -1);
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  position: relative;
+  padding: 0 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--bleed);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--bleed);
+}
+
+.table th {
+  height: 48px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
+.table td {
+  height: 58px;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--text-on-dark-muted);
+  white-space: nowrap;
+}
+
+/* Row dividers, inset to the panel content edges. */
+.table td::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--surface-divider);
+}
+
+.table td:first-child::after {
+  left: var(--bleed);
+}
+
+.table td:last-child::after {
+  right: var(--bleed);
+}
+
+/*
+ * Column widths (fixed layout). Percentages are of the table width and sum
+ * to ~93%, leaving room for the action column at the reference size.
+ */
+.colName {
+  width: 24%;
+}
+
+.colDomain {
+  width: 15.2%;
+}
+
+.colStatus {
+  width: 16.7%;
+}
+
+.colAdmins {
+  width: 13.4%;
+}
+
+.colApps {
+  width: 9.5%;
+}
+
+.colUpdated {
+  width: 14.5%;
+}
+
+/* Long domains truncate visually; the full value stays in the accessible
+   text and in the detail panel. */
+.table td.colDomain {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.colActions {
+  width: calc(var(--bleed) + 34px);
+  text-align: right;
+}
+
+.table td.colAdmins,
+.table td.colApps,
+.table td.colUpdated {
+  padding-left: 22px;
+  color: var(--text-on-dark);
+}
+
+/* Rows: hover, active (shown in the detail panel). */
+.row {
+  cursor: pointer;
+}
+
+.row td {
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover td {
+  background: rgb(255 255 255 / 0.025);
+}
+
+.row[data-active] td {
+  border-top: 1px solid rgb(126 118 255 / 0.2);
+  border-bottom: 1px solid rgb(126 118 255 / 0.2);
+  background: linear-gradient(180deg, rgb(86 80 214 / 0.2), rgb(70 66 180 / 0.16));
+}
+
+.row[data-active] td::after {
+  display: none;
+}
+
+.row[data-active] td:first-child {
+  border-left: 1px solid rgb(126 118 255 / 0.2);
+  border-radius: 11px 0 0 11px;
+}
+
+.row[data-active] td:last-child {
+  border-right: 1px solid rgb(126 118 255 / 0.2);
+  border-radius: 0 11px 11px 0;
+}
+
+/* Name cell */
+.nameButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin-left: -4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-on-dark);
+  text-align: left;
+}
+
+.nameButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.nameText {
+  display: grid;
+  min-width: 0;
+  white-space: normal;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.nameDomain,
+.nameStatus {
+  display: none;
+}
+
+.nameDomain {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Sortable headers */
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-left: -4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+.sortButton:hover {
+  color: var(--text-on-dark);
+}
+
+.sortButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.sortIcon {
+  color: var(--text-on-dark-muted);
+}
+
+.sortIcon[data-active] {
+  color: var(--color-accent-glow);
+}
+
+
+/* Row actions */
+.moreButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #d2d9ea;
+}
+
+.moreButton:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.moreButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 16px 24px;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.count {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.illustrative {
+  color: var(--text-on-dark-muted);
+}
+
+.pagination {
+  display: flex;
+  gap: 10px;
+}
+
+.pageButton {
+  display: grid;
+  place-items: center;
+  min-width: 33px;
+  height: 35px;
+  padding: 0 8px;
+  border: 1px solid #262f45;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.015);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-on-dark-secondary);
+}
+
+.pageButton[aria-current='page'] {
+  border-color: #5d58e6;
+  background: rgb(96 88 240 / 0.2);
+  box-shadow: 0 0 14px -5px rgb(116 104 255 / 0.8);
+  color: var(--text-on-dark);
+}
+
+.pageButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pageButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* ---------- Narrow panels (container queries on .panel) ---------- */
+
+@container (max-width: 737px) {
+  .colApps {
+    display: none;
+  }
+
+  .colName {
+    width: 26%;
+  }
+
+  .colDomain {
+    width: 17.5%;
+  }
+
+  .colStatus {
+    width: 18.5%;
+  }
+
+  .colAdmins {
+    width: 14.5%;
+  }
+
+  .colUpdated {
+    width: 16%;
+  }
+}
+
+@container (max-width: 662px) {
+  .colAdmins {
+    display: none;
+  }
+
+  .colName {
+    width: 30%;
+  }
+
+  .colDomain {
+    width: 20%;
+  }
+
+  .colStatus {
+    width: 23%;
+  }
+
+  .colUpdated {
+    width: 20%;
+  }
+}
+
+@container (max-width: 540px) {
+  .colUpdated {
+    display: none;
+  }
+
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .newButton {
+    width: 100%;
+    margin-top: 0;
+  }
+}
+
+@container (max-width: 430px) {
+  .colDomain {
+    display: none;
+  }
+
+  .colName {
+    width: auto;
+  }
+
+  .colStatus {
+    width: 128px;
+  }
+
+  .nameDomain {
+    display: block;
+  }
+
+  .table td {
+    height: 64px;
+  }
+}
+
+@container (max-width: 330px) {
+  .colStatus {
+    display: none;
+  }
+
+  .nameStatus {
+    display: block;
+    margin: 4px 0 2px 45px;
+  }
+
+  .table td {
+    padding-block: 8px;
+  }
+}
+
+@media (max-width: 767px) {
+  .panel {
+    --bleed: 14px;
+
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
+    line-height: 20px;
+  }
+}

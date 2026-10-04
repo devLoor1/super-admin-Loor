@@ -1,0 +1,446 @@
+/* Geometry follows the approved Whitelabels V1 image at 1:1 (536px panel). */
+.panel {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 13px 12px 15px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.02) 0%, rgb(255 255 255 / 0) 40%),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.025),
+    0 14px 32px -22px rgb(0 0 0 / 0.7);
+  scroll-margin-top: 16px;
+}
+
+/* ---------- Identity ---------- */
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 22px;
+  padding: 0 7px 0 6px;
+}
+
+.identity {
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.name {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.metaDot {
+  margin: 0 10px;
+}
+
+.kebab {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  margin-top: 3px;
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.015);
+  color: var(--text-on-dark);
+}
+
+.kebab:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.kebab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.tabs {
+  margin-top: 13px;
+}
+
+.tabsHint {
+  display: none;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-on-dark-muted);
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--color-accent-glow);
+  outline-offset: 2px;
+}
+
+/* When the panel spans the full width (stacked layouts), tabs keep their
+   natural width instead of stretching across the panel. */
+@container (min-width: 640px) {
+  .tabs [role='tab'] {
+    flex: 0 0 auto;
+    padding: 0 22px;
+  }
+}
+
+.tabPanel {
+  margin-top: 15px;
+  border-radius: var(--radius-panel);
+}
+
+.tabPanel:focus-visible {
+  outline: 2px solid var(--color-accent-glow);
+  outline-offset: 2px;
+}
+
+.overview {
+  display: grid;
+  gap: 12px;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: 32px 16px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: var(--radius-tile);
+}
+
+/* ---------- Inner cards ---------- */
+
+.card {
+  container-type: inline-size;
+  padding: 12px 15px 3px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background: #141b2a;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-on-dark);
+}
+
+.cardSubtitle {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+}
+
+.editButton {
+  height: 29px;
+  margin: 0 1px 0 0;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+/* Key/value list */
+.fields {
+  margin: 0;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(110px, min(36%, 240px)) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-height: 31px;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.field dt {
+  font-size: 12.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.field dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.value {
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.copyButton {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--icon-on-dark);
+}
+
+.copyButton:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-on-dark);
+}
+
+.copyButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* Data-ready summary cards */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.summaryCard {
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr);
+  grid-template-rows: minmax(31px, auto) auto auto;
+  grid-template-areas:
+    'icon label'
+    'icon value'
+    'icon status';
+  align-content: start;
+  column-gap: 8px;
+  padding: 10px 8px 10px 9px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background: #151c2c;
+}
+
+.summaryIcon {
+  grid-area: icon;
+}
+
+.summary .summaryCard .summaryIcon {
+  width: 31px;
+  height: 31px;
+}
+
+.summaryLabel {
+  grid-area: label;
+  align-self: center;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  color: #cfd9eb;
+}
+
+.summaryValue {
+  grid-area: value;
+  margin-top: 3px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-on-dark);
+}
+
+.summaryStatus {
+  grid-area: status;
+  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 14px;
+  color: var(--text-on-dark-muted);
+}
+
+/* Quick actions */
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin: 9px -2px 5px;
+}
+
+.action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 11px;
+  width: 100%;
+  min-height: 52px;
+  padding: 3px 9px 3px 5px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025) 0%, rgb(255 255 255 / 0) 100%),
+    #182033;
+  color: var(--text-on-dark);
+  text-align: left;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.action:hover {
+  border-color: var(--surface-border-strong);
+  background-color: var(--surface-hover);
+}
+
+.action:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.actionText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actionTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.actionDescription {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--text-on-dark-muted);
+}
+
+.actionChevron {
+  margin-left: -4px;
+  transition: transform var(--transition-fast);
+}
+
+.action:hover .actionChevron {
+  transform: translateX(2px);
+}
+
+/* ---------- Narrow panels ---------- */
+
+/* Medium (e.g. 1360–1500px viewports): summary cards keep three columns,
+   with the icon above the text so labels never break mid-word. */
+@container (max-width: 479px) {
+  /* Lets the four tabs fit without scrolling down to ~380px panels. */
+  .tabs [role='tab'] {
+    padding: 0 8px;
+    font-size: 12.5px;
+  }
+
+  .summary {
+    gap: 10px;
+  }
+
+  .summaryCard {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: 'icon' 'label' 'value' 'status';
+    padding: 10px 10px 11px;
+  }
+
+  /* Two-line slot keeps the values aligned across the three cards. */
+  .summaryLabel {
+    align-self: start;
+    min-height: 28px;
+    margin-top: 9px;
+  }
+}
+
+/* Narrow (phones): one summary row per item, value on the right. */
+@container (max-width: 359px) {
+  .tabsHint {
+    display: block;
+  }
+
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summaryCard {
+    grid-template-columns: 31px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas: 'icon label value' 'icon status value';
+    align-items: center;
+    padding: 10px 12px 10px 10px;
+  }
+
+  .summaryLabel {
+    align-self: end;
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .summaryValue {
+    margin: 0 4px 0 0;
+  }
+
+  .summaryStatus {
+    align-self: start;
+    margin-top: 2px;
+  }
+}
+
+/* Quick actions: one column once two tiles would wrap descriptions badly. */
+@container (max-width: 420px) {
+  .actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Key/value rows stack only on very narrow cards. */
+@container (max-width: 300px) {
+  .field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 4px;
+    padding: 8px 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .panel {
+    padding: 16px 12px 12px;
+  }
+
+  .header {
+    column-gap: 14px;
+    padding: 0 4px;
+  }
+
+  .name {
+    font-size: 18px;
+    line-height: 24px;
+  }
+}

@@ -11,7 +11,7 @@ const ACTIONS: { id: string; title: string; description: string; module: string;
   { id: 'auditoria', title: 'Acessar Auditoria', description: 'Consulte logs e histórico', module: 'Auditoria', icon: FileSearch, tone: 'plum' },
 ]
 
-/** Shortcuts into the main domains. Destinations are out of scope: each shows a prototype notice. */
+/** Whitelabels is available locally; remaining destinations show prototype notices. */
 export function QuickActionsPanel({ className }: { className?: string }) {
   const notify = usePrototypeNotice()
 
@@ -20,7 +20,9 @@ export function QuickActionsPanel({ className }: { className?: string }) {
       <ul className={styles.grid}>
         {ACTIONS.map((action) => (
           <li key={action.id}>
-            <button type="button" className={styles.action} onClick={() => notify(moduleUnavailable(action.module))}>
+            <button type="button" className={styles.action} onClick={() => action.id === 'whitelabels'
+              ? window.location.assign('#/whitelabels')
+              : notify(moduleUnavailable(action.module))}>
               <IconTile icon={action.icon} tone={action.tone} size="md" />
               <span className={styles.text}>
                 <span className={styles.title}>{action.title}</span>

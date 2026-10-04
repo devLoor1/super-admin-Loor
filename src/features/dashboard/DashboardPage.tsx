@@ -4,7 +4,7 @@ import { moduleUnavailable, usePrototypeNotice } from '../../components/shell/pr
 import type { Tone } from '../../components/ui/IconTile'
 import { ActivityPanel } from './ActivityPanel'
 import { GlobalOverviewPanel } from './GlobalOverviewPanel'
-import { MetricCard } from './MetricCard'
+import { MetricCard } from '../../components/ui/MetricCard'
 import { OperationalStatusPanel } from './OperationalStatusPanel'
 import { QuickActionsPanel } from './QuickActionsPanel'
 import { RecentEventsPanel } from './RecentEventsPanel'
@@ -49,7 +49,9 @@ function DashboardContent() {
                 label={metric.label}
                 icon={metric.icon}
                 tone={metric.tone}
-                onOpen={() => notify(moduleUnavailable(metric.module))}
+                onOpen={() => metric.id === 'whitelabels'
+                  ? window.location.assign('#/whitelabels')
+                  : notify(moduleUnavailable(metric.module))}
               />
             </li>
           ))}

@@ -357,3 +357,26 @@ refinement above. Ready for final user visual approval; promotion to dev is
 conditional on that approval.** TypeScript, oxlint, production Vite build and
 diff-check pass. One local refinement commit; no push, main/dev unchanged,
 no deploy, no Backend and no additional screen. Local preview stays on port 5173.
+
+## Whitelabels V1 — Codex review/refinement — 2026-10-04
+
+Incoming uncommitted Claude prototype recovered on dev@c07bcb7; all review work
+isolated on feature/super-admin-whitelabels-v1. Approved composition and shared
+shell preserved. Consistent Whitelabel terminology, explicit illustrative status/
+Applications boundaries, single active-row selection, coherent filtered detail,
+mobile focus/tab visibility, shared MetricCard ownership/compact density and
+page-neutral skip target refined. Two existing Dashboard Whitelabel shortcuts
+connected locally. No Backend, persistence or new destination screen.
+
+1672×941, 1440×810, 1280×810, 900×900, 390×844 and 320×800 passed reflow/no page
+overflow. Search/filter/sort, empty/reset, row activation, keyboard tabs, clipboard,
+notices and mobile drawer checked. Dashboard 1440/390 captures pixel-identical;
+Login mobile identical, desktop form unchanged (decorative phase differs).
+Fresh post-edit console clean; network local assets only. TypeScript, oxlint,
+production build and diff-check pass. Focused accessibility checks, not full WCAG.
+
+Full evidence/limits and open Product questions: docs/whitelabels-v1-review.md.
+OriginKit recommendations only: docs/whitelabels-originkit-mapping.md.
+Captures: C:/Users/User/AppData/Local/Temp/super-admin-whitelabels-review-20261004.
+One local commit only; no push/merge/deploy, main/dev refs unchanged. Ready for
+user review before any promotion; normal-motion local preview retained on 5173.

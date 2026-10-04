@@ -1,20 +1,25 @@
 # Loor Super Admin — Frontend
 
-Visual prototype of the **Super Admin**: Login V1 and the application-frame
-**App Shell + Global Dashboard V1**. Frontend only.
+Visual prototype of the **Super Admin**: Login V1, the application-frame
+**App Shell + Global Dashboard V1** and the **Whitelabels V1** list/detail page.
+Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
 > local field check; the dashboard shows data-ready empty states
-> ("—", "Sem dados", "Aguardando integração") instead of metrics.
+> ("—", "Sem dados", "Aguardando integração") instead of metrics. The
+> Whitelabels page lists three clearly illustrative rows (prototype IDs, no
+> counts or dates).
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
 | Login V1 | `http://localhost:5173/` | [`docs/reference/super-admin-login-approved.png`](docs/reference/super-admin-login-approved.png) |
 | App Shell + Dashboard V1 | `http://localhost:5173/#/dashboard` | [`docs/reference/super-admin-dashboard-approved.png`](docs/reference/super-admin-dashboard-approved.png) |
+| Whitelabels V1 | `http://localhost:5173/#/whitelabels` | [`docs/reference/super-admin-whitelabels-approved.png`](docs/reference/super-admin-whitelabels-approved.png) |
 
-The two views are selected by a prototype-only hash switch (`src/app/App.tsx`);
-the dashboard is reached directly by URL because there is no authentication.
+The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
+shell screens are reached directly by URL because there is no authentication.
+In the sidebar, **Plataformas** links to `#/whitelabels`.
 
 ---
 
@@ -53,7 +58,7 @@ handle panel-level responsiveness.
 ```
 src/
   main.tsx                          entry — renders <App />
-  app/App.tsx                       prototype view switch: "#/dashboard" → dashboard, else login
+  app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels", else login
   styles/
     tokens.css                      prototype visual tokens (login + dark app shell)
     global.css                      reset + base typography
@@ -73,17 +78,29 @@ src/
       EmptyState.tsx (+ .css)       "no data yet" block
       IconTile.tsx (+ .css)         tinted module icon square (identity tones)
       OutlineButton.tsx (+ .css)    low-emphasis panel action
+      MetricCard.tsx (+ .css)       shared data-ready KPI card (default / compact density)
+      PrimaryButton.tsx (+ .css)    high-emphasis violet action
+      StatusPill.tsx (+ .css)       status dot + label (success / warning / neutral / muted tones)
+      SearchField.tsx (+ .css)      labelled search input
+      SelectField.tsx (+ .css)      native select with icon + chevron
+      FilterChips.tsx (+ .css)      single-choice chip group (aria-pressed)
+      Tabs.tsx (+ .css), tabIds.ts  accessible tablist (roving tabindex, arrow/Home/End)
   features/
     login/                          Login V1 (unchanged visually)
     dashboard/
       DashboardPage.tsx (+ .css)    page grid + KPI row
-      MetricCard.tsx (+ .css)       KPI card, data-ready state
       GlobalOverviewPanel.tsx       "Supervisão global" panel (+ GlobalOverviewIllustration)
       ActivityPanel.tsx             time-series container, empty
       WhitelabelDistributionPanel   donut placeholder, empty
       OperationalStatusPanel.tsx    neutral "Aguardando integração" list
       RecentEventsPanel.tsx         audit-ready table header + empty state
       QuickActionsPanel.tsx         shortcuts (prototype notices)
+    whitelabels/
+      WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
+      WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
+      WhitelabelDetailPanel.tsx     identity, tabs, main information, summary cards, quick actions
+      EntityAvatar.tsx (+ .css)     monogram / building avatar
+      prototypeWhitelabels.ts       illustrative rows + status vocabulary (not backend data)
 docs/reference/                     approved concept images
 ```
 
@@ -162,6 +179,47 @@ At 1440 × 810 the document is 967px tall (157px vertical scroll). On 320px phon
 the menu target remains 40px wide; brand tracking tightens and the redundant user
 chevron hides instead of shrinking the menu target.
 
+## Whitelabels V1 — decisions
+
+- **Reference scale.** The approved image (1672 × 941) is reproduced 1:1 at a
+  1672 × 941 CSS viewport inside the unchanged App Shell; the page fits that
+  viewport without scrolling. The KPI row uses the compact density of the
+  shared `MetricCard` (≈110px vs the Dashboard's 118px), as in the image.
+- **Navigation unchanged.** The image shows "Whitelabels" and "Aplicações" as
+  sidebar items; per Product decision the approved shared navigation is kept and
+  **Plataformas** is the active parent area (`href="#/whitelabels"`). Taxonomy is
+  a separate future Product decision.
+- **Illustrative rows only.** Finapop, Loor and Nova Plataforma (statuses Ativo,
+  Em configuração, Rascunho) come from `prototypeWhitelabels.ts`, labelled
+  "Dados ilustrativos". IDs are `wl_proto_0x`. Administrator/application/
+  integration counts and update dates are "—" ("sem dados"); KPI cards say
+  "Aguardando integração". No totals are derived from the three rows.
+- **Local-only behavior.** Search (name/domain/slug, accent- and case-insensitive),
+  status select and quick chips (kept in sync), column sorting, single active row
+  → detail panel, tabs, and copy domain/slug to the clipboard. No checkboxes or bulk actions.
+  "Novo Whitelabel", Editar, row/detail menus,
+  KPI cards, quick actions and pagination arrows are prototype notices or
+  disabled. Only the "Visão geral" tab has content; the other tabs show a
+  "próxima etapa" placeholder. Nothing is persisted; the URL stays `#/whitelabels`.
+- **Status vocabulary** (Ativo / Em configuração / Rascunho / Inativo) and its
+  tones live in `prototypeWhitelabels.ts` + `--status-*` tokens. It is a visual
+  proposal, not a backend-authoritative state model. The UI explicitly labels
+  data/status as illustrative and Aplicações as a visual concept. The architecture
+  proposes active/inactive capability, but not the full status enum.
+- **New shared UI** (generic, no Whitelabels knowledge): `PrimaryButton`,
+  `StatusPill`, `SearchField`, `SelectField`, `FilterChips`, `Tabs`.
+
+### Whitelabels responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | KPI row (4) + list (≈60%) and detail (≈40%, ≥420px) side by side. At 1672px all eight table columns are shown; list columns drop by panel width (Aplicações below ≈1655px, Administradores below ≈1500px viewports; both stay visible in the detail summary). Detail summary cards move their icon above the label in narrower panels; quick actions become one column. |
+| 1200–1359px | Detail panel moves below the full-width list (all columns visible); tabs keep natural width. |
+| 768–1199px | Icon rail; KPI cards 2 + 2; list and detail stacked (Aplicações column hidden below ≈910px). |
+| < 768px | Drawer navigation; single column. On phones the table keeps name / actions, with domain and status under the name. Row activation scrolls/focuses the detail panel; detail tabs scroll horizontally with a scrollbar/hint and keep focused tabs visible. |
+
+No horizontal page overflow from 320 to 1920px (checked at 22 widths).
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -171,6 +229,17 @@ chevron hides instead of shrinking the menu target.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Whitelabels:
+
+- The table has a caption, `scope="col"` headers, sort buttons with `aria-sort`,
+  and a name button per row (`aria-controls` the detail panel, `aria-current` on the
+  active row). Result count/detail identity have polite live announcements.
+- Search and status select have labels; chips are a labelled group of
+  `aria-pressed` buttons. Detail tabs follow the WAI-ARIA tabs pattern.
+- "—" values carry visually hidden "sem dados" text. axe-core (4.x) reported no
+  violations at 1672px and 390px for this page during this phase's QA (not a
+  WCAG certification; axe is not a project dependency).
 
 Dashboard / shell:
 
@@ -216,13 +285,17 @@ Login:
 ## Out of scope (by design)
 
 Backend integration, authentication, API clients, real routing, tenant switching,
-real search, destination module screens (Whitelabels, Administradores, SMTP,
-Oportunidades, Investidores, Empreendedores, Investimentos, Pagamentos, Wallet,
- Gateways, KYC, Auditoria), further OriginKit assets, final brand system.
+real search, persistence, whitelabel create/edit flows, the Whitelabels detail tabs
+other than "Visão geral", other destination module screens (Administradores,
+Platform Settings, SMTP, Gateways, Indicadores, Oportunidades, Investidores,
+Empreendedores, Investimentos, Pagamentos, Wallet, KYC, Auditoria), further
+OriginKit assets, final brand system.
 
 ## Review records
 
 - [Dashboard V1 review, architecture boundaries and validation](docs/dashboard-v1-review.md)
 - [App Shell / Dashboard OriginKit opportunity mapping](docs/dashboard-originkit-mapping.md)
 - [Approved Dashboard OriginKit integration, performance and architecture review](docs/dashboard-originkit-integration.md)
+- [Whitelabels V1 review and validation](docs/whitelabels-v1-review.md)
+- [Whitelabels-specific OriginKit opportunity mapping](docs/whitelabels-originkit-mapping.md)
 - [Visual QA record](design-qa.md)

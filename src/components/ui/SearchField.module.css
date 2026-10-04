@@ -1,0 +1,53 @@
+.field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  height: 43px;
+  padding: 0 14px 0 16px;
+  border: 1px solid #222b42;
+  border-radius: 8px;
+  background: #161d2e;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.field:hover {
+  border-color: var(--surface-border-strong);
+}
+
+.field:focus-within {
+  border-color: var(--color-accent-glow);
+  box-shadow: 0 0 0 3px rgb(139 129 255 / 0.22);
+}
+
+.icon {
+  flex: none;
+  color: var(--icon-on-dark);
+}
+
+.input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-on-dark);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-on-dark-muted);
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  /* 16px avoids iOS Safari zooming into the field on focus. */
+  .input {
+    font-size: 16px;
+  }
+}

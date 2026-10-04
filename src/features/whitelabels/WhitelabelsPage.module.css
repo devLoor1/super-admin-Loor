@@ -1,0 +1,63 @@
+/*
+ * Layout follows the approved Whitelabels V1 image at 1:1 (1672px viewport):
+ * four summary cards, then list (≈60%) + detail (≈40%) side by side.
+ * Below 1360px the detail panel moves under the list.
+ */
+.page {
+  display: grid;
+  gap: 15px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.summaryCell {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.noSelection {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 32px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 801fr) minmax(420px, 536fr);
+  align-items: stretch;
+  gap: 15px;
+}
+
+@media (max-width: 1359px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1199px) {
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .page,
+  .summary,
+  .split {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 479px) {
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

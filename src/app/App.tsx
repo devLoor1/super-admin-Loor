@@ -1,23 +1,33 @@
 import { useEffect, useState } from 'react'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { LoginPage } from '../features/login/LoginPage'
+import { WhitelabelsPage } from '../features/whitelabels/WhitelabelsPage'
 
-type View = 'login' | 'dashboard'
+type View = 'login' | 'dashboard' | 'whitelabels'
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
   dashboard: 'Super Admin · Dashboard Global',
+  whitelabels: 'Super Admin · Whitelabels',
 }
 
-/** `#/dashboard` → visual shell (not an authentication guard); anything else → login. */
+/** Views rendered inside the dark App Shell. */
+const SHELL_VIEWS: ReadonlySet<View> = new Set<View>(['dashboard', 'whitelabels'])
+
+/**
+ * `#/dashboard`, `#/whitelabels` → visual shell screens (not an authentication
+ * guard); anything else → login.
+ */
 function viewFromHash(): View {
-  return window.location.hash.replace(/^#\/?/, '') === 'dashboard' ? 'dashboard' : 'login'
+  const path = window.location.hash.replace(/^#\/?/, '')
+  if (path === 'dashboard' || path === 'whitelabels') return path
+  return 'login'
 }
 
 /**
- * Prototype-only view switch. There is no authentication: the dashboard is
- * reached directly through its URL hash. Replace with a real router once more
- * than these two screens exist.
+ * Prototype-only view switch. There is no authentication: shell screens are
+ * reached directly through their URL hash. Replace with a real router once
+ * real routes, layouts and permission handling are needed.
  */
 export function App() {
   const [view, setView] = useState<View>(viewFromHash)
@@ -34,8 +44,12 @@ export function App() {
   useEffect(() => {
     document.title = TITLES[view]
     document.documentElement.dataset.view = view
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', view === 'dashboard' ? '#0f131d' : '#14161d')
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', SHELL_VIEWS.has(view) ? '#0f131d' : '#14161d')
   }, [view])
 
-  return view === 'dashboard' ? <DashboardPage /> : <LoginPage />
+  if (view === 'dashboard') return <DashboardPage />
+  if (view === 'whitelabels') return <WhitelabelsPage />
+  return <LoginPage />
 }

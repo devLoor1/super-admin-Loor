@@ -1,0 +1,50 @@
+.pill {
+  --pill-fg: var(--status-neutral-fg);
+  --pill-dot: var(--status-neutral-dot);
+  --pill-bg: var(--status-neutral-bg);
+  --pill-border: var(--status-neutral-border);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--pill-border);
+  border-radius: 13px;
+  background: var(--pill-bg);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--pill-fg);
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pill-dot);
+  box-shadow: 0 0 8px -1px var(--pill-dot);
+}
+
+.pill[data-tone='success'] {
+  --pill-fg: var(--status-success-fg);
+  --pill-dot: var(--status-success-dot);
+  --pill-bg: var(--status-success-bg);
+  --pill-border: var(--status-success-border);
+}
+
+.pill[data-tone='warning'] {
+  --pill-fg: var(--status-warning-fg);
+  --pill-dot: var(--status-warning-dot);
+  --pill-bg: var(--status-warning-bg);
+  --pill-border: var(--status-warning-border);
+}
+
+.pill[data-tone='muted'] {
+  --pill-fg: var(--status-muted-fg);
+  --pill-dot: var(--status-muted-dot);
+  --pill-bg: var(--status-muted-bg);
+  --pill-border: var(--status-muted-border);
+}

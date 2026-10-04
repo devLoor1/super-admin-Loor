@@ -27,7 +27,8 @@ export type NavItem = {
  */
 export const PRIMARY_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: House, href: '#/dashboard' },
-  { id: 'plataformas', label: 'Plataformas', icon: LayoutGrid },
+  // Plataformas is the parent domain of the Whitelabels page (its only screen so far).
+  { id: 'plataformas', label: 'Plataformas', icon: LayoutGrid, href: '#/whitelabels' },
   { id: 'operacao', label: 'Operação', icon: Box },
   { id: 'financeiro', label: 'Financeiro', icon: ChartColumnIncreasing },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },

@@ -91,11 +91,11 @@ export function AppShell({ activeNav, title, location, children }: AppShellProps
       <div className={styles.shell}>
         <a
           className={styles.skipLink}
-          href="#dashboard-content"
+          href="#app-content"
           inert={navOpen}
           onClick={(event) => {
             event.preventDefault()
-            document.getElementById('dashboard-content')?.focus()
+            document.getElementById('app-content')?.focus()
           }}
         >
           Ir para o conteúdo
@@ -127,7 +127,7 @@ export function AppShell({ activeNav, title, location, children }: AppShellProps
             onOpenNav={() => setNavOpen(true)}
             menuButtonRef={menuButtonRef}
           />
-          <main id="dashboard-content" tabIndex={-1} className={styles.main}>{children}</main>
+          <main id="app-content" tabIndex={-1} className={styles.main}>{children}</main>
         </div>
       </div>
     </PrototypeNoticeProvider>

@@ -49,6 +49,13 @@ svg {
   display: block;
 }
 
+/* Dashboard prototype uses a dark document surface (no light overscroll). */
+html[data-view='dashboard'] body {
+  background: var(--shell-bg);
+  color: var(--text-on-dark);
+  color-scheme: dark;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

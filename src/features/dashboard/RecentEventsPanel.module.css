@@ -1,0 +1,33 @@
+.table {
+  width: 100%;
+  margin-top: 5px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th {
+  height: 27px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--surface-divider);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  text-align: left;
+  color: var(--text-on-dark-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  align-self: center;
+  max-width: 420px;
+  padding: 17px 12px 0;
+}
+
+/* Narrow: keep only the essential columns. */
+@container (max-width: 520px) {
+  .table th.secondary {
+    display: none;
+  }
+}

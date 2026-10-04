@@ -70,3 +70,74 @@
 - TypeScript validation, oxlint, production Vite build, and `git diff --check` passed after consolidation.
 
 **final result: passed**
+
+## App Shell + Dashboard V1 review — 2026-10-04
+
+This is a separate frontend-only review of Claude's recovered Dashboard work on
+`feature/super-admin-dashboard-v1`, based on approved Login `b54329c`. Existing
+Login approval above remains intact. No new OriginKit integration or Backend work.
+
+### Current visual evidence
+
+- Dashboard source: `docs/reference/super-admin-dashboard-approved.png`, 1672 × 941.
+- Current captures and comparison pairs:
+  `C:/Users/User/Desktop/Loor/output/super-admin-dashboard-review-20261004`.
+- `dashboard-before-1672.jpg` records the recovered implementation before edits.
+  `dashboard-1672.jpg` is the refined full view at the reference CSS size and DPR 1.
+  `dashboard-comparison-1672.jpg` places source left and implementation right.
+- `dashboard-1440.jpg`, `dashboard-1280.jpg`, `dashboard-900.jpg`,
+  `dashboard-390.jpg`, `dashboard-320.jpg` cover the requested reflows;
+  `drawer-390.jpg` records the modal navigation. No browser chrome/device frame.
+- Login: `login-1440.jpg` compared with the reference resampled to 1440 × 810,
+  together in `login-comparison-1440.jpg` (source left/current right). Also captured
+  1672, 1280, 900, 390 and 320px. `login-reduced-motion-320.jpg` and
+  `login-no-webgl-320.jpg` record static fallbacks in this run.
+
+### Findings and resolutions
+
+- [P2, resolved] Drawer had no explicit Tab/Shift+Tab wrap and search shortcut was
+  active behind inert content. Added modal semantics, focus wrapping/return,
+  shortcut isolation and outside-toast interaction blocking; Escape, scrim,
+  background inertness and scroll lock remain.
+- [P2, resolved] At 320px the mobile menu target shrank to 22px. Preserved a 40px
+  target, slightly tightened brand tracking/spacing at ≤359px and hid the redundant
+  user chevron. No horizontal overflow or wider-layout change.
+- [P2, resolved] Equal colored donut segments could imply invented shares. The
+  empty ring is now muted/unsegmented. No values, counts or tenant names were added.
+- [P3, deliberate] Shared isometric art is slightly brighter than the Dashboard
+  concept; its coherent Login vocabulary is retained. Candidate asset polish is
+  deferred, not integrated. Borders/depth differ slightly from the raster reference
+  but preserve hierarchy and proportions.
+- [P3, deliberate] Laptop layout scrolls vertically rather than shrinking secondary
+  text to force one viewport. Measured 157px vertical scroll at 1440 × 810.
+- No remaining blocking visual/interaction regression found in the tested scope.
+
+### Validation boundary
+
+- Dashboard scroll widths at 1672/1440/1280/900/390/320 were
+  1672/1425/1265/885/375/305: no horizontal overflow. Mobile lower panels, tablet
+  rail and stacked layouts were inspected in full-page captures.
+- Login scroll widths at those sizes were 1672/1440/1280/885/390/305. Desktop and
+  tablet retain the illustration; mobile hides it intentionally. Shared SVG
+  definition contents and visible tree match the approved Git version exactly
+  after normalizing attribute order/definition placement. Other Login components
+  and their CSS were not modified.
+- Login required/malformed input validation, first-invalid focus, tab order,
+  password visibility and neutral local submission/recovery messages passed.
+- Reduced-motion initial load has no Wordmark canvas and no AmbientTerms animation.
+  Forced WebGL-denial remount leaves static text white and readable, with not-ready
+  canvas. Temporary browser-only override was removed by reload; normal readiness
+  returned. No permanent QA switch or fallback implementation change.
+- All 22 Dashboard buttons show local prototype notices. Skip link reaches main
+  without route changes; search shortcut/Enter, drawer keyboard, scrim and breakpoint
+  focus return passed. No network/API/business action was triggered.
+- Current console has no warnings/errors. Runtime requests were localhost assets,
+  modules/fonts and development HMR only. Source has no Backend/API calls.
+- Manual DOM/AX/keyboard review, not a full WCAG or screen-reader certification.
+  No existing axe runner/bundle available; earlier automated claims were not reused.
+- TypeScript, oxlint, production build and `git diff --check` passed.
+- The Product Design audit guidance led to before/after captures, paired reference
+  comparison, priority-labelled findings and explicit evidence limits.
+
+**Dashboard V1 review result: passed for local visual review.** Real authentication,
+tenant/data integration and future permission handling remain out of this prototype.

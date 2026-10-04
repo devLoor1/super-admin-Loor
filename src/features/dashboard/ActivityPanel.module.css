@@ -1,0 +1,88 @@
+/*
+ * Plot geometry follows the reference at 1:1: 456 × 154 plot, five horizontal
+ * intervals, six date ticks (verticals end 14px before the plot's right edge).
+ */
+.chart {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr);
+  grid-template-rows: minmax(154px, 1fr) auto;
+  margin: 30px 6px -3px 1px;
+}
+
+.yAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: -7px 0;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--text-on-dark-faint);
+}
+
+.plot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.grid line {
+  stroke: #9fb0d6;
+  stroke-opacity: 0.09;
+  stroke-dasharray: 2 4;
+}
+
+.grid .vertical {
+  stroke-opacity: 0.06;
+}
+
+.grid .axis,
+.grid .baseline {
+  stroke-opacity: 0.16;
+  stroke-dasharray: none;
+}
+
+.empty {
+  position: relative;
+  /* Narrow measure → the description breaks into two balanced lines, as in the reference. */
+  max-width: 262px;
+  padding: 8px 12px;
+}
+
+.xAxis {
+  position: relative;
+  grid-column: 2;
+  height: 22px;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--text-on-dark-faint);
+}
+
+.xAxis span {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 479px) {
+  /* Keep only every other date on very narrow screens. */
+  .xAxis span:nth-child(even),
+  .xAxis span:nth-child(5) {
+    display: none;
+  }
+
+  .xAxis span:last-child {
+    display: block;
+    transform: translateX(-100%);
+  }
+}

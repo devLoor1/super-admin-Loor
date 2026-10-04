@@ -1,0 +1,165 @@
+/*
+ * Wide layout (reference): icon tile on the left, label / value / status on the right.
+ * Compact layout (card narrower than ~238px, e.g. ~1440px viewports):
+ * smaller tile beside the label, value and status spanning the card width.
+ * Narrow layout (card narrower than ~205px, e.g. 1200–1359px or tablet):
+ * tile on its own row, label below it — words never break mid-word.
+ * Driven by a container query on the grid cell (see DashboardPage .kpiCell).
+ */
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) 20px;
+  grid-template-areas:
+    'tile label  arrow'
+    'tile value  value'
+    'tile status status';
+  grid-template-rows: auto auto auto;
+  column-gap: 17px;
+  align-content: start;
+  height: 100%;
+  padding: 20px 20px 22px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.03) 0%, rgb(255 255 255 / 0) 70%),
+    var(--surface-raised);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.03),
+    0 14px 30px -22px rgb(0 0 0 / 0.8);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--surface-border-strong);
+}
+
+.card:has(.open:focus-visible) {
+  box-shadow: var(--focus-ring-dark);
+}
+
+.tile {
+  grid-area: tile;
+  align-self: start;
+}
+
+.label {
+  grid-area: label;
+  padding-top: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #cfd9eb;
+  overflow-wrap: break-word;
+}
+
+.value {
+  grid-area: value;
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 26px;
+  color: var(--text-on-dark);
+}
+
+.status {
+  grid-area: status;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.open {
+  grid-area: arrow;
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -6px -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9baacd;
+  transition: color var(--transition-fast);
+}
+
+.open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-panel);
+}
+
+.open:focus-visible {
+  outline: none;
+}
+
+.card:hover .open {
+  color: var(--text-on-dark);
+}
+
+@container (max-width: 238px) {
+  .card {
+    grid-template-columns: 38px minmax(0, 1fr) 20px;
+    grid-template-areas:
+      'tile   label  arrow'
+      'value  value  value'
+      'status status status';
+    column-gap: 12px;
+    padding: 16px 16px 18px;
+  }
+
+  .card .tile {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+  }
+
+  .card .tile svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .label {
+    align-self: center;
+    padding-top: 0;
+  }
+
+  .value {
+    margin-top: 10px;
+  }
+
+  .status {
+    margin-top: 2px;
+  }
+}
+
+@container (max-width: 205px) {
+  .card {
+    grid-template-areas:
+      'tile   .      arrow'
+      'label  label  label'
+      'value  value  value'
+      'status status status';
+  }
+
+  .label {
+    margin-top: 12px;
+  }
+
+  .value {
+    margin-top: 4px;
+  }
+}
+
+/* Phones: single-column cards, slightly tighter. */
+@media (max-width: 479px) {
+  .card {
+    padding: 16px 16px 18px 14px;
+  }
+}

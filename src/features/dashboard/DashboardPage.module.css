@@ -1,0 +1,105 @@
+/*
+ * Grid follows the approved image at 1:1 (1672px viewport):
+ *   KPI row        5 equal cards
+ *   overview       full width
+ *   middle row     527 / 422 / 359 (status keeps ≥344px)
+ *   bottom row     765 / 558 (quick actions keep ≥560px)
+ * Below 1360px the middle and bottom rows restack instead of shrinking.
+ */
+.dashboard {
+  display: grid;
+  gap: 15px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.kpiCell {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.middle {
+  display: grid;
+  grid-template-columns: minmax(0, 527fr) minmax(0, 422fr) minmax(344px, 359fr);
+  gap: 15px;
+  min-height: 276px;
+}
+
+.bottom {
+  display: grid;
+  /* Quick actions keep ≥560px so tile titles and descriptions stay on one line. */
+  grid-template-columns: minmax(0, 765fr) minmax(560px, 558fr);
+  gap: 16px;
+}
+
+/* Laptop: activity gets the full row; events and quick actions stack. */
+@media (max-width: 1359px) {
+  .middle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activity {
+    grid-column: 1 / -1;
+  }
+
+  .bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tablet: KPI cards 3 + 2. */
+@media (max-width: 1199px) {
+  .kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .kpiCell {
+    grid-column: span 2;
+  }
+
+  .kpiCell:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 899px) {
+  .middle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile: two KPI columns, then one. */
+@media (max-width: 767px) {
+  .dashboard,
+  .kpis {
+    gap: 12px;
+  }
+
+  .middle,
+  .bottom {
+    gap: 12px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpiCell,
+  .kpiCell:nth-child(n + 4) {
+    grid-column: auto;
+  }
+
+  .kpiCell:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 479px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

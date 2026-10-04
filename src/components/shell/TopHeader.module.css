@@ -1,0 +1,443 @@
+/* Desktop geometry follows the approved Dashboard image at 1:1. */
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'title controls actions';
+  align-items: center;
+  column-gap: 22px;
+  padding: 39px 0 31px;
+}
+
+/* ---------- Mobile bar (menu + brand), hidden on larger screens ---------- */
+
+.mobileBar {
+  display: none;
+  grid-area: mobile;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mobileBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-on-dark);
+}
+
+.mobileBrand svg {
+  color: #dfe3ff;
+  filter: drop-shadow(0 0 5px rgb(139 129 255 / 0.6));
+}
+
+/* ---------- Title ---------- */
+
+.titleBlock {
+  position: relative;
+  grid-area: title;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 34px;
+  row-gap: 4px;
+  min-width: 0;
+}
+
+.accentBar {
+  position: absolute;
+  top: -15px;
+  left: 0;
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-accent-glow);
+}
+
+.title {
+  padding-top: 4px;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.01em;
+  color: var(--text-on-dark);
+  white-space: nowrap;
+}
+
+.location {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
+.location svg {
+  color: var(--icon-on-dark);
+}
+
+/* ---------- Context selector + search ---------- */
+
+.controls {
+  grid-area: controls;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  min-width: 0;
+}
+
+.context,
+.search {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 8px;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.context {
+  flex: none;
+  gap: 13px;
+  width: 172px;
+  padding: 0 14px;
+  background: #1b2032;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-on-dark);
+  text-align: left;
+}
+
+.context:hover {
+  border-color: #3d4766;
+  background: #1f2539;
+}
+
+.context:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.contextLabel {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.controlIcon {
+  flex: none;
+  color: var(--icon-on-dark);
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-on-dark-secondary);
+}
+
+.search {
+  flex: 0 1 263px;
+  gap: 12px;
+  min-width: 190px;
+  padding: 0 9px 0 14px;
+  border-color: var(--surface-border);
+  background: #161b29;
+}
+
+.search:hover {
+  border-color: var(--surface-border-strong);
+}
+
+.search:focus-within {
+  border-color: var(--color-accent-glow);
+  box-shadow: 0 0 0 3px rgb(139 129 255 / 0.22);
+}
+
+.searchInput {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--text-on-dark);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-on-dark-muted);
+  opacity: 1;
+}
+
+/* Hide the native clear "x" so the keyboard badge stays aligned. */
+.searchInput::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.kbd {
+  flex: none;
+  padding: 3px 7px;
+  border: 1px solid #2c3349;
+  border-radius: 5px;
+  background: #222839;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  letter-spacing: 0.04em;
+  color: #95a3c0;
+  white-space: nowrap;
+}
+
+/* ---------- Notifications + user ---------- */
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+}
+
+.actions > .divider:first-child {
+  margin-right: 14px;
+}
+
+.actions > .iconButton {
+  margin-right: 7px;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: var(--surface-border);
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #e1e8f6;
+  transition: background-color var(--transition-fast);
+}
+
+.iconButton:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.iconButton:focus-visible,
+.user:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: 15px;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--text-on-dark);
+}
+
+.user:hover .userName {
+  color: #ffffff;
+}
+
+.avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+
+.userName {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.user .chevron {
+  margin-left: -6px;
+}
+
+/* ---------- Laptop: tighter spacing ---------- */
+
+@media (max-width: 1439px) {
+  .header {
+    column-gap: 16px;
+  }
+
+  .titleBlock {
+    column-gap: 24px;
+  }
+
+  .controls {
+    gap: 12px;
+  }
+
+  .context {
+    width: 160px;
+  }
+}
+
+/* Small laptops with the full sidebar: make room for the title on one line. */
+@media (max-width: 1359px) and (min-width: 1200px) {
+  .userName {
+    display: none;
+  }
+
+  .user {
+    gap: 10px;
+  }
+
+  .user .chevron {
+    margin-left: 0;
+  }
+}
+
+/* ---------- Tablet / small laptop: controls move to their own row ---------- */
+
+@media (max-width: 1199px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title actions'
+      'controls controls';
+    row-gap: 18px;
+    padding: 32px 0 24px;
+  }
+
+  .search {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 767px) {
+  .header {
+    grid-template-areas:
+      'mobile actions'
+      'title title'
+      'controls controls';
+    row-gap: 20px;
+    padding: 16px 0 20px;
+  }
+
+  .mobileBar {
+    display: flex;
+  }
+
+  .iconButton {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--surface-border);
+    background: rgb(255 255 255 / 0.02);
+  }
+
+  .divider,
+  .userName,
+  .kbd {
+    display: none;
+  }
+
+  .actions {
+    gap: 10px;
+  }
+
+  .user {
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  .titleBlock {
+    padding-top: 14px;
+  }
+
+  .accentBar {
+    top: 0;
+  }
+
+  .title {
+    font-size: 22px;
+    line-height: 28px;
+    padding-top: 0;
+  }
+
+  .location {
+    padding-top: 2px;
+  }
+
+  .context {
+    width: auto;
+    min-width: 150px;
+  }
+
+  .search {
+    min-width: 0;
+  }
+
+  /* 16px avoids iOS Safari zooming into the field on focus. */
+  .searchInput {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 479px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .context,
+  .search {
+    width: 100%;
+    flex: none;
+    height: 44px;
+  }
+
+  .mobileBrand {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+  }
+}
+
+/* Preserve the 40px menu target on the narrowest phones instead of shrinking it. */
+@media (max-width: 359px) {
+  .mobileBar {
+    gap: 8px;
+  }
+
+  .mobileBrand {
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .actions {
+    gap: 6px;
+  }
+
+  .user .chevron {
+    display: none;
+  }
+}

@@ -204,7 +204,7 @@
   line-height: 12px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #6f7c92;
+  color: var(--text-on-dark-muted);
 }
 
 @media (max-height: 760px) and (min-width: 1200px) {

@@ -296,3 +296,64 @@ and the transient blank `07-no-webgl.jpg` were rejected, never acceptance eviden
 **Developer visual checks: curved identity YES; visible motion within 2–3s YES;
 visible pointer response YES. Ready for user review, not claimed user-approved.**
 One local commit only. No push, merge, deploy, Backend or Product expansion.
+
+## Dashboard V1 — final combined composition review — 2026-10-04
+
+Starting clean `8c73f5b619ff52e4203eb794901ba9988a538a90`, on
+`feature/super-admin-dashboard-v1`. Architecture DOCX inspected as context only;
+no new functionality or asset was introduced.
+
+1. **Combined desktop — balanced.** Observed for 22.63 seconds with five timed
+   captures, then exercised the Arc, sidebar, search and notifications. The Arc
+   remains recognizable, visibly animated and confined to the overview artwork.
+   The 3500ms Carousel is readable; its reserved slot keeps adjacent controls
+   stable. Glass selection is clear, with restrained inactive rows. No effect
+   needs removal or attenuation. The Carousel adds the least functional value.
+2. **Interaction / semantics — passed.** Stable accessible H1 `Dashboard Global`;
+   rotating title and Arc are aria-hidden. Dashboard has aria-current=page.
+   Keyboard focus is visible. Search/navigation/header controls give honest
+   local prototype feedback, without API/authentication integration. Pointer
+   influence reached 0.599 inside the artwork and decayed to 0.0015 at the sidebar.
+3. **Responsive — passed.** Dashboard checked at 1672x941, 1440x810, 1280x810,
+   900x900, 390x844 and 320x800; scroll width equals client width throughout.
+   Tablet icon labels remain accessible. Mobile Arc is static/dim; drawer
+   primary targets are 48px high, utilities 44px, close control 40px. Dialog
+   focus wraps both ways, background is inert, Escape restores menu-button focus.
+4. **Combined fallbacks — passed.** Reduced motion holds `Global`, stops WebGL
+   and shows the static Arc while retaining usable Glass keyboard focus.
+   Forced unavailable WebGL also shows the source-shaped static Arc. All
+   temporary browser overrides were restored; normal preview resumed.
+5. **Login regression — passed.** Desktop, tablet and 390/320px reflow; no
+   horizontal overflow. Required-field errors, first-invalid focus,
+   email -> password -> toggle keyboard order and password visibility passed.
+   Reduced motion stops AmbientTerms/Wordmark; heading remains complete.
+   Forced no-WebGL leaves readable static SUPER ADMIN. No successful login or
+   external authentication was attempted; synthetic input was cleared.
+6. **Performance smoke check — passed with limits.** Current runtime sampled
+   60 draws in 1009ms on a 443x200 WebGL surface. At 1280px/scrollY=643 it
+   stopped drawing, disposed its buffer to 1x1, and resumed on return.
+   Glass stops its RAF when settled; Carousel cleanup/visibility gating reviewed.
+   No observed interaction lag or console warnings/errors. This is not a
+   long-duration leak audit or a guarantee for all hardware.
+7. **One accessibility refinement.** Sidebar footer copy changed only from
+   #6f7c92 to the existing --text-on-dark-muted token (#8f9cb4). The former has
+   at most 4.23:1 contrast even against the darkest #121726 background;
+   the replacement provides additional headroom for the decorative backdrop.
+   Arc, Carousel, Glass behavior, shared tokens and Login remain unchanged.
+8. **Architecture / language.** Global Control Plane and multi-whitelabel
+   supervision are clear. Plataformas/Whitelabels overlap as concepts;
+   rotating Operacoes is decorative, not a changed filter, while navigation
+   uses Operacao. Future discussion: platform vs tenant naming, Sistema vs
+   Auditoria grouping, scope-selector behavior and Core-authoritative metrics.
+   These are Product questions, not functionality added during this review.
+
+Current-run captures: `C:/Users/User/Desktop/Loor/output/dashboard-final-composition-20261004`.
+Final review uses the inspected full-page captures for sharp visual evidence;
+timed/pointer PNGs additionally document motion states. Focused accessibility
+checks do not constitute full WCAG or screen-reader certification.
+
+**Developer recommendation: B — approve with the single minor contrast
+refinement above. Ready for final user visual approval; promotion to dev is
+conditional on that approval.** TypeScript, oxlint, production Vite build and
+diff-check pass. One local refinement commit; no push, main/dev unchanged,
+no deploy, no Backend and no additional screen. Local preview stays on port 5173.

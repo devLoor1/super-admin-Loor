@@ -79,7 +79,8 @@ Future Product options:
 ### Performance / fallbacks / tradeoffs
 
 - Navy base `#0f1321`; indigo `#5557ca`, violet `#8b81ff`, muted periwinkle
-  `#aeb4ed`. Layer opacity 0.72; opaque panels preserve reading contrast.
+  `#aeb4ed`. Layer opacity 0.50 after the final refinement (previously 0.72);
+  opaque panels preserve reading contrast. Dot size and shader palette are unchanged.
 - Desktop animation capped at 30 fps, phone at 18 fps. DPR capped at 1.25/1;
   raster budget 1.8 million pixels, largest dimension 4096. Uniform downscaling
   and CSS-sized cells preserve circular geometry. No worker or new framework.

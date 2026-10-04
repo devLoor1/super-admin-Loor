@@ -8,6 +8,7 @@
   isolation: isolate;
   display: grid;
   gap: 15px;
+  padding-top: 14px;
 }
 
 .summary {

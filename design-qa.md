@@ -470,3 +470,46 @@ Screenshots/measurements: `C:/Users/User/AppData/Local/Temp/super-admin-whitelab
 Integration differences/future color boundary: `docs/whitelabels-originkit-mapping.md`.
 One local feature commit only; no push/merge/deploy/Backend or new screen. Ready
 for user visual review, not approval for promotion to dev.
+
+## Whitelabels V1 — final visual refinement — 2026-10-04
+
+Starting state: clean `feature/super-admin-whitelabels-v1` at
+`134b66b6a4c0d1ab99db6413e7cff4d72b2a47a7`. Only two visual declarations changed:
+page-local `padding-top: 14px`, and Dot Matrix layer opacity `0.72` → `0.50`
+(30.6% lower). No shared shell/header/sidebar, table, typography, data, Radial
+Reveal, detail transition, shader, palette, dot size or animation change.
+
+Baseline/refined desktop captures compared in the same default Finapop state.
+Header/content grid alignment remains intact; the first KPI moves y=110 → 124.
+The background still begins at the main region, y=110, not behind the header.
+Additional separation is just 14 px, not a new blank section. Three normal-motion
+samples covered >12 seconds; changing noise patterns remain recognizable while
+opaque cards and text dominate. Final Dot Matrix classification: **BALANCED**.
+
+| Viewport | Client / scroll width | Header bottom / first KPI top | Result |
+| --- | --- | --- | --- |
+| 1672×941 | 1657 / 1657 | 110 / 124 | PASS |
+| 1440×810 | 1425 / 1425 | 110 / 124 | PASS |
+| 1280×810 | 1265 / 1265 | 110 / 124 | PASS |
+| 900×900 | 885 / 885 | 154 / 168 | PASS |
+| 390×844 | 375 / 375 | 256 / 270 | PASS |
+| 320×800 | 305 / 305 | 256 / 270 | PASS |
+
+No horizontal overflow or matrix leakage into sidebar/header. Normal vertical
+page scrolling is retained; at 1672 the added space now requires a vertical
+scrollbar, so existing container-responsive table rules react to 15 px less width.
+Their structure and breakpoints were not changed. No content is clipped to avoid
+scrolling; narrow detail-tab scrolling remains intentional.
+
+Reduced motion: static shader field still visibly related to the animated matrix.
+Forced no-WebGL2: zero main canvases, recognizable static CSS circles at opacity
+0.50. Browser diagnostic and media overrides restored; no QA switches in source.
+Login/Dashboard 1440 and 390 captures reviewed, no horizontal overflow or leaked
+matrix/identity elements; their source and approved layout remain unchanged.
+
+TypeScript, oxlint, production Vite build and diff-check PASS. Unchanged 514.70 kB
+single-JS-chunk advisory is non-blocking. Fresh normal-motion console has no
+warnings/errors. No Backend/API/product action, dependency addition, push, merge
+or deployment. Local preview retained on 5173, viewport override reset. Captures:
+`C:/Users/User/AppData/Local/Temp/super-admin-whitelabels-refinement-20261004`.
+One local refinement commit only; ready for final user visual approval.

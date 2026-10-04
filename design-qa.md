@@ -144,6 +144,10 @@ tenant/data integration and future permission handling remain out of this protot
 
 ## Dashboard V1 — selected OriginKit integration QA — 2026-10-04
 
+The initial technical pass below was followed by a user **visual acceptance
+rejection of Predictive Arc visibility**. The correction below supersedes that
+initial Arc verdict; Carousel/Glass/Login implementations remain unchanged.
+
 This follows the user-approved integration brief, starting at clean `9aec697` on
 `feature/super-admin-dashboard-v1`. It does not revise the approved Login result.
 Actual supplied Predictive Arc, Text Carousel and Light Glass Button source was
@@ -195,3 +199,45 @@ are in [docs/dashboard-originkit-integration.md](docs/dashboard-originkit-integr
 
 **Integration result: passed for user visual review.** One local feature commit;
 no push, merge, deploy, Backend or additional screen.
+
+## Predictive Arc — visual acceptance correction — 2026-10-04
+
+- [P1, resolved in code; awaiting user review] `842dd43` mounted a valid shader but
+  failed the requested visual identity. Live inspection ruled out reduced motion,
+  fallback, capability detection and broken stacking. The 0.3 opacity, low-contrast
+  colors, bottom peak erased by the fade, flat exported preset and panel coverage
+  made the field effectively imperceptible; disabled pointer response removed
+  another defining behavior.
+- Actual supplied source was rendered in isolation first. Its exact exported
+  red/flat preset and its own curved base with violet palette were captured and
+  inspected. Browser-only attenuation removal confirmed compositing worked.
+- Same unchanged shader now uses the source's curved 35/70 base, preserved 206
+  thickness, 600 falloff, 78 density and 102 dot size; original speed 100 and
+  radius 236 / 34% pointer response. A 640px content-only field, opacity 0.9 and
+  bright violet highlights are clearly visible at idle and during interaction.
+  Fade is below the curved concentration; sidebar remains wholly excluded.
+- Static fallback draws the source's curve/dot/palette/time-zero math on resize
+  in Canvas 2D, with no frame loop. Mobile opacity 0.6; reduced motion/no-WebGL
+  retain the actual visual identity instead of a generic gradient. Only fallback
+  edge antialiasing differs from the GLSL path.
+- Current-run artifacts: `C:/Users/User/Desktop/Loor/output/predictive-arc-correction-20261004`.
+  Exact source, source curve/pointer, rejection, attenuation ablation, corrected
+  1672 × 941 / 1440 × 810 / 1280 × 810 / 900 × 800 / 390 × 844 / 320 × 700,
+  paired comparison, reduced/no-WebGL and Login captures were inspected.
+- No horizontal overflow; visible desktop/tablet dot field and static mobile.
+  Text/panels stay readable and unchanged. Arc visibility no longer requires
+  searching for a small bottom-gap texture. Cards intentionally obscure some
+  of the full arc; this is environmental placement, not a full hero replacement.
+- Normal desktop uses WebGL; reduced/mobile/no-WebGL use the visible static
+  canvas. Pointer shader readback reached 0.340 with normalized CSS coordinates.
+  Offscreen GPU buffer shrank to 1 × 1; context loss/fallback/restoration passed.
+- Login layout, required errors/first-invalid focus, password toggle, normal
+  Wordmark and reduced-motion heading/static behavior passed. Carousel, Glass,
+  Login, tokens and shell/panel layout files have no changes in this correction.
+- TypeScript, oxlint, production build and staged diff-check passed. Console
+  clean; fresh 76-request sample stayed localhost-only with zero failures.
+  Temporary source isolation and browser-only test overrides were removed.
+
+**Correction result: ready for another visual review, not yet user-approved.**
+One local correction commit only; no push/merge/deploy/Backend. Source comparison,
+parameter changes and evidence limits are detailed in the existing integration report.

@@ -4,6 +4,11 @@ Date: 2026-10-04. Starting SHA: `9aec6978249b0b1e510c6d022c35f77530c09f23`.
 Branch: `feature/super-admin-dashboard-v1`; clean at start. Origin:
 `https://github.com/devLoor1/super-admin-Loor`.
 
+The initial record below describes `842dd43`. User visual review subsequently
+**rejected its Predictive Arc visibility**, despite passing technical checks.
+The correction and current values are recorded at the end of this document;
+the initial visual verdict is superseded, not accepted evidence of fidelity.
+
 One local commit only. No push, merge, deployment, Backend, API, authentication,
 destination screen, business data or financial action. Local/remote `dev` and the
 Login feature remain `b54329c`; local/remote `main` remains `c2235ac`.
@@ -164,7 +169,7 @@ Future discussions, not implemented:
 No current terminology falsely claims integrated data. The main future risk is
 confusing decorative rotating terms with an actual tenant/module selection.
 
-## Outcome and handoff
+## Initial outcome and handoff — visual verdict superseded
 
 The three enhancements improve polish without overwhelming panels: glass navigation
 adds the clearest functional value; the carousel adds identity; the Arc is deliberately
@@ -177,3 +182,94 @@ Not a real authenticated/control-plane implementation or a Production release.
 - Login: `http://127.0.0.1:5173/`
 - Dashboard: `http://127.0.0.1:5173/#/dashboard`
 - Development server kept running. No push, merge into dev or deploy.
+
+## Predictive Arc visual correction — 2026-10-04
+
+Starting SHA `842dd431b1db0add87b9e9940dd490c9f0be636f`, same feature branch,
+clean at start. Only PredictiveArc source/styles and these QA records were changed.
+Text Carousel, Light Glass navigation, Login, panels, shell structure and shared
+tokens were not modified. One additional local correction commit; no push/merge/deploy.
+
+### Verified cause, not fallback speculation
+
+1. Normal 1672px preview had WebGL ready, reduced motion false, compact mode false,
+   four reported cores, and a valid 1371 × 875 buffer for the 1410 × 900 stage.
+   Fallback/capability detection were not responsible.
+2. Canvas opacity was 0.3. The mask faded from 75% to zero at the bottom, exactly
+   where `peak: 100` placed the brightest line. Dark desaturated violet compounded
+   that attenuation; opaque panels covered most of the remaining band.
+3. The exported supplied preset really has `archHeight: 0` and a red palette.
+   Rendering it unchanged in isolation showed a flat, bright bottom dot field.
+   Rendering the source with its own base `peak: 35 / archHeight: 70` and violet
+   colors showed the requested curved silhouette. The shader itself was working.
+4. A browser-only opacity=1/no-mask test exposed dots around/between panels without
+   changing z-index or wrapper backgrounds. Therefore stacking was not broken;
+   peak placement, fade, attenuation and panel coverage were the primary causes.
+   Pointer strength had also been zeroed, removing the source's defining interaction.
+
+### Current implementation
+
+| Setting | Rejected version | Corrected version |
+| --- | --- | --- |
+| Peak / arch height | 100 / 0, exported flat preset | 35 / 70, supplied source's curved base |
+| Thickness / falloff | 206 / 600 | 206 / 600, preserved |
+| Density / dot size | 78 / 102 | 78 / 102, preserved |
+| Speed | 35 | 100, original source default |
+| Pointer | disabled | radius 236, strength 34%, source lerp rates 12/6 |
+| Stage height | up to 900px | up to 640px, within header/KPI/overview region |
+| Canvas opacity | 0.3 | 0.9; static mobile 0.6 |
+| Fade | 75–100%, erasing bottom peak | 82–100%, below the curved concentration |
+| Background | #0f131d | #080b13 |
+| Base / accent / highlight | #34385c / #6f65b3 / #9187d3 | #34156b / #a050ff / #e8d9ff |
+
+Original vertex and fragment shader strings remain equal to the supplied source
+after newline normalization. Original dot coverage, wave modulation, color blend,
+thickness, falloff, pointer radius/strength and interpolation remain. Coordinate
+input is normalized to the shader's top-origin CSS space rather than the source
+handler's mirrored Y. Parent-content passive pointer listeners observe movement
+without intercepting controls and are removed on cleanup. Sidebar events do not
+affect the field. The stage remains behind content at z-index -1; no panel/background
+or shell stacking change was required.
+
+Static fallback uses a separate 2D canvas and the source shader's curve, cell/dot,
+time-zero wave, intensity and palette math. It draws only initially/on resize,
+not in a frame loop. Canvas 2D edge antialiasing differs from the GLSL coverage
+smoothstep; this is a fallback-only difference, not a replacement of the main shader.
+Mobile, reduced motion, unavailable WebGL and low-capability contexts now retain
+a visible dot/arc identity instead of the previous generic gradient.
+
+The 30-draw/sec, DPR <=1.25 and ~1.2MP WebGL budget remain. Cleanup now unbinds
+resources and shrinks the unused WebGL buffer to 1 × 1; offscreen and context-loss
+fallback/resume were verified. No additional library or debug/query switch.
+
+### Current-run evidence and validation
+
+Artifacts: `C:/Users/User/Desktop/Loor/output/predictive-arc-correction-20261004`.
+
+- `03-original-exact-preset.jpg`: actual supplied component, unchanged exported preset.
+- `04-original-curved-violet.jpg` / `05-original-pointer-response.jpg`: same source
+  using its base curve and violet palette; source pointer strength reached 0.314.
+- `01-rejected-dashboard-1672.jpg`, `02-rejected-content-region.jpg` and
+  `06-opacity-fade-ablation.jpg`: measured rejection and cause-isolation evidence.
+- `08-corrected-dashboard-1672.jpg` and `comparison-dashboard-1672.jpg`: visible
+  violet dot field at rest; source/rejected comparison also saved and inspected.
+- `09-corrected-pointer.jpg`: integrated strength reached 0.340 at local [705,120].
+- `corrected-1440/1280/900/390/320.jpg`: desktop/tablet WebGL and static mobile.
+  Live widths 1425/1265/885/375/305 respectively: no horizontal overflow.
+  Arc left 262px at 1672, 232px at 1440/1280, 76px tablet, 0px mobile; sidebar excluded.
+- `10-reduced-motion-1672.jpg` / `11-no-webgl-1672.jpg`: visible static source-shaped
+  fallback. Context loss exposes it at opacity 0.9; restoration returns WebGL.
+- `12-login-1440.jpg` / `13-login-390.jpg`: approved Login layout/Wordmark unchanged;
+  required-field errors, first-invalid focus and password visibility passed.
+  Reduced-motion Login has no canvas and a fully readable heading. No auth request.
+- Fresh network sample: 76 localhost-only requests, no failures/truncation. Current
+  console has no warning/error. Temporary isolation files/browser overrides removed.
+- TypeScript, oxlint, production build and staged diff-check passed after cleanup.
+
+The Product Design audit required isolation, live mode/parameter inspection,
+ablation and paired current-run screenshots before accepting the correction.
+Desktop/tablet visibility is now clearly stronger without moving or changing UI;
+opaque cards still conceal parts of the environmental arc by design. This is not
+a full WCAG/hardware performance certification or frame-exact copy of the red,
+flat exported preset. The correction is ready for **another user visual review**,
+not yet claimed as user-approved. Local server remains running on port 5173.

@@ -2,14 +2,16 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  height: min(100%, 900px);
+  height: min(100%, 640px);
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse 75% 35% at 50% 90%, rgb(102 91 162 / 0.10), transparent 85%);
-  mask-image: linear-gradient(#000 0%, #000 75%, transparent 100%);
+  background: #080b13;
+  mask-image: linear-gradient(#000 0%, #000 82%, transparent 100%);
 }
 
-.canvas {
+.canvas, .fallback {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -17,4 +19,9 @@
   pointer-events: none;
 }
 
-.canvas[data-ready='true'] { opacity: 0.3; }
+.canvas[data-ready='true'], .fallback[data-ready='true'] { opacity: 0.9; }
+.canvas[data-ready='true'] + .fallback { opacity: 0; }
+
+@media (max-width: 767px) {
+  .fallback[data-ready='true'] { opacity: 0.6; }
+}

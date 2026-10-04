@@ -185,6 +185,10 @@ Not a real authenticated/control-plane implementation or a Production release.
 
 ## Predictive Arc visual correction — 2026-10-04
 
+Historical `aa05fc9` correction, subsequently **rejected by user review** for
+visual fidelity and runtime-motion acceptance. Values/claims below describe
+that rejected version, not the current acceptance result.
+
 Starting SHA `842dd431b1db0add87b9e9940dd490c9f0be636f`, same feature branch,
 clean at start. Only PredictiveArc source/styles and these QA records were changed.
 Text Carousel, Light Glass navigation, Login, panels, shell structure and shared
@@ -273,3 +277,116 @@ opaque cards still conceal parts of the environmental arc by design. This is not
 a full WCAG/hardware performance certification or frame-exact copy of the red,
 flat exported preset. The correction is ready for **another user visual review**,
 not yet claimed as user-approved. Local server remains running on port 5173.
+
+## Predictive Arc runtime fidelity correction — 2026-10-04
+
+Starting clean `aa05fc9b33025fb16640ed4655b8618b66749b9b` on the same feature
+branch. User rejection supersedes the previous success claim. No push, merge,
+deploy, Backend, authentication or additional Product screen.
+
+### Actual cause and source comparison
+
+- Normal built-in browser: document visible, reduced=false, compact=false,
+  four reported cores, WebGL ready. The visibility hook was not suspending it.
+- Observing uTime alone was insufficient. Samples taken immediately **after
+  actual GPU draws** at 0.028 / 1.027 / 2.044s changed 50.00% / 50.10% of raw
+  shader pixels by >8/255, with maxima 215/211. The shader did animate.
+- But its continuous luminous band sat under opaque panels. Only disconnected
+  dot fragments were exposed. 206% thickness used in short CSS coordinates
+  swamped curve definition, producing an apparent grid. Pointer changes were
+  similarly obscured. This explains the failed user-level result without
+  misclassifying it as a reduced-motion or WebGL-detection failure.
+- Temporary side-by-side rendered actual supplied source at left, the current
+  component unoccluded at right, and the real overview integration below.
+  Same browser/runtime; no screenshot substituted for a working component.
+  Both source shader strings compare equal after newline normalization.
+- The exported red/flat preset remains different from the requested curved
+  asset. Current integration uses the source's **curved base defaults**, not
+  a claim of frame-exact reproduction of that exported flat preset.
+
+### Implementation / integration-only differences
+
+| Setting | Rejected aa05fc9 | Current |
+| --- | --- | --- |
+| Placement | Behind all main-content panels | Inside overview's illustration space |
+| Coordinates | Raw small CSS field | Source 800px-high world normalized to actual canvas |
+| Peak / arch height | 35 / 70 | 35 / 70, source curved base |
+| Thickness / falloff | 206 / 600 | 100 / 250, source curved base |
+| Density / dot size / speed | 78 / 102 / 100 | Preserved |
+| Pointer | 236 / 34% | 236 / 60%, source base strength; source lerp rates 12/6 |
+| Frame schedule | At most 30 GPU draws/s | Native RAF, as supplied source |
+| Canvas opacity | 0.9 | 1; copy-only narrow panel group opacity 0.25 |
+| Mask | Vertical 82–100% | Horizontal 0–10% / 90–100% edge blending |
+| Background | #080b13 | #151b28, matching existing panel |
+| Base / accent / highlight | #34156b / #a050ff / #e8d9ff | Preserved |
+
+The effect is now owned by `GlobalOverviewPanel` instead of AppShell. It layers
+above the existing panel background and below the unmodified isometric SVG;
+copy and statements stay above it. The existing panel grid/height, navigation,
+data panels and illustration geometry are unchanged. No Arc behind the sidebar.
+Its decorative canvases never intercept controls. Passive section-level pointer
+listeners include open space around the illustration, with normalized top-origin
+coordinates. Source handler's mirrored Y is intentionally corrected.
+
+The field extends 14px vertically / 24px horizontally around the illustration;
+1360–1599px expands it 36px/42px to counter the existing three-column squeeze.
+Copy-only narrow layout is unchanged: illustration SVG stays hidden; its Arc
+becomes an absolute, dim background without reserving layout space. Mobile/coarse,
+reduced motion and low capability select static Canvas 2D. Static math shares
+the same 800px world; only fallback edge antialiasing differs from GLSL.
+DPR<=1.25 / ~1.2MP bounds and offscreen/tab visibility gating remain. Current
+1672px WebGL surface is only 443 × 200, versus rejected 1410 × 640.
+
+### Measured rendered output
+
+Accepted full PNG screenshots were cropped **offline** to the same Arc region.
+No header/Carousel changes are included in these comparisons.
+
+| Time | uTime | Pointer strength | Pixels >8/255 vs previous | Pixels >24/255 | Max channel delta |
+| --- | --- | --- | --- | --- | --- |
+| 0s | 244.462 | 0 | — | — | — |
+| 1.084s | 246.382 | 0 | 14.22% | 7.83% | 130 |
+| 2.079s | 248.211 | 0 | 14.75% | 8.03% | 146 |
+
+Inspection shows moving luminous regions along an uninterrupted curved dot band.
+At fixed uTime=2, actual mouse movement away → left/center/right changed
+9.65% / 11.42% / 9.29% of composited pixels by >8/255, maxima 163/187/184.
+The visible band bends toward the pointer. Fixed time isolates pointer effects
+from autonomous waves; it was temporary QA instrumentation, not Product behavior.
+Desktop cross-checks at 1672/1440/1280 also changed 13.14% / 12.48% / 11.72%
+of the composited region by >8/255. Restoring native RAF does not promise 60fps:
+current browser sample was 22 actual draws / 1001ms with changing uTime.
+
+### Validation and limits
+
+Current-run artifacts: `C:/Users/User/Desktop/Loor/output/predictive-arc-motion-20261004`.
+
+- `01-rejected-dashboard.jpg`, `02-source-side-by-side.jpg`: rejection/source audit.
+- `05-final-source-comparison.jpg`: source/component/actual overview comparison.
+- `time-comparison.png`, `visible-motion.gif`: accepted 0/1.084/2.079s frames;
+  GIF is a sampled-frame illustration, not a frame-rate recording.
+- `pointer-comparison.png`: controlled, visibly different pointer positions.
+- `10-final-dashboard-1672.jpg`, `final-1440/1280/900/390/320.jpg`: context and
+  responsive captures. Page width equals client width at each tested breakpoint.
+  Desktop/tablet WebGL visible; mobile static and lower contrast for copy readability.
+- `06-reduced-motion.jpg`, **`07-no-webgl.png`**: visible static fallback.
+  At 1280px, actual offscreen scrollY=643 yielded static / ready=false / buffer=1;
+  returning resumed. Normal preview is not offscreen, hidden or accidentally static.
+- `08-login-1440.jpg`, `09-login-390.jpg`: layout, validation, first-invalid focus,
+  password visibility and tab order pass; reduced Login canvas count zero.
+- Source isolation files removed. Runtime frame counters, fixed-time and forced
+  WebGL-denial overrides removed/reset. Console clean. No new dependencies/debug UI.
+- TypeScript, oxlint, production build and staged diff-check passed.
+
+Rejected diagnostic captures are explicitly excluded: readPixels after browser
+presentation returned cleared black buffers; some direct clipped captures used
+the wrong origin; `07-no-webgl.jpg` was transiently blank. Fresh full PNG capture
+proved the no-WebGL fallback correctly. None were treated as motion success/failure.
+
+The Product Design audit influenced the decision to require rendered image
+differences and actual source comparison before fixing placement. Developer
+user-level review: identifiable curve **YES**, motion noticeable within 2–3s
+**YES**, visible pointer reaction **YES** on desktop. Ready for user visual review,
+not user acceptance or a full accessibility/hardware-performance certification.
+Carousel, Glass navigation, Login, shared tokens, data panels and Product scope
+remain unchanged. Local server remains running on port 5173.

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { PrototypeNoticeProvider } from './PrototypeNoticeProvider'
 import { Sidebar } from './Sidebar'
 import { TopHeader } from './TopHeader'
-import { PredictiveArc } from '../originkit/PredictiveArc'
 import styles from './AppShell.module.css'
 
 type AppShellProps = {
@@ -120,7 +119,6 @@ export function AppShell({ activeNav, title, location, children }: AppShellProps
         ) : null}
 
         <div className={styles.content} inert={navOpen}>
-          <PredictiveArc />
           <ContentBackdrop />
           <TopHeader
             title={title}

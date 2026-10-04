@@ -20,6 +20,8 @@
 }
 
 .copy {
+  position: relative;
+  z-index: 1;
   align-self: start;
   min-width: 0;
 }
@@ -58,6 +60,7 @@
 
 .artSvg {
   position: absolute;
+  z-index: 1;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -65,6 +68,8 @@
 }
 
 .statements {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 10.7px;
   min-width: 176px;
@@ -90,7 +95,7 @@
   }
 }
 
-/* Tablet portrait and below: copy only (the art would squeeze the text). */
+/* Keep the copy-only layout; the static/dim Arc occupies its background. */
 @media (max-width: 899px) {
   .panel {
     grid-template-columns: minmax(0, 1fr);
@@ -98,8 +103,16 @@
   }
 
   .art {
-    display: none;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    aspect-ratio: auto;
+    pointer-events: none;
+    opacity: 0.25;
   }
+
+  .artSvg { display: none; }
 }
 
 @media (max-width: 767px) {

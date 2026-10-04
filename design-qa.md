@@ -202,6 +202,10 @@ no push, merge, deploy, Backend or additional screen.
 
 ## Predictive Arc — visual acceptance correction — 2026-10-04
 
+Historical record for `aa05fc9`: user review **rejected both visual fidelity and
+perceptible motion**. Its visual-success statements below are superseded by the
+rendered-pixel audit and placement correction that follow.
+
 - [P1, resolved in code; awaiting user review] `842dd43` mounted a valid shader but
   failed the requested visual identity. Live inspection ruled out reduced motion,
   fallback, capability detection and broken stacking. The 0.3 opacity, low-contrast
@@ -241,3 +245,54 @@ no push, merge, deploy, Backend or additional screen.
 **Correction result: ready for another visual review, not yet user-approved.**
 One local correction commit only; no push/merge/deploy/Backend. Source comparison,
 parameter changes and evidence limits are detailed in the existing integration report.
+
+## Predictive Arc — rendered motion / placement correction — 2026-10-04
+
+Starting clean `aa05fc9` on `feature/super-admin-dashboard-v1`. Scope: Arc only;
+moving its mount from AppShell to the overview illustration is explicitly authorized.
+
+1. **Rejected state — failure confirmed.** A live post-draw GPU sample changed
+   about 50% of pixels by >8/255 at ~1s intervals, so the shader was not frozen.
+   The actual page hid its luminous center under opaque panels. Unscaled 206%
+   pixel thickness across a short field also made it resemble a dot grid.
+   Reduced motion was false; document visible; WebGL active; four reported cores.
+2. **Source comparison — passed.** Temporary same-runtime side-by-side showed
+   the supplied curved base, unoccluded integration and actual overview panel.
+   Both shader strings remain identical to the supplied source. Original wave,
+   dot coverage, color blending and pointer interpolation are not recreated.
+3. **Corrected desktop — passed for another user review.** Continuous violet
+   curved band surrounds the Control Plane illustration, inside the overview
+   panel rather than behind other cards. Source 800px coordinates normalize
+   thickness, wave spacing and pointer radius into the smaller surface.
+   The native RAF cadence replaces the old 30-draw throttle; actual current
+   browser draw sample: 22 draws / 1001ms, uTime 248.811 → 250.521. This is not
+   a guarantee of a particular frame rate on other hardware.
+4. **Actual image changes — passed.** Full PNG screenshots, cropped offline to
+   the same 443 × 200 Arc/illustration area, at 0 / 1.084 / 2.079s. uTime
+   244.462 / 246.382 / 248.211, pointer strength zero. Pixels changing >8/255:
+   **14.22% / 14.75%**; >24/255: **7.83% / 8.03%**; maxima **130 / 146**.
+   Luminous areas visibly travel along the band; not merely numerical changes.
+5. **Pointer — passed.** At fixed uTime=2, actual left/center/right mouse events
+   produced visible band bending. Pixels >8/255 versus away:
+   **9.65% / 11.42% / 9.29%**. All temporary overrides removed afterward.
+6. **Responsive / fallbacks — passed.** 1672, 1440, 1280 and 900px show WebGL;
+   390/320px retain dim static source-shaped background in the copy-only panel.
+   No horizontal overflow. Reduced and forced no-WebGL retain a visible Arc.
+   At 1280px, scrolling to 643px makes it genuinely offscreen: static, GL not
+   ready, buffer 1px; returning resumes. Sidebar remains excluded.
+7. **Regression / engineering — passed.** Carousel, Glass navigation, illustration,
+   shared tokens and Login source unchanged. Login required validation,
+   first-invalid focus, email → password → toggle order, password visibility,
+   responsive layout and reduced motion verified. TypeScript, oxlint, production
+   build and diff-check pass; console has no warnings/errors.
+
+Artifacts: `C:/Users/User/Desktop/Loor/output/predictive-arc-motion-20261004`.
+Accepted: `05-final-source-comparison.jpg`, `time-comparison.png`,
+`pointer-comparison.png`, `10-final-dashboard-1672.jpg`, responsive desktop/tablet/
+mobile captures, `06-reduced-motion.jpg`, `07-no-webgl.png`, Login captures and
+JSON measurements. Invalid post-presentation black buffers, origin-wrong crops
+and the transient blank `07-no-webgl.jpg` were rejected, never acceptance evidence.
+
+**Developer visual checks: curved identity YES; visible motion within 2–3s YES;
+visible pointer response YES. Ready for user review, not claimed user-approved.**
+One local commit only. No push, merge, deploy, Backend or Product expansion.

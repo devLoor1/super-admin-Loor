@@ -1,4 +1,5 @@
 import { GlobalOverviewIllustration } from './GlobalOverviewIllustration'
+import { PredictiveArc } from '../../components/originkit/PredictiveArc'
 import styles from './GlobalOverviewPanel.module.css'
 
 /** Prominent explanatory panel: what the Super Admin control plane is for. */
@@ -17,6 +18,7 @@ export function GlobalOverviewPanel() {
       </div>
 
       <div className={styles.art} aria-hidden="true">
+        <PredictiveArc />
         <GlobalOverviewIllustration className={styles.artSvg} />
       </div>
 

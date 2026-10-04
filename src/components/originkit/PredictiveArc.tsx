@@ -64,9 +64,10 @@ void main(){
 }
 `
 
-// Exported preset's dot field/thickness + supplied base component's curved arch.
-const ARC = { peak: 0.35, height: 0.7, thickness: 2.06, falloff: 6, density: 78, dotSize: 1.02, speed: 100, pointerRadius: 236, pointerStrength: 0.34 }
-const COLORS = { background: [8, 11, 19], base: [52, 21, 107], accent: [160, 80, 255], highlight: [232, 217, 255] }
+// Supplied curved base. Its 800px world keeps pixel-sized thickness/waves in proportion.
+const WORLD_HEIGHT = 800
+const ARC = { peak: 0.35, height: 0.7, thickness: 1, falloff: 2.5, density: 78, dotSize: 1.02, speed: 100, pointerRadius: 236, pointerStrength: 0.6 }
+const COLORS = { background: [21, 27, 40], base: [52, 21, 107], accent: [160, 80, 255], highlight: [232, 217, 255] }
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 
 /** Static translation of the supplied shader's curve/dot/color math, at time zero. */
@@ -77,7 +78,10 @@ function drawStaticArc(canvas: HTMLCanvasElement, width: number, height: number)
   const dpr = Math.min(window.devicePixelRatio || 1, 1.25, Math.sqrt(1_200_000 / (width * height)))
   canvas.width = Math.max(1, Math.round(width * dpr))
   canvas.height = Math.max(1, Math.round(height * dpr))
-  context.setTransform(dpr, 0, 0, dpr, 0, 0)
+  const scale = height / WORLD_HEIGHT
+  width /= scale
+  height = WORLD_HEIGHT
+  context.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0)
   context.fillStyle = `rgb(${COLORS.background.join(' ')})`
   context.fillRect(0, 0, width, height)
   const pitch = Math.min(width, height) / ARC.density
@@ -123,7 +127,7 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
   return shader
 }
 
-/** Only AppShell's main-content region owns this effect; never the sidebar. */
+/** Decorative field in the overview illustration's open space; never the sidebar. */
 export function PredictiveArc() {
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -195,15 +199,16 @@ export function PredictiveArc() {
     const influence = u('uMouseStrength')
     gl.uniform1f(u('uMouseRadius'), ARC.pointerRadius)
     const pointer = { x: 0, y: 0, targetX: 0, targetY: 0, active: 0, targetActive: 0 }
-    // Observe the content region, not the pointer-transparent decorative canvas.
-    const region = stage.parentElement
+    // Include open space around the illustration without intercepting any controls.
+    const region = stage.closest('section') ?? stage.parentElement
     const move = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') return
       const rect = stage.getBoundingClientRect()
-      pointer.targetX = event.clientX - rect.left
+      const scale = rect.height / WORLD_HEIGHT
+      pointer.targetX = (event.clientX - rect.left) / scale
       // The shader measures y from the top; normalize instead of mirroring input.
-      pointer.targetY = event.clientY - rect.top
-      pointer.targetActive = pointer.targetX >= 0 && pointer.targetX <= rect.width && pointer.targetY >= 0 && pointer.targetY <= rect.height ? 1 : 0
+      pointer.targetY = (event.clientY - rect.top) / scale
+      pointer.targetActive = pointer.targetX >= 0 && pointer.targetX <= rect.width / scale && pointer.targetY >= 0 && pointer.targetY <= WORLD_HEIGHT ? 1 : 0
     }
     const leave = () => { pointer.targetActive = 0 }
     region?.addEventListener('pointermove', move, { passive: true })
@@ -221,11 +226,12 @@ export function PredictiveArc() {
       canvas.width = bw
       canvas.height = bh
       gl.viewport(0, 0, bw, bh)
-      const pitchCss = Math.min(bw, bh) / dpr / ARC.density
+      const worldDpr = dpr * height / WORLD_HEIGHT
+      const pitchWorld = Math.min(bw, bh) / worldDpr / ARC.density
       gl.uniform2f(resolution, bw, bh)
-      gl.uniform1f(dprLocation, dpr)
-      gl.uniform1f(cell, Math.max(2, pitchCss * dpr))
-      gl.uniform1f(dot, pitchCss * 1.2 * ARC.dotSize)
+      gl.uniform1f(dprLocation, worldDpr)
+      gl.uniform1f(cell, Math.max(2, pitchWorld * worldDpr))
+      gl.uniform1f(dot, pitchWorld * 1.2 * ARC.dotSize)
     }
     resize()
     const observer = new ResizeObserver(resize)
@@ -235,11 +241,11 @@ export function PredictiveArc() {
     let clock = 0
     const render = (now: number) => {
       frame = requestAnimationFrame(render)
-      if (now - last < 1000 / 30 || !drawable || gl.isContextLost()) return
+      if (!drawable || gl.isContextLost()) return
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0
       last = now
       clock = (clock + dt * 0.9 * (ARC.speed / 50)) % 6283
-      // Supplied position/activation lerp rates and 34% pointer strength.
+      // Supplied position/activation lerp rates and curved-base pointer strength.
       pointer.x += (pointer.targetX - pointer.x) * Math.min(1, dt * 12)
       pointer.y += (pointer.targetY - pointer.y) * Math.min(1, dt * 12)
       pointer.active += (pointer.targetActive - pointer.active) * Math.min(1, dt * 6)

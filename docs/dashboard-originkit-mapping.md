@@ -4,6 +4,12 @@ Date: 2026-10-04. Recommendation only: no catalog asset was selected or integrat
 Search phrases below are suggestions, not verified catalog availability or asset IDs.
 The approved Login's VectorWordmark, TypeOnceHeading and AmbientTerms are preserved.
 
+This records the **pre-selection recommendation**, not the current implementation.
+The user subsequently selected and supplied Predictive Arc, Text Carousel and Light
+Glass Button. Their restrained integration supersedes the earlier recommendation
+against an animated background; see [the integration record](dashboard-originkit-integration.md).
+The other illustrative candidates below remain proposals, not implemented assets.
+
 ## Classification
 
 | Area | Classification | Decision |

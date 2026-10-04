@@ -40,6 +40,7 @@ npm run preview    # serve dist/
 | Styling | **CSS Modules + CSS custom properties** | Built into Vite (no dependency). Scoped per component; tokens live in one file. |
 | Icons | **lucide-react** | Tree-shaken; its icon set matches the line icons in the approved image. |
 | Font | **@fontsource-variable/inter** | Self-hosted Inter (no third-party font request on an admin login). |
+| Title motion | **GSAP** | Preserves the supplied OriginKit Text Carousel's character transitions. |
 | Lint | **oxlint** | Ships with the official Vite React template; one small dev dependency. |
 
 Deliberately **not** added: router, state library, form library, UI kit, Tailwind,
@@ -59,6 +60,7 @@ src/
   components/
     form/                           FormField, PasswordField (login)
     illustration/IsoScene.tsx       shared SVG primitives: platform, glass card, glow node
+    originkit/                      supplied PredictiveArc, RotatingDashboardTitle, GlassNavItem + scoped styles/motion hooks
     shell/
       AppShell.tsx (+ .css)         sidebar + header + content frame, mobile drawer logic
       Sidebar.tsx (+ .css)          brand, primary/utility navigation, decorative backdrop
@@ -134,10 +136,11 @@ docs/reference/                     approved concept images
   match the approved base after normalizing definition placement/attribute order.
   Fresh desktop/tablet/mobile captures show no new Login regression. The dashboard overview
   reuses the same platform/card/node grammar.
-- **OriginKit.** No new OriginKit integration. The existing OriginKit-derived
-  login pieces (VectorWordmark, AmbientTerms, TypeOnceHeading) were not reused in
-  the shell: the reference shows a static brand mark, and a continuously
-  animated WebGL wordmark in persistent navigation would distract.
+- **OriginKit.** The user-selected Predictive Arc is a bounded, subtle content-only
+  backdrop; Text Carousel is a visual title enhancement with a stable semantic
+  `Dashboard Global`; Light Glass Button supplies sidebar light/ring behavior.
+  Login's VectorWordmark, AmbientTerms and TypeOnceHeading remain unchanged.
+  The sidebar brand remains static. See the source/adaptation and QA record below.
 - **Tokens.** Dark shell surfaces, text levels and module identity tones were
   added to `tokens.css` (sampled from the image). The accent tokens are shared
   with the login. The neutral Login and navy Dashboard surfaces remain distinct
@@ -215,10 +218,11 @@ Login:
 Backend integration, authentication, API clients, real routing, tenant switching,
 real search, destination module screens (Whitelabels, Administradores, SMTP,
 Oportunidades, Investidores, Empreendedores, Investimentos, Pagamentos, Wallet,
-Gateways, KYC, Auditoria), new OriginKit assets, final brand system.
+ Gateways, KYC, Auditoria), further OriginKit assets, final brand system.
 
 ## Review records
 
 - [Dashboard V1 review, architecture boundaries and validation](docs/dashboard-v1-review.md)
 - [App Shell / Dashboard OriginKit opportunity mapping](docs/dashboard-originkit-mapping.md)
+- [Approved Dashboard OriginKit integration, performance and architecture review](docs/dashboard-originkit-integration.md)
 - [Visual QA record](design-qa.md)

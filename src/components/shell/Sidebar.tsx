@@ -2,6 +2,7 @@ import type { Ref } from 'react'
 import { Layers, X } from 'lucide-react'
 import { PRIMARY_NAV, UTILITY_NAV, type NavItem } from './navigation'
 import { moduleUnavailable, usePrototypeNotice } from './prototypeNotice'
+import { GlassNavItem } from '../originkit/GlassNavItem'
 import styles from './Sidebar.module.css'
 
 type SidebarProps = {
@@ -96,28 +97,15 @@ function NavList({
 
         return (
           <li key={item.id}>
-            {item.href ? (
-              <a
-                href={item.href}
-                className={styles.item}
-                data-active={active || undefined}
-                data-tooltip={item.label}
-                aria-current={active ? 'page' : undefined}
-                onClick={onNavigate}
-              >
-                {content}
-              </a>
-            ) : (
-              // Destination screens are out of scope: give harmless feedback instead of a fake page.
-              <button
-                type="button"
-                className={styles.item}
-                data-tooltip={item.label}
-                onClick={() => notify(moduleUnavailable(item.label))}
-              >
-                {content}
-              </button>
-            )}
+            <GlassNavItem
+              href={item.href}
+              active={active}
+              label={item.label}
+              className={styles.item}
+              onClick={item.href ? onNavigate : () => notify(moduleUnavailable(item.label))}
+            >
+              {content}
+            </GlassNavItem>
           </li>
         )
       })}

@@ -1,0 +1,40 @@
+.control { isolation: isolate; }
+.fill, .light, .ring { position: absolute; inset: 0; pointer-events: none; border-radius: var(--glass-radius, 10px); }
+.fill {
+  z-index: -1;
+  opacity: 0;
+  background: rgb(116 102 193 / 0.16);
+  backdrop-filter: blur(20px) saturate(180%) brightness(108%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(108%);
+  transition: opacity var(--transition-fast);
+}
+.control[data-active] .fill, .control:hover .fill, .control:focus-visible .fill { opacity: 1; }
+.light { z-index: 0; opacity: 0; mix-blend-mode: screen; }
+.ring {
+  z-index: 0;
+  padding: 1px;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: border-box, content-box;
+  mask-composite: exclude;
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: border-box, content-box;
+  -webkit-mask-composite: xor;
+}
+.baseRing {
+  opacity: 0;
+  background: linear-gradient(180deg, rgb(210 202 255 / 0.34), rgb(141 132 211 / 0.12));
+  backdrop-filter: saturate(220%) brightness(140%);
+  -webkit-backdrop-filter: saturate(220%) brightness(140%);
+  transition: opacity var(--transition-fast);
+}
+.control[data-active] .baseRing { opacity: 1; }
+.control:hover .baseRing, .control:focus-visible .baseRing { opacity: 0.75; }
+.edgeLight {
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: conic-gradient(from calc((var(--la, 0) - var(--lw, 30)) * 1deg), transparent 0deg, #ad9eff calc(var(--lw, 30) * 1deg), transparent calc(var(--lw, 30) * 2deg));
+}
+.content { position: relative; z-index: 1; display: flex; align-items: center; gap: inherit; width: 100%; justify-content: inherit; }
+.control[data-active] { box-shadow: inset 0 1px 0 rgb(228 220 255 / 0.06), 0 0 24px -10px rgb(116 104 255 / 0.45); }
+@supports not (backdrop-filter: blur(2px)) { .fill { background: rgb(62 53 105 / 0.62); } }
+@media (hover: none) { .control:not([data-active]):not(:focus-visible) .fill, .control:not([data-active]):not(:focus-visible) .baseRing { opacity: 0; } }

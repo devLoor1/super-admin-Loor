@@ -1,6 +1,7 @@
 import { useEffect, useRef, type FormEvent, type Ref } from 'react'
 import { Bell, ChevronDown, Globe, House, Layers, Menu, Search } from 'lucide-react'
 import { usePrototypeNotice } from './prototypeNotice'
+import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
 
 type TopHeaderProps = {
@@ -62,7 +63,9 @@ export function TopHeader({ title, location, navOpen, onOpenNav, menuButtonRef }
 
       <div className={styles.titleBlock}>
         <span className={styles.accentBar} aria-hidden="true" />
-        <h1 className={styles.title}>{title}</h1>
+        <h1 className={styles.title}>
+          {title === 'Dashboard Global' ? <><span className="visually-hidden">Dashboard Global</span><RotatingDashboardTitle /></> : title}
+        </h1>
         <p className={styles.location}>
           <House size={15} strokeWidth={1.7} aria-hidden="true" />
           <span>{location}</span>

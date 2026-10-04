@@ -3,6 +3,11 @@
 Date: 2026-10-04. Scope: frontend-only visual prototype; one local feature commit,
 no push, merge, deployment, Backend, API, authentication or new destination screens.
 
+This is the baseline review at `9aec697`, before the separately authorized
+OriginKit integrations. Current integration evidence and the architecture
+reconciliation are in [dashboard-originkit-integration.md](dashboard-originkit-integration.md).
+Statements below about no new dependency/OriginKit asset describe that baseline.
+
 ## Recovery and ownership
 
 - Starting branch: `feature/super-admin-login-v1`.

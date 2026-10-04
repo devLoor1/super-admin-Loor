@@ -141,3 +141,57 @@ Login approval above remains intact. No new OriginKit integration or Backend wor
 
 **Dashboard V1 review result: passed for local visual review.** Real authentication,
 tenant/data integration and future permission handling remain out of this prototype.
+
+## Dashboard V1 — selected OriginKit integration QA — 2026-10-04
+
+This follows the user-approved integration brief, starting at clean `9aec697` on
+`feature/super-admin-dashboard-v1`. It does not revise the approved Login result.
+Actual supplied Predictive Arc, Text Carousel and Light Glass Button source was
+integrated; provenance/adaptations/performance and separate architecture findings
+are in [docs/dashboard-originkit-integration.md](docs/dashboard-originkit-integration.md).
+
+### Before/after evidence and findings
+
+- Local captures: `C:/Users/User/Desktop/Loor/output/dashboard-originkit-20261004`.
+  Before/after pairs at 1672 × 941, 1440 × 810, 1280 × 810, 900 × 800,
+  390 × 844 and 320 × 700 were inspected together. Panels, typography, illustration,
+  status/empty copy, primary hierarchy and responsive grid remain intact.
+- No blocking visual or interaction finding in the requested scope. Selected
+  glass treatment strengthens navigation; inactive rows remain calm. Hover light
+  is visible without all rows glowing. No effect is drawn behind the sidebar.
+- [P3, integration tradeoff] Widest-word reservation moves the breadcrumb below
+  the title at some widths. It does not keep moving when the carousel rotates.
+  Sampled H1 geometry varied by ~0.30px horizontally and retained 36px height on
+  desktop. Mobile title remains readable and all sizes have no horizontal overflow.
+- [P3, performance tradeoff] GSAP plus integration adds ~32.16 KB gzip JS. Required
+  to retain the selected source behavior; no second animation library was added.
+- Arc is subtle (opacity 0.3), clipped to a bounded content region and fades out;
+  no readability loss was found. Static mobile/low-capability fallback is deliberate,
+  not a missing animation bug. Do not increase its intensity without another review.
+
+### Behavior and validation
+
+- Live scroll widths at all six viewports were <= viewport width. Four desktop/
+  tablet sizes initialized the Arc; 390/320 used static fallback. Its left edge
+  matched the sidebar right at 262/232/232/76px, and 0px on mobile.
+- All four title terms rotated at 3500ms; actual H1/document title stayed
+  `Dashboard Global`. Animated text and visual backgrounds were excluded from
+  the actual accessibility tree. Reduced motion held `Global` static.
+- Mouse light tracking, keyboard focus-visible, `aria-current`, one-control row
+  semantics, modal drawer focus wrap/return, background inertness and touch
+  selected state passed. No nested buttons/links.
+- Offscreen Arc/carousel suspension, WebGL resource disposal/resume, forced WebGL
+  denial, simulated low-capability fallback and context loss/restoration passed.
+  Temporary local browser overrides/counters were removed by reload; no source
+  debug switches were introduced.
+- Login normal captures at all six sizes and reduced-motion/static fallbacks
+  passed. Existing required/malformed validation, first-invalid focus, keyboard
+  sequence, password toggle and central illustration remain intact. No Login
+  component, shared token or form implementation was changed.
+- Fresh network capture: 76 localhost requests, no failures, no Backend/API calls.
+  Current console: no warnings/errors. Manual DOM/AX/keyboard accessibility review
+  only; no full WCAG or hardware performance certification.
+- TypeScript, oxlint, production Vite build and staged `git diff --check` passed.
+
+**Integration result: passed for user visual review.** One local feature commit;
+no push, merge, deploy, Backend or additional screen.

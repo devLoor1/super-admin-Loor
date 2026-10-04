@@ -380,3 +380,93 @@ OriginKit recommendations only: docs/whitelabels-originkit-mapping.md.
 Captures: C:/Users/User/AppData/Local/Temp/super-admin-whitelabels-review-20261004.
 One local commit only; no push/merge/deploy, main/dev refs unchanged. Ready for
 user review before any promotion; normal-motion local preview retained on 5173.
+
+## Whitelabels V1 — selected OriginKit integration — 2026-10-04
+
+Starting state: clean `feature/super-admin-whitelabels-v1` at
+`0f2377cc488d5513b07b62b7b0134a56f9b217fa`. Local/tracking/live dev remains
+`c07bcb7d6f32d374466377eb0ef96ee0294d1dc9`; main remains
+`c2235ac5d0d65408e9d39bf836a1a717da3d95ae`.
+
+**Implemented:** supplied Dot Matrix shaders (four strings verified verbatim),
+Live Chat spring/stagger language only, and Radial Reveal's pointer-origin clip
+tween. Page composition and illustrative dataset preserved. Matrix starts exactly
+at the main region's top and extends only within its content column. At 1672 it is
+x=262/y=110; sidebar is left of x=262 and header ends at y=110. Opaque cards,
+filters, table and text stay above it. Intensity tuned to 0.72, keeping its moving
+circles recognizable rather than barely visible. Full names replace only row
+monogram squares; the detail header avatar is intentionally retained.
+
+### Runtime / interaction evidence
+
+- Normal-motion sequence observed for >16 seconds, changing all three identities
+  and tabs; separate search, status/filter/sort and empty/reset checks also passed.
+  Combined motion: **BALANCED**. Effects are distinct but do not obscure content.
+- Detail frame samples show the old identity fade/slide out, then distinct new
+  header, information, summary and action arrivals. Perceived duration roughly
+  600–800 ms; no height animation or overlapping panels. Rapid changes resolve to
+  the latest selected identity, overview resets, and clipboard reflects that
+  identity after its asynchronous write completes.
+- Pointer samples show circular growth from actual entry coordinates, not a
+  flat background-color hover. Keyboard focus is centred and visibly revealed.
+  Selected rectangles retain their left accent and tint without hover.
+- Existing search remains trim/case/accent safe; draft/empty results reconcile
+  the detail rather than displaying an unrelated tenant. Sort retains aria-sort.
+  Tabs and honest Applications/integration placeholders remain intact.
+- Phone keyboard selection retains the already-approved focus/scroll to the
+  persistent `whitelabel-detail` region. End brings Integrações fully into view;
+  roving tabindex remains 0 for the current tab. No new tab stop or nested
+  interactive element; one detail region, one selection announcement.
+- No financial/tenant mutation, auth, persistence, Backend or business API used.
+
+### Responsive / fallback / lifecycle checks
+
+| Viewport | Page client/scroll width | Layout | Result |
+| --- | --- | --- | --- |
+| 1672×941 | 1672 / 1672 | List + detail | PASS |
+| 1440×810 | 1425 / 1425 | List + detail | PASS |
+| 1280×810 | 1265 / 1265 | Stacked | PASS |
+| 900×900 | 885 / 885 | Rail, stacked | PASS |
+| 390×844 | 375 / 375 | Drawer, stacked | PASS |
+| 320×800 | 305 / 305 | Drawer, stacked | PASS |
+
+15 px differences from viewport width are vertical scrollbars, not horizontal
+overflow. All full names readable; rectangles capped at 180 px and shrink to fit.
+Background begins below the header at every breakpoint. Internal narrow-tab
+scrolling is intentional, documented and keyboard accessible.
+
+- Reduced motion checked live: fixed shader dots, all detail stages opacity 1 /
+  transform none, immediate identity update. Related static no-WebGL2 field also
+  forced and inspected: no canvas, CSS circular dots, no overflow. Overrides were
+  temporary browser diagnostics, not source/URL QA switches, and were restored.
+- Temporary GL draw instrumentation: 72 two-pass draw calls in 1602 ms at desktop
+  (within the 30 fps cap), raster 1,167,480 pixels. Zero draws during sampled
+  reduced-motion, non-intersecting and hidden-document windows after transition
+  callbacks settled. Code cleanup reviewed for observers/listeners/RAF/GL objects.
+- Mobile layouts and keyboard/selection behavior verified in the built-in browser.
+  Native touch-event injection is unsupported there; no physical-device claim.
+  A synthetic `pointerType: touch` enter event left the reveal at circle(0%);
+  selected styling remained present. This tests the guard, not physical input.
+- Focused DOM/accessibility-tree/keyboard checks, not full WCAG/screen-reader,
+  cross-browser or physical-device certification.
+
+### Regressions / final technical validation
+
+Login and Dashboard desktop/mobile captures reviewed with reduced motion. Their
+source, layout and approved visuals are untouched; new matrix/identity elements
+are absent on both routes. Login required-field handling, password toggle and
+keyboard behavior retained. Dashboard Whitelabel links remain local navigation.
+Final TypeScript, oxlint, Vite production build and diff-check pass. Vite's >500 kB
+single-JS-chunk advisory is recorded separately from build success; no unrelated
+library added and no dependency version migration.
+
+Fresh normal-motion console: no warnings/errors. Final untruncated reload capture:
+107 requests, all local assets on 127.0.0.1:5173, no business/API/external requests.
+The broader multi-route event buffer was truncated and is not used as complete
+network evidence. HMR's temporary dependency-optimization errors and the deliberate
+reduced-motion development notice are not persistent production defects.
+Browser capability timeout recovered using the same tab, not another browser.
+Screenshots/measurements: `C:/Users/User/AppData/Local/Temp/super-admin-whitelabels-originkit-20261004`.
+Integration differences/future color boundary: `docs/whitelabels-originkit-mapping.md`.
+One local feature commit only; no push/merge/deploy/Backend or new screen. Ready
+for user visual review, not approval for promotion to dev.

@@ -209,9 +209,9 @@
 }
 
 .row[data-active] td {
-  border-top: 1px solid rgb(126 118 255 / 0.2);
-  border-bottom: 1px solid rgb(126 118 255 / 0.2);
-  background: linear-gradient(180deg, rgb(86 80 214 / 0.2), rgb(70 66 180 / 0.16));
+  border-top: 1px solid color-mix(in srgb, var(--wl-accent) 20%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--wl-accent) 20%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wl-accent) 16%, transparent), color-mix(in srgb, var(--wl-accent) 12%, transparent));
 }
 
 .row[data-active] td::after {
@@ -219,12 +219,12 @@
 }
 
 .row[data-active] td:first-child {
-  border-left: 1px solid rgb(126 118 255 / 0.2);
+  border-left: 1px solid color-mix(in srgb, var(--wl-accent) 20%, transparent);
   border-radius: 11px 0 0 11px;
 }
 
 .row[data-active] td:last-child {
-  border-right: 1px solid rgb(126 118 255 / 0.2);
+  border-right: 1px solid color-mix(in srgb, var(--wl-accent) 20%, transparent);
   border-radius: 0 11px 11px 0;
 }
 
@@ -234,6 +234,7 @@
   align-items: center;
   gap: 10px;
   max-width: 100%;
+  width: 100%;
   margin-left: -4px;
   padding: 4px;
   border: 0;
@@ -251,13 +252,8 @@
 .nameText {
   display: grid;
   min-width: 0;
+  width: 100%;
   white-space: normal;
-}
-
-.name {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 17px;
 }
 
 .nameDomain,
@@ -488,7 +484,7 @@
 
   .nameStatus {
     display: block;
-    margin: 4px 0 2px 45px;
+    margin: 4px 0 2px;
   }
 
   .table td {

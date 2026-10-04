@@ -297,5 +297,5 @@ OriginKit assets, final brand system.
 - [App Shell / Dashboard OriginKit opportunity mapping](docs/dashboard-originkit-mapping.md)
 - [Approved Dashboard OriginKit integration, performance and architecture review](docs/dashboard-originkit-integration.md)
 - [Whitelabels V1 review and validation](docs/whitelabels-v1-review.md)
-- [Whitelabels-specific OriginKit opportunity mapping](docs/whitelabels-originkit-mapping.md)
+- [Whitelabels OriginKit mapping and selected visual integration](docs/whitelabels-originkit-mapping.md)
 - [Visual QA record](design-qa.md)

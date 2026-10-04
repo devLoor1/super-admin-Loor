@@ -19,6 +19,7 @@ import { StatusPill } from '../../components/ui/StatusPill'
 import { Tabs } from '../../components/ui/Tabs'
 import { tabId, tabPanelId } from '../../components/ui/tabIds'
 import { EntityAvatar } from './EntityAvatar'
+import { DetailTransition } from './visuals/DetailTransition'
 import { STATUS_META, type Whitelabel } from './prototypeWhitelabels'
 import styles from './WhitelabelDetailPanel.module.css'
 
@@ -50,9 +51,18 @@ const ID_PREFIX = 'wl-detail'
 /**
  * Detail of the selected whitelabel. Only "Visão geral" has content; the other
  * tabs, quick actions, edit and overflow actions are prototype placeholders.
- * The parent remounts this panel per whitelabel (key), so the tab resets.
+ * The accessible region stays mounted during selection transitions; only its
+ * inner contents reset tabs when the next identity appears.
  */
 export function WhitelabelDetailPanel({ whitelabel }: { whitelabel: Whitelabel }) {
+  return (
+    <DetailTransition whitelabel={whitelabel} className={styles.panel}>
+      {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} />}
+    </DetailTransition>
+  )
+}
+
+function DetailContents({ whitelabel }: { whitelabel: Whitelabel }) {
   const notify = usePrototypeNotice()
   const [tab, setTab] = useState<DetailTab>('overview')
   const status = STATUS_META[whitelabel.status]
@@ -69,8 +79,8 @@ export function WhitelabelDetailPanel({ whitelabel }: { whitelabel: Whitelabel }
   }
 
   return (
-    <section id="whitelabel-detail" className={styles.panel} aria-labelledby="wl-detail-title" tabIndex={-1}>
-      <header className={styles.header}>
+    <>
+      <header className={styles.header} data-detail-stage="identity">
         <EntityAvatar initial={whitelabel.initial} tone={whitelabel.avatarTone} size="lg" />
         <div className={styles.identity}>
           <h2 id="wl-detail-title" className={styles.name}>
@@ -131,7 +141,7 @@ export function WhitelabelDetailPanel({ whitelabel }: { whitelabel: Whitelabel }
           )}
         </div>
       ))}
-    </section>
+    </>
   )
 }
 
@@ -150,7 +160,7 @@ function Overview({
 }) {
   return (
     <div className={styles.overview}>
-      <section className={styles.card} aria-labelledby="wl-info-title">
+      <section className={styles.card} aria-labelledby="wl-info-title" data-detail-stage="information">
         <div className={styles.cardHeader}>
           <h3 id="wl-info-title" className={styles.cardTitle}>
             Informações principais
@@ -196,7 +206,7 @@ function Overview({
         </dl>
       </section>
 
-      <ul className={styles.summary} aria-label="Resumo do Whitelabel ilustrativo">
+      <ul className={styles.summary} aria-label="Resumo do Whitelabel ilustrativo" data-detail-stage="summary">
         {SUMMARY.map((item) => (
           <li key={item.label} className={styles.summaryCard}>
             <IconTile icon={item.icon} tone={item.tone} size="sm" className={styles.summaryIcon} />
@@ -210,7 +220,7 @@ function Overview({
         ))}
       </ul>
 
-      <section className={styles.card} aria-labelledby="wl-actions-title">
+      <section className={styles.card} aria-labelledby="wl-actions-title" data-detail-stage="actions">
         <h3 id="wl-actions-title" className={styles.cardTitle}>
           Ações rápidas
         </h3>

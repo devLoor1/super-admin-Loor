@@ -7,6 +7,8 @@ import { MetricCard } from '../../components/ui/MetricCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { WhitelabelDetailPanel } from './WhitelabelDetailPanel'
 import { WhitelabelListPanel, type SortKey, type StatusFilter } from './WhitelabelListPanel'
+import { DotMatrixBackground } from './visuals/DotMatrixBackground'
+import { DEFAULT_WHITELABEL_ACCENT } from './visuals/visualAccent'
 import { PROTOTYPE_WHITELABELS, STATUS_META, type Whitelabel } from './prototypeWhitelabels'
 import styles from './WhitelabelsPage.module.css'
 
@@ -17,10 +19,10 @@ import styles from './WhitelabelsPage.module.css'
  * and selection. Summary cards stay in the data-ready "—" state; nothing is
  * fetched, saved or authenticated.
  */
-export function WhitelabelsPage() {
+export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT }: { accentColor?: string }) {
   return (
     <AppShell activeNav="plataformas" title="Whitelabels" location="Whitelabels">
-      <WhitelabelsContent />
+      <WhitelabelsContent accentColor={accentColor} />
     </AppShell>
   )
 }
@@ -38,7 +40,7 @@ const MOBILE_QUERY = '(max-width: 767px)'
 const normalize = (value: string) =>
   value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
 
-function WhitelabelsContent() {
+function WhitelabelsContent({ accentColor = DEFAULT_WHITELABEL_ACCENT }: { accentColor?: string }) {
   const notify = usePrototypeNotice()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
@@ -78,6 +80,7 @@ function WhitelabelsContent() {
 
   return (
     <div className={styles.page}>
+      <DotMatrixBackground accentColor={accentColor} />
       <section aria-labelledby="wl-summary-heading">
         <h2 id="wl-summary-heading" className="visually-hidden">
           Resumo de whitelabels
@@ -111,8 +114,9 @@ function WhitelabelsContent() {
           onSortChange={setSort}
           activeId={active?.id}
           onActivate={activate}
+          accentColor={accentColor}
         />
-        {active ? <WhitelabelDetailPanel key={active.id} whitelabel={active} /> : (
+        {active ? <WhitelabelDetailPanel whitelabel={active} /> : (
           <section className={styles.noSelection} aria-label="Detalhes do Whitelabel">
             <EmptyState icon={Building} title="Nenhum Whitelabel em exibição" description="Ajuste os filtros para consultar os detalhes de um resultado ilustrativo." />
           </section>

@@ -4,6 +4,8 @@
  * Below 1360px the detail panel moves under the list.
  */
 .page {
+  position: relative;
+  isolation: isolate;
   display: grid;
   gap: 15px;
 }

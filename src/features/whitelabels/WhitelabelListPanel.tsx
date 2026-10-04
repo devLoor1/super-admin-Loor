@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Plus, SearchX } from 'lucide-react'
 import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { SearchField } from '../../components/ui/SearchField'
 import { SelectField } from '../../components/ui/SelectField'
 import { StatusPill } from '../../components/ui/StatusPill'
-import { EntityAvatar } from './EntityAvatar'
+import { WhitelabelIdentity } from './visuals/WhitelabelIdentity'
 import { STATUS_META, type Whitelabel, type WhitelabelStatus } from './prototypeWhitelabels'
 import styles from './WhitelabelListPanel.module.css'
 
@@ -27,6 +27,7 @@ type WhitelabelListPanelProps = {
   onSortChange: (value: Sort) => void
   activeId?: string
   onActivate: (id: string) => void
+  accentColor: string
 }
 
 const CHIPS: { value: StatusFilter; label: string }[] = [
@@ -57,6 +58,7 @@ export function WhitelabelListPanel({
   onSortChange,
   activeId,
   onActivate,
+  accentColor,
 }: WhitelabelListPanelProps) {
   const notify = usePrototypeNotice()
   function toggleSort(key: SortKey) {
@@ -73,7 +75,7 @@ export function WhitelabelListPanel({
   const filtersActive = query !== '' || status !== 'all'
 
   return (
-    <section className={styles.panel} aria-labelledby="wl-list-title">
+    <section className={styles.panel} aria-labelledby="wl-list-title" style={{ '--wl-accent': accentColor } as CSSProperties}>
       <div className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.accentBar} aria-hidden="true" />
@@ -166,9 +168,8 @@ export function WhitelabelListPanel({
                       aria-current={isActive ? 'true' : undefined}
                       aria-controls="whitelabel-detail"
                     >
-                      <EntityAvatar initial={row.initial} tone={row.avatarTone} />
                       <span className={styles.nameText}>
-                        <span className={styles.name}>{row.name}</span>
+                        <WhitelabelIdentity name={row.name} selected={isActive} accentColor={accentColor} />
                         <span className={styles.nameDomain}>{row.domain}</span>
                         <span className="visually-hidden">, ver detalhes</span>
                       </span>

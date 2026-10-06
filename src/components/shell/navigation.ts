@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -36,11 +37,13 @@ export const PRIMARY_NAV: NavItem[] = [
     label: 'Plataformas',
     icon: LayoutGrid,
     href: '#/whitelabels',
-    // Plataformas is the parent context of the Whitelabels and Contas screens.
+    // Plataformas is the parent context of the Whitelabels, Contas and Configurações screens.
     children: [
       { id: 'whitelabels', label: 'Whitelabels', icon: Building2, href: '#/whitelabels' },
-      // Contas is tenant-first: the entry opens the first illustrative Whitelabel.
+      // Contas and Configurações are tenant-first: by default they open the first
+      // illustrative Whitelabel; pages pass `subNavHrefs` for the current one.
       { id: 'contas', label: 'Contas', icon: UsersRound, href: '#/whitelabels/wl_proto_01/accounts' },
+      { id: 'whitelabel-settings', label: 'Config. do Whitelabel', icon: SlidersHorizontal, href: '#/whitelabels/wl_proto_01/settings' },
     ],
   },
   { id: 'operacao', label: 'Operação', icon: Box },

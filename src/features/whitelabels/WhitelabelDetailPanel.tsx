@@ -41,7 +41,7 @@ const SUMMARY: { label: string; icon: LucideIcon; tone: Tone }[] = [
 
 /** `path` actions open an existing prototype screen for the selected Whitelabel. */
 const QUICK_ACTIONS: { title: string; description: string; icon: LucideIcon; tone: Tone; path?: string }[] = [
-  { title: 'Configurações', description: 'Domínio, identidade e preferências', icon: Settings, tone: 'indigo' },
+  { title: 'Configurações', description: 'Identidade, textos e Termos de Uso', icon: Settings, tone: 'indigo', path: '/settings' },
   { title: 'Administradores', description: 'Gerenciar usuários e permissões', icon: Users, tone: 'violet', path: '/accounts?tipo=administradores' },
   { title: 'Aplicações', description: 'Conceito visual — escopo a definir', icon: LayoutGrid, tone: 'indigo' },
   { title: 'Integrações', description: 'Gateway e SMTP — destinos futuros', icon: Link, tone: 'violet' },
@@ -227,7 +227,7 @@ function Overview({
         <h3 id="wl-actions-title" className={styles.cardTitle}>
           Ações rápidas
         </h3>
-        <p className={styles.cardSubtitle}>Contas e Administradores abrem o protótipo de Contas; demais destinos futuros.</p>
+        <p className={styles.cardSubtitle}>Configurações, Contas e Administradores já abrem protótipos.</p>
         <ul className={styles.actions}>
           {QUICK_ACTIONS.map((action) => {
             const body = (

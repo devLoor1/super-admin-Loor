@@ -18,13 +18,6 @@ import type {
  * demonstrate layout and are shown as illustrative.
  */
 
-/** Current Terms revision per illustrative Whitelabel (null → none published). */
-export const CURRENT_TERMS_REVISION: Record<string, number | null> = {
-  wl_proto_01: 4,
-  wl_proto_02: 2,
-  wl_proto_03: null,
-}
-
 const dep = (key: Dependency['key'], status: DependencyStatus, value: string): Dependency => ({ key, status, value })
 
 type InvestorSeed = {

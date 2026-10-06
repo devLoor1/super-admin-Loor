@@ -467,6 +467,11 @@
     font-size: 12px;
     letter-spacing: 0.18em;
   }
+
+  /* Long page titles wrap instead of running into the right gutter. */
+  .title {
+    white-space: normal;
+  }
 }
 
 /* Preserve the 40px menu target on the narrowest phones instead of shrinking it. */

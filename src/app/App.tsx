@@ -3,30 +3,36 @@ import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { LoginPage } from '../features/login/LoginPage'
 import { WhitelabelsPage } from '../features/whitelabels/WhitelabelsPage'
 import { WhitelabelAccountsPage } from '../features/whitelabel-accounts/WhitelabelAccountsPage'
+import { WhitelabelSettingsPage } from '../features/whitelabel-settings/WhitelabelSettingsPage'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
+import { subscribePrototypeNavigation } from './prototypeNavigation'
 
-type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts'
+type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts' | 'settings'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
   | { view: 'accounts'; whitelabelId: string; initialType?: AccountType }
+  | { view: 'settings'; whitelabelId: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
   dashboard: 'Super Admin · Dashboard Global',
   whitelabels: 'Super Admin · Whitelabels',
   accounts: 'Super Admin · Contas do Whitelabel',
+  settings: 'Super Admin · Configurações do Whitelabel',
 }
 
 /** Views rendered inside the dark App Shell. */
-const SHELL_VIEWS: ReadonlySet<View> = new Set<View>(['dashboard', 'whitelabels', 'accounts'])
+const SHELL_VIEWS: ReadonlySet<View> = new Set<View>(['dashboard', 'whitelabels', 'accounts', 'settings'])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
+const SETTINGS_PATH = /^whitelabels\/([\w-]+)\/settings$/
 
 /**
  * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
- * (optional `?tipo=investidores|empreendedores|administradores`) → visual shell
+ * (optional `?tipo=investidores|empreendedores|administradores`),
+ * `#/whitelabels/:whitelabelId/settings` → visual shell
  * screens (not an authentication guard); anything else → login.
  */
 function routeFromHash(): Route {
@@ -40,6 +46,8 @@ function routeFromHash(): Route {
       initialType: accountTypeFromParam(new URLSearchParams(search).get('tipo')),
     }
   }
+  const settings = SETTINGS_PATH.exec(path)
+  if (settings) return { view: 'settings', whitelabelId: settings[1] }
   return { view: 'login' }
 }
 
@@ -56,8 +64,7 @@ export function App() {
       setRoute(routeFromHash())
       window.scrollTo(0, 0)
     }
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
+    return subscribePrototypeNavigation(onHashChange)
   }, [])
 
   useEffect(() => {
@@ -73,5 +80,6 @@ export function App() {
   if (route.view === 'accounts') {
     return <WhitelabelAccountsPage whitelabelId={route.whitelabelId} initialType={route.initialType} />
   }
+  if (route.view === 'settings') return <WhitelabelSettingsPage whitelabelId={route.whitelabelId} />
   return <LoginPage />
 }

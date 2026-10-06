@@ -48,3 +48,10 @@
   --pill-bg: var(--status-muted-bg);
   --pill-border: var(--status-muted-border);
 }
+
+.pill[data-tone='danger'] {
+  --pill-fg: var(--status-danger-fg);
+  --pill-dot: var(--status-danger-dot);
+  --pill-bg: var(--status-danger-bg);
+  --pill-border: var(--status-danger-border);
+}

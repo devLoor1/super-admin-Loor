@@ -20,7 +20,8 @@ import {
   type AccountType,
   type AdminAccount,
 } from './accountModel'
-import { CURRENT_TERMS_REVISION, PROTOTYPE_ACCOUNTS, adminDependencies } from './prototypeAccounts'
+import { PROTOTYPE_ACCOUNTS, adminDependencies } from './prototypeAccounts'
+import { useWhitelabelSettings } from '../whitelabel-settings/settingsStore'
 import { PauseAccessDialog, ReactivateAccessDialog } from './dialogs/AccessDialogs'
 import { ChangeWhitelabelDialog } from './dialogs/ChangeWhitelabelDialog'
 import { NewAdminDialog, type NewAdminInput } from './dialogs/NewAdminDialog'
@@ -61,7 +62,10 @@ export function WhitelabelAccountsPage({ whitelabelId, initialType }: { whitelab
     <AppShell
       activeNav="plataformas"
       activeSubNav="contas"
-      subNavHrefs={{ contas: `#/whitelabels/${whitelabelId}/accounts` }}
+      subNavHrefs={{
+        contas: `#/whitelabels/${whitelabelId}/accounts`,
+        'whitelabel-settings': `#/whitelabels/${whitelabelId}/settings`,
+      }}
       title="Contas do Whitelabel"
       location="Contas"
       breadcrumbs={[
@@ -95,6 +99,7 @@ export function WhitelabelAccountsPage({ whitelabelId, initialType }: { whitelab
 
 function AccountsContent({ whitelabel, initialType }: { whitelabel: Whitelabel; initialType?: AccountType }) {
   const notify = usePrototypeNotice()
+  const settings = useWhitelabelSettings(whitelabel.id)
   // Local prototype state for every illustrative Whitelabel (survives context switches).
   const [accounts, setAccounts] = useState<Account[]>(PROTOTYPE_ACCOUNTS)
   const [events, setEvents] = useState<Record<string, AccountEvent[]>>({})
@@ -367,7 +372,7 @@ function AccountsContent({ whitelabel, initialType }: { whitelabel: Whitelabel; 
               whitelabel={whitelabel}
               whitelabels={PROTOTYPE_WHITELABELS}
               events={events[active.id] ?? []}
-              currentTermsRevision={CURRENT_TERMS_REVISION[whitelabel.id] ?? null}
+              currentTermsRevision={settings?.terms.current?.revision ?? null}
               onPause={() => setDialog({ kind: 'pause', accountId: active.id })}
               onReactivate={() => setDialog({ kind: 'reactivate', accountId: active.id })}
               onTransfer={() => setDialog({ kind: 'transfer', accountId: active.id })}

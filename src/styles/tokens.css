@@ -123,4 +123,8 @@
   --status-muted-dot: #7d8597;
   --status-muted-bg: rgb(125 133 151 / 0.1);
   --status-muted-border: rgb(125 133 151 / 0.22);
+  --status-danger-fg: #f6b3c0;
+  --status-danger-dot: #f07890;
+  --status-danger-bg: rgb(232 92 120 / 0.1);
+  --status-danger-border: rgb(240 120 145 / 0.28);
 }

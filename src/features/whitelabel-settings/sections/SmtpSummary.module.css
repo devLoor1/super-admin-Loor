@@ -1,0 +1,50 @@
+.manage {
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 12.5px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #121826;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tone-violet-border);
+  border-radius: 9px;
+  background: var(--tone-violet-bg);
+  color: var(--tone-violet-fg);
+}
+
+.text {
+  min-width: 0;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-on-dark);
+}
+
+.description {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-muted);
+}

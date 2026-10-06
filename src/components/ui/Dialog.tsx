@@ -21,7 +21,8 @@ type DialogProps = {
 
 /**
  * Modal dialog built on the native <dialog> element: top layer, inert
- * background, focus containment and Escape are provided by the browser.
+ * background and focus containment are provided by the browser. React owns
+ * Escape/close requests so guarded drafts can remain open.
  * Mount it to open; unmount (via `onClose`) to close. Focus returns to the
  * element that opened it, or to `fallbackFocus` if that element is gone.
  */
@@ -73,6 +74,14 @@ export function Dialog({
       data-size={size}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
+      onKeyDown={(event) => {
+        // Repeated native close requests can cease being cancelable. Handle
+        // Escape before that default so a guarded draft never closes invisibly.
+        if (event.key !== 'Escape') return
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
       onCancel={(event) => {
         // Escape: let React own the open state.
         event.preventDefault()

@@ -1,0 +1,237 @@
+/*
+ * Whitelabel Settings V1. Context row and section navigation on top; the
+ * independent configuration cards follow in reading order:
+ * [Geral, Identidade] [Experiência, Funcionalidades] / [Termos de Uso, SMTP].
+ * Below 1360px everything stacks in a single column.
+ * The Dot Matrix background is the shared Whitelabels implementation.
+ */
+.page {
+  position: relative;
+  isolation: isolate;
+  padding-top: 14px;
+}
+
+.layout {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- Context ---------- */
+
+.context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.intro {
+  min-width: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -4px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text-on-dark);
+}
+
+.back:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.subtitle {
+  max-width: 720px;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--text-on-dark-secondary);
+}
+
+/* ---------- Section navigation + legend ---------- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  min-width: 0;
+}
+
+.sectionNav {
+  min-width: 0;
+}
+
+.sectionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--surface-border);
+  border-radius: 11px;
+  background: rgb(15 20 32 / 0.82);
+}
+
+.sectionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.sectionLink:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text-on-dark);
+}
+
+.sectionLink[aria-current='true'] {
+  border-color: rgb(126 118 255 / 0.45);
+  background: rgb(98 90 230 / 0.18);
+  color: var(--text-on-dark);
+}
+
+.sectionLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.dirtyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f7bf6d;
+  box-shadow: 0 0 8px -1px #f7bf6d;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.legendTag {
+  padding: 1px 7px;
+  border: 1px solid var(--surface-border);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.legendTag[data-source='tenant'] {
+  margin-left: 6px;
+  border-color: rgb(126 118 255 / 0.4);
+  background: rgb(98 90 230 / 0.12);
+  color: #c4c0ff;
+}
+
+/* ---------- Cards ---------- */
+
+.content {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.content:focus {
+  outline: none;
+}
+
+.columns,
+.bottomRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 14px 15px;
+  min-width: 0;
+}
+
+.bottomRow {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.notFound {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  margin-top: 14px;
+  padding: 32px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.inlineLink {
+  color: #b9b4ff;
+}
+
+@media (max-width: 1359px) {
+  .columns,
+  .bottomRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding-top: 6px;
+  }
+
+  .context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subtitle {
+    font-size: 13px;
+    line-height: 19px;
+  }
+
+  .sectionNav,
+  .sectionList {
+    width: 100%;
+  }
+
+  .sectionLink {
+    padding: 0 10px;
+    font-size: 12.5px;
+  }
+}

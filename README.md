@@ -1,8 +1,9 @@
 # Loor Super Admin — Frontend
 
 Visual prototype of the **Super Admin**: Login V1, the application-frame
-**App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page and
-**Whitelabel Account Control V1** (Contas do Whitelabel). Frontend only.
+**App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
+**Whitelabel Account Control V1** (Contas do Whitelabel) and **Whitelabel
+Settings V1** (Configurações do Whitelabel). Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -12,6 +13,8 @@ Visual prototype of the **Super Admin**: Login V1, the application-frame
 > counts or dates). Contas uses illustrative accounts (example.com e-mails,
 > masked documents, no amounts); pause/reactivate, Whitelabel change and the
 > Admin form only change local state — **Backend: implementation pending**.
+> Configurações uses illustrative per-tenant settings; every section save and
+> the Terms publication are local to the browser session (lost on reload).
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -19,14 +22,16 @@ Visual prototype of the **Super Admin**: Login V1, the application-frame
 | App Shell + Dashboard V1 | `http://localhost:5173/#/dashboard` | [`docs/reference/super-admin-dashboard-approved.png`](docs/reference/super-admin-dashboard-approved.png) |
 | Whitelabels V1 | `http://localhost:5173/#/whitelabels` | [`docs/reference/super-admin-whitelabels-approved.png`](docs/reference/super-admin-whitelabels-approved.png) |
 | Whitelabel Account Control V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/accounts` | [`docs/reference/super-admin-whitelabel-account-control-approved.png`](docs/reference/super-admin-whitelabel-account-control-approved.png) |
+| Whitelabel Settings V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/settings` | [`docs/reference/super-admin-whitelabel-settings-approved.png`](docs/reference/super-admin-whitelabel-settings-approved.png) (visual direction only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
 In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
-is active, lists its screens: **Whitelabels** and **Contas**. The accounts route
-is `#/whitelabels/:whitelabelId/accounts` with an optional
-`?tipo=investidores|empreendedores|administradores`.
-Within Contas, its sidebar destination preserves the displayed Whitelabel.
+is active, lists its screens: **Whitelabels**, **Contas** and **Config. do Whitelabel**.
+The accounts route is `#/whitelabels/:whitelabelId/accounts` with an optional
+`?tipo=investidores|empreendedores|administradores`; the settings route is
+`#/whitelabels/:whitelabelId/settings`. Within Contas and Configurações, the
+sidebar destinations preserve the displayed Whitelabel.
 
 ---
 
@@ -66,7 +71,7 @@ handle panel-level responsiveness.
 src/
   main.tsx                          entry — renders <App />
   app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
-                                    "#/whitelabels/:id/accounts[?tipo=…]", else login
+                                    "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings", else login
   styles/
     tokens.css                      prototype visual tokens (login + dark app shell)
     global.css                      reset + base typography
@@ -88,7 +93,8 @@ src/
       OutlineButton.tsx (+ .css)    low-emphasis panel action
       MetricCard.tsx (+ .css)       shared data-ready KPI card (default / compact density)
       PrimaryButton.tsx (+ .css)    high-emphasis violet action
-      StatusPill.tsx (+ .css)       status dot + label (success / warning / neutral / muted tones)
+      StatusPill.tsx (+ .css)       status dot + label (success / warning / neutral / muted / danger tones)
+      Switch.tsx (+ .css)           accessible on/off switch (role="switch", aria-checked)
       SearchField.tsx (+ .css)      labelled search input
       SelectField.tsx (+ .css)      native select with icon + chevron
       FilterChips.tsx (+ .css)      single-choice chip group (aria-pressed)
@@ -122,6 +128,15 @@ src/
       accountListConfig.ts          filter/column configuration per account type
       prototypeAccounts.ts          illustrative accounts per Whitelabel (not backend data)
       dialogs/                      pause, reactivate, change Whitelabel (simulation), new Admin
+    whitelabel-settings/
+      WhitelabelSettingsPage.tsx    page layout, section navigation, unsaved-change guard, Terms dialogs
+      SettingsSection.tsx (+ .css)  independent section card: status, Editar, unsaved bar, Descartar/Salvar
+      useSectionEditor.ts           per-section local edit lifecycle (draft, validation, simulated save)
+      settingsModel.ts              WhitelabelSettings / SettingValue<T> types, defaults, state vocabulary
+      prototypeSettings.ts          illustrative settings per Whitelabel (not backend data)
+      settingsStore.ts              in-memory session store (survives in-app navigation, not reload)
+      sections/                     Geral, Identidade, Experiência, Funcionalidades, Termos de Uso, SMTP summary
+      dialogs/                      view revision, publish revision, unsaved changes
 docs/reference/                     approved concept images
 ```
 
@@ -296,6 +311,66 @@ Codex independently checked 1672, 1440, 1280, 900, 390 and 320px for all three
 account types and dialog forms without horizontal overflow. See the frontend
 review record for scope, evidence and fallback checks.
 
+## Whitelabel Settings V1 — decisions
+
+- **Placement.** Third Plataformas screen (`Config. do Whitelabel`); no new top-level
+  domain. The Whitelabels detail quick action *Configurações* opens it. The
+  Whitelabel context card (reused from Contas) switches tenant locally.
+- **Independent sections, no global save.** Geral (read-only), Identidade,
+  Experiência, Funcionalidades and Termos de Uso are separate cards, each with
+  its own status, Editar / Descartar / Salvar and an "Alterações não salvas"
+  bar. Funcionalidades edits inline (switches) and shows the bar only when
+  changed. Saving is a short local simulation; values live in an in-memory
+  session store until reload.
+- **State vocabulary:** Configurado, Usando padrão, Não configurado, Alterado
+  localmente, Salvando…, Salvo, Erro, Aguardando integração (plus Somente
+  leitura for Geral and Publicado for Termos).
+- **Default vs Whitelabel override.** Every value is a `SettingValue<T>`
+  (`{ value, source: 'default' | 'tenant' }`) shown with a *Padrão global* or
+  *Personalizado* tag; "Usar padrão" / "Restaurar padrão" return to the global
+  default, and a value equal to the default is stored as "using default". No
+  inheritance engine exists; defaults are illustrative constants.
+- **Geral** shows name, status, slug, domain, public URL, prototype ID and the
+  session's last local change. Domain/URL are read-only (copy only); there is no
+  tenant pause or lifecycle change here.
+- **Identidade:** logo and favicon (local preview of a chosen file, type/size
+  checks, nothing uploaded), primary and accent colours (picker + hex, white-text
+  contrast hint) and an illustrative preview.
+- **Experiência:** structured copy only (public name, slogan, institutional
+  message, login message, empty opportunities list, CTA, "Oportunidades" term)
+  with length limits — not a CMS.
+- **Funcionalidades:** only confirmed capabilities — Perfil do investidor,
+  Wallet, Investimento anônimo como padrão, Informações da oportunidade.
+- **Termos de Uso:** current revision (Vigente) visually distinct from previous
+  revisions (Substituída), read-only revision viewer, and a local publish flow
+  (title, content, explicit confirmation). Publishing makes the revision current
+  immediately; **no re-acceptance is requested** (product decision pending).
+  The current revision is shared with Account Control through the same local
+  session store (initially Finapop 4, Loor 2, none for Nova Plataforma). An
+  Investor's accepted revision stays independent and is never changed by publication.
+- **SMTP** appears only as a compact status (Aguardando integração) with a
+  *Gerenciar SMTP* entry point (prototype notice). No credentials, provider or
+  test send; no generic integrations module.
+- **Unsaved-change protection:** a confirmation dialog lists the sections with
+  unsaved edits before switching Whitelabel or following an in-app link; the
+  browser's own prompt covers reload/tab close. Same-document Back/Forward
+  transitions are guarded before the hash switch unmounts the draft; cancelling
+  restores the history entry, while explicit discard resumes the transition.
+- **Intentionally not reproduced from the generated image:** fabricated dates,
+  *Visualizar como tenant*, *Abrir no Admin*, global *Salvar alterações*,
+  Pix / Transferência / Cadastro rápido / Match facial / Oportunidades /
+  Termos customizados toggles, Política de privacidade, Webhooks / API-Chaves /
+  Canais de suporte, Ambiente / URL de callback, editable domains,
+  Controle e segurança / Pausar conta, Pendências de backend, preview modes.
+
+### Whitelabel Settings responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | Context row (back link + description, Whitelabel card); section navigation + legend; two columns [Geral, Identidade] [Experiência, Funcionalidades]; bottom row Termos de Uso (wide) + SMTP. Cards keep their natural height. |
+| 768–1359px | Single column in the same order. |
+| < 768px | Drawer navigation; section navigation wraps; key/value rows stack per card width (container queries); dialogs use stacked actions. Long page titles wrap below 480px. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -305,6 +380,20 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Whitelabel Settings:
+
+- Each section is a labelled `<section>` with an `h2` (focus target of the
+  section navigation, which uses buttons with `aria-current` because the hash is
+  the router). Source tags and on/off state are text, never colour alone.
+- Fields have labels, hints and errors linked via `aria-describedby`; failed
+  saves focus the first invalid field; Editar, Descartar, Salvar, "Usar padrão"
+  and dialogs hand focus to a sensible target instead of dropping it.
+- Switches use `role="switch"` + `aria-checked`, named by the feature label.
+- axe-core 4.x (scratch copy, not a project dependency) reported no violations
+  for view, edit/error, selector, unsaved, publish and revision dialogs at 1440px
+  and the page at 390px; the only finding (open mobile drawer,
+  `aria-allowed-role`, minor) predates this phase.
 
 Whitelabels:
 
@@ -361,11 +450,12 @@ Login:
 ## Out of scope (by design)
 
 Backend integration, authentication, API clients, real routing, tenant switching,
-real search, persistence, whitelabel create/edit flows, the Whitelabels detail tabs
+real search, persistence, whitelabel create/edit flows, real settings
+persistence/inheritance, file uploads, Terms re-acceptance, SMTP management, the Whitelabels detail tabs
 other than "Visão geral", real account pause/reactivate, tenant reassignment,
-Admin provisioning/invitations, RBAC, audit trail, Terms/questionnaire/
-classification editing, other destination module screens (Platform Settings,
-SMTP, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
+Admin provisioning/invitations, RBAC, audit trail, questionnaire/
+classification editing, other destination module screens (global Platform
+Settings, SMTP, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
 KYC, Auditoria), further OriginKit assets, final brand system.
 
 ## Review records
@@ -376,5 +466,6 @@ KYC, Auditoria), further OriginKit assets, final brand system.
 - [Whitelabels V1 review and validation](docs/whitelabels-v1-review.md)
 - [Whitelabels OriginKit mapping and selected visual integration](docs/whitelabels-originkit-mapping.md)
 - [Whitelabel Account Control V1 — frontend review and local QA](docs/whitelabel-account-control-v1.md)
+- [Whitelabel Settings V1 — local implementation and QA](docs/whitelabel-settings-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

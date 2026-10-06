@@ -52,7 +52,8 @@ svg {
 /* App shell views use a dark document surface (no light overscroll). */
 html[data-view='dashboard'] body,
 html[data-view='whitelabels'] body,
-html[data-view='accounts'] body {
+html[data-view='accounts'] body,
+html[data-view='settings'] body {
   background: var(--shell-bg);
   color: var(--text-on-dark);
   color-scheme: dark;

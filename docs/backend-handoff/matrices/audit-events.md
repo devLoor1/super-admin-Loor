@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved account-control prototype `cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a` demonstrates local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its frontend kinds (`paused`, `reactivated`, `transfer_requested`, `created`) and illustrative history are session-only and reset on reload; no Core/Control Plane event is emitted or persisted. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API. No Admin update editor/event flow is prototyped.
+Approved frontend `df87de8e5d3ded2da3915c5de602620c282ab5ba` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its frontend kinds (`paused`, `reactivated`, `transfer_requested`, `created`) and illustrative history are session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save timestamps/notices and Terms history/publication feedback, not durable events. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API. No Admin update editor/event flow is prototyped.
 
 ## Future Super Admin requirements
 
@@ -33,12 +33,14 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | ACCOUNT_WHITELABEL_CHANGED | Authorized reassignment | Source/target tenant IDs and migration operation reference |
 | ADMIN_CREATED | Managed tenant Admin provisioning | Admin/tenant IDs and provisioning mode; no password |
 | ADMIN_UPDATED | Allowed Admin update | Safe changed-field list and permission/scope context |
-| TERMS_PUBLISHED | Tenant revision publication | Revision ID/number, tenant, editor; no full legal content needed |
-| PLATFORM_SETTINGS_UPDATED | Validated configuration update | Page/key, allowed sanitized difference; omit secret fields |
+| TERMS_PUBLISHED | Authorized authoritative tenant revision publication | Core revision ID/number and prior current revision reference, tenant/operator/correlation/result; no full legal content needed |
+| PLATFORM_SETTINGS_UPDATED | Validated Identity/Experience configuration update/reset | Section/key, default-versus-override operation and allowed sanitized difference; tenant/operator/correlation/result; omit secrets |
+| PLATFORM_ASSET_UPDATED | Authorized asset upload/replace/remove or agreed default reset | Tenant/asset ID and type, operation, permitted old/new references and correlation/result; no file bytes or signed-access tokens |
+| PLATFORM_FEATURE_UPDATED | Authorized established capability update/reset | Authoritative flag key, permitted prior/new value/provenance, tenant/operator/correlation/result; not a generic entitlement grant |
 
 Architecture also requires relevant login success/failure, SMTP/gateway changes/tests and authorized Opportunity actions. Event coverage must be completed as those commands are scoped, without adding financial controls through this documentation task.
 
-The prototype's simulated request corresponds only to a future request-stage concept, never proof of `ACCOUNT_WHITELABEL_CHANGED`. `ACCOUNT_PAUSED`, `ACCOUNT_REACTIVATED` and `ADMIN_CREATED` have local UI demonstrations; `ADMIN_UPDATED` remains future-only. Every proposed event remains **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for Control Plane audit; Product still defines event coverage and success/failure guarantees.
+The prototype's simulated request corresponds only to a future request-stage concept, never proof of `ACCOUNT_WHITELABEL_CHANGED`. Account and Settings actions have local UI demonstrations; `ADMIN_UPDATED` remains future-only. Settings feedback does not emit `PLATFORM_SETTINGS_UPDATED`, `PLATFORM_ASSET_UPDATED`, `PLATFORM_FEATURE_UPDATED` or `TERMS_PUBLISHED`. Existing Core `platform_asset.*` and `terms_of_use.publish` writer calls must not be relabeled as delivered Super Admin events. Every proposed event remains **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for Control Plane audit; Product still defines event coverage and success/failure guarantees.
 
 Proposed shared metadata: operator ID, actor type, resource type/ID, tenant ID, action, result, timestamp, correlation ID and reason/operation reference. Sanitized old/new fields, IP and user agent are subject to agreed access/retention policy. Failed and denied attempts need a defined policy; command success/failure must not be conflated.
 

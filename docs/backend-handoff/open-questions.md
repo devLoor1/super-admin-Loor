@@ -2,7 +2,7 @@
 
 This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
 
-Context update: Whitelabel Account Control V1 is **FRONTEND PROTOTYPED** at approved `dev@cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a`. Local read displays, pause/reactivate, tenant-change simulation and Admin creation now demonstrate the UI, not answers to the questions below. Pause enforcement/token revocation/background operations, migration eligibility/history ownership, provisioning/RBAC/audit, Terms reacceptance, global questionnaire/classification governance and feature/module rules remain unresolved. No question is closed by prototype approval or by a local feedback event.
+Context update: Whitelabel Account Control and Whitelabel Settings V1 are **FRONTEND PROTOTYPED** at approved `dev@df87de8e5d3ded2da3915c5de602620c282ab5ba`. Account actions and Settings per-section local editing/default display/assets/features/Terms publication demonstrate the UI, not answers to the questions below. Pause enforcement, migration lineage, provisioning/RBAC/audit, inheritance/asset policy, Terms reacceptance, SMTP ownership, global questionnaire/classification governance and feature/module rules remain unresolved. Local current-Terms coherence across Settings/Account Control is implemented; authoritative synchronization is still a contract question. No question is closed by prototype approval or local feedback.
 
 ## Whitelabel
 
@@ -40,6 +40,7 @@ Context update: Whitelabel Account Control V1 is **FRONTEND PROTOTYPED** at appr
 - **Q-TE-01 — Product:** Do published revisions require existing-user reacceptance? If so, which actors/actions are gated and what remains available before acceptance?
 - **Q-TE-02 — Product and Backend:** Is acceptance limited to Investors or required for Entrepreneurs/Admins too, and what immutable acceptance history/evidence must be retained across revisions and tenant changes?
 - **Q-TE-03 — Product:** Who drafts, approves and publishes tenant Terms, and is the current immediate-publication model sufficient or is a draft/approval workflow required?
+- **Q-TE-04 — Backend with Product approval:** What scoped current/history/publication and acceptance-read contracts expose Core revision IDs, and how do Settings/Account Control reconcile publication, concurrent revisions, freshness and conflicts without changing accepted-revision evidence?
 
 ## Questionnaire
 
@@ -58,6 +59,18 @@ Context update: Whitelabel Account Control V1 is **FRONTEND PROTOTYPED** at appr
 - **Q-FE-01 — Product and Backend:** Which existing settings/flags can Super Admin manage, with what typed validation and tenant-wide effect? Distinguish display preferences from access enforcement.
 - **Q-FE-02 — Product:** Are Aplicações/commercial plans/entitlements in V1, or does scope remain existing settings, Admin menu visibility and owner tools? Advanced commercial flags are deferred in the architecture.
 - **Q-FE-03 — Product and Backend:** How should tenant-level gateway choice/configuration, Opportunity-level PAG credentials and build-time frontend flags be represented without conflating ownership or configured state with health?
+
+The four Settings concepts (Investor Profile, Wallet, anonymous-investment default and Opportunity information) demonstrate availability/default choices only. Q-FE-01 must establish each authoritative flag mapping, affected fields/actions and whether it is visibility, an initial value or access enforcement; their local keys do not settle those semantics. Q-FE-02 remains open; no generic plans/entitlements were added.
+
+## Settings
+
+- **Q-ST-01 — Product and Backend:** What is the global-default versus tenant-override/inheritance policy per setting? Define effective value/provenance, propagation of default changes, explicit reset/removal, equal-to-default overrides and empty/null/false semantics. Who can edit global defaults versus tenant values?
+- **Q-ST-02 — Product and Backend:** Which logo/favicon types, byte/dimension limits, content/SVG validation, storage/delivery access, replacement/removal/default and orphan-cleanup rules are authoritative? Current frontend checks and object URLs are illustrative, not approved Backend limits or storage.
+- **Q-ST-03 — Product and Backend:** Which Identity/Experience keys, formats/lengths and editable fields are allowed? Define section/field validation errors, authorization scope, write atomicity, concurrency/version conflicts, authoritative readback and safe ambiguous-response/retry behavior. General tenant identity/domain/lifecycle stays read-only in this prototype.
+
+## SMTP
+
+- **Q-SM-01 — Product and Backend:** Who owns tenant/environment SMTP configuration and safe status reads, which provider/credential fields and test/send operations belong in the dedicated management scope, and how are secret storage/masking, permissions and durable audit guaranteed? Settings implements only a summary/shortcut; configured is not a delivery-health guarantee.
 
 ## RBAC
 

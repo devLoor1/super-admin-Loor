@@ -2,7 +2,7 @@
 
 ## Approved frontend prototype
 
-Whitelabel Account Control V1 is **FRONTEND PROTOTYPED** at approved `dev@cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a`. Source: `src/features/whitelabel-accounts/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a/src/features/whitelabel-accounts)). Route: `#/whitelabels/:whitelabelId/accounts`, with optional `?tipo=investidores`, `?tipo=empreendedores` or `?tipo=administradores`.
+Whitelabel Account Control V1 was approved at `cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a` and remains **FRONTEND PROTOTYPED** in current `dev@df87de8e5d3ded2da3915c5de602620c282ab5ba`, with the Terms coherence update noted below. Source: `src/features/whitelabel-accounts/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/df87de8e5d3ded2da3915c5de602620c282ab5ba/src/features/whitelabel-accounts)). Route: `#/whitelabels/:whitelabelId/accounts`, with optional `?tipo=investidores`, `?tipo=empreendedores` or `?tipo=administradores`.
 
 The UI includes Whitelabel context, three account tabs, search, separate access/business filters, sorting/paging, account detail, account-specific states, dependency summaries, Terms/profile display, pause/reactivate, Change Whitelabel simulation, local Admin creation and local history/feedback. Responsive and accessible interaction states were reviewed, including keyboard/focus/dialog behavior and reduced-motion/static fallbacks. All data/actions are illustrative and local; reload resets them. No authentication, business API, authoritative persistence or financial mutation exists in this prototype.
 
@@ -62,7 +62,7 @@ There is no real provisioning, invitation/email, credential generation or effect
 
 ## Terms and Investor profile display
 
-Investor detail prototypes accepted revision, current tenant revision and acceptance date, including missing/outdated states. These are local illustrative values. **CORE EXISTS** for current tenant Terms/Investor registration acceptance; **CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for authoritative reads. No publisher or forced reacceptance is implemented; coverage/governance remains [Q-TE-01–03](open-questions.md#terms).
+Investor detail prototypes accepted revision, current tenant revision and acceptance date, including missing/outdated states. At the current approved frontend SHA it subscribes to the [Settings in-memory store](05-whitelabel-settings.md#terms-coherence). Local publication updates the current revision in both screens, but leaves accepted revision/date unchanged; reload restores seeds. These are local illustrative values. **CORE EXISTS** for current tenant Terms/Investor registration acceptance; **CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for authoritative reads. Settings has a local publication prototype, not a Super Admin Backend publisher or forced reacceptance. Coverage/governance and authoritative synchronization remain [Q-TE-01–04](open-questions.md#terms).
 
 Profile detail displays current classification and questionnaire completed/pending state, with null handling. No questionnaire, weights/ranges, classification override or per-Whitelabel editor exists. Questionnaire/classification remain global in the audited Core; local display does not imply persisted raw answers or answer-version history. Safe read exposure is pending; governance/versioning stays [Q-QU-01–03](open-questions.md#questionnaire) and [Q-CL-01–03](open-questions.md#classification).
 

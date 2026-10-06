@@ -1,6 +1,6 @@
 # Current Frontend Scope
 
-Baseline: `dev@cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a`. Login V1, Dashboard V1, Whitelabels V1 and Whitelabel Account Control V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. New account-control source links below are pinned to that approved commit, not assumed present on this documentation branch.
+Baseline: `dev@df87de8e5d3ded2da3915c5de602620c282ab5ba`. Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1 and Whitelabel Settings V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. Earlier account-control links retain their phase commit; Settings and changed navigation/readback links below use the current approved commit. Frontend implementation is not merged into this documentation branch.
 
 ## Login V1
 
@@ -24,7 +24,7 @@ Sources: [WhitelabelsPage.tsx](../../src/features/whitelabels/WhitelabelsPage.ts
 
 Purpose: tenant discovery and selected-tenant detail. Local behavior includes accent/case/trim-safe name/domain/slug search, status filtering, sort, single-row selection, empty/reset states, tab navigation and clipboard copying. Three illustrative records drive the UI; counts/dates are null. Pagination is a one-page placeholder with previous/next disabled.
 
-Only the overview tab contains detail. Administradores, Aplicações and Integrações remain placeholder detail tabs. The Contas quick action opens the selected tenant's account-control prototype; the Administradores quick action opens the same route with `?tipo=administradores`. Create/edit/overflow actions and configuration/indicator shortcuts still do not persist or open implemented management screens. Terms is mapped future tenant-management scope, not a Whitelabel tab or editor.
+Only the overview tab contains detail. Administradores, Aplicações and Integrações remain placeholder detail tabs. The Contas quick action opens the selected tenant's account-control prototype; the Administradores quick action opens the same route with `?tipo=administradores`. Configurações now opens the selected tenant's Settings prototype. Create/edit/overflow actions and indicator shortcuts remain notices without persistence. Terms is a Settings section, not an additional Whitelabel detail tab.
 
 Expected integration is a real tenant list/detail, agreed status vocabulary, authorized actions, server-side filtering/pagination and tenant-specific administrative/configuration reads. See [Whitelabels](03-whitelabels.md).
 
@@ -42,8 +42,16 @@ Illustrative records and action feedback live in frontend memory and reset on re
 
 Expected integration remains authorized Core-backed reads and commands through Control Plane, with durable audit/readback and explicit Product policy. See [account control](04-whitelabel-account-control.md).
 
-## Navigation and account control boundary
+## Whitelabel Settings V1
 
-[App.tsx](https://github.com/devLoor1/super-admin-Loor/blob/cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a/src/app/App.tsx) selects `#/dashboard`, `#/whitelabels` and the account-control route above; other hashes show Login. Direct hash navigation is explicitly not an authentication guard. [navigation.ts](https://github.com/devLoor1/super-admin-Loor/blob/cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a/src/components/shell/navigation.ts) preserves the approved top-level shell, including Auditoria, and adds Whitelabels / Contas under Plataformas. Context-specific links retain the displayed tenant; unimplemented destinations remain notices rather than fabricated screens.
+Source: `src/features/whitelabel-settings/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/df87de8e5d3ded2da3915c5de602620c282ab5ba/src/features/whitelabel-settings)); route: `#/whitelabels/:whitelabelId/settings`. See [Settings handoff](05-whitelabel-settings.md) and the [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/df87de8e5d3ded2da3915c5de602620c282ab5ba/docs/whitelabel-settings-v1.md) for phase evidence, not a Backend contract or a deployment claim.
 
-Account control is now prototyped, not Backend-integrated. Questionnaire editing, classification governance, feature entitlement management and audit management still have no implemented management screens. Investor profile display is read-only and global in the current Core; no per-Whitelabel editor exists. No visual-library implementation details change these functional boundaries.
+General tenant context is read-only. Identity offers simulated logo/favicon selection, primary/accent colors and a local preview. Experience offers structured text/default-versus-override display. Features offers only four existing capability concepts, not plans/entitlements. Terms offers current/history/local publication; SMTP is summary/shortcut only. Each editable section has local drafts, validation, save/discard and unsaved-change protection, including in-app Back/Forward and native beforeunload behavior.
+
+Settings saves survive in-app navigation only and reset on reload; selected assets are local object URLs, never uploads. Account Control reads the current Terms revision from the same in-memory Settings store, preserving the illustrative Investor's accepted revision/date. No authoritative legal publication, reacceptance, business API, authentication or durable audit occurs.
+
+## Navigation and management boundary
+
+[App.tsx](https://github.com/devLoor1/super-admin-Loor/blob/df87de8e5d3ded2da3915c5de602620c282ab5ba/src/app/App.tsx) selects `#/dashboard`, `#/whitelabels` and the account-control/Settings routes above; other hashes show Login. Direct hash navigation is explicitly not an authentication guard. [navigation.ts](https://github.com/devLoor1/super-admin-Loor/blob/df87de8e5d3ded2da3915c5de602620c282ab5ba/src/components/shell/navigation.ts) preserves the approved top-level shell, including Auditoria, and adds Whitelabels / Contas / Config. do Whitelabel under Plataformas. The tenant Settings destination is distinct from the global utility Configurações, which remains unimplemented. Context-specific links retain the displayed tenant; unimplemented destinations remain notices.
+
+Account Control and Settings are prototyped, not Backend-integrated. Questionnaire editing, classification governance, generic feature entitlement management and audit management still have no implemented management screens. Investor profile display is read-only and global in the audited Core; the Settings capability switch is not a per-Whitelabel catalog/classification editor. No visual-library implementation details change these functional boundaries.

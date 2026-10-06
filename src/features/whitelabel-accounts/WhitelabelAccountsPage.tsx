@@ -65,6 +65,7 @@ export function WhitelabelAccountsPage({ whitelabelId, initialType }: { whitelab
       subNavHrefs={{
         contas: `#/whitelabels/${whitelabelId}/accounts`,
         'whitelabel-settings': `#/whitelabels/${whitelabelId}/settings`,
+        'whitelabel-emails': `#/whitelabels/${whitelabelId}/emails`,
       }}
       title="Contas do Whitelabel"
       location="Contas"

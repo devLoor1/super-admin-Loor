@@ -1,0 +1,125 @@
+/*
+ * Whitelabel E-mails V1. Desktop: context row, then SMTP + Envios automáticos
+ * (main column) beside Templates + session activity (≈400px aside), as in the
+ * approved direction. Below 1360px everything stacks in reading order.
+ * The Dot Matrix background is the shared Whitelabels implementation.
+ */
+.page {
+  position: relative;
+  isolation: isolate;
+  padding-top: 14px;
+}
+
+.layout {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- Context ---------- */
+
+.context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.intro {
+  min-width: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -4px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text-on-dark);
+}
+
+.back:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.subtitle {
+  max-width: 720px;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--text-on-dark-secondary);
+}
+
+/* ---------- Cards ---------- */
+
+.content {
+  display: grid;
+  min-width: 0;
+}
+
+.content:focus {
+  outline: none;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 400px);
+  align-items: start;
+  gap: 14px 15px;
+  min-width: 0;
+}
+
+.main,
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.notFound {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  margin-top: 14px;
+  padding: 32px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.inlineLink {
+  color: #b9b4ff;
+}
+
+@media (max-width: 1359px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding-top: 6px;
+  }
+
+  .context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subtitle {
+    font-size: 13px;
+    line-height: 19px;
+  }
+}

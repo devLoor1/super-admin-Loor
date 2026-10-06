@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Building2 } from 'lucide-react'
-import { registerPrototypeNavigationGuard } from '../../app/prototypeNavigation'
+import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
 import { AppShell } from '../../components/shell/AppShell'
 import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
 import { DetailTransition } from '../../components/ui/DetailTransition'
@@ -22,7 +22,6 @@ import styles from './WhitelabelSettingsPage.module.css'
 
 const settingsHref = (id: string) => `#/whitelabels/${id}/settings`
 
-type Pending = { hash: string; destination: string; resume?: () => void }
 type TermsDialog = { kind: 'view'; revision: TermsRevision } | { kind: 'publish' } | null
 
 /**
@@ -40,6 +39,7 @@ export function WhitelabelSettingsPage({ whitelabelId }: { whitelabelId: string 
       subNavHrefs={{
         contas: `#/whitelabels/${whitelabelId}/accounts`,
         'whitelabel-settings': settingsHref(whitelabelId),
+        'whitelabel-emails': `#/whitelabels/${whitelabelId}/emails`,
       }}
       title="Configurações do Whitelabel"
       location="Configurações"
@@ -75,7 +75,7 @@ export function WhitelabelSettingsPage({ whitelabelId }: { whitelabelId: string 
 function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
   const notify = usePrototypeNotice()
   const [dirty, setDirty] = useState<Partial<Record<SectionKey, boolean>>>({})
-  const [pending, setPending] = useState<Pending | null>(null)
+  const [draftReset, setDraftReset] = useState(0)
   const [termsDialog, setTermsDialog] = useState<TermsDialog>(null)
   const [activeSection, setActiveSection] = useState<SectionKey>('general')
   // Id of the Whitelabel whose sections are mounted (lags during the switch transition).
@@ -83,55 +83,17 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
 
   const dirtySections = SECTIONS.filter((section) => dirty[section.key])
   const hasUnsaved = dirtySections.length > 0
-  const hasUnsavedRef = useRef(hasUnsaved)
-  useEffect(() => {
-    hasUnsavedRef.current = hasUnsaved
-  })
-
   const onDirtyChange = useCallback((section: SectionKey, value: boolean) => {
     setDirty((current) => (Boolean(current[section]) === value ? current : { ...current, [section]: value }))
   }, [])
   const onTermsDraftChange = useCallback((value: boolean) => onDirtyChange('terms', value), [onDirtyChange])
 
-  /** Navigates now, or asks first when any section holds unsaved edits. */
-  const requestNavigation = useCallback((hash: string, destination: string) => {
-    if (hasUnsavedRef.current) setPending({ hash, destination })
-    else window.location.hash = hash
-  }, [])
-
-  useEffect(() => registerPrototypeNavigationGuard(({ hash, resume }) => {
-    if (!hasUnsavedRef.current) return true
-    setPending({ hash, resume, destination: 'sair desta página pelo histórico do navegador' })
-    return false
-  }), [])
-
-  // Unsaved-change protection for in-app links (sidebar, breadcrumbs, back
-  // link) and for reload / tab close. History is guarded at the hash switch;
-  // the Whitelabel selector asks directly.
-  useEffect(() => {
-    const onClick = (event: MouseEvent) => {
-      if (!hasUnsavedRef.current || event.defaultPrevented || event.button !== 0) return
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-      const link = (event.target as Element | null)?.closest?.('a[href^="#/"]')
-      if (!link) return
-      const hash = link.getAttribute('href') ?? ''
-      if (hash === window.location.hash) return
-      event.preventDefault()
-      event.stopPropagation()
-      setPending({ hash, destination: 'sair desta página' })
-    }
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!hasUnsavedRef.current) return
-      event.preventDefault()
-      event.returnValue = ''
-    }
-    document.addEventListener('click', onClick, true)
-    window.addEventListener('beforeunload', onBeforeUnload)
-    return () => {
-      document.removeEventListener('click', onClick, true)
-      window.removeEventListener('beforeunload', onBeforeUnload)
-    }
-  }, [])
+  // Shared guard: in-app links, Back/Forward, reload/tab close and the selector.
+  const { pending, requestNavigation, stay, discardAndContinue } = useUnsavedChangesGuard(hasUnsaved, () => {
+    setDirty({})
+    setTermsDialog(null)
+    setDraftReset((value) => value + 1)
+  })
 
   // Section navigation: highlight the section currently in view. After a click
   // the chosen section stays highlighted until the user scrolls again (the
@@ -190,16 +152,6 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
     } catch {
       notify(`Não foi possível copiar ${what} automaticamente. Valor: ${value}`)
     }
-  }
-
-  function discardAndContinue() {
-    if (!pending) return
-    const { hash, resume } = pending
-    setPending(null)
-    setDirty({})
-    hasUnsavedRef.current = false
-    if (resume) resume()
-    else window.location.hash = hash
   }
 
   return (
@@ -268,7 +220,7 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
           labelledBy="whitelabel-settings-label"
           onDisplay={setDisplayedId}
         >
-          {(displayed) => <SettingsSections key={displayed.id} whitelabel={displayed} onDirtyChange={onDirtyChange} onCopy={copy} onTerms={setTermsDialog} />}
+          {(displayed) => <SettingsSections key={`${displayed.id}:${draftReset}`} whitelabel={displayed} onDirtyChange={onDirtyChange} onCopy={copy} onTerms={setTermsDialog} />}
         </DetailTransition>
       </div>
 
@@ -276,7 +228,7 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
         <UnsavedChangesDialog
           sections={dirtySections.map((section) => section.label)}
           destination={pending.destination}
-          onStay={() => setPending(null)}
+          onStay={stay}
           onDiscard={discardAndContinue}
         />
       ) : null}
@@ -360,12 +312,7 @@ function SettingsSections({
           onView={(revision) => onTerms({ kind: 'view', revision })}
           onPublish={() => onTerms({ kind: 'publish' })}
         />
-        <SmtpSummary
-          status={settings.integrations.smtp}
-          onManage={() =>
-            notify('Gerenciamento de SMTP: próximo bloco do protótipo. Nenhuma credencial é exibida ou editada aqui.')
-          }
-        />
+        <SmtpSummary whitelabelId={whitelabel.id} />
       </div>
     </>
   )

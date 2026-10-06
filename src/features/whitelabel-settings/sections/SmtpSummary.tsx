@@ -1,26 +1,28 @@
 import { Mail, Settings2 } from 'lucide-react'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
+import outline from '../../../components/ui/OutlineButton.module.css'
+import { useWhitelabelEmailSettings } from '../../whitelabel-emails/emailStore'
 import { SettingsSection } from '../SettingsSection'
-import { INTEGRATION_META, type IntegrationStatus } from '../settingsModel'
 import styles from './SmtpSummary.module.css'
 
 /**
- * Compact, read-only SMTP status with an entry point to its own management
- * flow (next prototype block). No credentials, provider or test send here.
+ * Compact, read-only SMTP status. Configuration, the simulated test send and
+ * automatic e-mails live in E-mails (`?section=smtp` focuses its SMTP card).
+ * No credentials are shown here.
  */
-export function SmtpSummary({ status, onManage }: { status: IntegrationStatus; onManage: () => void }) {
-  const meta = INTEGRATION_META[status]
+export function SmtpSummary({ whitelabelId }: { whitelabelId: string }) {
+  const smtp = useWhitelabelEmailSettings(whitelabelId)?.smtp
+  const configured = smtp?.status === 'configured'
   return (
     <SettingsSection
       id="settings-smtp"
       title="E-mail (SMTP)"
       subtitle="Resumo do envio de e-mails transacionais deste Whitelabel."
-      status={status}
+      status={configured ? 'configured' : 'not_configured'}
       headerAction={
-        <OutlineButton className={styles.manage} onClick={onManage}>
+        <a className={`${outline.button} ${styles.manage}`} href={`#/whitelabels/${whitelabelId}/emails?section=smtp`}>
           <Settings2 size={15} strokeWidth={1.8} aria-hidden="true" />
           Gerenciar SMTP
-        </OutlineButton>
+        </a>
       }
     >
       <div className={styles.row}>
@@ -28,10 +30,12 @@ export function SmtpSummary({ status, onManage }: { status: IntegrationStatus; o
           <Mail size={17} strokeWidth={1.7} />
         </span>
         <div className={styles.text}>
-          <p className={styles.name}>Servidor de envio: {meta.label.toLowerCase()}</p>
+          <p className={styles.name}>
+            {configured ? `Remetente: ${smtp.senderName} · ${smtp.senderEmail}` : 'Servidor de envio não configurado'}
+          </p>
           <p className={styles.description}>
-            O status de SMTP deste Whitelabel ainda não está conectado ao protótipo. Credenciais, provedor e testes de
-            envio ficam no gerenciamento de SMTP.
+            Servidor, credenciais, envio de teste e e-mails automáticos são gerenciados em E-mails. A conexão real
+            aguarda integração com o Backend.
           </p>
         </div>
       </div>

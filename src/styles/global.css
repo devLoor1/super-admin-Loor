@@ -53,7 +53,8 @@ svg {
 html[data-view='dashboard'] body,
 html[data-view='whitelabels'] body,
 html[data-view='accounts'] body,
-html[data-view='settings'] body {
+html[data-view='settings'] body,
+html[data-view='emails'] body {
   background: var(--shell-bg);
   color: var(--text-on-dark);
   color-scheme: dark;

@@ -3,14 +3,15 @@ import { sameValue, type SectionKey, type SectionPhase } from './settingsModel'
 
 export type FieldErrors = Record<string, string>
 
-type Options<T> = {
-  section: SectionKey
+type Options<T, K extends string> = {
+  /** Section id reported to the page's unsaved-change tracking. */
+  section: K
   label: string
   /** Last saved (local) value of the section. */
   saved: T
   onCommit: (value: T) => void
   validate?: (draft: T) => FieldErrors
-  onDirtyChange: (section: SectionKey, dirty: boolean) => void
+  onDirtyChange: (section: K, dirty: boolean) => void
   notify: (message: string) => void
   /** Sections without an edit mode (e.g. feature switches) always hold a draft. */
   alwaysEditing?: boolean
@@ -24,7 +25,7 @@ const SAVED_VISIBLE = 2600
  * saving → saved, plus discard. "Saving" is a short local simulation; nothing
  * is sent anywhere and nothing survives a reload.
  */
-export function useSectionEditor<T>({
+export function useSectionEditor<T, K extends string = SectionKey>({
   section,
   label,
   saved,
@@ -33,7 +34,7 @@ export function useSectionEditor<T>({
   onDirtyChange,
   notify,
   alwaysEditing = false,
-}: Options<T>) {
+}: Options<T, K>) {
   const [editing, setEditing] = useState(alwaysEditing)
   const [draft, setDraft] = useState<T>(saved)
   const [phase, setPhase] = useState<SectionPhase>('idle')
@@ -94,6 +95,9 @@ export function useSectionEditor<T>({
     timers.current.push(
       window.setTimeout(() => {
         onCommit(value)
+        // Drop the submitted draft outside always-on sections: it may hold
+        // write-only input (e.g. a new SMTP password) that must not linger.
+        setDraft(alwaysEditing ? value : saved)
         setEditing(alwaysEditing)
         setPhase('saved')
         notify(`${label}: alterações salvas localmente neste protótipo.`)

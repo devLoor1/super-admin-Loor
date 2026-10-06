@@ -48,3 +48,7 @@
   line-height: 17px;
   color: var(--text-on-dark-muted);
 }
+
+a.manage {
+  text-decoration: none;
+}

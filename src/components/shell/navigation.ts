@@ -7,6 +7,7 @@ import {
   FileSearch,
   House,
   LayoutGrid,
+  Mail,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
@@ -37,13 +38,14 @@ export const PRIMARY_NAV: NavItem[] = [
     label: 'Plataformas',
     icon: LayoutGrid,
     href: '#/whitelabels',
-    // Plataformas is the parent context of the Whitelabels, Contas and Configurações screens.
+    // Plataformas is the parent context of the Whitelabels, Contas, Config. do Whitelabel and E-mails screens.
     children: [
       { id: 'whitelabels', label: 'Whitelabels', icon: Building2, href: '#/whitelabels' },
-      // Contas and Configurações are tenant-first: by default they open the first
+      // Contas, Config. do Whitelabel and E-mails are tenant-first: by default they open the first
       // illustrative Whitelabel; pages pass `subNavHrefs` for the current one.
       { id: 'contas', label: 'Contas', icon: UsersRound, href: '#/whitelabels/wl_proto_01/accounts' },
       { id: 'whitelabel-settings', label: 'Config. do Whitelabel', icon: SlidersHorizontal, href: '#/whitelabels/wl_proto_01/settings' },
+      { id: 'whitelabel-emails', label: 'E-mails', icon: Mail, href: '#/whitelabels/wl_proto_01/emails' },
     ],
   },
   { id: 'operacao', label: 'Operação', icon: Box },

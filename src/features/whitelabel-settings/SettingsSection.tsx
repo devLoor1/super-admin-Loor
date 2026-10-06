@@ -19,12 +19,14 @@ type SettingsSectionProps = {
   id: string
   title: string
   subtitle: string
-  /** Resting status (Configurado, Usando padrão…); local edit states take precedence. */
-  status: SectionStatus
+  /** Resting status (Configurado, Usando padrão…); local edit states take precedence. Omit for no badge. */
+  status?: SectionStatus
   editor?: EditorState
   /** Sections whose controls are always live (no "Editar" button). */
   inlineEditing?: boolean
   editLabel?: string
+  /** Label of the bar's save button (default "Salvar"). */
+  saveLabel?: string
   headerAction?: ReactNode
   editButtonRef?: Ref<HTMLButtonElement>
   className?: string
@@ -44,13 +46,13 @@ export function SettingsSection({
   editor,
   inlineEditing = false,
   editLabel = 'Editar',
+  saveLabel = 'Salvar',
   headerAction,
   editButtonRef,
   className,
   children,
 }: SettingsSectionProps) {
-  const resolved = sectionStatus(status, editor)
-  const meta = SECTION_STATUS_META[resolved]
+  const meta = status ? SECTION_STATUS_META[sectionStatus(status, editor)] : null
   const titleId = `${id}-title`
   const showBar = editor && (editor.editing && (!inlineEditing || editor.dirty || editor.phase === 'saving'))
   const sectionRef = useRef<HTMLElement>(null)
@@ -85,7 +87,7 @@ export function SettingsSection({
             <h2 id={titleId} className={styles.title} tabIndex={-1}>
               {title}
             </h2>
-            <StatusPill tone={meta.tone} label={meta.label} />
+            {meta ? <StatusPill tone={meta.tone} label={meta.label} /> : null}
           </div>
           <p className={styles.subtitle}>{subtitle}</p>
         </div>
@@ -136,7 +138,7 @@ export function SettingsSection({
               onClick={editor.save}
               disabled={!editor.dirty || editor.phase === 'saving'}
             >
-              Salvar
+              {saveLabel}
               <span className="visually-hidden"> {title}</span>
             </PrimaryButton>
           </div>

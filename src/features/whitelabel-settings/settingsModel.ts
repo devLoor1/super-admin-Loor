@@ -17,8 +17,6 @@ export type SettingValue<T> = { value: T; source: ValueSource }
 /** A locally chosen file (object URL) or a bundled illustrative asset. Never uploaded. */
 export type AssetRef = { url: string; name: string; local: boolean }
 
-export type IntegrationStatus = 'configured' | 'not_configured' | 'awaiting_integration'
-
 export type IdentitySettings = {
   logo: SettingValue<AssetRef | null>
   favicon: SettingValue<AssetRef | null>
@@ -60,7 +58,6 @@ export type WhitelabelSettings = {
   experience: ExperienceSettings
   features: FeatureSettings
   terms: TermsSettings
-  integrations: { smtp: IntegrationStatus }
   /** Last local save in this session (null → none). */
   lastLocalChange: string | null
 }
@@ -128,12 +125,6 @@ export const FEATURES: { key: FeatureKey; label: string; description: string }[]
     description: 'Exibe informações complementares das oportunidades aos investidores.',
   },
 ]
-
-export const INTEGRATION_META: Record<IntegrationStatus, { label: string; tone: StatusTone }> = {
-  configured: { label: 'Configurado', tone: 'success' },
-  not_configured: { label: 'Não configurado', tone: 'muted' },
-  awaiting_integration: { label: 'Aguardando integração', tone: 'neutral' },
-}
 
 /* ---------- Section status ---------- */
 

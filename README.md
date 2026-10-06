@@ -2,8 +2,9 @@
 
 Visual prototype of the **Super Admin**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
-**Whitelabel Account Control V1** (Contas do Whitelabel) and **Whitelabel
-Settings V1** (Configurações do Whitelabel). Frontend only.
+**Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
+Settings V1** (Configurações do Whitelabel) and **Whitelabel E-mails V1**.
+Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -15,6 +16,9 @@ Settings V1** (Configurações do Whitelabel). Frontend only.
 > Admin form only change local state — **Backend: implementation pending**.
 > Configurações uses illustrative per-tenant settings; every section save and
 > the Terms publication are local to the browser session (lost on reload).
+> E-mails uses illustrative SMTP values (reserved example domains) and event
+> preferences; saves are local, the test send is simulated and **no e-mail is
+> ever sent**. The SMTP password is write-only and never stored or shown.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -23,15 +27,18 @@ Settings V1** (Configurações do Whitelabel). Frontend only.
 | Whitelabels V1 | `http://localhost:5173/#/whitelabels` | [`docs/reference/super-admin-whitelabels-approved.png`](docs/reference/super-admin-whitelabels-approved.png) |
 | Whitelabel Account Control V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/accounts` | [`docs/reference/super-admin-whitelabel-account-control-approved.png`](docs/reference/super-admin-whitelabel-account-control-approved.png) |
 | Whitelabel Settings V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/settings` | [`docs/reference/super-admin-whitelabel-settings-approved.png`](docs/reference/super-admin-whitelabel-settings-approved.png) (visual direction only) |
+| Whitelabel E-mails V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/emails` | [`docs/reference/super-admin-whitelabel-emails-approved.png`](docs/reference/super-admin-whitelabel-emails-approved.png) (visual direction only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
 In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
-is active, lists its screens: **Whitelabels**, **Contas** and **Config. do Whitelabel**.
-The accounts route is `#/whitelabels/:whitelabelId/accounts` with an optional
-`?tipo=investidores|empreendedores|administradores`; the settings route is
-`#/whitelabels/:whitelabelId/settings`. Within Contas and Configurações, the
-sidebar destinations preserve the displayed Whitelabel.
+is active, lists its screens: **Whitelabels**, **Contas**, **Config. do Whitelabel**
+and **E-mails**. The accounts route is `#/whitelabels/:whitelabelId/accounts` with an
+optional `?tipo=investidores|empreendedores|administradores`; the settings route is
+`#/whitelabels/:whitelabelId/settings`; the e-mails route is
+`#/whitelabels/:whitelabelId/emails` with an optional `?section=smtp|envios|templates`
+that focuses that card. Within the tenant screens, the sidebar destinations
+preserve the displayed Whitelabel.
 
 ---
 
@@ -71,7 +78,10 @@ handle panel-level responsiveness.
 src/
   main.tsx                          entry — renders <App />
   app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
-                                    "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings", else login
+                                    "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
+                                    "#/whitelabels/:id/emails[?section=…]", else login
+  app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
+  app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
     tokens.css                      prototype visual tokens (login + dark app shell)
     global.css                      reset + base typography
@@ -137,6 +147,13 @@ src/
       settingsStore.ts              in-memory session store (survives in-app navigation, not reload)
       sections/                     Geral, Identidade, Experiência, Funcionalidades, Termos de Uso, SMTP summary
       dialogs/                      view revision, publish revision, unsaved changes
+    whitelabel-emails/
+      WhitelabelEmailsPage.tsx      page layout, tenant context, `?section=` focus, shared unsaved guard
+      emailModel.ts                 SMTP / event / template types, vocabulary, validation helpers
+      prototypeEmails.ts            illustrative SMTP + event preferences per Whitelabel (no secrets)
+      emailStore.ts                 in-memory session store + session-only activity feed
+      sections/                     SMTP (with simulated test send), Envios automáticos, Templates summary, session activity
+      dialogs/                      test-send confirmation
 docs/reference/                     approved concept images
 ```
 
@@ -348,9 +365,9 @@ review record for scope, evidence and fallback checks.
   The current revision is shared with Account Control through the same local
   session store (initially Finapop 4, Loor 2, none for Nova Plataforma). An
   Investor's accepted revision stays independent and is never changed by publication.
-- **SMTP** appears only as a compact status (Aguardando integração) with a
-  *Gerenciar SMTP* entry point (prototype notice). No credentials, provider or
-  test send; no generic integrations module.
+- **SMTP** appears only as a compact status (from the E-mails session store)
+  with a *Gerenciar SMTP* link to `#/whitelabels/:id/emails?section=smtp`. No
+  credentials, provider or test send here; no generic integrations module.
 - **Unsaved-change protection:** a confirmation dialog lists the sections with
   unsaved edits before switching Whitelabel or following an in-app link; the
   browser's own prompt covers reload/tab close. Same-document Back/Forward
@@ -371,6 +388,57 @@ review record for scope, evidence and fallback checks.
 | 768–1359px | Single column in the same order. |
 | < 768px | Drawer navigation; section navigation wraps; key/value rows stack per card width (container queries); dialogs use stacked actions. Long page titles wrap below 480px. |
 
+## Whitelabel E-mails V1 — decisions
+
+- **Placement.** Fourth Plataformas screen (`E-mails`); no new top-level domain.
+  Always tenant-scoped (reused Whitelabel context card). The Config. do
+  Whitelabel SMTP shortcut opens it focused on the SMTP card.
+- **Three separate concepts.** SMTP = how the Whitelabel sends; Envios
+  automáticos = when the platform sends each e-mail; Templates = what is sent
+  (summary + entry point only, no editor, no counts).
+- **SMTP:** host, port, security (STARTTLS / SSL-TLS), user, password,
+  sender e-mail and display name. Local Editar / Descartar / Salvar with
+  frontend validation only (required fields, host format, port 1–65535,
+  e-mail format); no connectivity check on save. States: Configurado, Não
+  configurado, Alterado localmente, Salvando…, Salvo, Erro, plus "Conexão real:
+  Aguardando integração".
+- **Secret handling.** The password is write-only: the model only keeps
+  `secretConfigured`; view mode shows a fixed mask + "Configurada"; edit mode
+  offers an empty "Nova senha" field (no reveal toggle). The typed value lives
+  only in the edit draft and is dropped on save/discard; it never reaches the
+  store, the activity feed, notices or logs.
+- **Test send:** destination validation → confirmation dialog (states that no
+  e-mail is sent) → loading → simulated success. Uses the saved configuration
+  only; blocked while SMTP is unconfigured or being edited. No request is made.
+- **Automatic events** (local switches, section-level Salvar alterações /
+  Descartar, consistent with Settings): Investimento em Equity and Investimento
+  em Debt are **Product requirements**, independently configurable, Backend
+  pending until validated. Cadastro concluído, Recuperação de senha, Conta
+  aprovada and Termos atualizados are **illustrative** event concepts with no
+  confirmed Backend flag. Categories are UI labels only. Disabling password
+  recovery shows a risk note; with SMTP unconfigured the section warns that
+  nothing would be sent.
+- **Session activity** lists only this session's local actions (SMTP saved,
+  simulated test, events enabled/disabled) with local times — explicitly not an
+  audit trail; never contains secrets.
+- **Shared pieces:** the unsaved-change guard from Settings is now
+  `useUnsavedChangesGuard` (used by both pages); `SettingsSection` gained an
+  optional badge and `saveLabel`; `useSectionEditor` accepts other section keys
+  and clears submitted drafts after save.
+- **Intentionally not reproduced from the generated image:** provider values
+  presented as real (`smtp.sendgrid.com`), "12 templates / 6 tipos", dates and
+  "Última edição por", fabricated "Últimas alterações" history, *Visualizar como
+  tenant*, *Abrir no Admin*, password reveal (eye) button, per-row "⋯" menus,
+  slug / "ID do Whitelabel" header values not in the dataset.
+
+### Whitelabel E-mails responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | Context row; main column SMTP + Envios automáticos (table-like rows); aside (340–400px) Templates + Atividade nesta sessão. |
+| 768–1359px | Single column: SMTP, Envios automáticos, Templates, Atividade. |
+| < 768px | Drawer navigation; SMTP fields stack; each event row shows name, description, then category + switch (usable at 320px); dialogs use stacked actions. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -380,6 +448,20 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Whitelabel E-mails:
+
+- SMTP fields have labels, hints and errors via `aria-describedby`; failed saves
+  focus the first invalid field. The password input is `type="password"` with
+  `autocomplete="new-password"`; the masked value is announced as "Oculta".
+- Event switches are named by the event and described by its trigger; on/off,
+  category and Backend status are text. Equity and Debt are separate controls.
+- The test result is announced through `role="status"`; the send button keeps
+  focus while simulating (`aria-disabled`). Dialogs reuse `Dialog` (focus
+  return, Escape).
+- axe-core 4.x (scratch copy) reported no violations for view, edit/errors,
+  dirty events, test error/dialog/result and unsaved dialog at 1440px, and the
+  page at 390px and 320px.
 
 Whitelabel Settings:
 
@@ -451,11 +533,12 @@ Login:
 
 Backend integration, authentication, API clients, real routing, tenant switching,
 real search, persistence, whitelabel create/edit flows, real settings
-persistence/inheritance, file uploads, Terms re-acceptance, SMTP management, the Whitelabels detail tabs
+persistence/inheritance, file uploads, Terms re-acceptance, real SMTP connectivity or
+e-mail sending, secret storage, template editing, delivery logs/analytics, the Whitelabels detail tabs
 other than "Visão geral", real account pause/reactivate, tenant reassignment,
 Admin provisioning/invitations, RBAC, audit trail, questionnaire/
 classification editing, other destination module screens (global Platform
-Settings, SMTP, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
+Settings, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
 KYC, Auditoria), further OriginKit assets, final brand system.
 
 ## Review records
@@ -467,5 +550,6 @@ KYC, Auditoria), further OriginKit assets, final brand system.
 - [Whitelabels OriginKit mapping and selected visual integration](docs/whitelabels-originkit-mapping.md)
 - [Whitelabel Account Control V1 — frontend review and local QA](docs/whitelabel-account-control-v1.md)
 - [Whitelabel Settings V1 — local implementation and QA](docs/whitelabel-settings-v1.md)
+- [Whitelabel E-mails V1 — local implementation and QA](docs/whitelabel-emails-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

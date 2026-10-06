@@ -109,7 +109,6 @@ export const PROTOTYPE_SETTINGS: Record<string, WhitelabelSettings> = {
         '2025-01-15T10:00:00-03:00',
       ]),
     ),
-    integrations: { smtp: 'awaiting_integration' },
     lastLocalChange: null,
   },
   wl_proto_02: {
@@ -123,7 +122,6 @@ export const PROTOTYPE_SETTINGS: Record<string, WhitelabelSettings> = {
     experience: experience('Loor', { ctaLabel: 'Explorar oportunidades' }),
     features: features({ walletVisibility: false }),
     terms: split(revisions('wl_proto_02', 'Loor', ['2026-05-18T16:12:00-03:00', '2026-02-03T10:30:00-03:00'])),
-    integrations: { smtp: 'awaiting_integration' },
     lastLocalChange: null,
   },
   wl_proto_03: {
@@ -137,7 +135,6 @@ export const PROTOTYPE_SETTINGS: Record<string, WhitelabelSettings> = {
     experience: experience('Nova Plataforma', {}),
     features: features({}),
     terms: { current: null, history: [] },
-    integrations: { smtp: 'awaiting_integration' },
     lastLocalChange: null,
   },
 }

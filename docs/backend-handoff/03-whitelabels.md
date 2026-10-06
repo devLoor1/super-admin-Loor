@@ -9,13 +9,16 @@
 | Create | `Novo Whitelabel` gives a notice | No provisioning service/validator/API found | Validated creation with readback and audit |
 | Edit | Notice only | No Whitelabel management update contract found | Explicit mutable fields, uniqueness/domain policy, audit |
 | Lifecycle/status | Illustrative active/setup/draft/inactive labels | Boolean `is_active`; resolver checks are not a complete pause system | Product-defined transitions and Core access enforcement |
-| Administrators | Placeholder tab and quick action | Admin has nullable tenant FK and `isSuperAdmin`; no management CRUD found | Safe list/detail/provision/update/access control |
+| Account context | Contas quick action opens the selected tenant's account-control prototype | Scoped actor reads exist; global management/access/reassignment contracts remain incomplete | Authorized account projections; no client-selected tenant as permission grant |
+| Administrators | Placeholder Whitelabel detail tab; quick action opens account-control Administradores tab | Admin has nullable tenant FK and `isSuperAdmin`; no management CRUD found | Safe list/detail/provision/update/access control |
 | Settings | Quick-action notice, not an editor | Tenant platform settings exist | Auth-aware internal exposure and validated schema |
 | Terms | No current tab/editor | Tenant Terms revision and acceptance services exist | Safe read/publish exposure and legal policy |
 | Integrations | Placeholder tab/shortcut | SMTP and payment-provider/Opportunity credential capabilities exist in different domains | Safe configuration summaries; do not equate configured with healthy |
 | Indicators | Quick-action notice; KPI counts absent | Operational domains exist; required registry/global aggregates absent | Core aggregates with agreed definitions |
 
 Sources: [page](../../src/features/whitelabels/WhitelabelsPage.tsx), [list](../../src/features/whitelabels/WhitelabelListPanel.tsx), [detail](../../src/features/whitelabels/WhitelabelDetailPanel.tsx), [audit source index](audit-findings.md#core-source-index). Aplicações is an undefined visual concept, not a Core module catalog or implemented application-link relation.
+
+Approved account-navigation additions are in [detail at the current frontend baseline](https://github.com/devLoor1/super-admin-Loor/blob/cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a/src/features/whitelabels/WhitelabelDetailPanel.tsx). Contas opens `#/whitelabels/:whitelabelId/accounts`; Administradores adds `?tipo=administradores`. Both carry the selected Whitelabel into the [account-control module](04-whitelabel-account-control.md). Its local context groups Investors, Entrepreneurs and Admins but does not establish authoritative ownership, tenant permissions or a migration contract. No unrelated Whitelabel creation, settings, lifecycle or integration behavior changed.
 
 ## Identity and lifecycle
 

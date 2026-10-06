@@ -13,6 +13,10 @@
 
 The current table has Admin ID, module, entity ID, action, JSON metadata and timestamps. `recordSafe` catches/logs failures; a successful domain mutation does not guarantee a durable audit event. The model lacks dedicated operator/tenant/result/IP/user-agent/correlation fields and append-only protections. General account/lifecycle/reassignment audit and an audit query API were not found.
 
+## Frontend local feedback — not an audit capability
+
+Approved account-control prototype `cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a` demonstrates local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its frontend kinds (`paused`, `reactivated`, `transfer_requested`, `created`) and illustrative history are session-only and reset on reload; no Core/Control Plane event is emitted or persisted. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API. No Admin update editor/event flow is prototyped.
+
 ## Future Super Admin requirements
 
 All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event names or a promise that the associated command is approved. Architecture section 20 proposes immutable audit with actor/resource/tenant, sanitized state and correlation.
@@ -25,6 +29,7 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | WHITELABEL_DEACTIVATED | Agreed deactivation transition | State and reason reference, not account deletion |
 | ACCOUNT_PAUSED | Authorized account pause | Actor type/ID, tenant, access-state transition, reason |
 | ACCOUNT_REACTIVATED | Authorized access restoration | State transition; no implied validation changes |
+| ACCOUNT_WHITELABEL_CHANGE_REQUESTED | Authorized reassignment request/preflight, if that stage is approved | Source/target tenant IDs, eligibility/result and request correlation; no claim that migration completed |
 | ACCOUNT_WHITELABEL_CHANGED | Authorized reassignment | Source/target tenant IDs and migration operation reference |
 | ADMIN_CREATED | Managed tenant Admin provisioning | Admin/tenant IDs and provisioning mode; no password |
 | ADMIN_UPDATED | Allowed Admin update | Safe changed-field list and permission/scope context |
@@ -32,6 +37,8 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | PLATFORM_SETTINGS_UPDATED | Validated configuration update | Page/key, allowed sanitized difference; omit secret fields |
 
 Architecture also requires relevant login success/failure, SMTP/gateway changes/tests and authorized Opportunity actions. Event coverage must be completed as those commands are scoped, without adding financial controls through this documentation task.
+
+The prototype's simulated request corresponds only to a future request-stage concept, never proof of `ACCOUNT_WHITELABEL_CHANGED`. `ACCOUNT_PAUSED`, `ACCOUNT_REACTIVATED` and `ADMIN_CREATED` have local UI demonstrations; `ADMIN_UPDATED` remains future-only. Every proposed event remains **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for Control Plane audit; Product still defines event coverage and success/failure guarantees.
 
 Proposed shared metadata: operator ID, actor type, resource type/ID, tenant ID, action, result, timestamp, correlation ID and reason/operation reference. Sanitized old/new fields, IP and user agent are subject to agreed access/retention policy. Failed and denied attempts need a defined policy; command success/failure must not be conflated.
 

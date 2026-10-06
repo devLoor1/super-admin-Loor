@@ -1,6 +1,8 @@
 # Open Questions
 
-This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items are open as of 2026-10-05. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
+This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
+
+Context update: Whitelabel Account Control V1 is **FRONTEND PROTOTYPED** at approved `dev@cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a`. Local read displays, pause/reactivate, tenant-change simulation and Admin creation now demonstrate the UI, not answers to the questions below. Pause enforcement/token revocation/background operations, migration eligibility/history ownership, provisioning/RBAC/audit, Terms reacceptance, global questionnaire/classification governance and feature/module rules remain unresolved. No question is closed by prototype approval or by a local feedback event.
 
 ## Whitelabel
 

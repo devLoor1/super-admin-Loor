@@ -2,7 +2,7 @@
 
 This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
 
-Context update: Whitelabel Account Control and Whitelabel Settings V1 are **FRONTEND PROTOTYPED** at approved `dev@df87de8e5d3ded2da3915c5de602620c282ab5ba`. Account actions and Settings per-section local editing/default display/assets/features/Terms publication demonstrate the UI, not answers to the questions below. Pause enforcement, migration lineage, provisioning/RBAC/audit, inheritance/asset policy, Terms reacceptance, SMTP ownership, global questionnaire/classification governance and feature/module rules remain unresolved. Local current-Terms coherence across Settings/Account Control is implemented; authoritative synchronization is still a contract question. No question is closed by prototype approval or local feedback.
+Context update: Whitelabel Account Control, Whitelabel Settings and Whitelabel Emails V1 are **FRONTEND PROTOTYPED** at approved `dev@5f438035dbac1ec49df68fc3d9799c3fb5078c4a`. Account actions, Settings local editing/default/assets/features/Terms publication and Emails local SMTP/events/template summary demonstrate the UI, not answers to the questions below. No real email is sent. Pause enforcement, migration lineage, provisioning/RBAC/audit, inheritance/asset policy, Terms reacceptance, SMTP ownership/test semantics, email-event support/suppression/defaults, template resolution/versioning, global questionnaire/classification governance and feature/module rules remain unresolved. Local current-Terms coherence across Settings/Account Control and shared SMTP summary ownership across Settings/Emails are implemented; authoritative contracts remain pending. No question is closed by prototype approval or local feedback.
 
 ## Whitelabel
 
@@ -71,6 +71,24 @@ The four Settings concepts (Investor Profile, Wallet, anonymous-investment defau
 ## SMTP
 
 - **Q-SM-01 — Product and Backend:** Who owns tenant/environment SMTP configuration and safe status reads, which provider/credential fields and test/send operations belong in the dedicated management scope, and how are secret storage/masking, permissions and durable audit guaranteed? Settings implements only a summary/shortcut; configured is not a delivery-health guarantee.
+- **Q-SM-02 — Product and Backend:** What exactly does the real SMTP test verify: connection/TLS/authentication, message dispatch/acceptance or delivery? Does it use saved configuration or an explicit draft, which destinations and limits/timeouts/retry rules apply, and what sanitized result/error and request/readback semantics avoid implying delivery from configuration alone?
+
+Q-SM-01 now applies to the detailed Emails prototype as well as the Settings summary; it remains unresolved. The secure contract must define omitted/blank/replace/reset secret updates, safe configured/masked reads and server-side storage without exposing existing passwords. No additional SMTP ownership/security question duplicates it.
+
+## Email Events
+
+- **Q-EM-01 — Product and Backend:** What is the exact supported/configurable event catalog, stable event identity and actor coverage? Which of registration completed, password recovery, account approved and Terms updated may be configured, if any, and how are unsupported events rejected? The four current rows are illustrative, not confirmed flags.
+- **Q-EM-02 — Backend with Product approval:** At which authoritative Core transitions are Equity and Debt investment confirmations currently dispatched, and which existing trigger/preference capabilities can be reused to deliver independent per-Whitelabel controls? Define confirmation criteria and duplicate/retry behavior without coupling the two confirmed Product requirements or inferring state from the frontend.
+- **Q-EM-03 — Product and Backend:** Which existing email sends can safely be suppressed per Whitelabel, which security/mandatory messages must remain available, and how do changed preferences affect queued/in-flight/retried or historical sends without altering underlying business state?
+- **Q-EM-04 — Product and Backend:** When a tenant event preference is absent, what is the authoritative fallback/effective state and provenance? Does absence inherit a default or preserve existing dispatch behavior, how do default changes propagate, and how do read/update/reset contracts distinguish absent from explicitly enabled/disabled values?
+
+Equity and Debt independence is already a Product requirement; these questions concern supported contracts and effects, not whether the frontend should tie the switches together. Event audit policy references Q-AU-01–03 below; it is not a separate duplicate question set.
+
+## Email Templates
+
+- **Q-ET-01 — Product and Backend:** What authoritative listing and event-to-template mapping expose platform defaults versus tenant overrides, and what inheritance/effective-source/reset/propagation rules apply? Which audited Core capabilities already support that model? The current summary does not prove coverage or overrides.
+- **Q-ET-02 — Product and Backend:** For the later template editor, what versioning, draft/approval/publication, activation/rollback and concurrency rules are required, and which revision is used for an in-flight send? Define authorized update/publish readback; no editor is delivered by Emails V1.
+- **Q-ET-03 — Product and Backend:** How are sender email/display name and visual branding resolved across SMTP, tenant Identity, platform defaults and template overrides, including unconfigured/missing values? Establish precedence and ownership without duplicating SMTP or Identity truth.
 
 ## RBAC
 
@@ -84,5 +102,7 @@ The four Settings concepts (Investor Profile, Wallet, anonymous-investment defau
 - **Q-AU-01 — Product and Backend:** What is the ownership/correlation model for Control Plane and Core audit, and the durability guarantee if a critical mutation succeeds but audit persistence fails?
 - **Q-AU-02 — Product and Backend:** What append-only protections, retention, query permissions, redaction and IP/user-agent policy apply to administrative evidence?
 - **Q-AU-03 — Product and Backend:** Which successful, failed and denied actions must be recorded, with what ordering/result and event-query contract for Dashboard and audit management?
+
+For Emails, Q-AU-01–03 include SMTP configuration changes, test request/results, supported event enabled/disabled changes and later template update/publication. Define required operator/Whitelabel/configuration-or-event references, sanitized before/after state, result, timestamp and correlation, including failure/denial coverage and Core writer correlation. Secrets must never enter evidence. Session activity does not answer these existing audit questions.
 
 Resolved decisions should be recorded against their IDs with an evidence reference. Do not delete uncertainty by implementing an assumption or relabeling an unrelated existing Core action.

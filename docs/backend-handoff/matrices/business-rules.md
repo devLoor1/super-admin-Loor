@@ -8,7 +8,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | --- | --- | --- |
 | C-01 | Architecture sections 2–5, 39 | Core remains the operational source of truth; Control Plane uses internal services, without direct DB access or operational duplication. |
 | C-02 | Architecture sections 24, 30 | Operator authorization and service authentication are separate; requested tenant filters are not permission grants. |
-| C-03 | Approved frontend source at df87de8e5d3ded2da3915c5de602620c282ab5ba | Login, Dashboard, Whitelabels, Whitelabel Account Control and Whitelabel Settings V1 are FRONTEND PROTOTYPED without authentication/business API integration. Account actions/history and Settings saves are local and reset on reload. |
+| C-03 | Approved frontend source at 5f438035dbac1ec49df68fc3d9799c3fb5078c4a | Login, Dashboard, Whitelabels, Whitelabel Account Control, Whitelabel Settings and Whitelabel Emails V1 are FRONTEND PROTOTYPED without authentication/business API integration. Account actions/history, Settings/Emails saves and activity are local and reset on reload; no real email is sent. |
 | C-04 | Current user intent and approved local prototype | Pause intent is temporary access prevention with data/history preservation; the prototype requires a reason and changes only local access state. Reactivate restores local access without changing unrelated business/validation state. Real enforcement is not implemented; policy is PARTIALLY DEFINED. |
 | C-05 | Core audit | Investor validation denial/self soft-deletion, tenant active flag and owner-tool disable are separate behaviors, not generic account pause. |
 | C-06 | Core Terms service/auth | Current tenant revision is required at Investor registration; rejected acceptance/stale revision fail before Investor creation in the audited path. Existing-user forced reacceptance was not found. |
@@ -19,6 +19,10 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | C-11 | Approved local reassignment/Admin prototype | Change Whitelabel records a simulated request without moving tenant/lineage. Admin creation adds a local illustrative record/invitation state, not provisioning, credentials, invitation delivery or a permission grant. |
 | C-12 | Approved Settings prototype | General is read-only; Identity assets are local previews; Experience and four capability concepts show default/tenant provenance with section-level save/discard. No inheritance resolver, server asset validation, feature enforcement or entitlement system is delivered. |
 | C-13 | Approved shared Settings/Account Control store | Local Terms publication updates Settings current revision/history and Account Control current revision without changing Investor accepted revision/date or requesting reacceptance. This is session coherence, not authoritative publication or cross-system synchronization. |
+| C-14 | Explicit Emails Product requirement and approved prototype | Investment confirmed — Equity and Investment confirmed — Debt must be independently configurable per Whitelabel. Independent switches exist locally; authoritative trigger/preference support remains CORE SUPPORT UNKNOWN / TO VERIFY and INTEGRATION PENDING. |
+| C-15 | Explicit security requirement and approved write-only UI | Existing SMTP password/secret must never be readable or returned in full; updates are write-only and logs/audit/errors must omit secrets. Prototype stores only configured metadata, dropping the new draft on save/discard; secure Backend storage/contract is not thereby proven. |
+| C-16 | Approved Emails/Settings shared store | Settings owns safe SMTP summary/shortcut; Emails owns detailed SMTP/events. One tenant-local Emails store supplies summary and sender; no duplicate SMTP truth. Real authorization, persistence, event support validation and delivery remain Backend work. |
+| C-17 | Approved Emails event labels and template scope | Registration completed, password recovery, account approved and Terms updated are illustrative, not confirmed Backend-configurable flags. Templates is summary-only; local categories/default labels do not establish actual coverage, inheritance or an editor. |
 
 ## Proposed rules
 
@@ -35,6 +39,9 @@ These require contract/design review and are not delivered behavior.
 | P-07 | Pair commands with authoritative readback and sanitized durable audit; reconcile ambiguous responses before retry. | Q-AU-01–03 |
 | P-08 | Expose typed Settings values with effective/default/override provenance and explicit reset semantics; agree conflicts, field errors and readback before integrating local forms. | Q-ST-01–03 |
 | P-09 | Reuse Core-owned Terms and asset domains; synchronize current Terms after publication without altering immutable acceptance evidence. Keep SMTP management a separate scope. | Q-TE-01–04, Q-ST-02, Q-SM-01 |
+| P-10 | Expose a supported event catalog and authorized tenant preference reads/writes; reject nonexistent/unsupported events. Preserve independent Equity/Debt preferences at authoritative trigger points, with readback and sanitized errors/audit. Exact support and policies are not inferred from frontend IDs. | Q-EM-01–04, Q-RB-01–04, Q-AU-01–03 |
+| P-11 | Agree SMTP omitted/blank/replace/reset secret-update behavior and bounded test semantics; configured state must not imply connectivity, dispatch or delivery success. | Q-SM-01–02 |
+| P-12 | Reuse Core template capability with agreed event mapping, inherited defaults/tenant overrides, later editor/versioning and sender/branding resolution, rather than adopting the local summary as a Backend model. | Q-ET-01–03 |
 
 ## Product decisions required
 
@@ -51,8 +58,13 @@ The authoritative question text exists only in [open-questions.md](../open-quest
 | Classification governance | [Q-CL-01–03](../open-questions.md#classification) |
 | Feature/module availability | [Q-FE-01–03](../open-questions.md#features) |
 | Settings inheritance/assets/validation and SMTP ownership | [Q-ST-01–03](../open-questions.md#settings), [Q-SM-01](../open-questions.md#smtp) |
+| SMTP test outcomes and safe write-only update semantics | [Q-SM-01–02](../open-questions.md#smtp) |
+| Configurable event catalog, Equity/Debt triggers, suppression and absent preferences | [Q-EM-01–04](../open-questions.md#email-events) |
+| Template inheritance/mapping, versioning and sender/branding resolution | [Q-ET-01–03](../open-questions.md#email-templates) |
 | RBAC and audit guarantees | [Q-RB-01–04](../open-questions.md#rbac), [Q-AU-01–03](../open-questions.md#audit) |
 
 Do not convert seed comments, UI labels, nullable columns, domain-specific denial or architecture route examples into settled Product rules.
 
 Accepted Terms evidence and classification/questionnaire state remain read-only displays. Settings now prototypes local current-Terms publication, not an acceptance edit or a Backend publisher. Existing Core legal/profile capabilities and all reacceptance, inheritance, flag-effect, governance and authorization decisions remain separate from this local behavior. Prototype validation limits/default values are not settled Product rules.
+
+Emails confirms UI separation and independent investment-event requirements, not Backend delivery. Proposed event support/suppression and template rules require canonical decisions before integration; illustrative switches cannot authorize suppressing mandatory/security messages. SMTP save/test is local only. See [Emails V1](../06-whitelabel-emails.md).

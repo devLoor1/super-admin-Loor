@@ -1,0 +1,164 @@
+/* Modal dialog on the dark shell surfaces. The <dialog> fills with its surface
+   so that only backdrop clicks target the element itself. */
+.dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-on-dark);
+}
+
+.dialog[data-size='lg'] {
+  width: min(660px, calc(100vw - 32px));
+}
+
+.dialog::backdrop {
+  background: rgb(5 7 13 / 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.dialog[open] {
+  animation: dialog-in 160ms ease-out;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+}
+
+.surface {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.03) 0%, rgb(255 255 255 / 0) 30%),
+    #151b29;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 30px 70px -30px rgb(0 0 0 / 0.9);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 14px;
+  padding: 20px 18px 16px 22px;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.header:not(:has(.icon)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--tone-violet-border);
+  border-radius: 10px;
+  background: var(--tone-violet-bg);
+  color: var(--tone-violet-fg);
+}
+
+.icon[data-tone='warning'] {
+  border-color: var(--tone-amber-border);
+  background: var(--tone-amber-bg);
+  color: var(--tone-amber-fg);
+}
+
+.icon[data-tone='teal'] {
+  border-color: var(--tone-teal-border);
+  background: var(--tone-teal-bg);
+  color: var(--tone-teal-fg);
+}
+
+.heading {
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--text-on-dark);
+}
+
+.description {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--text-on-dark-secondary);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: -3px -2px 0 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-on-dark-secondary);
+}
+
+.close:hover {
+  border-color: var(--surface-border);
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text-on-dark);
+}
+
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 18px 22px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--surface-divider);
+}
+
+@media (max-width: 479px) {
+  .header {
+    padding: 16px 14px 14px 16px;
+  }
+
+  .body {
+    padding: 16px;
+  }
+
+  .footer {
+    flex-direction: column-reverse;
+    padding: 12px 16px 16px;
+  }
+
+  .footer > * {
+    width: 100%;
+  }
+}

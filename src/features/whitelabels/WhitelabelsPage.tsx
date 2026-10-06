@@ -21,7 +21,7 @@ import styles from './WhitelabelsPage.module.css'
  */
 export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT }: { accentColor?: string }) {
   return (
-    <AppShell activeNav="plataformas" title="Whitelabels" location="Whitelabels">
+    <AppShell activeNav="plataformas" activeSubNav="whitelabels" title="Whitelabels" location="Whitelabels">
       <WhitelabelsContent accentColor={accentColor} />
     </AppShell>
   )

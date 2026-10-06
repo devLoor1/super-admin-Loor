@@ -7,7 +7,7 @@ type EntityAvatarProps = {
   size?: 'md' | 'lg'
 }
 
-/** Square monogram (or neutral building icon) identifying a whitelabel. Decorative. */
+/** Shared square monogram (or neutral building icon). Decorative. */
 export function EntityAvatar({ initial, tone, size = 'md' }: EntityAvatarProps) {
   return (
     <span className={styles.avatar} data-tone={tone} data-size={size} aria-hidden="true">

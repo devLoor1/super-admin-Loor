@@ -7,6 +7,9 @@ import styles from './Sidebar.module.css'
 
 type SidebarProps = {
   activeId: string
+  /** Active nested entry inside the active domain (e.g. "contas" under Plataformas). */
+  activeSubId?: string
+  subNavHrefs?: Record<string, string>
   /** Mobile drawer state (ignored on larger screens, where the sidebar is persistent). */
   open: boolean
   onClose: () => void
@@ -19,7 +22,7 @@ type SidebarProps = {
  * Persistent navigation. Desktop: full sidebar. 768–1199px: icon rail with
  * tooltips. Below 768px: off-canvas drawer controlled by the header menu button.
  */
-export function Sidebar({ activeId, open, onClose, closeButtonRef, sidebarRef }: SidebarProps) {
+export function Sidebar({ activeId, activeSubId, subNavHrefs, open, onClose, closeButtonRef, sidebarRef }: SidebarProps) {
   return (
     <aside
       ref={sidebarRef}
@@ -49,7 +52,7 @@ export function Sidebar({ activeId, open, onClose, closeButtonRef, sidebarRef }:
       </div>
 
       <nav className={styles.primary} aria-label="Navegação principal">
-        <NavList items={PRIMARY_NAV} activeId={activeId} onNavigate={onClose} />
+        <NavList items={PRIMARY_NAV} activeId={activeId} activeSubId={activeSubId} subNavHrefs={subNavHrefs} onNavigate={onClose} />
       </nav>
 
       <div className={styles.bottom}>
@@ -73,11 +76,15 @@ export function Sidebar({ activeId, open, onClose, closeButtonRef, sidebarRef }:
 function NavList({
   items,
   activeId,
+  activeSubId,
+  subNavHrefs,
   onNavigate,
   compact = false,
 }: {
   items: NavItem[]
   activeId: string
+  activeSubId?: string
+  subNavHrefs?: Record<string, string>
   onNavigate: () => void
   compact?: boolean
 }) {
@@ -88,6 +95,10 @@ function NavList({
       {items.map((item) => {
         const Icon = item.icon
         const active = item.id === activeId
+        // Nested screens are listed only while their domain is active; the
+        // parent then marks the location ("true") and the child is the page.
+        const children = active ? item.children : undefined
+        const childIsCurrent = Boolean(children?.some((child) => child.id === activeSubId))
         const content = (
           <>
             <Icon className={styles.itemIcon} size={23} strokeWidth={active ? 1.8 : 1.6} aria-hidden="true" />
@@ -100,12 +111,36 @@ function NavList({
             <GlassNavItem
               href={item.href}
               active={active}
+              currentType={childIsCurrent ? 'true' : 'page'}
               label={item.label}
               className={styles.item}
               onClick={item.href ? onNavigate : () => notify(moduleUnavailable(item.label))}
             >
               {content}
             </GlassNavItem>
+            {children ? (
+              <ul className={styles.subList} aria-label={`Telas de ${item.label}`}>
+                {children.map((child) => {
+                  const ChildIcon = child.icon
+                  const current = child.id === activeSubId
+                  return (
+                    <li key={child.id}>
+                      <a
+                        href={subNavHrefs?.[child.id] ?? child.href}
+                        className={styles.subItem}
+                        data-active={current || undefined}
+                        data-tooltip={child.label}
+                        aria-current={current ? 'page' : undefined}
+                        onClick={onNavigate}
+                      >
+                        <ChildIcon className={styles.subIcon} size={17} strokeWidth={1.7} aria-hidden="true" />
+                        <span className={styles.subLabel}>{child.label}</span>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : null}
           </li>
         )
       })}

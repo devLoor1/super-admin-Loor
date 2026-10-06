@@ -47,3 +47,54 @@
   outline: 2px solid var(--color-accent-glow);
   outline-offset: -3px;
 }
+
+/* ---------- Segmented variant (page-level switch, e.g. account types) ---------- */
+
+.tablist[data-variant='segmented'] {
+  gap: 10px;
+  padding: 2px;
+  border-bottom: 0;
+}
+
+.tablist[data-variant='segmented'] .tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 20px 0 17px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025) 0%, rgb(255 255 255 / 0) 100%),
+    #151b29;
+  font-size: 14px;
+}
+
+.tablist[data-variant='segmented'] .tab:hover {
+  border-color: var(--surface-border-strong);
+}
+
+.tablist[data-variant='segmented'] .tab[aria-selected='true'] {
+  border-color: rgb(126 118 255 / 0.55);
+  background: linear-gradient(180deg, rgb(98 90 230 / 0.26), rgb(70 66 180 / 0.18));
+  box-shadow: 0 0 22px -10px rgb(116 104 255 / 0.85);
+  color: var(--text-on-dark);
+}
+
+.tablist[data-variant='segmented'] .tab[aria-selected='true']::after {
+  display: none;
+}
+
+.tablist[data-variant='segmented'] .tab:focus-visible {
+  outline-offset: 2px;
+}
+
+.icon {
+  flex: none;
+  color: var(--icon-on-dark);
+}
+
+.tab[aria-selected='true'] .icon {
+  color: #c9c4ff;
+}

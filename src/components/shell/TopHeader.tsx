@@ -1,13 +1,18 @@
 import { useEffect, useRef, type FormEvent, type Ref } from 'react'
-import { Bell, ChevronDown, Globe, House, Layers, Menu, Search } from 'lucide-react'
+import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, Menu, Search } from 'lucide-react'
 import { usePrototypeNotice } from './prototypeNotice'
 import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
+
+/** One step of the header trail; the last step is the current page. */
+export type Breadcrumb = { label: string; href?: string }
 
 type TopHeaderProps = {
   title: string
   /** Short location/context label shown next to the title (e.g. "Visão geral"). */
   location: string
+  /** Optional trail (e.g. Plataformas › Whitelabels › Finapop › Contas) replacing `location`. */
+  breadcrumbs?: Breadcrumb[]
   navOpen: boolean
   onOpenNav: () => void
   menuButtonRef?: Ref<HTMLButtonElement>
@@ -20,7 +25,7 @@ const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(naviga
  * selector, search, notifications and user area. Every control is local-only
  * in this prototype (no tenant data, no search backend, no auth).
  */
-export function TopHeader({ title, location, navOpen, onOpenNav, menuButtonRef }: TopHeaderProps) {
+export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, menuButtonRef }: TopHeaderProps) {
   const notify = usePrototypeNotice()
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -66,10 +71,37 @@ export function TopHeader({ title, location, navOpen, onOpenNav, menuButtonRef }
         <h1 className={styles.title}>
           {title === 'Dashboard Global' ? <><span className="visually-hidden">Dashboard Global</span><RotatingDashboardTitle /></> : title}
         </h1>
-        <p className={styles.location}>
-          <House size={15} strokeWidth={1.7} aria-hidden="true" />
-          <span>{location}</span>
-        </p>
+        {breadcrumbs?.length ? (
+          <nav className={styles.location} aria-label="Trilha de navegação">
+            <House size={15} strokeWidth={1.7} aria-hidden="true" />
+            <ol className={styles.crumbs}>
+              {breadcrumbs.map((crumb, index) => {
+                const current = index === breadcrumbs.length - 1
+                return (
+                  <li key={`${crumb.label}-${index}`} className={styles.crumb}>
+                    {index > 0 ? (
+                      <ChevronRight className={styles.crumbSeparator} size={13} strokeWidth={1.8} aria-hidden="true" />
+                    ) : null}
+                    {crumb.href && !current ? (
+                      <a href={crumb.href} className={styles.crumbLink}>
+                        {crumb.label}
+                      </a>
+                    ) : (
+                      <span aria-current={current ? 'page' : undefined} className={current ? styles.crumbCurrent : undefined}>
+                        {crumb.label}
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+          </nav>
+        ) : (
+          <p className={styles.location}>
+            <House size={15} strokeWidth={1.7} aria-hidden="true" />
+            <span>{location}</span>
+          </p>
+        )}
       </div>
 
       <div className={styles.controls}>

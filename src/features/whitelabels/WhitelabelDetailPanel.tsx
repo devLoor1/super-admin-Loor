@@ -9,6 +9,7 @@ import {
   Pencil,
   Settings,
   Users,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react'
 import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
@@ -18,8 +19,8 @@ import { OutlineButton } from '../../components/ui/OutlineButton'
 import { StatusPill } from '../../components/ui/StatusPill'
 import { Tabs } from '../../components/ui/Tabs'
 import { tabId, tabPanelId } from '../../components/ui/tabIds'
-import { EntityAvatar } from './EntityAvatar'
-import { DetailTransition } from './visuals/DetailTransition'
+import { EntityAvatar } from '../../components/ui/EntityAvatar'
+import { DetailTransition } from '../../components/ui/DetailTransition'
 import { STATUS_META, type Whitelabel } from './prototypeWhitelabels'
 import styles from './WhitelabelDetailPanel.module.css'
 
@@ -38,12 +39,14 @@ const SUMMARY: { label: string; icon: LucideIcon; tone: Tone }[] = [
   { label: 'Integrações', icon: Link, tone: 'violet' },
 ]
 
-const QUICK_ACTIONS: { title: string; description: string; icon: LucideIcon; tone: Tone }[] = [
+/** `path` actions open an existing prototype screen for the selected Whitelabel. */
+const QUICK_ACTIONS: { title: string; description: string; icon: LucideIcon; tone: Tone; path?: string }[] = [
   { title: 'Configurações', description: 'Domínio, identidade e preferências', icon: Settings, tone: 'indigo' },
-  { title: 'Administradores', description: 'Gerenciar usuários e permissões', icon: Users, tone: 'violet' },
+  { title: 'Administradores', description: 'Gerenciar usuários e permissões', icon: Users, tone: 'violet', path: '/accounts?tipo=administradores' },
   { title: 'Aplicações', description: 'Conceito visual — escopo a definir', icon: LayoutGrid, tone: 'indigo' },
   { title: 'Integrações', description: 'Gateway e SMTP — destinos futuros', icon: Link, tone: 'violet' },
   { title: 'Indicadores', description: 'Acessar métricas e relatórios', icon: ChartColumnIncreasing, tone: 'blue' },
+  { title: 'Contas', description: 'Controle de acesso das contas', icon: UsersRound, tone: 'blue', path: '/accounts' },
 ]
 
 const ID_PREFIX = 'wl-detail'
@@ -56,7 +59,7 @@ const ID_PREFIX = 'wl-detail'
  */
 export function WhitelabelDetailPanel({ whitelabel }: { whitelabel: Whitelabel }) {
   return (
-    <DetailTransition whitelabel={whitelabel} className={styles.panel}>
+    <DetailTransition item={whitelabel} className={styles.panel}>
       {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} />}
     </DetailTransition>
   )
@@ -224,26 +227,39 @@ function Overview({
         <h3 id="wl-actions-title" className={styles.cardTitle}>
           Ações rápidas
         </h3>
-        <p className={styles.cardSubtitle}>Destinos do protótipo deste Whitelabel — ainda não implementados.</p>
+        <p className={styles.cardSubtitle}>Contas e Administradores abrem o protótipo de Contas; demais destinos futuros.</p>
         <ul className={styles.actions}>
-          {QUICK_ACTIONS.map((action) => (
-            <li key={action.title}>
-              <button
-                type="button"
-                className={styles.action}
-                onClick={() =>
-                  onNotify(`Protótipo visual: a área "${action.title}" de ${whitelabel.name} ainda não está disponível.`)
-                }
-              >
+          {QUICK_ACTIONS.map((action) => {
+            const body = (
+              <>
                 <IconTile icon={action.icon} tone={action.tone} size="md" />
                 <span className={styles.actionText}>
                   <span className={styles.actionTitle}>{action.title}</span>
                   <span className={styles.actionDescription}>{action.description}</span>
                 </span>
                 <ChevronRight className={styles.actionChevron} size={16} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            </li>
-          ))}
+              </>
+            )
+            return (
+              <li key={action.title}>
+                {action.path ? (
+                  <a className={styles.action} href={`#/whitelabels/${whitelabel.id}${action.path}`}>
+                    {body}
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.action}
+                    onClick={() =>
+                      onNotify(`Protótipo visual: a área "${action.title}" de ${whitelabel.name} ainda não está disponível.`)
+                    }
+                  >
+                    {body}
+                  </button>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </section>
     </div>

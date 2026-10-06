@@ -1,25 +1,32 @@
 # Loor Super Admin — Frontend
 
 Visual prototype of the **Super Admin**: Login V1, the application-frame
-**App Shell + Global Dashboard V1** and the **Whitelabels V1** list/detail page.
-Frontend only.
+**App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page and
+**Whitelabel Account Control V1** (Contas do Whitelabel). Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
 > local field check; the dashboard shows data-ready empty states
 > ("—", "Sem dados", "Aguardando integração") instead of metrics. The
 > Whitelabels page lists three clearly illustrative rows (prototype IDs, no
-> counts or dates).
+> counts or dates). Contas uses illustrative accounts (example.com e-mails,
+> masked documents, no amounts); pause/reactivate, Whitelabel change and the
+> Admin form only change local state — **Backend: implementation pending**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
 | Login V1 | `http://localhost:5173/` | [`docs/reference/super-admin-login-approved.png`](docs/reference/super-admin-login-approved.png) |
 | App Shell + Dashboard V1 | `http://localhost:5173/#/dashboard` | [`docs/reference/super-admin-dashboard-approved.png`](docs/reference/super-admin-dashboard-approved.png) |
 | Whitelabels V1 | `http://localhost:5173/#/whitelabels` | [`docs/reference/super-admin-whitelabels-approved.png`](docs/reference/super-admin-whitelabels-approved.png) |
+| Whitelabel Account Control V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/accounts` | [`docs/reference/super-admin-whitelabel-account-control-approved.png`](docs/reference/super-admin-whitelabel-account-control-approved.png) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
-In the sidebar, **Plataformas** links to `#/whitelabels`.
+In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
+is active, lists its screens: **Whitelabels** and **Contas**. The accounts route
+is `#/whitelabels/:whitelabelId/accounts` with an optional
+`?tipo=investidores|empreendedores|administradores`.
+Within Contas, its sidebar destination preserves the displayed Whitelabel.
 
 ---
 
@@ -58,7 +65,8 @@ handle panel-level responsiveness.
 ```
 src/
   main.tsx                          entry — renders <App />
-  app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels", else login
+  app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
+                                    "#/whitelabels/:id/accounts[?tipo=…]", else login
   styles/
     tokens.css                      prototype visual tokens (login + dark app shell)
     global.css                      reset + base typography
@@ -70,7 +78,7 @@ src/
       AppShell.tsx (+ .css)         sidebar + header + content frame, mobile drawer logic
       Sidebar.tsx (+ .css)          brand, primary/utility navigation, decorative backdrop
       TopHeader.tsx (+ .css)        title/location, context selector, search, notifications, user
-      navigation.ts                 navigation model (top-level domains)
+      navigation.ts                 navigation model (top-level domains + nested screens of Plataformas)
       PrototypeNoticeProvider.tsx   toast for controls whose destination does not exist yet
       prototypeNotice.ts            notice context + standard copy
     ui/
@@ -84,7 +92,10 @@ src/
       SearchField.tsx (+ .css)      labelled search input
       SelectField.tsx (+ .css)      native select with icon + chevron
       FilterChips.tsx (+ .css)      single-choice chip group (aria-pressed)
-      Tabs.tsx (+ .css), tabIds.ts  accessible tablist (roving tabindex, arrow/Home/End)
+      Tabs.tsx (+ .css), tabIds.ts  accessible tablist (roving tabindex, arrow/Home/End; underline or segmented)
+      Dialog.tsx (+ .css)           modal dialog on native <dialog> (focus return, Escape, backdrop)
+      DetailTransition.tsx          identity-scoped detail motion + explicit focus handoff
+      EntityAvatar.tsx (+ .css)     shared decorative monogram / building avatar
   features/
     login/                          Login V1 (unchanged visually)
     dashboard/
@@ -99,8 +110,18 @@ src/
       WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
       WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
       WhitelabelDetailPanel.tsx     identity, tabs, main information, summary cards, quick actions
-      EntityAvatar.tsx (+ .css)     monogram / building avatar
       prototypeWhitelabels.ts       illustrative rows + status vocabulary (not backend data)
+      visuals/                      approved Dot Matrix background, identity reveal
+    whitelabel-accounts/
+      WhitelabelAccountsPage.tsx    page layout + local state (accounts, events, filters, dialogs)
+      WhitelabelContextSelector.tsx tenant context card + switcher
+      AccountListPanel.tsx          search, access/business filters, sortable table, pagination
+      AccountDetailPanel.tsx        type-specific detail, account actions, dependencies, terms, permissions, history
+      AccountBadges.tsx             BusinessBadge (business state) + initials avatar
+      accountModel.ts               types, state vocabularies, dependency definitions, helpers
+      accountListConfig.ts          filter/column configuration per account type
+      prototypeAccounts.ts          illustrative accounts per Whitelabel (not backend data)
+      dialogs/                      pause, reactivate, change Whitelabel (simulation), new Admin
 docs/reference/                     approved concept images
 ```
 
@@ -220,6 +241,61 @@ chevron hides instead of shrinking the menu target.
 
 No horizontal page overflow from 320 to 1920px (checked at 22 widths).
 
+## Whitelabel Account Control V1 — decisions
+
+- **Tenant-first.** The selected Whitelabel (context card, route id, breadcrumb)
+  scopes everything; the account types are tabs (Investidores / Empreendedores /
+  Administradores). There is no global, cross-tenant user list. The generated
+  image's "Todas as whitelabels" filter, checkboxes and generic "Nova conta" were
+  intentionally not reproduced; only the Administradores tab offers
+  **Novo administrador** (local form).
+- **Access state ≠ business state.** Access (Ativa / Pausada) is a rounded pill
+  with a dot; business states are squared badges without a dot (Investor
+  validation: Aguardando / Validação automática / Validação manual / Aprovada /
+  Negada; Entrepreneur company validation: Cadastro incompleto / Empresa em
+  validação / Empresa validada; Admin: conceptual role + invitation). Pause and
+  reactivate change only the access state; a denied Investor stays denied.
+- **Pause / reactivate** (central prototype capability): confirmation dialog with
+  identity, Whitelabel, mandatory reason (≥10 characters) and the preservation
+  statement; reactivation keeps every business state. Status:
+  Frontend **prototype**, Backend **implementation pending**, Integration
+  **pending** — shown in the detail panel and dialogs.
+- **Alterar Whitelabel** is a three-step simulation (destination → dependency
+  impact + Backend warning → reason + acknowledgement). Its outcome is a
+  *simulated request* shown on the account and in the session history; no
+  account, history or relationship is moved. It can be discarded.
+- **Dependencies** use semantic statuses only (Concluído, Vínculos existentes,
+  Pendente, Aguardando integração…), never amounts or counts.
+- **Terms / profile / questionnaire**: read-only Investor display (accepted
+  revision vs the Whitelabel's current revision, classification, questionnaire
+  completed/pending). Questionnaire/classification are labelled global; there is
+  no editor. **Permissions** for Admins are conceptual labels only (no RBAC).
+- **History** is a session-only log of the prototype's own actions (plus
+  illustrative creation dates); it is explicitly not an audit trail.
+- **Reuse.** Same App Shell, Dot Matrix background (main content only; its
+  reduced-motion and no-WebGL behaviour), list/detail language, StatusPill,
+  SearchField, SelectField, Tabs, EmptyState, IconTile, EntityAvatar and the
+  detail transition (generic, `item` prop). EntityAvatar and DetailTransition now
+  live in shared UI; Dot Matrix still reuses the approved Whitelabels visuals.
+- **Shared refactors (minimal):** TopHeader optional `breadcrumbs`; AppShell
+  `activeSubNav` + `breadcrumbs`; navigation `children` + Sidebar nested list;
+  GlassNavItem `currentType` (parent gets `aria-current="true"`); Tabs
+  `variant="segmented"` with icons; new `Dialog`; OutlineButton accepts `ref`;
+  DetailTransition generic. Whitelabels detail quick actions *Contas* and
+  *Administradores* now open the accounts screen.
+
+### Whitelabel Account Control responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | Left column: context card, type tabs, list. Right column (≈452px): selected-account panel spanning the full height. List columns drop by panel width (activity/invitation, then e-mail moves under the name). |
+| 768–1359px | Single column: context, tabs, list, then detail. Icon rail below 1200px shows Whitelabels/Contas as icon entries with tooltips. |
+| < 768px | Drawer navigation (nested entries listed); account types stack below 480px (↑/↓ also work); table keeps name/actions with e-mail and both states under the name; selecting a row scrolls to the detail; dialogs fit the viewport with stacked actions. |
+
+Codex independently checked 1672, 1440, 1280, 900, 390 and 320px for all three
+account types and dialog forms without horizontal overflow. See the frontend
+review record for scope, evidence and fallback checks.
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -286,10 +362,11 @@ Login:
 
 Backend integration, authentication, API clients, real routing, tenant switching,
 real search, persistence, whitelabel create/edit flows, the Whitelabels detail tabs
-other than "Visão geral", other destination module screens (Administradores,
-Platform Settings, SMTP, Gateways, Indicadores, Oportunidades, Investidores,
-Empreendedores, Investimentos, Pagamentos, Wallet, KYC, Auditoria), further
-OriginKit assets, final brand system.
+other than "Visão geral", real account pause/reactivate, tenant reassignment,
+Admin provisioning/invitations, RBAC, audit trail, Terms/questionnaire/
+classification editing, other destination module screens (Platform Settings,
+SMTP, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
+KYC, Auditoria), further OriginKit assets, final brand system.
 
 ## Review records
 
@@ -298,4 +375,6 @@ OriginKit assets, final brand system.
 - [Approved Dashboard OriginKit integration, performance and architecture review](docs/dashboard-originkit-integration.md)
 - [Whitelabels V1 review and validation](docs/whitelabels-v1-review.md)
 - [Whitelabels OriginKit mapping and selected visual integration](docs/whitelabels-originkit-mapping.md)
+- [Whitelabel Account Control V1 — frontend review and local QA](docs/whitelabel-account-control-v1.md)
+- [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

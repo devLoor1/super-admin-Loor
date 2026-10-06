@@ -11,6 +11,8 @@ type Props = {
   label: string
   className: string
   onClick: MouseEventHandler<HTMLAnchorElement | HTMLButtonElement>
+  /** `aria-current` for an active link; a parent of the current sub-page uses "true". */
+  currentType?: 'page' | 'true'
 }
 
 const LIGHT_FADE = 0.6
@@ -25,7 +27,7 @@ const LIGHT_GRADIENT = [1, 0.34].map((peak, i) =>
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 const lightRadius = (w: number, h: number) => Math.max(w, h) * 0.4
 
-export function GlassNavItem({ children, href, active, label, className, onClick }: Props) {
+export function GlassNavItem({ children, href, active, label, className, onClick, currentType = 'page' }: Props) {
   const controlRef = useRef<HTMLElement | null>(null)
   const lightRef = useRef<HTMLSpanElement>(null)
   const strokeRef = useRef<HTMLSpanElement>(null)
@@ -156,6 +158,6 @@ export function GlassNavItem({ children, href, active, label, className, onClick
     onBlur: () => { target.current.on = 0; kick() },
   }
   return href
-    ? <a {...common} href={href} aria-current={active ? 'page' : undefined}>{visuals}</a>
+    ? <a {...common} href={href} aria-current={active ? currentType : undefined}>{visuals}</a>
     : <button {...common} type="button">{visuals}</button>
 }

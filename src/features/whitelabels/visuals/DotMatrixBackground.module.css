@@ -22,6 +22,9 @@
 .background[data-renderer='webgl']::before { display: none; }
 .background canvas { display: block; width: 100%; height: 100%; }
 
+/* A lost context can leave an opaque canvas over the static fallback. */
+.background:not([data-renderer='webgl']) canvas { display: none; }
+
 @media (max-width: 767px) {
   .background { bottom: -24px; }
 }

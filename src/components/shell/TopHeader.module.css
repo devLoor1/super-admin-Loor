@@ -72,6 +72,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  max-width: 100%;
+  min-width: 0;
   padding-top: 6px;
   font-size: 12.5px;
   line-height: 18px;
@@ -81,6 +83,52 @@
 
 .location svg {
   color: var(--icon-on-dark);
+}
+
+/* Breadcrumb trail (optional). Wraps instead of overflowing on narrow screens. */
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.location .crumbSeparator {
+  color: var(--text-on-dark-faint);
+}
+
+.crumbLink {
+  border-radius: 4px;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.crumbLink:hover {
+  color: var(--text-on-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.crumbLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.crumbCurrent {
+  font-weight: 600;
+  color: var(--text-on-dark);
 }
 
 /* ---------- Context selector + search ---------- */

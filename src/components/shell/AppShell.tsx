@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { PrototypeNoticeProvider } from './PrototypeNoticeProvider'
 import { Sidebar } from './Sidebar'
-import { TopHeader } from './TopHeader'
+import { TopHeader, type Breadcrumb } from './TopHeader'
 import styles from './AppShell.module.css'
 
 type AppShellProps = {
   /** Id of the active primary navigation item. */
   activeNav: string
+  /** Id of the active nested screen inside the active domain, if any. */
+  activeSubNav?: string
+  /** Context-specific destinations for existing nested navigation entries. */
+  subNavHrefs?: Record<string, string>
   title: string
   location: string
+  /** Optional trail shown instead of the single location label. */
+  breadcrumbs?: Breadcrumb[]
   children: ReactNode
 }
 
@@ -18,7 +24,7 @@ const MOBILE_QUERY = '(max-width: 767px)'
  * Prototype application frame: persistent sidebar + header + page content.
  * Below 768px the sidebar becomes a drawer opened from the header menu button.
  */
-export function AppShell({ activeNav, title, location, children }: AppShellProps) {
+export function AppShell({ activeNav, activeSubNav, subNavHrefs, title, location, breadcrumbs, children }: AppShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -102,6 +108,8 @@ export function AppShell({ activeNav, title, location, children }: AppShellProps
         </a>
         <Sidebar
           activeId={activeNav}
+          activeSubId={activeSubNav}
+          subNavHrefs={subNavHrefs}
           open={navOpen}
           onClose={closeNav}
           closeButtonRef={closeButtonRef}
@@ -123,6 +131,7 @@ export function AppShell({ activeNav, title, location, children }: AppShellProps
           <TopHeader
             title={title}
             location={location}
+            breadcrumbs={breadcrumbs}
             navOpen={navOpen}
             onOpenNav={() => setNavOpen(true)}
             menuButtonRef={menuButtonRef}

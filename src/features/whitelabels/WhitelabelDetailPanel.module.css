@@ -310,6 +310,7 @@
   transition:
     border-color var(--transition-fast),
     background-color var(--transition-fast);
+  text-decoration: none;
 }
 
 .action:hover {

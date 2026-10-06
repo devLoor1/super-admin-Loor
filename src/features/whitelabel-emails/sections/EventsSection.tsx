@@ -12,6 +12,7 @@ import {
   type EmailSectionKey,
 } from '../emailModel'
 import { addEmailActivity, updateWhitelabelEmailSettings } from '../emailStore'
+import { OrbitBorderFrame } from '../visuals/OrbitBorderFrame'
 import styles from './EmailSections.module.css'
 
 const EVENT_ICON: Record<EmailEventId, LucideIcon> = {
@@ -103,59 +104,66 @@ export function EventsSection({ whitelabelId, whitelabelName, saved, smtpConfigu
           const nameId = `email-event-${event.id}-name`
           const descriptionId = `email-event-${event.id}-description`
           return (
-            <li key={event.id} className={styles.eventRow} data-changed={changed || undefined}>
-              <div className={styles.eventName}>
-                <IconTile icon={EVENT_ICON[event.id]} tone={category.tone} size="sm" />
-                <div className={styles.eventNameText}>
-                  <p id={nameId} className={styles.eventLabel}>
-                    {event.label}
-                  </p>
-                  <p className={styles.eventFlags}>
-                    <span className={styles.flag} data-kind={event.productRequirement ? 'requirement' : 'illustrative'}>
-                      {event.productRequirement ? 'Requisito de produto' : 'Evento ilustrativo'}
-                    </span>
-                    <span className={styles.backend} data-tone={backend.tone}>
-                      {backend.label}
-                    </span>
-                  </p>
+            <li key={event.id} className={styles.eventItem}>
+              <OrbitBorderFrame
+                className={styles.eventRow}
+                enabled={event.enabled}
+                productRequirement={event.productRequirement}
+                changed={changed}
+              >
+                <div className={styles.eventName}>
+                  <IconTile icon={EVENT_ICON[event.id]} tone={category.tone} size="sm" />
+                  <div className={styles.eventNameText}>
+                    <p id={nameId} className={styles.eventLabel}>
+                      {event.label}
+                    </p>
+                    <p className={styles.eventFlags}>
+                      <span className={styles.flag} data-kind={event.productRequirement ? 'requirement' : 'illustrative'}>
+                        {event.productRequirement ? 'Requisito de produto' : 'Evento ilustrativo'}
+                      </span>
+                      <span className={styles.backend} data-tone={backend.tone}>
+                        {backend.label}
+                      </span>
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <p id={descriptionId} className={styles.eventDescription}>
-                {event.description}
-              </p>
-              <span className={styles.category} data-tone={category.tone}>
-                <span className="visually-hidden">Categoria: </span>
-                {category.label}
-              </span>
-              <div className={styles.eventControl}>
-                <Switch
-                  id={`email-event-${event.id}-switch`}
-                  checked={event.enabled}
-                  onCheckedChange={(value) => toggle(event.id, value)}
-                  disabled={editor.phase === 'saving'}
-                  aria-labelledby={nameId}
-                  aria-describedby={descriptionId}
-                />
-                <span className={styles.eventState} data-on={event.enabled || undefined} aria-hidden="true">
-                  {event.enabled ? 'Ativado' : 'Desativado'}
+                <p id={descriptionId} className={styles.eventDescription}>
+                  {event.description}
+                </p>
+                <span className={styles.category} data-tone={category.tone}>
+                  <span className="visually-hidden">Categoria: </span>
+                  {category.label}
                 </span>
-              </div>
-              {changed || (event.id === 'passwordRecovery' && !event.enabled) ? (
-                <div className={styles.eventNotes}>
-                  {changed ? (
-                    <span className={styles.changed}>
-                      Alterado localmente
-                      <span className="visually-hidden"> em {event.label}: salve para aplicar</span>
-                    </span>
-                  ) : null}
-                  {event.id === 'passwordRecovery' && !event.enabled ? (
-                    <span className={styles.risk}>
-                      <AlertTriangle size={13} strokeWidth={2} aria-hidden="true" />
-                      Sem este e-mail, os usuários não recebem o link para redefinir a senha.
-                    </span>
-                  ) : null}
+                <div className={styles.eventControl}>
+                  <Switch
+                    id={`email-event-${event.id}-switch`}
+                    checked={event.enabled}
+                    onCheckedChange={(value) => toggle(event.id, value)}
+                    disabled={editor.phase === 'saving'}
+                    aria-labelledby={nameId}
+                    aria-describedby={descriptionId}
+                  />
+                  <span className={styles.eventState} data-on={event.enabled || undefined} aria-hidden="true">
+                    {event.enabled ? 'Ativado' : 'Desativado'}
+                  </span>
                 </div>
-              ) : null}
+                {changed || (event.id === 'passwordRecovery' && !event.enabled) ? (
+                  <div className={styles.eventNotes}>
+                    {changed ? (
+                      <span className={styles.changed}>
+                        Alterado localmente
+                        <span className="visually-hidden"> em {event.label}: salve para aplicar</span>
+                      </span>
+                    ) : null}
+                    {event.id === 'passwordRecovery' && !event.enabled ? (
+                      <span className={styles.risk}>
+                        <AlertTriangle size={13} strokeWidth={2} aria-hidden="true" />
+                        Sem este e-mail, os usuários não recebem o link para redefinir a senha.
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </OrbitBorderFrame>
             </li>
           )
         })}

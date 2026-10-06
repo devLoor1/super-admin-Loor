@@ -1,0 +1,102 @@
+.frame {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  --orbit-color: #9892ef;
+  --orbit-idle: 0.2;
+  --orbit-active: 0.5;
+}
+
+.frame[data-enabled='true'] {
+  --orbit-idle: 0.34;
+  --orbit-active: 0.64;
+}
+
+.frame[data-requirement='true'] {
+  --orbit-color: #aca3ff;
+  --orbit-idle: 0.28;
+  --orbit-active: 0.62;
+}
+
+.frame[data-requirement='true'][data-enabled='true'] {
+  --orbit-idle: 0.46;
+  --orbit-active: 0.78;
+}
+
+.frame > :not(.band) {
+  position: relative;
+  z-index: 1;
+}
+
+.band {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  padding: 1px;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--orbit-idle);
+  transition: opacity 180ms ease;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: border-box, content-box;
+  mask-composite: exclude;
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: border-box, content-box;
+  -webkit-mask-composite: xor;
+}
+
+.frame:hover > .band,
+.frame:focus-within > .band {
+  opacity: var(--orbit-active);
+}
+
+.comet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.glow,
+.core {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    var(--orbit-color) 0deg,
+    var(--orbit-color) var(--comet-solid, 22deg),
+    transparent var(--comet-arc, 88deg),
+    transparent 360deg
+  );
+}
+
+.glow {
+  filter: blur(8px);
+}
+
+.core {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band {
+    background: var(--orbit-color);
+    transition: none;
+  }
+
+  .comet {
+    display: none;
+  }
+}
+
+/* Unsupported CSS masks keep the original border, without a filled overlay. */
+@supports not ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  .band {
+    display: none;
+  }
+}

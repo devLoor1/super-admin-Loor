@@ -314,7 +314,7 @@
   transition: background-color var(--transition-fast);
 }
 
-.eventRow:last-child {
+.eventItem:last-child .eventRow {
   border-bottom: 0;
 }
 

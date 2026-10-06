@@ -183,3 +183,73 @@ editing. No dependency is closed by a local prototype save.
 selected OriginKit integration. No new OriginKit asset was searched or integrated.
 Prepared for one local feature commit only; dev/main and the documentation branch
 remain unchanged. Final user visual approval is still required before promotion.
+
+## Orbit Border event-card integration — Codex (2026-10-06)
+
+Starting clean feature HEAD: `baa0e596a01b0b6bb2d8887703dedbedcb4ddf6b`.
+This focused pass supersedes the prior next-step recommendation to select an
+asset: the user supplied OriginKit **Orbit Border Button** and authorized its
+decorative adaptation, not a new button or delivery capability.
+
+### Source adaptation and scope
+
+- Added feature-local `visuals/OrbitBorderFrame.tsx` and its CSS module. It uses
+  the supplied source's two-layer excluded/XOR border mask, diagonal square
+  sizing, counter-clockwise conic comet, blurred/core layers, `arc² / 360` solid
+  segment, RAF rotation and 450ms cubic-out arc expansion.
+- Replaced the source button/link with a neutral `div` inside each existing
+  `li`. Decorative spans are aria-hidden and pointer-transparent. No role,
+  tabIndex, card click, link, press animation or scale; the original labelled
+  Switch is still the only interactive control in each row.
+- Applied only to Cadastro concluído, Recuperação de senha, Investimento em
+  Equity, Investimento em Debt, Conta aprovada and Termos atualizados. No Orbit
+  frame appears in SMTP, Templates, activity, shell, Settings or generic buttons.
+- Original row grid, padding, typography, icon, category, textual Backend/Product
+  classification, dirty state, Switch and section editor behavior are unchanged.
+  The last-row separator selector was adjusted for the neutral wrapper; row
+  dimensions at 1672px remain 872×57px (last row 872×56px), matching the baseline.
+
+### Restrained visual parameters
+
+| Parameter | Illustrative events | Equity / Debt requirements |
+| --- | --- | --- |
+| Color | `#9892ef` | `#aca3ff` |
+| Idle / active arc | 88° / 250° | 112° / 300° |
+| Enabled idle / hover-focus opacity | 0.34 / 0.64 | 0.46 / 0.78 |
+| Disabled idle / hover-focus opacity | 0.20 / 0.50 | 0.28 / 0.62 |
+| Enabled rotation | 18°/s | 22°/s |
+| Disabled rotation | 12°/s | 12°/s |
+
+The band is 1px, blur 8px and core opacity 0.45. Opacity transitions take 180ms;
+hover and keyboard focus expand the source-style arc over 450ms. No face fill or
+text color changes. Product emphasis does not indicate Backend support; existing
+explicit classification labels remain authoritative. **Visual result: BALANCED**
+— borders are perceptible, especially on hover/focus, while text remains primary.
+
+### Independent browser QA / health
+
+| Step | Result |
+| --- | --- |
+| Idle / interaction | Observed all six cards for a dedicated 15-second interval, with three motion samples and start/end captures; also reviewed idle, pointer hover/leave and repeated keyboard focus transitions. No visible stutter or layout shift. |
+| Scheduler / cleanup | One shared RAF scheduler, paint writes capped at 30fps; no React state updates or layout reads per animation frame. Temporary browser-only instrumentation observed maximum one pending Orbit RAF across all six cards; zero pending after reduced motion and after navigating to Settings. Observers/listeners unsubscribe on unmount; offscreen and hidden-page frames pause. This is focused runtime/source evidence, not a CPU benchmark. |
+| Keyboard / semantics | Tab goes directly from Equity Switch to Debt Switch to Conta Switch. Shift+Tab and Space work; labels and descriptions remain correct. Neutral divs have no tabindex or role; each contains one Switch and no other button. List semantics remain intact. |
+| Reduced motion | Live media change stops rotation, hides the comet and shows a static masked accent; all six transforms remained fixed at 30°. Focus/hover accent is immediate. Media override reset afterward. |
+| Responsive | 1672×941, 1440×810, 1280×810, 900×810, 390×844 and 320×740 inspected. No horizontal overflow; borders follow existing 8px desktop/0px compact-row radius and ResizeObserver diagonal sizing. Decoration does not obscure content or capture clicks. |
+| Events / guard | Keyboard Debt toggle, explicit local save, subsequent toggle/discard and unsaved navigation/stay passed. Equity stayed independent. Saved/disabled emphasis followed the actual draft; no event content or persistence behavior changed. |
+| SMTP / test / Templates | Local sender-name save updates Templates and Settings summary; discard restores it. Test confirmation, processing and simulated result passed, explicitly stating no email sent. Templates manage action retains its next-block notice. No Orbit frames in any of those surfaces. |
+| Context | Nova Plataforma retains unconfigured-SMTP warning and its independent enabled/disabled seeds. Finapop context restores its own state. |
+| Regressions | Login blank-form validation/password toggle; Dashboard, Whitelabels, Account Control and Settings rendered normally. No Orbit frames outside Emails. Their feature code, shared Switch/Dialog, shell and Dot Matrix code are unchanged. Focused smokes, not an exhaustive regression or fresh axe suite. |
+| Console / network | No app console errors or exceptions observed. An older buffered network span was truncated and contained only local GET assets; a fresh bounded SMTP-save/discard/simulated-test span was untruncated: zero requests, zero errors. No business API or real email delivery. |
+| Dependencies | None added; package manifest/lockfile unchanged. |
+| TypeScript / lint / build / diff | Passed; production build retains the existing >500kB chunk advisory. |
+
+Review captures are outside the repository under
+`C:/Users/User/Desktop/Loor/output/whitelabel-email-orbit-20261006/`.
+All synthetic local-session saves and browser-only diagnostic overrides are
+cleared by the final reload. No durable QA data or debug switches are added.
+
+Only this frontend review record was updated. Canonical backend-handoff content,
+Backend, dev/main and remote refs remain unchanged. Prepared for one local
+`feat(ui): add orbit border to email events` commit, with **no push, merge or
+deployment**. Ready for final user visual review; no Product dependency is closed
+by this visual treatment.

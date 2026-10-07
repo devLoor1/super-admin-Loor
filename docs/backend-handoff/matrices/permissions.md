@@ -1,6 +1,6 @@
 # Permissions
 
-These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status below refers to the approved local prototype at `4098158b1aa8f58ea20692f0e9bb177b36a49e97`, not delivered RBAC or authoritative commands. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
+These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status below refers to the approved local prototype at `ec86b475e0126667e2fbece490730bdecc271584`, not delivered RBAC or authoritative commands. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
 
 Architecture sections 24 and 30 require independent operator authorization plus validated resource/tenant ownership. Global reads need an explicitly granted global scope; tenant-scoped permission does not imply access to every tenant. A frontend filter or hidden button is never an authorization control.
 
@@ -57,6 +57,14 @@ Architecture sections 24 and 30 require independent operator authorization plus 
 | MODALITY_DISABLE | Disable modality for tenant | FRONTEND PROTOTYPED; local confirmation | Active-business/Opportunity impact policy and authoritative preflight/readback; no financial cascade |
 | MODALITY_RULE_VIEW | Rule catalog and effective/default/override reads | FRONTEND PROTOTYPED; generic concepts only | Agreed rule ownership, supported catalog/provenance and tenant/resource scope |
 | MODALITY_RULE_UPDATE | Permitted modality rule override/reset | FRONTEND PROTOTYPED; two examples with local save/discard | Typed authoritative rules, validation/inheritance/conflicts/readback and sanitized audit; not an Opportunity editor |
+| SEGMENT_VIEW | Independent Segment list/read | FRONTEND PROTOTYPED; local search/filter/sort/pagination | Agreed global/tenant ownership, authorized resource projection; no implicit Resource Use grant |
+| SEGMENT_CREATE | Create Segment | FRONTEND PROTOTYPED; local only | Final fields/uniqueness/scope, authoritative readback and audit |
+| SEGMENT_UPDATE | Update allowed Segment fields | FRONTEND PROTOTYPED; local name/description/status | Final validation, reference policy, concurrency/readback and audit; status permissions remain to define |
+| SEGMENT_DELETE | Delete Segment if domain policy permits | FRONTEND PROTOTYPED; local removal only | Agreed delete/retention/reference protection and durable audit; not inactivation by implication |
+| RESOURCE_USE_VIEW | Independent Resource Use list/read | FRONTEND PROTOTYPED; local search/filter/sort/pagination | Agreed global/tenant ownership, authorized resource projection; no implicit Segment grant |
+| RESOURCE_USE_CREATE | Create Resource Use | FRONTEND PROTOTYPED; local only | Final fields/uniqueness/scope, authoritative readback and audit |
+| RESOURCE_USE_UPDATE | Update allowed Resource Use fields | FRONTEND PROTOTYPED; local name/description/status | Final validation, reference policy, concurrency/readback and audit; status permissions remain to define |
+| RESOURCE_USE_DELETE | Delete Resource Use if domain policy permits | FRONTEND PROTOTYPED; local removal only | Agreed delete/retention/reference protection and durable audit; not inactivation by implication |
 
 `TERMS_PUBLISH` refines the prior provisional `TERMS_UPDATE` specification label; this is not a deployed permission rename or grant migration. Emails labels above specify separate read/update/test operations, not effective grants, roles or settled permission inheritance. Settings' SMTP summary shortcut does not authorize configuration or sending. `EMAIL_TEMPLATE_UPDATE` describes later capability, not a current editor/publisher.
 
@@ -64,4 +72,6 @@ The Admin reactivation/reassignment labels above only identify existing prototyp
 
 Proposed acceptance: unauthorized operator, unauthorized tenant, wrong resource ownership and ordinary actor/service-token confusion are rejected server-side. Tests should cover global versus tenant scope, privilege escalation and disabled operators. Do not reuse a customer's token as service authentication or log credential payloads during permission diagnostics.
 
-Modality labels remain **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. Local controls grant no authority. Real ownership/operation boundaries are [Q-MO-05–06, Q-MO-11](../open-questions.md#modalities--rules), under existing Q-RB-01–04. Modality update does not imply enable/disable/rule-update permission; no financial permission or Segment/Resource Use management permission is added. See [Modalities / Rules](../08-whitelabel-finance-modalities-rules.md#permissions-audit-and-completion).
+Modality labels remain **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. Local controls grant no authority. Real ownership/operation boundaries are [Q-MO-05–06, Q-MO-11](../open-questions.md#modalities--rules), under existing Q-RB-01–04. Modality update does not imply enable/disable/rule-update, financial or Segment/Resource Use management permission. See [Modalities / Rules](../08-whitelabel-finance-modalities-rules.md#permissions-audit-and-completion).
+
+Segment and Resource Use labels are independent **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. Shared names, tenant presentation and one combined screen confer no grant or shared ownership. Separate activate/inactivate permissions, if necessary, remain a future Product/RBAC decision; they are not silently granted by UPDATE or DELETE. See [Q-CAT-01, Q-CAT-11](../open-questions.md#segments--resource-uses), under Q-RB-01–04, and [chapter 09](../09-whitelabel-finance-segments-resource-uses.md#permissions-and-audit).

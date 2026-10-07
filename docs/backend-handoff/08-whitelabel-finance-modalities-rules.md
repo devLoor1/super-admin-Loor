@@ -20,7 +20,7 @@ Separate classifications:
 | Super Admin exposure | CONTROL PLANE CONTRACT TO DEFINE / CONTROL PLANE EXPOSURE NEEDED |
 | Authoritative integration/runtime | INTEGRATION PENDING / E2E VALIDATION PENDING |
 
-**Capital de Giro is not a modality** and is not represented as a planned modality, modality rule, dependency, status, permission or count. **Segments / Segmentos** and **Resource Uses / Usos dos recursos** are separate Product domains reserved for a future combined block. Capital de Giro may exist in both catalogs without merging them. Their support/contracts remain to verify/define; no detailed CRUD contract is added here. See [Q-GM-01](open-questions.md#gateway--modality-relationship).
+**Capital de Giro is not a modality** and is not represented as a planned modality, modality rule, dependency, status, permission or count. **Segments / Segmentos** and **Resource Uses / Usos dos recursos** now have a separate [combined prototype screen](09-whitelabel-finance-segments-resource-uses.md), with independent CRUD/identity/lifecycle. Capital de Giro may exist in both without merging, mapping or synchronizing them. Their Core support and authoritative contracts remain to verify/define; chapter 09 owns their handoff, not this modality rule model. See [Q-GM-01](open-questions.md#gateway--modality-relationship) and [catalog decisions](open-questions.md#segments--resource-uses).
 
 ## Tenant enablement and detail
 
@@ -28,7 +28,7 @@ The prototype enables/disables a selected modality for the displayed Whitelabel.
 
 Presentation distinguishes **Habilitada**, **Dependência pendente**, **Desabilitada** and **Não configurada**. Explicit disable is not never-configured. Enabled counts include dependency-pending enabled modalities; pending dependencies do not silently change enablement. Counts and statuses do not prove operational readiness.
 
-Selected detail offers Visão geral, Dependências, Regras and Atividade da sessão. It displays tenant context, local configuration origin, dependency/rule summaries, integration pending and a session timestamp (or no change this session), not an authoritative historical last-change value. Tenant-preserving links connect both Finance screens.
+Selected detail offers Visão geral, Dependências, Regras and Atividade da sessão. It displays tenant context, local configuration origin, dependency/rule summaries, integration pending and a session timestamp (or no change this session), not an authoritative historical last-change value. Tenant-preserving navigation now connects all three Finance screens, including the separate catalogs.
 
 Whether tenant enablement exists in Core, what it permits, effects on new/existing Opportunities and investments/payments, disable restrictions while active business exists, and re-enable behavior remain **PRODUCT DECISION REQUIRED / CORE SUPPORT TO VERIFY**. No cascading behavior is claimed. See [Q-MO-01–04](open-questions.md#modalities--rules).
 

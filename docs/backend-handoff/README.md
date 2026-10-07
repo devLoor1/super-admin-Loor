@@ -2,16 +2,16 @@
 
 Start here for Backend review of the approved frontend and the capabilities needed to integrate it. This is a documentation handoff, not authorization to implement every proposed capability.
 
-Approved frontend baseline: `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1, Modalities / Rules V1). All eight are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
+Approved frontend baseline: `dev@ec86b475e0126667e2fbece490730bdecc271584` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1, Modalities / Rules V1, Segments / Resource Uses V1). All nine are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
 
-The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/4098158b1aa8f58ea20692f0e9bb177b36a49e97) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/ec86b475e0126667e2fbece490730bdecc271584) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
 
 The architecture boundary is **Super Admin frontend → Control Plane → Core**. Operational entities and rules remain authoritative in Core; the frontend receives neither Core service credentials nor direct database access.
 
 ## Read order
 
 1. [Context and architecture](00-context-and-architecture.md) and [current frontend scope](01-current-frontend-scope.md).
-2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), [Finance / Gateways V1](07-whitelabel-finance-gateways.md), and [Modalities / Rules V1](08-whitelabel-finance-modalities-rules.md).
+2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), [Finance / Gateways V1](07-whitelabel-finance-gateways.md), [Modalities / Rules V1](08-whitelabel-finance-modalities-rules.md), and [Segments / Resource Uses V1](09-whitelabel-finance-segments-resource-uses.md).
 3. [Backend dependencies](matrices/backend-dependencies.md), [permissions](matrices/permissions.md), [business rules](matrices/business-rules.md), and [audit events](matrices/audit-events.md).
 4. [Audit findings and source references](audit-findings.md), then [canonical open questions](open-questions.md).
 
@@ -41,6 +41,8 @@ Emails is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**
 
 Finance / Gateways is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. It is configuration/governance only: no provider, banking or financial operation occurs. See the [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
 
-Modalities / Rules is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Equity and Debt are the only current prototype modalities; Capital de Giro remains outside that taxonomy. Rules, default/override and dependency readiness are non-authoritative. See [Modalities / Rules](08-whitelabel-finance-modalities-rules.md) for local behavior and the separate future Segments / Resource Uses boundary.
+Modalities / Rules is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Equity and Debt are the only current prototype modalities; Capital de Giro remains outside that taxonomy. Rules, default/override and dependency readiness are non-authoritative. See [Modalities / Rules](08-whitelabel-finance-modalities-rules.md) for local behavior and its boundary with the separate catalog screen.
+
+Segments / Resource Uses is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. One screen presents two independent catalogs with local CRUD and active/inactive state. Capital de Giro may exist independently in both; it is never a modality or an automatic mapping. Ownership, Opportunity cardinality, deletion and authoritative validation remain unresolved. See [chapter 09](09-whitelabel-finance-segments-resource-uses.md).
 
 Backend review should first confirm the foundation and read contracts, then resolve Product-dependent writes. An existing Core table or actor endpoint does not by itself constitute a Super Admin capability.

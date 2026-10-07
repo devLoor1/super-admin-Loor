@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97`, including Finance / Gateways and Modalities / Rules V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@ec86b475e0126667e2fbece490730bdecc271584`, including Finance / Gateways, Modalities / Rules and Segments / Resource Uses V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -34,7 +34,15 @@ Current Entrepreneur Admin creation must be read from the audited service, not o
 
 The [approved Modalities / Rules frontend](08-whitelabel-finance-modalities-rules.md) adds Equity/Debt tenant-local enablement, generic rule choices, conceptual defaults/dependencies and session activity. **A-10/A-13** retain the existing narrower modality-policy/provider evidence; they do not prove an official managed catalog, Super Admin tenant enable/disable, rule ownership/validation, rule-default inheritance, bank/document dependencies or disabling impact. These targets remain **CORE SUPPORT TO VERIFY / PRODUCT DECISION REQUIRED / CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**; implement missing capabilities only after verification/contract decisions. No Core source, live endpoint or provider was newly inspected for this documentation update.
 
-**A-11** still limits audit evidence: frontend activity is not durable audit and does not deliver the proposed modality events or RBAC. Capital de Giro remains outside modality taxonomy; future Segments and Resource Uses are separate domains, not evidence of additional modality support. See [dependencies](matrices/backend-dependencies.md#modalities--rules-v1-dependencies) and [Q-MO-01–12](open-questions.md#modalities--rules). No retained finding, source link or Core audit SHA is changed by this mapping.
+**A-11** still limits audit evidence: frontend activity is not durable audit and does not deliver the proposed modality events or RBAC. Capital de Giro remains outside modality taxonomy; the now-prototyped Segments and Resource Uses are separate domains, not evidence of additional modality support. See [dependencies](matrices/backend-dependencies.md#modalities--rules-v1-dependencies) and [Q-MO-01–12](open-questions.md#modalities--rules). No retained finding, source link or Core audit SHA is changed by this mapping.
+
+### Catalog prototype mapping — no new Core finding
+
+The [approved Segments / Resource Uses screen](09-whitelabel-finance-segments-resource-uses.md) adds two independent local catalogs with CRUD, active/inactive state, search/filter/sort/pagination and session feedback. Capital de Giro may exist independently in both, never as a modality or automatic relationship. These are **new frontend prototype requirements**, not findings that Core already supports their management.
+
+The retained audit does not establish either catalog's source of truth, official seeds, CRUD, ownership, uniqueness/validation, lifecycle/delete, reference protection, Opportunity associations/cardinality, hierarchy/codes/order or version/concurrency contracts. **A-10/A-13** are narrower modality/provider evidence and must not be relabeled as catalog support. **A-11** does not establish the future catalog event names, durable audit or RBAC. Status remains **CORE SUPPORT TO VERIFY / PRODUCT DECISION REQUIRED / CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**; missing implementation is determined after support/contract verification.
+
+No Core source, live endpoint or provider was newly inspected. No retained finding A-01–13, source link or Core audit SHA is altered; [catalog dependencies](matrices/backend-dependencies.md#segments--resource-uses-v1-dependencies) and [Q-CAT-01–13](open-questions.md#segments--resource-uses) document the new targets without inventing support.
 
 ## Current route families and proposed exposure
 

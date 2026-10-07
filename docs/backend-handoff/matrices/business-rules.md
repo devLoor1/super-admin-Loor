@@ -8,7 +8,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | --- | --- | --- |
 | C-01 | Architecture sections 2–5, 39 | Core remains the operational source of truth; Control Plane uses internal services, without direct DB access or operational duplication. |
 | C-02 | Architecture sections 24, 30 | Operator authorization and service authentication are separate; requested tenant filters are not permission grants. |
-| C-03 | Approved frontend source at 4098158b1aa8f58ea20692f0e9bb177b36a49e97 | Login, Dashboard, Whitelabels, Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails, Finance / Gateways and Modalities / Rules V1 are FRONTEND PROTOTYPED without authentication/business API integration. Actions/saves/activity are local and reset on reload; no real email, provider, banking or financial operation occurs. |
+| C-03 | Approved frontend source at ec86b475e0126667e2fbece490730bdecc271584 | Login, Dashboard, Whitelabels, Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails, Finance / Gateways, Modalities / Rules and Segments / Resource Uses V1 are FRONTEND PROTOTYPED without authentication/business API integration. Actions/saves/activity are local and reset on reload; no real email, provider, banking or financial operation occurs. |
 | C-04 | Current user intent and approved local prototype | Pause intent is temporary access prevention with data/history preservation; the prototype requires a reason and changes only local access state. Reactivate restores local access without changing unrelated business/validation state. Real enforcement is not implemented; policy is PARTIALLY DEFINED. |
 | C-05 | Core audit | Investor validation denial/self soft-deletion, tenant active flag and owner-tool disable are separate behaviors, not generic account pause. |
 | C-06 | Core Terms service/auth | Current tenant revision is required at Investor registration; rejected acceptance/stale revision fail before Investor creation in the audited path. Existing-user forced reacceptance was not found. |
@@ -25,8 +25,27 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | C-17 | Approved Emails event labels and template scope | Registration completed, password recovery, account approved and Terms updated are illustrative, not confirmed Backend-configurable flags. Templates is summary-only; local categories/default labels do not establish actual coverage, inheritance or an editor. |
 | C-18 | Approved Finance / Gateways prototype and architecture financial boundary | The module is configuration/governance only and performs no wallet, Investment, Payment, Pix, refund, cashout, withdrawal, transfer or reconciliation mutation. Gateway/bank state is local and non-authoritative. |
 | C-19 | Approved write-only credential UI | Existing gateway secrets are never readable; edits start blank and only configured/masked metadata is shown. Secure Backend storage and contracts are not proven by the UI. |
-| C-20 | Explicit corrected Product taxonomy and approved frontend catalog | Equity and Debt are the only current prototype modalities, not proof of the complete production catalog. Capital de Giro is not a modality; it belongs to the separate future Segments / Resource Uses domains, reserved for their own combined block. |
+| C-20 | Explicit corrected Product taxonomy and approved frontend catalog | Equity and Debt are the only current prototype modalities, not proof of the complete production catalog. Capital de Giro is not a modality; it may exist independently in the separate Segments / Resource Uses catalogs, now presented in their own combined prototype screen. |
 | C-21 | Approved Modalities / Rules frontend and financial boundary | Regras gerais is read-only; the sole editor is modality-specific. Shared Finance enablement and local rule choices/activity are in-memory. No Opportunity editing or wallet/payment/Pix/Investment/refund/cashout/withdrawal/transfer/reconciliation mutation occurs. This confirms prototype boundaries, not real rule ownership or enforcement. |
+| C-22 | Corrected Product taxonomy and approved catalog model/store | Segment and Resource Use are separate domains with independent identity/lifecycle. Same-name records, including Capital de Giro in both, are not aliases, synchronized records or an automatic mapping. Shared presentation does not merge domains. |
+| C-23 | Approved Segments / Resource Uses prototype | Each catalog has independent local CRUD, search/filter/sort/pagination and status. Activity is local/session-only, not authoritative audit; no Opportunity CRUD, association, usage count, migration, assignment or financial mutation occurs. This confirms frontend behavior, not Backend support. |
+
+## Segment and Resource Use rules
+
+See [chapter 09](../09-whitelabel-finance-segments-resource-uses.md). **CONFIRMED** describes explicit taxonomy/observed frontend boundaries, not authoritative Backend semantics. **PROTOTYPE UX RULE** is local behavior only; **PRODUCT DECISION REQUIRED** and **BACKEND DECISION REQUIRED** remain distinct unresolved policy/contract needs.
+
+| ID | Classification | Rule / unresolved boundary |
+| --- | --- | --- |
+| CAT-01 | CONFIRMED | Two independent catalogs; Capital de Giro may exist in both with separate IDs/lifecycle and is not a modality. There is no automatic Segment ↔ Resource Use relationship; any future relation requires explicit definition (Q-CAT-09). |
+| CAT-02 | CONFIRMED frontend V1 behavior | Identical names across catalogs are allowed without creating a mapping. Authoritative naming policy remains unresolved under Q-CAT-04. |
+| CAT-03 | PROTOTYPE UX RULE | Block duplicates only within the same catalog using case-, accent- and extra-space-normalized comparison; not a Backend uniqueness rule (Q-CAT-04). |
+| CAT-04 | PROTOTYPE UX RULE | Name 2–60 characters and description up to 160; not final Product/Backend validation (Q-CAT-05). |
+| CAT-05 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Active/inactive meaning, selection eligibility, reactivation and new/existing Opportunity effects are unresolved; local inactive retains a record (Q-CAT-06). |
+| CAT-06 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Hard/soft delete, deletion of used records, inactivation instead of deletion, reference protection and historical retention are unresolved; prototype delete only removes the local record (Q-CAT-07). |
+| CAT-07 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Global, per-Whitelabel, global plus tenant overrides or global plus per-tenant enablement remain alternatives; tenant presentation does not define ownership (Q-CAT-01). |
+| CAT-08 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Official Segment and Resource Use datasets/source of truth, lifecycle, hierarchy/codes/order remain unresolved independently (Q-CAT-02–03, Q-CAT-10). |
+| CAT-09 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Expected future Opportunity consumption is not implemented; one/multiple Segments and one/multiple Resource Uses must be decided separately. No inferred associations/migration/assignment (Q-CAT-08–09). |
+| CAT-10 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Final per-domain permissions, durable audit, concurrency/versioning, sanitized errors and authoritative readback remain to define (Q-CAT-11–13, Q-RB-01–04, Q-AU-01–03). |
 
 ## Modality prototype assumptions
 
@@ -92,6 +111,7 @@ The authoritative question text exists only in [open-questions.md](../open-quest
 | Bank-account ownership, verification and financial relationships | [Q-BA-01–04](../open-questions.md#bank-accounts) |
 | Gateway/modality and Sandbox/Production semantics | [Q-GM-01–02](../open-questions.md#gateway--modality-relationship) |
 | Modality catalog, tenant transitions/impact, rule ownership/catalog/defaults, dependencies, RBAC and audit | [Q-MO-01–12](../open-questions.md#modalities--rules) |
+| Independent Segment/Resource Use ownership, official datasets, validation, lifecycle/delete, Opportunity cardinality, structural metadata, permissions/audit/versioning | [Q-CAT-01–13](../open-questions.md#segments--resource-uses) |
 | RBAC and audit guarantees | [Q-RB-01–04](../open-questions.md#rbac), [Q-AU-01–03](../open-questions.md#audit) |
 
 Do not convert seed comments, UI labels, nullable columns, domain-specific denial or architecture route examples into settled Product rules.

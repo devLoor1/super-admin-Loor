@@ -33,6 +33,13 @@ const METRICS: { id: string; label: string; module: string; icon: LucideIcon; to
   { id: 'kyc', label: 'KYC', module: 'Compliance', icon: ShieldCheck, tone: 'indigo' },
 ]
 
+/** KPI cards whose module now exists open it; the rest keep the prototype notice. */
+const DESTINATIONS: Record<string, string> = {
+  whitelabels: '#/whitelabels',
+  investidores: '#/operation/investors',
+  oportunidades: '#/operation/opportunities',
+}
+
 function DashboardContent() {
   const notify = usePrototypeNotice()
 
@@ -49,8 +56,8 @@ function DashboardContent() {
                 label={metric.label}
                 icon={metric.icon}
                 tone={metric.tone}
-                onOpen={() => metric.id === 'whitelabels'
-                  ? window.location.assign('#/whitelabels')
+                onOpen={() => DESTINATIONS[metric.id]
+                  ? window.location.assign(DESTINATIONS[metric.id])
                   : notify(moduleUnavailable(metric.module))}
               />
             </li>

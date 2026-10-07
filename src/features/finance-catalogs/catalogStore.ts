@@ -42,6 +42,44 @@ function emit(next: State) {
 
 const clean = (draft: CatalogDraft) => ({ name: tidy(draft.name), description: tidy(draft.description), status: draft.status })
 
+/**
+ * Read-only view of both catalogs for every Whitelabel (used by Operation to
+ * resolve the references an Opportunity holds). Still two separate maps.
+ * Detached, frozen records prevent callers from mutating the store; activity
+ * updates keep the same snapshot and do not re-render catalog readers.
+ */
+type CatalogSnapshot = Readonly<{
+  segments: Readonly<Record<string, readonly Readonly<Segment>[]>>
+  resourceUses: Readonly<Record<string, readonly Readonly<ResourceUse>[]>>
+}>
+
+function readonlyCatalog<T extends Segment | ResourceUse>(catalog: Record<string, T[]>) {
+  return Object.freeze(Object.fromEntries(Object.entries(catalog).map(([tenant, items]) => [
+    tenant,
+    Object.freeze(items.map((item) => Object.freeze({ ...item }))),
+  ])))
+}
+
+let catalogSnapshot: CatalogSnapshot | undefined
+let snapshotSegments: State['segments'] | undefined
+let snapshotResourceUses: State['resourceUses'] | undefined
+
+function getCatalogSnapshot(): CatalogSnapshot {
+  if (!catalogSnapshot || snapshotSegments !== state.segments || snapshotResourceUses !== state.resourceUses) {
+    snapshotSegments = state.segments
+    snapshotResourceUses = state.resourceUses
+    catalogSnapshot = Object.freeze({
+      segments: readonlyCatalog(state.segments),
+      resourceUses: readonlyCatalog(state.resourceUses),
+    })
+  }
+  return catalogSnapshot
+}
+
+export function useCatalogsSnapshot(): CatalogSnapshot {
+  return useSyncExternalStore(subscribe, getCatalogSnapshot)
+}
+
 /* ---------- Segments ---------- */
 
 export function useSegments(whitelabelId: string): Segment[] {

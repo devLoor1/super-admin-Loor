@@ -8,12 +8,36 @@ import { WhitelabelEmailsPage } from '../features/whitelabel-emails/WhitelabelEm
 import { FinanceGatewaysPage } from '../features/finance-gateways/FinanceGatewaysPage'
 import { FinanceModalitiesPage } from '../features/finance-modalities/FinanceModalitiesPage'
 import { FinanceCatalogsPage } from '../features/finance-catalogs/FinanceCatalogsPage'
+import { OpportunitiesPage } from '../features/operation/opportunities/OpportunitiesPage'
+import { OpportunityDetailPage } from '../features/operation/opportunities/OpportunityDetailPage'
+import { OpportunityFormPage } from '../features/operation/opportunities/OpportunityFormPage'
+import { InvestorsPage } from '../features/operation/investors/InvestorsPage'
+import { InvestorDetailPage } from '../features/operation/investors/InvestorDetailPage'
+import { EntrepreneursPage } from '../features/operation/entrepreneurs/EntrepreneursPage'
+import { EntrepreneurDetailPage } from '../features/operation/entrepreneurs/EntrepreneurDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
 
-type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts' | 'settings' | 'emails' | 'finance' | 'finance-modalities' | 'finance-catalogs'
+type View =
+  | 'login'
+  | 'dashboard'
+  | 'whitelabels'
+  | 'accounts'
+  | 'settings'
+  | 'emails'
+  | 'finance'
+  | 'finance-modalities'
+  | 'finance-catalogs'
+  | 'operation-opportunities'
+  | 'operation-opportunity-new'
+  | 'operation-opportunity'
+  | 'operation-opportunity-edit'
+  | 'operation-investors'
+  | 'operation-investor'
+  | 'operation-entrepreneurs'
+  | 'operation-entrepreneur'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
@@ -23,6 +47,12 @@ type Route =
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
   | { view: 'finance-catalogs'; whitelabelId: string }
+  | { view: 'operation-opportunities'; entrepreneurId?: string }
+  | { view: 'operation-opportunity-new' | 'operation-investors' | 'operation-entrepreneurs' }
+  | { view: 'operation-opportunity'; opportunityId: string }
+  | { view: 'operation-opportunity-edit'; opportunityId: string; focusClassification: boolean }
+  | { view: 'operation-investor'; investorId: string }
+  | { view: 'operation-entrepreneur'; entrepreneurId: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -34,6 +64,14 @@ const TITLES: Record<View, string> = {
   finance: 'Super Admin · Financeiro / Gateways',
   'finance-modalities': 'Super Admin · Financeiro / Modalidades e regras',
   'finance-catalogs': 'Super Admin · Financeiro / Segmentos e usos dos recursos',
+  'operation-opportunities': 'Super Admin · Operação / Oportunidades',
+  'operation-opportunity-new': 'Super Admin · Operação / Nova oportunidade',
+  'operation-opportunity': 'Super Admin · Operação / Oportunidade',
+  'operation-opportunity-edit': 'Super Admin · Operação / Editar oportunidade',
+  'operation-investors': 'Super Admin · Operação / Investidores',
+  'operation-investor': 'Super Admin · Operação / Investidor',
+  'operation-entrepreneurs': 'Super Admin · Operação / Empreendedores',
+  'operation-entrepreneur': 'Super Admin · Operação / Empreendedor',
 }
 
 /** Views rendered inside the dark App Shell. */
@@ -46,6 +84,14 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'finance',
   'finance-modalities',
   'finance-catalogs',
+  'operation-opportunities',
+  'operation-opportunity-new',
+  'operation-opportunity',
+  'operation-opportunity-edit',
+  'operation-investors',
+  'operation-investor',
+  'operation-entrepreneurs',
+  'operation-entrepreneur',
 ])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
@@ -54,6 +100,10 @@ const EMAILS_PATH = /^whitelabels\/([\w-]+)\/emails$/
 const FINANCE_GATEWAYS_PATH = /^whitelabels\/([\w-]+)\/finance\/gateways$/
 const FINANCE_MODALITIES_PATH = /^whitelabels\/([\w-]+)\/finance\/modalities$/
 const FINANCE_CATALOGS_PATH = /^whitelabels\/([\w-]+)\/finance\/segments-resource-uses$/
+const OPPORTUNITY_PATH = /^operation\/opportunities\/([\w-]+)$/
+const OPPORTUNITY_EDIT_PATH = /^operation\/opportunities\/([\w-]+)\/edit$/
+const INVESTOR_PATH = /^operation\/investors\/([\w-]+)$/
+const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
 
 /**
  * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
@@ -61,7 +111,11 @@ const FINANCE_CATALOGS_PATH = /^whitelabels\/([\w-]+)\/finance\/segments-resourc
  * `#/whitelabels/:whitelabelId/settings`, `#/whitelabels/:whitelabelId/emails`
  * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`,
  * `#/whitelabels/:whitelabelId/finance/modalities`,
- * `#/whitelabels/:whitelabelId/finance/segments-resource-uses`
+ * `#/whitelabels/:whitelabelId/finance/segments-resource-uses`,
+ * Operation (global): `#/operation/opportunities` (optional `?empreendedor=:id`),
+ * `#/operation/opportunities/new`, `#/operation/opportunities/:opportunityId`
+ * (`/edit`, optional `?secao=classificacao`), `#/operation/investors[/:investorId]`,
+ * `#/operation/entrepreneurs[/:entrepreneurId]`
  * → visual shell
  * screens (not an authentication guard); anything else → login.
  */
@@ -88,6 +142,27 @@ function routeFromHash(): Route {
   if (modalities) return { view: 'finance-modalities', whitelabelId: modalities[1] }
   const catalogs = FINANCE_CATALOGS_PATH.exec(path)
   if (catalogs) return { view: 'finance-catalogs', whitelabelId: catalogs[1] }
+  const params = new URLSearchParams(search)
+  if (path === 'operation/opportunities') {
+    return { view: 'operation-opportunities', entrepreneurId: params.get('empreendedor') ?? undefined }
+  }
+  if (path === 'operation/opportunities/new') return { view: 'operation-opportunity-new' }
+  if (path === 'operation/investors') return { view: 'operation-investors' }
+  if (path === 'operation/entrepreneurs') return { view: 'operation-entrepreneurs' }
+  const opportunityEdit = OPPORTUNITY_EDIT_PATH.exec(path)
+  if (opportunityEdit) {
+    return {
+      view: 'operation-opportunity-edit',
+      opportunityId: opportunityEdit[1],
+      focusClassification: params.get('secao') === 'classificacao',
+    }
+  }
+  const opportunity = OPPORTUNITY_PATH.exec(path)
+  if (opportunity) return { view: 'operation-opportunity', opportunityId: opportunity[1] }
+  const investor = INVESTOR_PATH.exec(path)
+  if (investor) return { view: 'operation-investor', investorId: investor[1] }
+  const entrepreneur = ENTREPRENEUR_PATH.exec(path)
+  if (entrepreneur) return { view: 'operation-entrepreneur', entrepreneurId: entrepreneur[1] }
   return { view: 'login' }
 }
 
@@ -125,5 +200,26 @@ export function App() {
   if (route.view === 'finance') return <FinanceGatewaysPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-modalities') return <FinanceModalitiesPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-catalogs') return <FinanceCatalogsPage whitelabelId={route.whitelabelId} />
+  if (route.view === 'operation-opportunities') return <OpportunitiesPage entrepreneurId={route.entrepreneurId} />
+  if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />
+  if (route.view === 'operation-opportunity-edit') {
+    return (
+      <OpportunityFormPage
+        key={`edit:${route.opportunityId}`}
+        mode="edit"
+        opportunityId={route.opportunityId}
+        focusClassification={route.focusClassification}
+      />
+    )
+  }
+  if (route.view === 'operation-opportunity') {
+    return <OpportunityDetailPage key={route.opportunityId} opportunityId={route.opportunityId} />
+  }
+  if (route.view === 'operation-investors') return <InvestorsPage />
+  if (route.view === 'operation-investor') return <InvestorDetailPage key={route.investorId} investorId={route.investorId} />
+  if (route.view === 'operation-entrepreneurs') return <EntrepreneursPage />
+  if (route.view === 'operation-entrepreneur') {
+    return <EntrepreneurDetailPage key={route.entrepreneurId} entrepreneurId={route.entrepreneurId} />
+  }
   return <LoginPage />
 }

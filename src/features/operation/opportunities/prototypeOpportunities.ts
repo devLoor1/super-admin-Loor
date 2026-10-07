@@ -1,0 +1,163 @@
+import type { Opportunity } from './opportunityModel'
+
+/*
+ * ILLUSTRATIVE PROTOTYPE OPPORTUNITIES — not production data.
+ *
+ * Names are generic examples; dates only demonstrate layout. There are no
+ * amounts, targets, rates or any financial parameter. Segment / Resource Use
+ * ids reference the Whitelabel's own catalogs in Financeiro › Segmentos e usos
+ * dos recursos; entrepreneur ids reference Accounts prototype records of the
+ * same Whitelabel. "Capital de Giro 2026" shows the valid combination
+ * Debt + Segment "Capital de Giro" + Resource Use "Capital de Giro": two
+ * records from independent catalogs, never a modality.
+ */
+
+const FINAPOP = 'wl_proto_01'
+const LOOR = 'wl_proto_02'
+
+export const PROTOTYPE_OPPORTUNITIES: Opportunity[] = [
+  {
+    id: 'opp_proto_001',
+    name: 'Expansão Sul',
+    description: 'Expansão das operações na região Sul com novas unidades (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_001',
+    modality: 'debt',
+    segmentIds: ['seg_finapop_tecnologia'],
+    resourceUseIds: ['ru_finapop_expansao'],
+    status: 'active',
+    updatedAt: '2026-10-03T14:32:00-03:00',
+  },
+  {
+    id: 'opp_proto_002',
+    name: 'Plataforma Digital',
+    description: 'Evolução de produto digital e aquisição de clientes (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_001',
+    modality: 'equity',
+    segmentIds: ['seg_finapop_tecnologia'],
+    resourceUseIds: ['ru_finapop_modernizacao', 'ru_finapop_marketing'],
+    status: 'active',
+    updatedAt: '2026-10-01T16:48:00-03:00',
+  },
+  {
+    id: 'opp_proto_003',
+    name: 'Capital de Giro 2026',
+    description: 'Reforço das operações do dia a dia (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_005',
+    modality: 'debt',
+    segmentIds: ['seg_finapop_capital_giro'],
+    resourceUseIds: ['ru_finapop_capital_giro'],
+    status: 'active',
+    updatedAt: '2026-10-02T11:20:00-03:00',
+  },
+  {
+    id: 'opp_proto_004',
+    name: 'Rede de Clínicas',
+    description: 'Abertura de novas clínicas (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_005',
+    modality: 'equity',
+    segmentIds: ['seg_finapop_saude'],
+    resourceUseIds: ['ru_finapop_expansao'],
+    status: 'paused',
+    updatedAt: '2026-09-27T14:26:00-03:00',
+  },
+  {
+    id: 'opp_proto_005',
+    name: 'Usina Solar Norte',
+    description: '',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_003',
+    modality: 'debt',
+    segmentIds: [],
+    resourceUseIds: ['ru_finapop_modernizacao'],
+    status: 'paused',
+    updatedAt: '2026-09-12T09:44:00-03:00',
+  },
+  {
+    id: 'opp_proto_006',
+    name: 'Novo Campus',
+    description: 'Rascunho sem empreendedor vinculado (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: null,
+    modality: 'equity',
+    segmentIds: ['seg_finapop_educacao'],
+    resourceUseIds: ['ru_finapop_expansao'],
+    status: 'draft',
+    updatedAt: '2026-09-30T10:05:00-03:00',
+  },
+  {
+    id: 'opp_proto_007',
+    name: 'Modernização Fabril',
+    description: 'Atualização de equipamentos e reforço das operações (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_001',
+    modality: 'debt',
+    segmentIds: ['seg_finapop_tecnologia'],
+    resourceUseIds: ['ru_finapop_modernizacao', 'ru_finapop_capital_giro'],
+    status: 'draft',
+    updatedAt: '2026-10-03T17:02:00-03:00',
+  },
+  {
+    id: 'opp_proto_008',
+    name: 'Estoque de Safra',
+    description: 'Usa itens hoje inativos nos catálogos (exemplo ilustrativo).',
+    whitelabelId: FINAPOP,
+    entrepreneurId: 'emp_proto_003',
+    modality: 'debt',
+    segmentIds: ['seg_finapop_agro'],
+    resourceUseIds: ['ru_finapop_estoque'],
+    status: 'paused',
+    updatedAt: '2026-08-21T15:10:00-03:00',
+  },
+  {
+    id: 'opp_proto_009',
+    name: 'Armazém Regional',
+    description: 'Novo centro de armazenagem (exemplo ilustrativo).',
+    whitelabelId: LOOR,
+    entrepreneurId: 'emp_proto_007',
+    modality: 'debt',
+    segmentIds: ['seg_loor_servicos'],
+    resourceUseIds: ['ru_loor_expansao'],
+    status: 'active',
+    updatedAt: '2026-10-01T10:15:00-03:00',
+  },
+  {
+    id: 'opp_proto_010',
+    name: 'Varejo Conectado',
+    description: 'Integração de canais físico e digital (exemplo ilustrativo).',
+    whitelabelId: LOOR,
+    entrepreneurId: 'emp_proto_007',
+    modality: 'equity',
+    segmentIds: ['seg_loor_varejo'],
+    resourceUseIds: ['ru_loor_capital_giro'],
+    status: 'active',
+    updatedAt: '2026-09-29T09:15:00-03:00',
+  },
+  {
+    id: 'opp_proto_011',
+    name: 'Linha Industrial',
+    description: '',
+    whitelabelId: LOOR,
+    entrepreneurId: 'emp_proto_007',
+    modality: 'debt',
+    segmentIds: ['seg_loor_industria'],
+    resourceUseIds: ['ru_loor_capital_giro'],
+    status: 'draft',
+    updatedAt: '2026-09-18T13:37:00-03:00',
+  },
+  {
+    id: 'opp_proto_012',
+    name: 'Expansão Varejo',
+    description: 'Rascunho ainda sem classificação de segmento ou uso (exemplo ilustrativo).',
+    whitelabelId: LOOR,
+    entrepreneurId: null,
+    modality: 'equity',
+    segmentIds: [],
+    resourceUseIds: [],
+    status: 'draft',
+    updatedAt: null,
+  },
+]

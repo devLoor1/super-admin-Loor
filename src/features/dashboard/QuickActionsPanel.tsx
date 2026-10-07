@@ -11,7 +11,9 @@ const ACTIONS: { id: string; title: string; description: string; module: string;
   { id: 'auditoria', title: 'Acessar Auditoria', description: 'Consulte logs e histórico', module: 'Auditoria', icon: FileSearch, tone: 'plum' },
 ]
 
-/** Whitelabels is available locally; remaining destinations show prototype notices. */
+/** Whitelabels and Operação are available locally; remaining destinations show prototype notices. */
+const DESTINATIONS: Record<string, string> = { whitelabels: '#/whitelabels', operacao: '#/operation/opportunities' }
+
 export function QuickActionsPanel({ className }: { className?: string }) {
   const notify = usePrototypeNotice()
 
@@ -20,8 +22,8 @@ export function QuickActionsPanel({ className }: { className?: string }) {
       <ul className={styles.grid}>
         {ACTIONS.map((action) => (
           <li key={action.id}>
-            <button type="button" className={styles.action} onClick={() => action.id === 'whitelabels'
-              ? window.location.assign('#/whitelabels')
+            <button type="button" className={styles.action} onClick={() => DESTINATIONS[action.id]
+              ? window.location.assign(DESTINATIONS[action.id])
               : notify(moduleUnavailable(action.module))}>
               <IconTile icon={action.icon} tone={action.tone} size="md" />
               <span className={styles.text}>

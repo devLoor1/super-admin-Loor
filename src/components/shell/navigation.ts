@@ -1,5 +1,6 @@
 import {
   Box,
+  Briefcase,
   Building2,
   ChartColumnIncreasing,
   CircleHelp,
@@ -14,6 +15,8 @@ import {
   Shapes,
   ShieldCheck,
   SlidersHorizontal,
+  Target,
+  TrendingUp,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -51,7 +54,18 @@ export const PRIMARY_NAV: NavItem[] = [
       { id: 'whitelabel-emails', label: 'E-mails', icon: Mail, href: '#/whitelabels/wl_proto_01/emails' },
     ],
   },
-  { id: 'operacao', label: 'Operação', icon: Box },
+  {
+    id: 'operacao',
+    label: 'Operação',
+    icon: Box,
+    href: '#/operation/opportunities',
+    // Three sibling, logically independent modules; global (not tenant-first) lists.
+    children: [
+      { id: 'operation-opportunities', label: 'Oportunidades', icon: Target, href: '#/operation/opportunities' },
+      { id: 'operation-investors', label: 'Investidores', icon: TrendingUp, href: '#/operation/investors' },
+      { id: 'operation-entrepreneurs', label: 'Empreendedores', icon: Briefcase, href: '#/operation/entrepreneurs' },
+    ],
+  },
   {
     id: 'financeiro',
     label: 'Financeiro',

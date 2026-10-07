@@ -5,7 +5,8 @@ Visual prototype of the **Super Admin**: Login V1, the application-frame
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
-dos recursos V1** (Financeiro). Frontend only.
+dos recursos V1** (Financeiro), and **Operation V1** — **Oportunidades**,
+**Investidores** and **Empreendedores** (Operação). Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -25,12 +26,18 @@ dos recursos V1** (Financeiro). Frontend only.
 > simulated, credentials are write-only (never stored or shown), and **no
 > provider or bank request and no financial operation ever happens**.
 > Modalidades e regras covers only Equity and Debt; enable/disable and the
-> generic rule concepts are local, nothing cascades, and **no Opportunity,
-> investment or payment is created or changed**.
+> generic rule concepts are local, nothing cascades, and **this module creates
+> or changes no Opportunity, investment or payment**.
 > Segmentos e usos dos recursos holds two independent illustrative catalogs;
 > create, edit, activate/inactivate and delete are local to the browser
-> session, the two catalogs are never linked, and **no Opportunity is created,
-> changed or counted**.
+> session, the two catalogs are never linked, and **the catalog screen creates,
+> changes or counts no Opportunity**.
+> Operação uses illustrative Opportunities (no amounts or financial
+> parameters) with a local create/edit/status flow — no delete; Investidores
+> and Empreendedores are read-only projections of the illustrative Accounts
+> records with prototype KYC summaries and count-only relationships. Investments
+> and KYC destinations answer with a "módulo ainda não implementado" notice;
+> **no account, KYC or financial mutation exists**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -43,6 +50,9 @@ dos recursos V1** (Financeiro). Frontend only.
 | Finance / Gateways V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/gateways` | [`docs/reference/super-admin-whitelabel-finance-gateways-approved.png`](docs/reference/super-admin-whitelabel-finance-gateways-approved.png) (visual direction only) |
 | Modalidades e regras V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/modalities` | [`docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png`](docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png) (composition only) |
 | Segmentos e usos dos recursos V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/segments-resource-uses` | [`docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png`](docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png) (composition only) |
+| Oportunidades V1 | `http://localhost:5173/#/operation/opportunities` | [`docs/reference/super-admin-operation-opportunities-approved.png`](docs/reference/super-admin-operation-opportunities-approved.png) (composition only) |
+| Investidores V1 | `http://localhost:5173/#/operation/investors` | [`docs/reference/super-admin-operation-investors-approved.png`](docs/reference/super-admin-operation-investors-approved.png) (composition only) |
+| Empreendedores V1 | `http://localhost:5173/#/operation/entrepreneurs` | [`docs/reference/super-admin-operation-entrepreneurs-approved.png`](docs/reference/super-admin-operation-entrepreneurs-approved.png) (composition only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
@@ -59,7 +69,12 @@ by default) and, while active, lists **Gateways e contas**, **Modalidades e
 regras** (`#/whitelabels/:whitelabelId/finance/modalities`) and **Segmentos e usos
 dos recursos** (`#/whitelabels/:whitelabelId/finance/segments-resource-uses`, one
 entry for both catalogs); on all three screens the Financeiro links keep the
-displayed Whitelabel.
+displayed Whitelabel. **Operação** links to `#/operation/opportunities` and, while
+active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
+(global screens across Whitelabels): `#/operation/opportunities` (optional
+`?empreendedor=:id`), `/new`, `/:opportunityId`, `/:opportunityId/edit` (optional
+`?secao=classificacao`), `#/operation/investors[/:investorId]` and
+`#/operation/entrepreneurs[/:entrepreneurId]`.
 
 ---
 
@@ -103,7 +118,9 @@ src/
                                     "#/whitelabels/:id/emails[?section=…]",
                                     "#/whitelabels/:id/finance/gateways",
                                     "#/whitelabels/:id/finance/modalities",
-                                    "#/whitelabels/:id/finance/segments-resource-uses", else login
+                                    "#/whitelabels/:id/finance/segments-resource-uses",
+                                    "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
+                                    "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]", else login
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
@@ -145,7 +162,7 @@ src/
       WhitelabelDistributionPanel   donut placeholder, empty
       OperationalStatusPanel.tsx    neutral "Aguardando integração" list
       RecentEventsPanel.tsx         audit-ready table header + empty state
-      QuickActionsPanel.tsx         shortcuts (prototype notices)
+      QuickActionsPanel.tsx         shortcuts (Whitelabels and Operação open; others are prototype notices)
     whitelabels/
       WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
       WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
@@ -199,6 +216,12 @@ src/
       catalogStore.ts               in-memory session store: two independent collections + session activity
       sections/                     summary cards, generic catalog panel (list/search/filter/sort/pagination), notes, activity
       dialogs/                      create/edit form, delete confirmation
+    operation/
+      shared/                       Operation frame (nav + Dot Matrix), list/detail pieces, participant projections over
+                                    Accounts, KYC vocabulary, session activity, pending-module copy, discard dialog
+      opportunities/                list, create/edit page, detail + tabs, status dialog, catalog pickers, model, seeds, store
+      investors/                    list + read-only profile, illustrative count-only investment associations
+      entrepreneurs/                list + read-only profile (live Opportunities relationship)
 docs/reference/                     approved concept images
 ```
 
@@ -245,6 +268,9 @@ docs/reference/                     approved concept images
   quick actions, "Ver todos", the context selector, period selector, search
   (Enter), notifications and the user menu show a short "Protótipo visual: …"
   toast. No destination screen is created. Ctrl/⌘ + K focuses the search field.
+  Destinations that now exist open them instead: the Whitelabels, Investidores
+  and Oportunidades KPI cards and the *Ver Whitelabels* / *Abrir Operação*
+  quick actions.
 - **Context selector** stays on "Visão global"; no whitelabel names are invented.
 - **Shared illustration primitives.** `components/illustration/IsoScene.tsx` was
   extracted from the login artwork; the SVG definitions and visible drawing tree
@@ -622,6 +648,51 @@ review record for scope, evidence and fallback checks.
 | < 1200px | Summary cards 2 × 2; catalogs stack when narrow; notes and activity stack. |
 | < 768px | Drawer navigation; card-level container queries move the description (≤ 540px) and status (≤ 420px) under the name and stack the controls; dialogs scroll their body with the footer visible. |
 
+## Operation V1 — decisions
+
+- **Three independent sibling modules** under Operação (Oportunidades,
+  Investidores, Empreendedores), global across Whitelabels. Shared pieces live
+  in `features/operation/shared`; modules only read each other's state.
+- **Boundaries.** Accounts owns identity/access (Operation links to the existing
+  `accounts?tipo=` route — no per-account deep link exists); Financeiro ›
+  Investimentos and Compliance › KYC are not implemented, so their buttons show
+  a "módulo ainda não implementado" notice instead of a broken route or an
+  empty placeholder module. Operation performs no account, KYC or financial
+  mutation.
+- **Oportunidades.** Local list (search, Whitelabel, status, modality, Segment
+  and Resource Use filters, sort, pagination), dedicated create/edit page,
+  detail (Visão geral, Classificação, Configuração, Atividade da sessão),
+  prototype status Rascunho / Ativa / Pausada with no transition graph, no
+  delete. Modality consumes the Finance catalog (**Equity and Debt only**);
+  Segments and Resource Uses are references into the Whitelabel's two
+  independent catalogs (active records offered; multi-selection is not a final
+  cardinality; nothing auto-links). Capital de Giro is valid as a Segment and,
+  separately, as a Resource Use — never as a modality. Name 3–80 / description
+  300 / Whitelabel and modality required are prototype UX constraints.
+  Configuração shows no financial parameter.
+- **Investidores / Empreendedores.** Read-only projections of the Accounts
+  prototype records (operational id = account prototype id; tenant context on
+  every record; no cross-tenant identity). KYC is a prototype summary owned by
+  Compliance (investor status derived from the Accounts KYC dependency).
+  Investors show count-only illustrative investment associations (no amounts);
+  entrepreneurs show their Opportunities live from the Opportunities store.
+- **Unsaved changes** (create/edit) reuse `useUnsavedChangesGuard`: links,
+  Back/Forward, reload, Cancelar. **Session activity** is local and labelled
+  "Não representa trilha de auditoria".
+- Records: [Oportunidades](docs/operation-opportunities-v1.md) (includes the
+  Operation QA), [Investidores](docs/operation-investors-v1.md),
+  [Empreendedores](docs/operation-entrepreneurs-v1.md).
+
+### Operation responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| Wide list card (≥ 1500px) | Search, the selects and *Limpar filtros* on one row; all table columns. |
+| 1000–1499px card | Search + *Limpar filtros*, then the selects on a second row; *Atualizada em* (≤ 1240px) and Segmento / Uso (≤ 1060px) move under the name. |
+| < 1000px card | Selects 3 → 2 → 1 per row; Whitelabel / participant columns (≤ 820px) and statuses (≤ 560px) move under the name. |
+| Detail | Header card, tabs (2 × 2 grid on phone-width cards), panels in auto-fit columns; create/edit cards side by side when each gets ≥ 440px. |
+| < 768px | Drawer navigation; intro actions full width. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -631,6 +702,27 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Operation (Oportunidades, Investidores, Empreendedores):
+
+- Lists have captions, `scope="col"` headers, sort buttons with `aria-sort`,
+  labelled search/filters, a polite live range and named row actions ("Abrir
+  oportunidade …", "Editar oportunidade …", "Abrir perfil de …"). Statuses and
+  KYC are text (dot pill for account/opportunity status, squared badge for KYC).
+- The create/edit form has labels, hints and errors via `aria-describedby`,
+  focus to the first invalid field, radio groups for modality and status, and
+  catalog pickers built from a disclosure button + checkbox list + removable
+  chips (Escape closes and returns focus). Detail tabs reuse `Tabs`; dialogs
+  reuse `Dialog`. Pending-module buttons are labelled "Módulo pendente" and
+  answer through the existing `role="status"` notice.
+- Claude reported axe-core 4.x (scratch copy) with no violations in 75 states
+  (1440/390/320px, forms, errors, dialogs, guards, every tab, not-found).
+- Codex independently reviewed the three modules in the built-in browser,
+  including six widths, short heights, keyboard/guards, reduced motion,
+  forced no-WebGL and scoped existing-screen regressions. No axe bundle was
+  available for that independent pass; its manual results are separate from
+  Claude's automated evidence. See the Operation QA record for refinements
+  and prototype limitations.
 
 Segmentos e usos dos recursos:
 
@@ -769,9 +861,13 @@ classification editing, real payment-provider or bank integration, credential
 storage, financial operations of any kind (balances, payments, Pix charges,
 refunds, cashout, transfers, reconciliation), an authoritative modality rule
 catalog or financial rule values, Backend-owned Segment / Resource Use catalogs
-(the local catalogs are illustrative), Opportunity creation/configuration,
-Opportunity–catalog associations or cardinality, links between catalogs, other destination module screens (global Platform Settings,
-Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet, KYC, Auditoria),
+(the local catalogs are illustrative), an official Opportunity workflow,
+Opportunity financial parameters, deletion or publication, authoritative
+Opportunity cardinalities (entrepreneur, Segment, Resource Use, modality),
+links between catalogs, investor/entrepreneur creation or account actions from
+Operation, KYC decisions, investment creation or amounts, other destination
+module screens (global Platform Settings, Indicadores, Investimentos,
+Pagamentos, Wallet, Compliance/KYC, Auditoria),
 further OriginKit assets, final brand system.
 
 ## Review records
@@ -787,5 +883,8 @@ further OriginKit assets, final brand system.
 - [Finance / Gateways V1 — local implementation, QA and Backend dependencies](docs/whitelabel-finance-gateways-v1.md)
 - [Modalidades e regras V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-modalities-rules-v1.md)
 - [Segmentos e usos dos recursos V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-segments-resource-uses-v1.md)
+- [Operação › Oportunidades V1 — local implementation, Operation QA and open questions](docs/operation-opportunities-v1.md)
+- [Operação › Investidores V1 — boundaries, local state and open questions](docs/operation-investors-v1.md)
+- [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

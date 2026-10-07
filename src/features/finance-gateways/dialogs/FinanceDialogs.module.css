@@ -1,0 +1,103 @@
+/* Content styles for the Finance / Gateways dialogs (inside components/ui/Dialog). */
+
+.summary {
+  display: grid;
+  margin: 0;
+  padding: 4px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #121826;
+}
+
+.summary > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 34%) minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.summary > div:last-child {
+  border-bottom: 0;
+}
+
+.summary dt {
+  font-size: 12.5px;
+  color: var(--text-on-dark-muted);
+}
+
+.summary dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.warningCallout {
+  border-color: rgb(247 191 109 / 0.3);
+  background: rgb(247 191 109 / 0.07);
+  color: #ecd8ae;
+}
+
+.warningCallout svg {
+  color: #f2c983;
+}
+
+.select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.select option {
+  background: #121826;
+  color: var(--text-on-dark);
+}
+
+.twoCols,
+.threeCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px 14px;
+}
+
+.threeCols {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(70px, 0.5fr);
+}
+
+.dangerConfirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgb(240 120 145 / 0.6);
+  border-radius: 9px;
+  background: rgb(232 92 120 / 0.18);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fbd3dc;
+  white-space: nowrap;
+}
+
+.dangerConfirm:hover {
+  background: rgb(232 92 120 / 0.26);
+}
+
+.dangerConfirm:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+@media (max-width: 479px) {
+  .twoCols,
+  .threeCols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summary > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -40,6 +40,7 @@ export function WhitelabelEmailsPage({ whitelabelId, section }: { whitelabelId: 
         contas: `#/whitelabels/${whitelabelId}/accounts`,
         'whitelabel-settings': `#/whitelabels/${whitelabelId}/settings`,
         'whitelabel-emails': emailsHref(whitelabelId),
+        financeiro: `#/whitelabels/${whitelabelId}/finance/gateways`,
       }}
       title="E-mails"
       location="E-mails"

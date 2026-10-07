@@ -66,6 +66,7 @@ export function WhitelabelAccountsPage({ whitelabelId, initialType }: { whitelab
         contas: `#/whitelabels/${whitelabelId}/accounts`,
         'whitelabel-settings': `#/whitelabels/${whitelabelId}/settings`,
         'whitelabel-emails': `#/whitelabels/${whitelabelId}/emails`,
+        financeiro: `#/whitelabels/${whitelabelId}/finance/gateways`,
       }}
       title="Contas do Whitelabel"
       location="Contas"

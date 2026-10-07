@@ -143,6 +143,7 @@ export type SectionStatus =
   | 'awaiting_integration'
   | 'readonly'
   | 'published'
+  | 'incomplete'
 
 export const SECTION_STATUS_META: Record<SectionStatus, { label: string; tone: StatusTone }> = {
   configured: { label: 'Configurado', tone: 'success' },
@@ -155,6 +156,7 @@ export const SECTION_STATUS_META: Record<SectionStatus, { label: string; tone: S
   awaiting_integration: { label: 'Aguardando integração', tone: 'neutral' },
   readonly: { label: 'Somente leitura', tone: 'muted' },
   published: { label: 'Publicado', tone: 'success' },
+  incomplete: { label: 'Incompleto', tone: 'warning' },
 }
 
 export const SECTIONS: { key: SectionKey; label: string; anchor: string }[] = [

@@ -5,18 +5,20 @@ import { WhitelabelsPage } from '../features/whitelabels/WhitelabelsPage'
 import { WhitelabelAccountsPage } from '../features/whitelabel-accounts/WhitelabelAccountsPage'
 import { WhitelabelSettingsPage } from '../features/whitelabel-settings/WhitelabelSettingsPage'
 import { WhitelabelEmailsPage } from '../features/whitelabel-emails/WhitelabelEmailsPage'
+import { FinanceGatewaysPage } from '../features/finance-gateways/FinanceGatewaysPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
 
-type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts' | 'settings' | 'emails'
+type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts' | 'settings' | 'emails' | 'finance'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
   | { view: 'accounts'; whitelabelId: string; initialType?: AccountType }
   | { view: 'settings'; whitelabelId: string }
   | { view: 'emails'; whitelabelId: string; section?: EmailsSection }
+  | { view: 'finance'; whitelabelId: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -25,20 +27,23 @@ const TITLES: Record<View, string> = {
   accounts: 'Super Admin · Contas do Whitelabel',
   settings: 'Super Admin · Configurações do Whitelabel',
   emails: 'Super Admin · E-mails do Whitelabel',
+  finance: 'Super Admin · Financeiro / Gateways',
 }
 
 /** Views rendered inside the dark App Shell. */
-const SHELL_VIEWS: ReadonlySet<View> = new Set<View>(['dashboard', 'whitelabels', 'accounts', 'settings', 'emails'])
+const SHELL_VIEWS: ReadonlySet<View> = new Set<View>(['dashboard', 'whitelabels', 'accounts', 'settings', 'emails', 'finance'])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
 const SETTINGS_PATH = /^whitelabels\/([\w-]+)\/settings$/
 const EMAILS_PATH = /^whitelabels\/([\w-]+)\/emails$/
+const FINANCE_GATEWAYS_PATH = /^whitelabels\/([\w-]+)\/finance\/gateways$/
 
 /**
  * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
  * (optional `?tipo=investidores|empreendedores|administradores`),
  * `#/whitelabels/:whitelabelId/settings`, `#/whitelabels/:whitelabelId/emails`
- * (optional `?section=smtp|envios|templates`) → visual shell
+ * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`
+ * → visual shell
  * screens (not an authentication guard); anything else → login.
  */
 function routeFromHash(): Route {
@@ -58,6 +63,8 @@ function routeFromHash(): Route {
   if (emails) {
     return { view: 'emails', whitelabelId: emails[1], section: emailsSectionFromParam(new URLSearchParams(search).get('section')) }
   }
+  const finance = FINANCE_GATEWAYS_PATH.exec(path)
+  if (finance) return { view: 'finance', whitelabelId: finance[1] }
   return { view: 'login' }
 }
 
@@ -92,5 +99,6 @@ export function App() {
   }
   if (route.view === 'settings') return <WhitelabelSettingsPage whitelabelId={route.whitelabelId} />
   if (route.view === 'emails') return <WhitelabelEmailsPage whitelabelId={route.whitelabelId} section={route.section} />
+  if (route.view === 'finance') return <FinanceGatewaysPage whitelabelId={route.whitelabelId} />
   return <LoginPage />
 }

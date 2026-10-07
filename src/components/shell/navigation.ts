@@ -7,6 +7,7 @@ import {
   FileSearch,
   House,
   LayoutGrid,
+  Link2,
   Mail,
   Settings,
   ShieldCheck,
@@ -49,7 +50,16 @@ export const PRIMARY_NAV: NavItem[] = [
     ],
   },
   { id: 'operacao', label: 'Operação', icon: Box },
-  { id: 'financeiro', label: 'Financeiro', icon: ChartColumnIncreasing },
+  {
+    id: 'financeiro',
+    label: 'Financeiro',
+    icon: ChartColumnIncreasing,
+    // Tenant-first like the Plataformas screens: pages pass `subNavHrefs` (parent included).
+    href: '#/whitelabels/wl_proto_01/finance/gateways',
+    children: [
+      { id: 'finance-gateways', label: 'Gateways e contas', icon: Link2, href: '#/whitelabels/wl_proto_01/finance/gateways' },
+    ],
+  },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
   { id: 'sistema', label: 'Sistema', icon: Settings },
   { id: 'auditoria', label: 'Auditoria', icon: FileSearch },

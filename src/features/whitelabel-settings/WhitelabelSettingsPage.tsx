@@ -40,6 +40,7 @@ export function WhitelabelSettingsPage({ whitelabelId }: { whitelabelId: string 
         contas: `#/whitelabels/${whitelabelId}/accounts`,
         'whitelabel-settings': settingsHref(whitelabelId),
         'whitelabel-emails': `#/whitelabels/${whitelabelId}/emails`,
+        financeiro: `#/whitelabels/${whitelabelId}/finance/gateways`,
       }}
       title="Configurações do Whitelabel"
       location="Configurações"

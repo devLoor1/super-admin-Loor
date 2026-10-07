@@ -3,8 +3,8 @@
 Visual prototype of the **Super Admin**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
-Settings V1** (Configurações do Whitelabel) and **Whitelabel E-mails V1**.
-Frontend only.
+Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1** and
+**Finance / Gateways V1** (Financeiro). Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -19,6 +19,10 @@ Frontend only.
 > E-mails uses illustrative SMTP values (reserved example domains) and event
 > preferences; saves are local, the test send is simulated and **no e-mail is
 > ever sent**. The SMTP password is write-only and never stored or shown.
+> Financeiro / Gateways uses fictitious providers and banks; configuration
+> edits, activation and bank accounts are local, the connection test is
+> simulated, credentials are write-only (never stored or shown), and **no
+> provider or bank request and no financial operation ever happens**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -28,6 +32,7 @@ Frontend only.
 | Whitelabel Account Control V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/accounts` | [`docs/reference/super-admin-whitelabel-account-control-approved.png`](docs/reference/super-admin-whitelabel-account-control-approved.png) |
 | Whitelabel Settings V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/settings` | [`docs/reference/super-admin-whitelabel-settings-approved.png`](docs/reference/super-admin-whitelabel-settings-approved.png) (visual direction only) |
 | Whitelabel E-mails V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/emails` | [`docs/reference/super-admin-whitelabel-emails-approved.png`](docs/reference/super-admin-whitelabel-emails-approved.png) (visual direction only) |
+| Finance / Gateways V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/gateways` | [`docs/reference/super-admin-whitelabel-finance-gateways-approved.png`](docs/reference/super-admin-whitelabel-finance-gateways-approved.png) (visual direction only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
@@ -38,7 +43,10 @@ optional `?tipo=investidores|empreendedores|administradores`; the settings route
 `#/whitelabels/:whitelabelId/settings`; the e-mails route is
 `#/whitelabels/:whitelabelId/emails` with an optional `?section=smtp|envios|templates`
 that focuses that card. Within the tenant screens, the sidebar destinations
-preserve the displayed Whitelabel.
+preserve the displayed Whitelabel. **Financeiro** links to
+`#/whitelabels/:whitelabelId/finance/gateways` (first illustrative Whitelabel
+by default) and, while active, lists **Gateways e contas**; on that screen the
+Financeiro links keep the displayed Whitelabel.
 
 ---
 
@@ -79,7 +87,8 @@ src/
   main.tsx                          entry — renders <App />
   app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
                                     "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
-                                    "#/whitelabels/:id/emails[?section=…]", else login
+                                    "#/whitelabels/:id/emails[?section=…]",
+                                    "#/whitelabels/:id/finance/gateways", else login
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
@@ -93,7 +102,7 @@ src/
       AppShell.tsx (+ .css)         sidebar + header + content frame, mobile drawer logic
       Sidebar.tsx (+ .css)          brand, primary/utility navigation, decorative backdrop
       TopHeader.tsx (+ .css)        title/location, context selector, search, notifications, user
-      navigation.ts                 navigation model (top-level domains + nested screens of Plataformas)
+      navigation.ts                 navigation model (top-level domains + nested screens of Plataformas / Financeiro)
       PrototypeNoticeProvider.tsx   toast for controls whose destination does not exist yet
       prototypeNotice.ts            notice context + standard copy
     ui/
@@ -154,6 +163,13 @@ src/
       emailStore.ts                 in-memory session store + session-only activity feed
       sections/                     SMTP (with simulated test send), Envios automáticos, Templates summary, session activity
       dialogs/                      test-send confirmation
+    finance-gateways/
+      FinanceGatewaysPage.tsx       page layout, tenant context, selection/filters, unsaved guards (page + gateway switch)
+      financeModel.ts               gateway / credential / bank / modality types, derived states, masking, validation
+      prototypeFinance.ts           illustrative gateways, banks and modality states per Whitelabel (no secrets)
+      financeStore.ts               in-memory session store + session-only activity feed
+      sections/                     summary cards, gateway list, gateway detail + tabs, bank accounts, modalities, quick actions
+      dialogs/                      validate connection, deactivate, new gateway, bank form, bank confirmations
 docs/reference/                     approved concept images
 ```
 
@@ -439,6 +455,53 @@ review record for scope, evidence and fallback checks.
 | 768–1359px | Single column: SMTP, Envios automáticos, Templates, Atividade. |
 | < 768px | Drawer navigation; SMTP fields stack; each event row shows name, description, then category + switch (usable at 320px); dialogs use stacked actions. |
 
+## Finance / Gateways V1 — decisions
+
+- **Placement.** First screen of the existing top-level **Financeiro** module
+  (`Gateways e contas`); no parallel Financeiro model and no other module
+  renamed or removed. Tenant-scoped through the reused Whitelabel context card.
+- **Scope = configuration only.** Gateways, credentials, simulated connection
+  validation, local activation, bank accounts and a read-only modalities
+  summary. No balances, payments, Pix charges, refunds, cashout, transfers,
+  reconciliation or any financial mutation.
+- **Illustrative data.** "Provedor Alfa/Beta/Gama/Delta" and fictitious banks
+  (codes 901–903); the supported catalog is a Backend/Product decision.
+  Summary counts are derived strictly from the local prototype state and say so.
+- **Statuses.** Configurado / Em configuração / Não configurado derive from the
+  credential state; Inativo when deactivated; Alterado localmente while the
+  selected gateway has an unsaved draft; Integração: Aguardando integração.
+- **Secrets are write-only.** The model stores `{configured, hint?}` only;
+  read views show a fixed mask + "Configurada" (identifiers may show their last
+  4 characters, secrets never); edit fields start empty ("Deixe em branco para
+  manter"), `type="password"` for secrets, no reveal or copy control; typed
+  values are dropped on save/discard and never reach the store, activity,
+  notices or logs. No encrypted Backend storage is implied.
+- **Validar conexão** → confirmation → ~1.4 s loading → simulated result
+  (missing credentials fail by label). No request is made.
+- **Ativar / Desativar** are local; deactivation is confirmed and states that
+  the operational impact depends on Backend rules.
+- **Bank accounts** are a Whitelabel-level grouping by prototype premise (not
+  authoritative). Account number and Pix key are write-only and reduced to
+  masked hints on save; deactivate/remove are confirmed.
+- **Modalities** (Equity, Debt, Capital de giro): Habilitada / Não configurada /
+  Planejada / Dependência pendente (enabled but no active gateway serves it).
+  No editor; not Backend flags.
+- **Unsaved changes** reuse `useUnsavedChangesGuard` (links, Back/Forward,
+  reload, tenant switch) plus the same dialog when switching gateway; no global
+  save.
+- **Session activity** per gateway and for bank accounts lists only this
+  session's local actions — not an audit trail, never secrets.
+- Details, QA and Backend dependencies:
+  [`docs/whitelabel-finance-gateways-v1.md`](docs/whitelabel-finance-gateways-v1.md).
+
+### Finance / Gateways responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | Context row, four summary cards, gateway list beside the selected-gateway panel, then bank accounts beside modalities + quick actions. |
+| 768–1359px | Single column (list, detail, banks, modalities, quick actions); summary cards 2 × 2 below 1200px. |
+| < 768px | Drawer navigation; table columns collapse by container width with key data moved under the name; detail tabs become a 2 × 2 grid; dialogs stack fields. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -448,6 +511,22 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Finance / Gateways:
+
+- The gateway table has a caption and `scope="col"` headers; each row's name
+  button has `aria-current` and `aria-controls` the detail panel. Search and
+  status filter are labelled; statuses are text, never colour alone.
+- Detail tabs reuse `Tabs` (roving tabindex, arrow/Home/End); credential and
+  bank fields have labels, hints and errors via `aria-describedby`; failed
+  saves focus the first invalid field. Masked values are announced as "Oculta"
+  or "Final …".
+- Validation progress/result is announced through `role="status"`; dialogs
+  reuse `Dialog` (focus return, Escape). Bank row icon buttons are named with
+  the masked account ("Editar Banco Exemplo •••• 4821-0").
+- axe-core 4.x (scratch copy) reported no violations in 23 Finance states
+  (view, edits/errors, all dialogs, unsaved dialogs; 1440/390/320px, three
+  tenants and not-found).
 
 Whitelabel E-mails:
 
@@ -537,9 +616,12 @@ persistence/inheritance, file uploads, Terms re-acceptance, real SMTP connectivi
 e-mail sending, secret storage, template editing, delivery logs/analytics, the Whitelabels detail tabs
 other than "Visão geral", real account pause/reactivate, tenant reassignment,
 Admin provisioning/invitations, RBAC, audit trail, questionnaire/
-classification editing, other destination module screens (global Platform
-Settings, Gateways, Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet,
-KYC, Auditoria), further OriginKit assets, final brand system.
+classification editing, real payment-provider or bank integration, credential
+storage, financial operations of any kind (balances, payments, Pix charges,
+refunds, cashout, transfers, reconciliation), a detailed modalities/rules
+editor, other destination module screens (global Platform Settings,
+Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet, KYC, Auditoria),
+further OriginKit assets, final brand system.
 
 ## Review records
 
@@ -551,5 +633,6 @@ KYC, Auditoria), further OriginKit assets, final brand system.
 - [Whitelabel Account Control V1 — frontend review and local QA](docs/whitelabel-account-control-v1.md)
 - [Whitelabel Settings V1 — local implementation and QA](docs/whitelabel-settings-v1.md)
 - [Whitelabel E-mails V1 — local implementation and QA](docs/whitelabel-emails-v1.md)
+- [Finance / Gateways V1 — local implementation, QA and Backend dependencies](docs/whitelabel-finance-gateways-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

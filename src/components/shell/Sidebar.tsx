@@ -109,7 +109,7 @@ function NavList({
         return (
           <li key={item.id}>
             <GlassNavItem
-              href={item.href}
+              href={subNavHrefs?.[item.id] ?? item.href}
               active={active}
               currentType={childIsCurrent ? 'true' : 'page'}
               label={item.label}

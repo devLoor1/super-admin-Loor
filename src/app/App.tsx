@@ -11,9 +11,19 @@ import { FinanceCatalogsPage } from '../features/finance-catalogs/FinanceCatalog
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
+import { isAuthenticated } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
 
-type View = 'login' | 'dashboard' | 'whitelabels' | 'accounts' | 'settings' | 'emails' | 'finance' | 'finance-modalities' | 'finance-catalogs'
+type View =
+  | 'login'
+  | 'dashboard'
+  | 'whitelabels'
+  | 'accounts'
+  | 'settings'
+  | 'emails'
+  | 'finance'
+  | 'finance-modalities'
+  | 'finance-catalogs'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
@@ -36,7 +46,7 @@ const TITLES: Record<View, string> = {
   'finance-catalogs': 'Super Admin · Financeiro / Segmentos e usos dos recursos',
 }
 
-/** Views rendered inside the dark App Shell. */
+/** Views rendered inside the dark App Shell (require Control Plane session). */
 const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'dashboard',
   'whitelabels',
@@ -55,16 +65,6 @@ const FINANCE_GATEWAYS_PATH = /^whitelabels\/([\w-]+)\/finance\/gateways$/
 const FINANCE_MODALITIES_PATH = /^whitelabels\/([\w-]+)\/finance\/modalities$/
 const FINANCE_CATALOGS_PATH = /^whitelabels\/([\w-]+)\/finance\/segments-resource-uses$/
 
-/**
- * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
- * (optional `?tipo=investidores|empreendedores|administradores`),
- * `#/whitelabels/:whitelabelId/settings`, `#/whitelabels/:whitelabelId/emails`
- * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`,
- * `#/whitelabels/:whitelabelId/finance/modalities`,
- * `#/whitelabels/:whitelabelId/finance/segments-resource-uses`
- * → visual shell
- * screens (not an authentication guard); anything else → login.
- */
 function routeFromHash(): Route {
   const [path, search = ''] = window.location.hash.replace(/^#\/?/, '').split('?')
   if (path === 'dashboard' || path === 'whitelabels') return { view: path }
@@ -80,7 +80,11 @@ function routeFromHash(): Route {
   if (settings) return { view: 'settings', whitelabelId: settings[1] }
   const emails = EMAILS_PATH.exec(path)
   if (emails) {
-    return { view: 'emails', whitelabelId: emails[1], section: emailsSectionFromParam(new URLSearchParams(search).get('section')) }
+    return {
+      view: 'emails',
+      whitelabelId: emails[1],
+      section: emailsSectionFromParam(new URLSearchParams(search).get('section')),
+    }
   }
   const finance = FINANCE_GATEWAYS_PATH.exec(path)
   if (finance) return { view: 'finance', whitelabelId: finance[1] }
@@ -91,16 +95,13 @@ function routeFromHash(): Route {
   return { view: 'login' }
 }
 
-/**
- * Prototype-only view switch. There is no authentication: shell screens are
- * reached directly through their URL hash. Replace with a real router once
- * real routes, layouts and permission handling are needed.
- */
 export function App() {
   const [route, setRoute] = useState<Route>(routeFromHash)
+  const [authed, setAuthed] = useState(() => isAuthenticated())
 
   useEffect(() => {
     const onHashChange = () => {
+      setAuthed(isAuthenticated())
       setRoute(routeFromHash())
       window.scrollTo(0, 0)
     }
@@ -115,13 +116,22 @@ export function App() {
       ?.setAttribute('content', SHELL_VIEWS.has(route.view) ? '#0f131d' : '#14161d')
   }, [route.view])
 
+  useEffect(() => {
+    if (SHELL_VIEWS.has(route.view) && !authed) {
+      window.location.hash = '#/login'
+    }
+  }, [route.view, authed])
+
+  if (!authed || route.view === 'login') return <LoginPage />
   if (route.view === 'dashboard') return <DashboardPage />
   if (route.view === 'whitelabels') return <WhitelabelsPage />
   if (route.view === 'accounts') {
     return <WhitelabelAccountsPage whitelabelId={route.whitelabelId} initialType={route.initialType} />
   }
   if (route.view === 'settings') return <WhitelabelSettingsPage whitelabelId={route.whitelabelId} />
-  if (route.view === 'emails') return <WhitelabelEmailsPage whitelabelId={route.whitelabelId} section={route.section} />
+  if (route.view === 'emails') {
+    return <WhitelabelEmailsPage whitelabelId={route.whitelabelId} section={route.section} />
+  }
   if (route.view === 'finance') return <FinanceGatewaysPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-modalities') return <FinanceModalitiesPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-catalogs') return <FinanceCatalogsPage whitelabelId={route.whitelabelId} />

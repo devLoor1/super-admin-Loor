@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`, including Finance / Gateways V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`, including Finance / Gateways V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 

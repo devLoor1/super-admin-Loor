@@ -2,7 +2,7 @@
 
 This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
 
-Context update: Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails and Finance / Gateways V1 are **FRONTEND PROTOTYPED** at approved `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`. Account, Settings, Emails and Finance actions demonstrate local UI only, not answers to the questions below. No real email, provider, banking or financial operation occurs. Pause/migration, provisioning/RBAC/audit, inheritance/assets/Terms, SMTP/events/templates, gateway/provider/secret semantics, bank ownership, modality relationships and profile governance remain unresolved. Local cross-screen coherence does not establish authoritative contracts, and no question is closed by prototype approval or local feedback.
+Context update: Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails and Finance / Gateways V1 are **FRONTEND PROTOTYPED** at approved `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`. Account, Settings, Emails and Finance actions demonstrate local UI only, not answers to the questions below. No real email, provider, banking or financial operation occurs. Pause/migration, provisioning/RBAC/audit, inheritance/assets/Terms, SMTP/events/templates, gateway/provider/secret semantics, bank ownership, modality relationships and profile governance remain unresolved. Local cross-screen coherence does not establish authoritative contracts, and no question is closed by prototype approval or local feedback.
 
 ## Whitelabel
 
@@ -110,7 +110,13 @@ The prototype's Whitelabel ownership and banking validation/masks are illustrati
 
 ## Gateway / Modality Relationship
 
-- **Q-GM-01 — Product and Backend:** What is the authoritative source of tenant modality availability and gateway dependencies for Equity, Debt and any future Capital de giro capability?
+- **Q-GM-01 — Product and Backend:** Establish the authoritative catalogs, scope and semantics for these separate concepts:
+  - **A — Financial modalities:** Which modalities are officially supported/configurable per tenant, and what is the authoritative source of availability and gateway dependencies? Finance / Gateways V1 currently represents Equity and Debt only; additional modalities require explicit Product definition.
+  - **B — Segments:** What is the authoritative Segment catalog and its semantics/scope? Capital de Giro is a Product-defined valid example/option in this independent catalog.
+  - **C — Resource Uses / Usos dos Recursos:** What is the authoritative Resource Use catalog and its semantics/scope, separately from Segments? Capital de Giro is also a Product-defined valid example/option here; sharing that example does not merge the domains.
+
+  Segments and Resource Uses each have future independent CRUD scope (create, list/read, update, delete): **PRODUCT DEFINED CONCEPT / FRONTEND NOT YET PROTOTYPED / BACKEND SUPPORT TO VERIFY / CONTROL PLANE CONTRACT TO DEFINE**. Their identities and this example are defined by Product; Backend support and Control Plane contracts are not established by this clarification. No detailed CRUD contract is prescribed here.
+
 - **Q-GM-02 — Product and Backend:** Does Sandbox count as configured or satisfy a modality dependency, or is Production required for readiness/availability? Define how environment changes status without implying financial execution.
 
 ## RBAC

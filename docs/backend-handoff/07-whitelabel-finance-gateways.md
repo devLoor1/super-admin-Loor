@@ -1,6 +1,6 @@
 # Whitelabel Finance / Gateways V1
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`.
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`.
 
 Route: `#/whitelabels/:whitelabelId/finance/gateways`. Source: `src/features/finance-gateways/`.
 
@@ -91,7 +91,9 @@ Conceptual capabilities are list/read sanitized accounts, create/update, activat
 
 ## Financial modalities summary
 
-The page shows only a conceptual summary for Equity, Debt and Capital de giro. Equity and Debt are established Product concepts; Capital de giro is planned/future scope. There is no detailed modality editor and no claim that tenant-level modality flags exist in Core.
+The page shows only a conceptual summary for **Equity and Debt**. These are the current financial modalities represented by Finance / Gateways V1; any other modality requires explicit Product definition. There is no detailed modality editor and no claim that tenant-level modality flags exist in Core.
+
+**Product-defined taxonomy:** Capital de Giro is not a modality. It is a valid example/option in both **Segments** and **Resource Uses / Usos dos Recursos**, which are separate catalogs/domains. Each has future independent CRUD scope (create, list/read, update, delete); neither is implemented by Finance / Gateways V1. Classification for both: **PRODUCT DEFINED CONCEPT / FRONTEND NOT YET PROTOTYPED / BACKEND SUPPORT TO VERIFY / CONTROL PLANE CONTRACT TO DEFINE**. This establishes taxonomy only, not API routes, detailed contracts or existing Backend support. Catalog and semantic questions remain in [Q-GM-01](open-questions.md#gateway--modality-relationship).
 
 Detailed configuration belongs to a future **Modalidades e Regras** block. Product/Backend must define the source of truth and whether Sandbox counts as configured, satisfies a dependency, or whether Production is required for operational readiness ([Q-GM-01–02](open-questions.md#gateway--modality-relationship)).
 

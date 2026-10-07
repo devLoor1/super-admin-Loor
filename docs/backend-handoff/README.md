@@ -2,9 +2,9 @@
 
 Start here for Backend review of the approved frontend and the capabilities needed to integrate it. This is a documentation handoff, not authorization to implement every proposed capability.
 
-Approved frontend baseline: `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1). All seven are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
+Approved frontend baseline: `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1). All seven are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
 
-The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
 
 The architecture boundary is **Super Admin frontend → Control Plane → Core**. Operational entities and rules remain authoritative in Core; the frontend receives neither Core service credentials nor direct database access.
 

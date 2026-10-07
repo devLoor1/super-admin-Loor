@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test activity. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
+Approved frontend `25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test activity. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
 
 ## Future Super Admin requirements
 

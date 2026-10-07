@@ -1,6 +1,6 @@
 # Current Frontend Scope
 
-Baseline: `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`. Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1 and Finance / Gateways V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. Earlier phase links retain their historical commits; Finance and current navigation use the current approved commit. Frontend implementation is not merged into this documentation branch.
+Baseline: `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`. Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1 and Finance / Gateways V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. Earlier phase links retain their historical commits; Finance and current navigation use the current approved commit. Frontend implementation is not merged into this documentation branch.
 
 ## Login V1
 
@@ -64,7 +64,7 @@ Tenant-specific saved values and activity survive in-app navigation only and res
 
 ## Finance / Gateways V1
 
-Source: `src/features/finance-gateways/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9/src/features/finance-gateways)); route: `#/whitelabels/:whitelabelId/finance/gateways`. See [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
+Source: `src/features/finance-gateways/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181/src/features/finance-gateways)); route: `#/whitelabels/:whitelabelId/finance/gateways`. See [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
 
 The tenant-scoped page prototypes gateway configuration, write-only credential status, simulated connection validation, local activation/deactivation, masked bank-account management, a conceptual modality summary and session-only activity. Save/discard and unsaved-change protection are local; state resets on reload. Providers, accounts and configuration are illustrative.
 

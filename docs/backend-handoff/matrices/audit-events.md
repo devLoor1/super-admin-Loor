@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `5f438035dbac1ec49df68fc3d9799c3fb5078c4a` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its frontend kinds (`paused`, `reactivated`, `transfer_requested`, `created`) and illustrative history are session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save timestamps/notices and Terms history/publication feedback. Emails adds session-only SMTP saves, simulated-test results and local event enabled/disabled feedback; there is no real email or durable audit. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API. No Admin update editor/event flow is prototyped.
+Approved frontend `6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test activity. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
 
 ## Future Super Admin requirements
 
@@ -45,10 +45,24 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | EMAIL_EVENT_DISABLED | Authorized supported-event preference disabled | Tenant/event/operator, sanitized prior/new preference/effective state and result/time/correlation; not proof a queued send was cancelled |
 | EMAIL_TEMPLATE_UPDATED | Future authorized template editing/version update | Tenant/template/event mapping, revision references and sanitized changed-field metadata/result/time/correlation; no full content required |
 | EMAIL_TEMPLATE_PUBLISHED | Future authorized template revision publication | Tenant/template/event and published revision references, prior state, operator/result/time/correlation; publishing workflow not yet prototyped |
+| GATEWAY_CONFIGURATION_CREATED | Authorized configuration creation | Operator/Whitelabel/gateway/provider identifiers, sanitized configuration and result; no credentials |
+| GATEWAY_CONFIGURATION_UPDATED | Authorized non-secret or write-only credential update | Sanitized changed-field list/before-after metadata; never secret values |
+| GATEWAY_ACTIVATED | Authorized activation after approved prerequisites | Prior/resulting state, operational decision reference, result/correlation |
+| GATEWAY_DEACTIVATED | Authorized deactivation | Prior/resulting state, reason/policy result; no implied financial-state mutation |
+| GATEWAY_TEST_REQUESTED | Bounded server-side test accepted | Gateway/provider/environment, operator/tenant and correlation; no credential payload |
+| GATEWAY_TEST_SUCCEEDED | Test meets the agreed success criterion | Correlated sanitized result and timing; not proof of payment readiness unless explicitly defined |
+| GATEWAY_TEST_FAILED | Test fails or times out | Correlated safe failure code/result; no raw provider exception or secret |
+| BANK_ACCOUNT_CREATED | Authorized account creation | Operator/Whitelabel/canonical owner/account ID, masked metadata, verification/result |
+| BANK_ACCOUNT_UPDATED | Authorized allowed update | Sanitized changed fields and masked state; no full account/Pix values |
+| BANK_ACCOUNT_ACTIVATED | Authorized status transition | Prior/resulting status, owner/account reference and result |
+| BANK_ACCOUNT_DEACTIVATED | Authorized status transition | Prior/resulting status, constraints/result and correlation |
+| BANK_ACCOUNT_REMOVED | Authorized removal under domain constraints | Owner/account reference, reason/result and correlation; no sensitive values |
 
 Architecture also requires relevant login success/failure, SMTP/gateway changes/tests and authorized Opportunity actions. Event coverage must be completed as those commands are scoped, without adding financial controls through this documentation task.
 
 The prototype's simulated request corresponds only to a future request-stage concept, never proof of `ACCOUNT_WHITELABEL_CHANGED`. Account, Settings and Emails actions have local UI demonstrations; `ADMIN_UPDATED` and template editing/publication remain future-only. Settings feedback does not emit `PLATFORM_SETTINGS_UPDATED`, `PLATFORM_ASSET_UPDATED`, `PLATFORM_FEATURE_UPDATED` or `TERMS_PUBLISHED`. Emails activity emits none of the SMTP/event/template uppercase names. Existing Core `email_config.*`, `email_template.*`, `platform_asset.*` and `terms_of_use.publish` writer calls must not be relabeled as delivered Super Admin events. Every proposed event remains **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for Control Plane audit; Product still defines event coverage and success/failure guarantees.
+
+Finance session activity emits none of these events. Future records may include operator, Whitelabel, gateway/account identifier, affected configuration/action, sanitized before/after state, result, timestamp and `correlation_id`. They must never include passwords, API secrets, full credentials or sensitive bank/Pix values.
 
 Proposed shared metadata: operator ID, actor type, resource type/ID, tenant ID, action, result, timestamp, correlation ID and reason/operation reference. Sanitized old/new fields, IP and user agent are subject to agreed access/retention policy. Failed and denied attempts need a defined policy; command success/failure must not be conflated.
 

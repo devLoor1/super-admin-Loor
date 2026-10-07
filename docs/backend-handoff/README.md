@@ -2,16 +2,16 @@
 
 Start here for Backend review of the approved frontend and the capabilities needed to integrate it. This is a documentation handoff, not authorization to implement every proposed capability.
 
-Approved frontend baseline: `dev@5f438035dbac1ec49df68fc3d9799c3fb5078c4a` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1). All six are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; account-control, Settings and Emails status updated on 2026-10-06.
+Approved frontend baseline: `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1). All seven are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
 
-The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/5f438035dbac1ec49df68fc3d9799c3fb5078c4a) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
 
 The architecture boundary is **Super Admin frontend → Control Plane → Core**. Operational entities and rules remain authoritative in Core; the frontend receives neither Core service credentials nor direct database access.
 
 ## Read order
 
 1. [Context and architecture](00-context-and-architecture.md) and [current frontend scope](01-current-frontend-scope.md).
-2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), and [Whitelabel Emails V1](06-whitelabel-emails.md).
+2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), and [Finance / Gateways V1](07-whitelabel-finance-gateways.md).
 3. [Backend dependencies](matrices/backend-dependencies.md), [permissions](matrices/permissions.md), [business rules](matrices/business-rules.md), and [audit events](matrices/audit-events.md).
 4. [Audit findings and source references](audit-findings.md), then [canonical open questions](open-questions.md).
 
@@ -38,5 +38,7 @@ Pause/reactivate is now **FRONTEND PROTOTYPED / BACKEND IMPLEMENTATION NEEDED / 
 Settings is **FRONTEND PROTOTYPED / PARTIAL EXISTING CAPABILITIES / CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Backend implementation/contract work is needed where applicable; the [Settings handoff](05-whitelabel-settings.md#backend-dependencies) separates existing Core capabilities, exposure gaps, new work and Product decisions. Local saves/publication are not durable configuration or legal publication.
 
 Emails is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. SMTP has **PARTIAL / EXISTING SMTP CAPABILITY**, with **CONTROL PLANE EXPOSURE NEEDED / CONTRACT / SECURITY WORK NEEDED**. Per-tenant event controls require Backend support verification/implementation; Equity and Debt confirmations are independent Product requirements, while four other events are illustrative. Templates are summary-only. See the [Emails handoff](06-whitelabel-emails.md); no real email is sent by the prototype.
+
+Finance / Gateways is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. It is configuration/governance only: no provider, banking or financial operation occurs. See the [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
 
 Backend review should first confirm the foundation and read contracts, then resolve Product-dependent writes. An existing Core table or actor endpoint does not by itself constitute a Super Admin capability.

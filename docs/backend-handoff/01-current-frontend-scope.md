@@ -1,6 +1,6 @@
 # Current Frontend Scope
 
-Baseline: `dev@5f438035dbac1ec49df68fc3d9799c3fb5078c4a`. Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1 and Whitelabel Emails V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. Earlier Account Control/Settings links retain their phase commits; Emails and current navigation/shared SMTP links use the current approved commit. Frontend implementation is not merged into this documentation branch.
+Baseline: `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`. Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1 and Finance / Gateways V1 are **FRONTEND PROTOTYPED**, with **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. Approval is visual/prototype approval, not operational readiness. Earlier phase links retain their historical commits; Finance and current navigation use the current approved commit. Frontend implementation is not merged into this documentation branch.
 
 ## Login V1
 
@@ -61,6 +61,14 @@ SMTP prototypes host, port, TLS mode, username, write-only password, sender emai
 Automatic email events have per-Whitelabel draft switches and explicit local save/discard. Investment confirmed — Equity and Investment confirmed — Debt are independent Product requirements; registration completed, password recovery, account approved and Terms updated are illustrative, not confirmed Backend-configurable flags. Templates is a summary of illustrative platform defaults/categories, the local SMTP sender and a Settings identity link; its manage action remains a notice, not an editor/versioning capability.
 
 Tenant-specific saved values and activity survive in-app navigation only and reset on reload. Unsaved-change protection covers links, tenant switching, Back/Forward and native document-exit/reload warnings; session feedback is not durable audit. Decorative Orbit borders do not change event support or delivery state. Integration still needs authorized scoped SMTP/event/template contracts, secure secrets, real test semantics, sanitized errors, RBAC and durable audit.
+
+## Finance / Gateways V1
+
+Source: `src/features/finance-gateways/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9/src/features/finance-gateways)); route: `#/whitelabels/:whitelabelId/finance/gateways`. See [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
+
+The tenant-scoped page prototypes gateway configuration, write-only credential status, simulated connection validation, local activation/deactivation, masked bank-account management, a conceptual modality summary and session-only activity. Save/discard and unsaved-change protection are local; state resets on reload. Providers, accounts and configuration are illustrative.
+
+This module is configuration/governance only. It performs no provider request, banking integration, Investment/Payment/wallet mutation, Pix generation, refund, cashout, transfer or reconciliation. Provider catalogs, secret contracts, banking ownership, modality relationships, RBAC and audit remain Backend/Product work.
 
 ## Navigation and management boundary
 

@@ -1,6 +1,6 @@
 # Permissions
 
-These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status below refers to the approved local prototype at `5f438035dbac1ec49df68fc3d9799c3fb5078c4a`, not delivered RBAC or authoritative commands. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
+These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status below refers to the approved local prototype at `6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`, not delivered RBAC or authoritative commands. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
 
 Architecture sections 24 and 30 require independent operator authorization plus validated resource/tenant ownership. Global reads need an explicitly granted global scope; tenant-scoped permission does not imply access to every tenant. A frontend filter or hidden button is never an authorization control.
 
@@ -41,6 +41,16 @@ Architecture sections 24 and 30 require independent operator authorization plus 
 | EMAIL_EVENT_UPDATE | Permitted tenant event enable/disable | FRONTEND PROTOTYPED; independent Equity/Debt draft switches | Validate supported event, independent preferences, safe suppression/default policy, authoritative readback and audit |
 | EMAIL_TEMPLATE_VIEW | Permitted template listing/event mapping/source | FRONTEND PROTOTYPED; illustrative summary only | Safe tenant/default provenance; actual template reads/mapping remain integration work |
 | EMAIL_TEMPLATE_UPDATE | Future editor/version/publish operations once approved | Not prototyped; manage notice only | Product-approved editing/publishing/inheritance, operator/tenant scope, validation/version/readback and audit; no editor or grant delivered in V1 |
+| GATEWAY_VIEW | Tenant gateway list/detail and sanitized credential status | FRONTEND PROTOTYPED; local illustrative state | Tenant/resource scope; no secret read access |
+| GATEWAY_CREATE | Create tenant gateway configuration | FRONTEND PROTOTYPED; local only | Supported provider/schema, validation, authoritative readback and audit |
+| GATEWAY_UPDATE | Update non-secret configuration or write-only credentials | FRONTEND PROTOTYPED; local save/discard | Separate allowed fields from secret rotation; sanitized errors/audit |
+| GATEWAY_ACTIVATE | Activate configuration | FRONTEND PROTOTYPED; local only | Product-approved operational prerequisites/impact and audit |
+| GATEWAY_DEACTIVATE | Deactivate configuration | FRONTEND PROTOTYPED; local only | Active-operation/fallback policy and audit; no implicit financial mutation |
+| GATEWAY_TEST | Run bounded provider configuration test | FRONTEND PROTOTYPED; simulated only | Server-side test, rate/timeout policy and sanitized result/audit |
+| BANK_ACCOUNT_VIEW | Tenant-related sanitized bank-account projection | FRONTEND PROTOTYPED; local masked data | Canonical ownership/resource scope; minimized sensitive fields |
+| BANK_ACCOUNT_CREATE | Create account under the approved owner | FRONTEND PROTOTYPED; local only | Authoritative validation/verification, readback and audit |
+| BANK_ACCOUNT_UPDATE | Update allowed account/status/Pix fields | FRONTEND PROTOTYPED; local only | Write-only sensitive values, concurrency/verification and audit |
+| BANK_ACCOUNT_DELETE | Remove account when domain policy allows | FRONTEND PROTOTYPED; local remove only | Relationship/in-flight-operation constraints and durable audit |
 
 `TERMS_PUBLISH` refines the prior provisional `TERMS_UPDATE` specification label; this is not a deployed permission rename or grant migration. Emails labels above specify separate read/update/test operations, not effective grants, roles or settled permission inheritance. Settings' SMTP summary shortcut does not authorize configuration or sending. `EMAIL_TEMPLATE_UPDATE` describes later capability, not a current editor/publisher.
 

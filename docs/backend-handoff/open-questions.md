@@ -2,7 +2,7 @@
 
 This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
 
-Context update: Whitelabel Account Control, Whitelabel Settings and Whitelabel Emails V1 are **FRONTEND PROTOTYPED** at approved `dev@5f438035dbac1ec49df68fc3d9799c3fb5078c4a`. Account actions, Settings local editing/default/assets/features/Terms publication and Emails local SMTP/events/template summary demonstrate the UI, not answers to the questions below. No real email is sent. Pause enforcement, migration lineage, provisioning/RBAC/audit, inheritance/asset policy, Terms reacceptance, SMTP ownership/test semantics, email-event support/suppression/defaults, template resolution/versioning, global questionnaire/classification governance and feature/module rules remain unresolved. Local current-Terms coherence across Settings/Account Control and shared SMTP summary ownership across Settings/Emails are implemented; authoritative contracts remain pending. No question is closed by prototype approval or local feedback.
+Context update: Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails and Finance / Gateways V1 are **FRONTEND PROTOTYPED** at approved `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`. Account, Settings, Emails and Finance actions demonstrate local UI only, not answers to the questions below. No real email, provider, banking or financial operation occurs. Pause/migration, provisioning/RBAC/audit, inheritance/assets/Terms, SMTP/events/templates, gateway/provider/secret semantics, bank ownership, modality relationships and profile governance remain unresolved. Local cross-screen coherence does not establish authoritative contracts, and no question is closed by prototype approval or local feedback.
 
 ## Whitelabel
 
@@ -89,6 +89,29 @@ Equity and Debt independence is already a Product requirement; these questions c
 - **Q-ET-01 — Product and Backend:** What authoritative listing and event-to-template mapping expose platform defaults versus tenant overrides, and what inheritance/effective-source/reset/propagation rules apply? Which audited Core capabilities already support that model? The current summary does not prove coverage or overrides.
 - **Q-ET-02 — Product and Backend:** For the later template editor, what versioning, draft/approval/publication, activation/rollback and concurrency rules are required, and which revision is used for an in-flight send? Define authorized update/publish readback; no editor is delivered by Emails V1.
 - **Q-ET-03 — Product and Backend:** How are sender email/display name and visual branding resolved across SMTP, tenant Identity, platform defaults and template overrides, including unconfigured/missing values? Establish precedence and ownership without duplicating SMTP or Identity truth.
+
+## Finance / Gateways
+
+- **Q-GW-01 — Product and Backend:** Which providers are supported, which credential schema/validation belongs to each provider and who owns tenant gateway configuration? Define secure preserve/replace/rotate/revoke semantics and sanitized configured metadata without secret readback.
+- **Q-GW-02 — Product and Backend:** What do principal, secondary and contingency mean? May multiple providers be active, and how is a principal/default provider selected or changed?
+- **Q-GW-03 — Product and Backend:** What does a connection test prove, which saved/draft configuration may it use, and what timeout/rate/result/error contract safely avoids secret or raw provider-error exposure?
+- **Q-GW-04 — Product and Backend:** What are activation/deactivation prerequisites and effects on future versus existing operations, in-flight work, provider switching and fallback? No financial state change may be inferred from the prototype.
+
+The single-principal rule and Production completeness warning are prototype assumptions, not answers to Q-GW-01–04.
+
+## Bank Accounts
+
+- **Q-BA-01 — Product and Backend:** What is the canonical owner of a bank account and how does it relate to Whitelabel, Opportunity and gateway/provider configuration?
+- **Q-BA-02 — Product and Backend:** What verification, receiving and payout semantics apply, and which states are authoritative?
+- **Q-BA-03 — Product and Backend:** Are multiple accounts supported; is there a principal/default account; and how is an account selected for a flow?
+- **Q-BA-04 — Product and Backend:** Which active/in-flight relationships constrain update, deactivation or removal, and what minimized/masked/write-only fields, authorization and audit are required?
+
+The prototype's Whitelabel ownership and banking validation/masks are illustrative, not authoritative.
+
+## Gateway / Modality Relationship
+
+- **Q-GM-01 — Product and Backend:** What is the authoritative source of tenant modality availability and gateway dependencies for Equity, Debt and any future Capital de giro capability?
+- **Q-GM-02 — Product and Backend:** Does Sandbox count as configured or satisfy a modality dependency, or is Production required for readiness/availability? Define how environment changes status without implying financial execution.
 
 ## RBAC
 

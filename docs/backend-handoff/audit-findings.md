@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Super Admin approved frontend was `dev@f903f98357ee7d44516c67475a498fc609ca772f`, with a clean worktree. It has no business API integration.
+- Current approved Super Admin frontend is `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`, including Finance / Gateways V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -26,6 +26,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 | A-10 | Selected tenant flags/settings, Admin menu visibility, owner tools and payment-provider mapping exist as distinct capabilities. | Do not call them a unified RBAC/entitlement/plan system. Generic gateway architecture is only partially represented. |
 | A-11 | Limited sanitized audit events exist; writer is best effort and there is no general immutable query/audit contract. | Define reliable Control Plane/Core audit responsibilities with correlation. |
 | A-12 | Ordinary email/password login is not a tenant/account-active guard. Resolver fallback and actor scope vary by path. | Pause/lifecycle design must cover actual access surfaces; authentication and resolver behavior require focused runtime validation later. |
+| A-13 | Retained audit evidence includes a payment-provider resolver, Whitelabel modality policy and safe PAG credential resource in narrower operational domains. It does not establish a generic Whitelabel gateway catalog, tenant-owned bank-account model or the Finance prototype's role/environment/modalities contract. | Classify Finance requirements as new Control Plane/Product/Backend work to verify; do not relabel existing Opportunity/provider capabilities as delivered generic gateway management. |
 
 Current Entrepreneur Admin creation must be read from the audited service, not old homolog QA notes: this source provisions a temporary password result and verified/prefilled state rather than proving the earlier setup-email workflow is the current contract. This is not a recommendation to adopt that provisioning policy for managed tenant Admins.
 

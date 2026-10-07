@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`, including Finance / Gateways V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97`, including Finance / Gateways and Modalities / Rules V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -29,6 +29,12 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 | A-13 | Retained audit evidence includes a payment-provider resolver, Whitelabel modality policy and safe PAG credential resource in narrower operational domains. It does not establish a generic Whitelabel gateway catalog, tenant-owned bank-account model or the Finance prototype's role/environment/modalities contract. | Classify Finance requirements as new Control Plane/Product/Backend work to verify; do not relabel existing Opportunity/provider capabilities as delivered generic gateway management. |
 
 Current Entrepreneur Admin creation must be read from the audited service, not old homolog QA notes: this source provisions a temporary password result and verified/prefilled state rather than proving the earlier setup-email workflow is the current contract. This is not a recommendation to adopt that provisioning policy for managed tenant Admins.
+
+### Modalities prototype mapping — no new Core finding
+
+The [approved Modalities / Rules frontend](08-whitelabel-finance-modalities-rules.md) adds Equity/Debt tenant-local enablement, generic rule choices, conceptual defaults/dependencies and session activity. **A-10/A-13** retain the existing narrower modality-policy/provider evidence; they do not prove an official managed catalog, Super Admin tenant enable/disable, rule ownership/validation, rule-default inheritance, bank/document dependencies or disabling impact. These targets remain **CORE SUPPORT TO VERIFY / PRODUCT DECISION REQUIRED / CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**; implement missing capabilities only after verification/contract decisions. No Core source, live endpoint or provider was newly inspected for this documentation update.
+
+**A-11** still limits audit evidence: frontend activity is not durable audit and does not deliver the proposed modality events or RBAC. Capital de Giro remains outside modality taxonomy; future Segments and Resource Uses are separate domains, not evidence of additional modality support. See [dependencies](matrices/backend-dependencies.md#modalities--rules-v1-dependencies) and [Q-MO-01–12](open-questions.md#modalities--rules). No retained finding, source link or Core audit SHA is changed by this mapping.
 
 ## Current route families and proposed exposure
 

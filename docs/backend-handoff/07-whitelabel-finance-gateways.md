@@ -1,6 +1,6 @@
 # Whitelabel Finance / Gateways V1
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`.
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97`.
 
 Route: `#/whitelabels/:whitelabelId/finance/gateways`. Source: `src/features/finance-gateways/`.
 
@@ -91,11 +91,13 @@ Conceptual capabilities are list/read sanitized accounts, create/update, activat
 
 ## Financial modalities summary
 
-The page shows only a conceptual summary for **Equity and Debt**. These are the current financial modalities represented by Finance / Gateways V1; any other modality requires explicit Product definition. There is no detailed modality editor and no claim that tenant-level modality flags exist in Core.
+This page remains a conceptual summary for **Equity and Debt**; the separate [Modalities / Rules V1](08-whitelabel-finance-modalities-rules.md) now provides local enable/disable and a generic rule editor. These are the only current prototype modalities, not a proven complete production catalog or proof of tenant-configurable Core flags.
 
-**Product-defined taxonomy:** Capital de Giro is not a modality. It is a valid example/option in both **Segments** and **Resource Uses / Usos dos Recursos**, which are separate catalogs/domains. Each has future independent CRUD scope (create, list/read, update, delete); neither is implemented by Finance / Gateways V1. Classification for both: **PRODUCT DEFINED CONCEPT / FRONTEND NOT YET PROTOTYPED / BACKEND SUPPORT TO VERIFY / CONTROL PLANE CONTRACT TO DEFINE**. This establishes taxonomy only, not API routes, detailed contracts or existing Backend support. Catalog and semantic questions remain in [Q-GM-01](open-questions.md#gateway--modality-relationship).
+Both Finance screens derive their catalog and enablement from the same local Finance model/store. Explicit **Desabilitada** differs from never-set-up **Não configurada**. The enabled count includes an enabled modality with **Dependência pendente**; missing gateway readiness does not silently disable it. The Modalidades quick action and Finance subnavigation retain the displayed Whitelabel. Rule choices and their activity use a separate module-local store, not a second enablement source.
 
-Detailed configuration belongs to a future **Modalidades e Regras** block. Product/Backend must define the source of truth and whether Sandbox counts as configured, satisfies a dependency, or whether Production is required for operational readiness ([Q-GM-01–02](open-questions.md#gateway--modality-relationship)).
+**Product-defined taxonomy:** Capital de Giro is not a modality. It is a valid example/option in both **Segments** and **Resource Uses / Usos dos Recursos**, which are separate catalogs/domains reserved for a future combined block. Each retains independent CRUD scope; neither is implemented by either Finance module. Classification for both: **PRODUCT DEFINED CONCEPT / FRONTEND NOT YET PROTOTYPED / BACKEND SUPPORT TO VERIFY / CONTROL PLANE CONTRACT TO DEFINE**. This establishes taxonomy only, not API routes, detailed contracts or existing Backend support. Catalog and semantic questions remain in [Q-GM-01](open-questions.md#gateway--modality-relationship).
+
+The new modality-specific editor remains non-authoritative. Product/Backend must still define source of truth, gateway mapping and whether Sandbox counts as configured, satisfies a dependency, or whether Production is required for operational readiness ([Q-GM-01–02](open-questions.md#gateway--modality-relationship), [modality decisions](open-questions.md#modalities--rules)). The bank relationship remains **Relação não definida**; neither screen establishes payout/receiving requirements.
 
 ## Local state, activity and completion boundary
 

@@ -1,8 +1,8 @@
 # Open Questions
 
-This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-06. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
+This is the single canonical list of unresolved Product/Backend decisions for this handoff. IDs are references, not commitments or delivered capabilities. All items remain open as of 2026-10-07. Product chooses policy; Backend confirms feasible contracts/invariants. No assignment to a named person or delivery date is assumed.
 
-Context update: Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails and Finance / Gateways V1 are **FRONTEND PROTOTYPED** at approved `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181`. Account, Settings, Emails and Finance actions demonstrate local UI only, not answers to the questions below. No real email, provider, banking or financial operation occurs. Pause/migration, provisioning/RBAC/audit, inheritance/assets/Terms, SMTP/events/templates, gateway/provider/secret semantics, bank ownership, modality relationships and profile governance remain unresolved. Local cross-screen coherence does not establish authoritative contracts, and no question is closed by prototype approval or local feedback.
+Context update: Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails, Finance / Gateways V1 and Modalities / Rules V1 are **FRONTEND PROTOTYPED** at approved `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97`. Account, Settings, Emails and Finance actions demonstrate local UI only, not answers to the questions below. No real email, provider, banking or financial operation occurs. Pause/migration, provisioning/RBAC/audit, inheritance/assets/Terms, SMTP/events/templates, gateway/provider/secret semantics, bank ownership, modality/rule relationships and profile governance remain unresolved. Local cross-screen coherence does not establish authoritative contracts, and no question is closed by prototype approval or local feedback.
 
 ## Whitelabel
 
@@ -118,6 +118,23 @@ The prototype's Whitelabel ownership and banking validation/masks are illustrati
   Segments and Resource Uses each have future independent CRUD scope (create, list/read, update, delete): **PRODUCT DEFINED CONCEPT / FRONTEND NOT YET PROTOTYPED / BACKEND SUPPORT TO VERIFY / CONTROL PLANE CONTRACT TO DEFINE**. Their identities and this example are defined by Product; Backend support and Control Plane contracts are not established by this clarification. No detailed CRUD contract is prescribed here.
 
 - **Q-GM-02 — Product and Backend:** Does Sandbox count as configured or satisfy a modality dependency, or is Production required for readiness/availability? Define how environment changes status without implying financial execution.
+
+Segments and Resource Uses remain separate and will be handled together in a future block; their existing questions/scope above are preserved. The following questions concern modality governance only. Equity/Debt local enablement, generic rule choices and shared Finance dependency displays do not settle Q-GM-01–02.
+
+## Modalities / Rules
+
+- **Q-MO-01 — Product and Backend:** Within the official financial-modality catalog requested in Q-GM-01-A, what stable identity, supported-versus-configurable distinction, source of truth and definition/version lifecycle govern tenant reads? Equity and Debt are the current prototype catalog, not proof of complete production coverage.
+- **Q-MO-02 — Product and Backend:** Does tenant-level modality enablement exist, where is its authoritative state owned, and what validated enable/disable/readback contract and operational meaning apply?
+- **Q-MO-03 — Product and Backend:** What impact, if any, does disabling have on new versus existing Opportunities and their Investment/Payment lineage? Is disable allowed while active business exists, and what restrictions or preflight must preserve historical/financial obligations without implicit cascades?
+- **Q-MO-04 — Product and Backend:** On re-enable, are prior rule choices/dependency mappings retained, reset or revalidated? What concurrency, ambiguous-response and reconciliation semantics prevent duplicate transitions?
+- **Q-MO-05 — Product and Backend:** Which real rules are global, tenant-wide, modality-specific or Opportunity-specific, and who may edit each scope? V1 has only modality-specific editing plus a read-only general overview; it does not define real ownership.
+- **Q-MO-06 — Product and Backend:** What authoritative rule catalog, typed values, validation and operational enforcement are supported for each modality? Are the illustrative manual-approval and Opportunity-configuration concepts real configurable rules at all, and what are their effects if adopted?
+- **Q-MO-07 — Product and Backend:** For modality rules specifically, do platform defaults exist and how do tenant override granularity, effective provenance, inheritance/fallback, explicit reset, empty/null semantics, versioning and propagation work? Apply Q-ST-01 where appropriate without assuming generic Settings delivers rule inheritance.
+- **Q-MO-08 — Product and Backend:** Within Q-GM-01–02 and Q-GW-01–04, what explicit gateway-to-modality mapping/cardinality, provider/fallback selection and readiness criteria govern availability? Can one gateway serve multiple modalities, and how do Sandbox/Production affect readiness independently from local configured/active labels?
+- **Q-MO-09 — Product and Backend:** Given Q-BA-01–04, does any modality require a bank account, which canonical owner/account and receiving/payout relation apply, and what readiness constraints follow? Current relationship is Relação não definida; an active-account count is not a requirement.
+- **Q-MO-10 — Product and Backend:** What documents/requirements apply per modality, who owns their catalog/version/source, and how do missing requirements affect tenant availability versus a specific Opportunity without creating a duplicate Opportunity-document domain?
+- **Q-MO-11 — Product and Backend:** Under Q-RB-01–04, which operator/tenant/resource grants separately authorize modality view/update/enable/disable and rule view/update, and what denied/conflict/dependency error/readback contract is safe? Proposed labels are not RBAC implementation.
+- **Q-MO-12 — Product and Backend:** Under Q-AU-01–03, which enable/disable/rule-update successes, failures and denials require durable records, with what rule-key and sanitized before/after metadata and Core/Control Plane correlation? Current session activity is not evidence of those events.
 
 ## RBAC
 

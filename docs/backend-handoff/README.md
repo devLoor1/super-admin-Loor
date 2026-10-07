@@ -2,16 +2,16 @@
 
 Start here for Backend review of the approved frontend and the capabilities needed to integrate it. This is a documentation handoff, not authorization to implement every proposed capability.
 
-Approved frontend baseline: `dev@25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1). All seven are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
+Approved frontend baseline: `dev@4098158b1aa8f58ea20692f0e9bb177b36a49e97` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1, Modalities / Rules V1). All eight are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
 
-The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/4098158b1aa8f58ea20692f0e9bb177b36a49e97) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
 
 The architecture boundary is **Super Admin frontend → Control Plane → Core**. Operational entities and rules remain authoritative in Core; the frontend receives neither Core service credentials nor direct database access.
 
 ## Read order
 
 1. [Context and architecture](00-context-and-architecture.md) and [current frontend scope](01-current-frontend-scope.md).
-2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), and [Finance / Gateways V1](07-whitelabel-finance-gateways.md).
+2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), [Finance / Gateways V1](07-whitelabel-finance-gateways.md), and [Modalities / Rules V1](08-whitelabel-finance-modalities-rules.md).
 3. [Backend dependencies](matrices/backend-dependencies.md), [permissions](matrices/permissions.md), [business rules](matrices/business-rules.md), and [audit events](matrices/audit-events.md).
 4. [Audit findings and source references](audit-findings.md), then [canonical open questions](open-questions.md).
 
@@ -27,7 +27,7 @@ Open questions have stable IDs in one file. Other documents reference those IDs 
 | PARTIAL EXISTING CAPABILITIES | Audited Core supports parts of the requested scope; not the complete prototype schema or Super Admin workflow. |
 | CONTROL PLANE EXPOSURE NEEDED | Core capability needs a scoped internal API and a frontend-facing Control Plane contract. |
 | BACKEND IMPLEMENTATION NEEDED | Required capability was not found in the audited implementation. |
-| CORE SUPPORT UNKNOWN / TO VERIFY | No supporting capability is established by the retained audit; verify before claiming delivery. |
+| CORE SUPPORT TO VERIFY | Target capability is not established by the retained audit; verify before claiming delivery. Earlier entries use CORE SUPPORT UNKNOWN / TO VERIFY with the same evidence limit. |
 | CONTRACT / SECURITY WORK NEEDED | Existing capabilities must be checked/adapted to the agreed scoped, safe contract; not a claim that all underlying behavior is missing. |
 | PRODUCT DECISION REQUIRED | Behavior cannot be finalized from current evidence. |
 | INTEGRATION PENDING | Frontend is not connected to the required authoritative API. |
@@ -40,5 +40,7 @@ Settings is **FRONTEND PROTOTYPED / PARTIAL EXISTING CAPABILITIES / CONTROL PLAN
 Emails is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. SMTP has **PARTIAL / EXISTING SMTP CAPABILITY**, with **CONTROL PLANE EXPOSURE NEEDED / CONTRACT / SECURITY WORK NEEDED**. Per-tenant event controls require Backend support verification/implementation; Equity and Debt confirmations are independent Product requirements, while four other events are illustrative. Templates are summary-only. See the [Emails handoff](06-whitelabel-emails.md); no real email is sent by the prototype.
 
 Finance / Gateways is **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. It is configuration/governance only: no provider, banking or financial operation occurs. See the [Finance / Gateways handoff](07-whitelabel-finance-gateways.md).
+
+Modalities / Rules is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Equity and Debt are the only current prototype modalities; Capital de Giro remains outside that taxonomy. Rules, default/override and dependency readiness are non-authoritative. See [Modalities / Rules](08-whitelabel-finance-modalities-rules.md) for local behavior and the separate future Segments / Resource Uses boundary.
 
 Backend review should first confirm the foundation and read contracts, then resolve Product-dependent writes. An existing Core table or actor endpoint does not by itself constitute a Super Admin capability.

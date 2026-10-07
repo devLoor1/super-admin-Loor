@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test activity. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
+Approved frontend `4098158b1aa8f58ea20692f0e9bb177b36a49e97` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test and modality enable/disable/rule-save/discard activity. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
 
 ## Future Super Admin requirements
 
@@ -57,12 +57,15 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | BANK_ACCOUNT_ACTIVATED | Authorized status transition | Prior/resulting status, owner/account reference and result |
 | BANK_ACCOUNT_DEACTIVATED | Authorized status transition | Prior/resulting status, constraints/result and correlation |
 | BANK_ACCOUNT_REMOVED | Authorized removal under domain constraints | Owner/account reference, reason/result and correlation; no sensitive values |
+| MODALITY_ENABLED | Future authorized tenant enablement after approved prerequisites | Operator/Whitelabel/modality, sanitized prior/new enablement, result/time/correlation; no claim of provider health |
+| MODALITY_DISABLED | Future authorized disable under active-business/impact policy | Operator/Whitelabel/modality, sanitized state and policy outcome, result/time/correlation; no inferred financial cascade |
+| MODALITY_RULES_UPDATED | Future validated allowed rule update/reset | Operator/Whitelabel/modality, changed rule keys, sanitized before/after and provenance/version when agreed, result/time/correlation; no sensitive financial/credential data |
 
 Architecture also requires relevant login success/failure, SMTP/gateway changes/tests and authorized Opportunity actions. Event coverage must be completed as those commands are scoped, without adding financial controls through this documentation task.
 
 The prototype's simulated request corresponds only to a future request-stage concept, never proof of `ACCOUNT_WHITELABEL_CHANGED`. Account, Settings and Emails actions have local UI demonstrations; `ADMIN_UPDATED` and template editing/publication remain future-only. Settings feedback does not emit `PLATFORM_SETTINGS_UPDATED`, `PLATFORM_ASSET_UPDATED`, `PLATFORM_FEATURE_UPDATED` or `TERMS_PUBLISHED`. Emails activity emits none of the SMTP/event/template uppercase names. Existing Core `email_config.*`, `email_template.*`, `platform_asset.*` and `terms_of_use.publish` writer calls must not be relabeled as delivered Super Admin events. Every proposed event remains **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** for Control Plane audit; Product still defines event coverage and success/failure guarantees.
 
-Finance session activity emits none of these events. Future records may include operator, Whitelabel, gateway/account identifier, affected configuration/action, sanitized before/after state, result, timestamp and `correlation_id`. They must never include passwords, API secrets, full credentials or sensitive bank/Pix values.
+Finance session activity emits none of these events. Future records may include operator, Whitelabel, gateway/account/modality identifier, changed rule keys, affected configuration/action, sanitized before/after state, result, timestamp and `correlation_id`. They must never include passwords, API secrets, full credentials, sensitive financial data or sensitive bank/Pix values. The proposed modality names are future requirements, not evidence of existing Core writer calls. [Q-MO-12](../open-questions.md#modalities--rules) extends Q-AU-01–03 for their success/failure/denial coverage, ownership and durability; rule save/discard feedback is not authoritative audit.
 
 Proposed shared metadata: operator ID, actor type, resource type/ID, tenant ID, action, result, timestamp, correlation ID and reason/operation reference. Sanitized old/new fields, IP and user agent are subject to agreed access/retention policy. Failed and denied attempts need a defined policy; command success/failure must not be conflated.
 

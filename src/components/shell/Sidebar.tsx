@@ -134,7 +134,9 @@ function NavList({
                         onClick={onNavigate}
                       >
                         <ChildIcon className={styles.subIcon} size={17} strokeWidth={1.7} aria-hidden="true" />
-                        <span className={styles.subLabel}>{child.label}</span>
+                        <span className={styles.subLabel} data-long={child.label.length > 24 || undefined}>
+                          {child.label}
+                        </span>
                       </a>
                     </li>
                   )

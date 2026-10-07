@@ -1,0 +1,78 @@
+/* Content styles for the Segmentos e usos dos recursos dialogs (inside components/ui/Dialog). */
+
+.textarea {
+  min-height: 84px;
+}
+
+.sameName {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #c4c0ff;
+}
+
+.sameName svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.statusGroup {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.statusOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.statusOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 9px;
+  background: #121826;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-dark-secondary);
+  cursor: pointer;
+}
+
+.statusOption:has(input:checked) {
+  border-color: rgb(126 118 255 / 0.55);
+  background: rgb(98 90 230 / 0.16);
+  color: var(--text-on-dark);
+}
+
+.statusOption input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #7d75ff;
+}
+
+.statusOption:has(input:focus-visible) {
+  box-shadow: var(--focus-ring-dark);
+}
+
+.calloutList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.calloutList li::marker {
+  color: #f2c983;
+}

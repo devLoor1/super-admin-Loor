@@ -256,6 +256,22 @@
   white-space: nowrap;
 }
 
+/* Long screen names (e.g. "Segmentos e usos dos recursos") wrap instead of
+   overflowing the full sidebar / drawer; short labels keep the fixed row. The
+   icon rail (768–1199px) keeps its own fixed entries. */
+@media (min-width: 1200px), (max-width: 767px) {
+  .subItem:has(> .subLabel[data-long]) {
+    height: auto;
+    min-height: 36px;
+  }
+
+  .subLabel[data-long] {
+    padding: 8px 0;
+    line-height: 17px;
+    white-space: normal;
+  }
+}
+
 /* ---------- Bottom: utility + concept lines ---------- */
 
 .bottom {
@@ -303,6 +319,10 @@
 
   .subItem {
     height: 34px;
+  }
+
+  .subLabel[data-long] {
+    padding: 7px 0;
   }
 }
 

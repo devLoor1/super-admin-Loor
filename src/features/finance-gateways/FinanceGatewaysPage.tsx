@@ -49,6 +49,7 @@ export function FinanceGatewaysPage({ whitelabelId }: { whitelabelId: string }) 
         financeiro: financeHref(whitelabelId),
         'finance-gateways': financeHref(whitelabelId),
         'finance-modalities': `#/whitelabels/${whitelabelId}/finance/modalities`,
+        'finance-catalogs': `#/whitelabels/${whitelabelId}/finance/segments-resource-uses`,
       }}
       title="Financeiro / Gateways"
       location="Gateways"

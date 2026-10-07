@@ -4,8 +4,8 @@ Visual prototype of the **Super Admin**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
-**Finance / Gateways V1** and **Modalidades e regras V1** (Financeiro).
-Frontend only.
+**Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
+dos recursos V1** (Financeiro). Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -27,6 +27,10 @@ Frontend only.
 > Modalidades e regras covers only Equity and Debt; enable/disable and the
 > generic rule concepts are local, nothing cascades, and **no Opportunity,
 > investment or payment is created or changed**.
+> Segmentos e usos dos recursos holds two independent illustrative catalogs;
+> create, edit, activate/inactivate and delete are local to the browser
+> session, the two catalogs are never linked, and **no Opportunity is created,
+> changed or counted**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -38,6 +42,7 @@ Frontend only.
 | Whitelabel E-mails V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/emails` | [`docs/reference/super-admin-whitelabel-emails-approved.png`](docs/reference/super-admin-whitelabel-emails-approved.png) (visual direction only) |
 | Finance / Gateways V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/gateways` | [`docs/reference/super-admin-whitelabel-finance-gateways-approved.png`](docs/reference/super-admin-whitelabel-finance-gateways-approved.png) (visual direction only) |
 | Modalidades e regras V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/modalities` | [`docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png`](docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png) (composition only) |
+| Segmentos e usos dos recursos V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/segments-resource-uses` | [`docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png`](docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png) (composition only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
@@ -50,9 +55,11 @@ optional `?tipo=investidores|empreendedores|administradores`; the settings route
 that focuses that card. Within the tenant screens, the sidebar destinations
 preserve the displayed Whitelabel. **Financeiro** links to
 `#/whitelabels/:whitelabelId/finance/gateways` (first illustrative Whitelabel
-by default) and, while active, lists **Gateways e contas** and **Modalidades e
-regras** (`#/whitelabels/:whitelabelId/finance/modalities`); on both screens the
-Financeiro links keep the displayed Whitelabel.
+by default) and, while active, lists **Gateways e contas**, **Modalidades e
+regras** (`#/whitelabels/:whitelabelId/finance/modalities`) and **Segmentos e usos
+dos recursos** (`#/whitelabels/:whitelabelId/finance/segments-resource-uses`, one
+entry for both catalogs); on all three screens the Financeiro links keep the
+displayed Whitelabel.
 
 ---
 
@@ -95,7 +102,8 @@ src/
                                     "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
                                     "#/whitelabels/:id/emails[?section=…]",
                                     "#/whitelabels/:id/finance/gateways",
-                                    "#/whitelabels/:id/finance/modalities", else login
+                                    "#/whitelabels/:id/finance/modalities",
+                                    "#/whitelabels/:id/finance/segments-resource-uses", else login
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
@@ -184,6 +192,13 @@ src/
       modalitiesStore.ts            in-memory rule choices + session-only activity (enablement stays in financeStore)
       sections/                     summary cards, modality list, detail + tabs, rules editor, Regras gerais, about, quick actions
       dialogs/                      disable confirmation
+    finance-catalogs/
+      FinanceCatalogsPage.tsx       page layout, tenant context, dialog state, shared unsaved guard
+      catalogModel.ts               Segment / ResourceUse types, catalog metadata, validation, sorting
+      prototypeCatalogs.ts          illustrative Segments and Resource Uses per Whitelabel (separate records)
+      catalogStore.ts               in-memory session store: two independent collections + session activity
+      sections/                     summary cards, generic catalog panel (list/search/filter/sort/pagination), notes, activity
+      dialogs/                      create/edit form, delete confirmation
 docs/reference/                     approved concept images
 ```
 
@@ -502,8 +517,8 @@ review record for scope, evidence and fallback checks.
   here; enablement and rule concepts are edited in Modalidades e regras (same
   local state). Not Backend flags.
 - **Product taxonomy:** Capital de Giro is not a modality. It is a valid
-  example in both independent Segment and Resource Use catalogs; their CRUD
-  scope is future work, not implemented here.
+  example in both independent Segment and Resource Use catalogs, which are
+  managed in Segmentos e usos dos recursos (not on this screen).
 - **Unsaved changes** reuse `useUnsavedChangesGuard` (links, Back/Forward,
   reload, tenant switch) plus the same dialog when switching gateway; no global
   save.
@@ -523,8 +538,9 @@ review record for scope, evidence and fallback checks.
 ## Modalidades e regras V1 — decisions
 
 - **Placement.** Second Financeiro screen (`Modalidades e regras`), tenant-scoped
-  through the reused context card. Segmentos e usos dos recursos is a separate
-  future block — no navigation entry, route or CRUD here.
+  through the reused context card. Segmentos e usos dos recursos is the separate
+  third Financeiro screen; the Sobre card links to it, and no catalog CRUD
+  happens here.
 - **Taxonomy.** Only Equity and Debt (catalog derived from the Finance model).
   Capital de Giro is not a modality and never appears as one.
 - **Single source.** Enablement is the Finance store's `settings.modalities`
@@ -560,6 +576,52 @@ review record for scope, evidence and fallback checks.
 | 768–1359px | Single column (tabs + list, detail, Sobre, Ações rápidas); summary cards 2 × 2 below 1200px. |
 | < 768px | Drawer navigation; list columns collapse by container width (description and status move under the name); page tabs share the width; detail tabs become a 2 × 2 grid; rule rows stack. |
 
+## Segmentos e usos dos recursos V1 — decisions
+
+- **Placement.** Third Financeiro screen, one navigation entry
+  (`Segmentos e usos dos recursos`) for both catalogs; no separate Segmentos or
+  Usos entries. Tenant-scoped through the reused context card; the route keeps
+  the displayed Whitelabel.
+- **Two independent catalogs.** Segment (`seg_…`) and ResourceUse (`ru_…`) are
+  separate types, collections, store actions and ids. Nothing links them; a
+  matching name (Capital de Giro is in both) does not create a relationship,
+  and deleting one never touches the other.
+- **Taxonomy.** Neither catalog is a modality. Modalities stay Equity and Debt
+  only; the catalog module imports nothing from the modality modules.
+- **CRUD per catalog.** List with accent-insensitive search, status filter,
+  sort by Nome / Status (`aria-sort`) and pagination (6 per page); create and
+  edit in a dialog (Nome required, 2–60 characters; optional Descrição up to
+  160 — prototype UX constraints, not authoritative Backend limits;
+  Status Ativo / Inativo); delete with confirmation. Inactivate keeps the
+  record listed; delete removes it from the local prototype.
+- **Duplicate names** are blocked only within the same catalog, after
+  normalising case, accents and spacing — marked in the UI as a prototype UX
+  rule pending Backend/Product validation. The same name in the other catalog
+  is allowed and only shown as an informative note.
+- **Summary cards** are derived from the local catalogs (count and
+  ativos/inativos); *Catálogos independentes* and *Uso em Oportunidades* show
+  "—". A note says the counts are not production data.
+- **Not invented:** Opportunity creation or counts, Opportunity cardinality,
+  links between catalogs, authoritative tenant ownership, hierarchy, codes,
+  effects of inactivation or deletion on existing use.
+- **Unsaved changes.** A dirty form asks before closing (Escape, Cancelar,
+  close); `useUnsavedChangesGuard` covers Finance links, Back/Forward, reload
+  and tenant switch.
+- **Session activity** lists only this session's local actions, tagged by
+  catalog — not an audit trail.
+- **Conceptual labels only:** permissions `SEGMENT_*` / `RESOURCE_USE_*` and
+  future audit events (`SEGMENT_CREATED`, …) are documented, not enforced.
+- Details, QA and Backend/Product dependencies:
+  [`docs/whitelabel-finance-segments-resource-uses-v1.md`](docs/whitelabel-finance-segments-resource-uses-v1.md).
+
+### Segmentos e usos dos recursos responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| Wide main area | Context row, four summary cards, the two catalog cards side by side when each gets ≥ 480px, then Observações beside Atividade da sessão. |
+| < 1200px | Summary cards 2 × 2; catalogs stack when narrow; notes and activity stack. |
+| < 768px | Drawer navigation; card-level container queries move the description (≤ 540px) and status (≤ 420px) under the name and stack the controls; dialogs scroll their body with the footer visible. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -569,6 +631,21 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Segmentos e usos dos recursos:
+
+- Each catalog is a labelled `<section>`; tables have captions and `scope="col"`
+  headers; Nome / Status sort buttons expose `aria-sort`; edit and delete
+  buttons are named with the item ("Editar segmento Tecnologia"). Search and
+  status filter are labelled per catalog; the result count is a polite live
+  region; statuses are text.
+- The form reuses `Dialog`: focus to Nome, errors via `aria-describedby` with
+  focus to the invalid field, status as a radio group. The delete dialog
+  focuses Cancelar; Escape closes and focus returns to the trigger (or to the
+  create button after a delete).
+- Claude reported axe-core 4.x (scratch copy) with no violations in 28 states
+  (1440/390/320px, dialogs, errors, guards, pagination, filtered empty, three
+  tenants and not-found).
 
 Modalidades e regras:
 
@@ -691,8 +768,9 @@ Admin provisioning/invitations, RBAC, audit trail, questionnaire/
 classification editing, real payment-provider or bank integration, credential
 storage, financial operations of any kind (balances, payments, Pix charges,
 refunds, cashout, transfers, reconciliation), an authoritative modality rule
-catalog or financial rule values, Segment and Resource Use catalogs,
-Opportunity creation/configuration, other destination module screens (global Platform Settings,
+catalog or financial rule values, Backend-owned Segment / Resource Use catalogs
+(the local catalogs are illustrative), Opportunity creation/configuration,
+Opportunity–catalog associations or cardinality, links between catalogs, other destination module screens (global Platform Settings,
 Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet, KYC, Auditoria),
 further OriginKit assets, final brand system.
 
@@ -708,5 +786,6 @@ further OriginKit assets, final brand system.
 - [Whitelabel E-mails V1 — local implementation and QA](docs/whitelabel-emails-v1.md)
 - [Finance / Gateways V1 — local implementation, QA and Backend dependencies](docs/whitelabel-finance-gateways-v1.md)
 - [Modalidades e regras V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-modalities-rules-v1.md)
+- [Segmentos e usos dos recursos V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-segments-resource-uses-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

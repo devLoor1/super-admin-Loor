@@ -461,6 +461,17 @@
   min-width: 0;
 }
 
+.aboutLink {
+  border-radius: 4px;
+  color: #b9b4ff;
+  text-underline-offset: 3px;
+}
+
+.aboutLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
 .aboutText p {
   font-size: 12.5px;
   line-height: 19px;

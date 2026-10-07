@@ -55,6 +55,7 @@ export function FinanceModalitiesPage({ whitelabelId }: { whitelabelId: string }
         financeiro: gatewaysHref(whitelabelId),
         'finance-gateways': gatewaysHref(whitelabelId),
         'finance-modalities': modalitiesHref(whitelabelId),
+        'finance-catalogs': `#/whitelabels/${whitelabelId}/finance/segments-resource-uses`,
       }}
       title="Modalidades e regras"
       location="Modalidades"
@@ -287,7 +288,7 @@ function ModalitySections({
           />
         </div>
         <div className={styles.areaAbout} data-detail-stage>
-          <AboutModalities />
+          <AboutModalities catalogsHref={`#/whitelabels/${whitelabel.id}/finance/segments-resource-uses`} />
         </div>
         <div className={styles.areaSide} data-detail-stage>
           <ModalityQuickActions

@@ -4,7 +4,7 @@ import { CATALOG_NAMES } from '../modalitiesModel'
 import styles from './ModalitySections.module.css'
 
 /** Sobre modalidades e regras — scope and boundaries in plain words. */
-export function AboutModalities() {
+export function AboutModalities({ catalogsHref }: { catalogsHref: string }) {
   return (
     <section className={fin.card} aria-labelledby="mod-about-title">
       <div className={styles.about}>
@@ -24,8 +24,11 @@ export function AboutModalities() {
             cada Oportunidade ficam fora deste escopo.
           </p>
           <p>
-            Segmentos e Usos dos recursos são catálogos separados, ligados à criação de Oportunidades — não são modalidades e serão
-            tratados em um bloco futuro.
+            Segmentos e Usos dos recursos são catálogos separados, ligados à criação de Oportunidades — não são modalidades. Ver{' '}
+            <a href={catalogsHref} className={styles.aboutLink}>
+              Segmentos e usos dos recursos
+            </a>
+            .
           </p>
         </div>
       </div>

@@ -501,3 +501,13 @@ Codex review refinements:
   regression. The correction is not claimed as a fresh axe pass: an automated
   axe rerun was unavailable due to certificate validation during its scratch
   package fetch.
+
+## Follow-up — Segmentos e usos dos recursos V1 (Claude, 2026-10-07)
+
+- Financeiro now also lists **Segmentos e usos dos recursos**
+  (`#/whitelabels/:id/finance/segments-resource-uses`); this page passes it in
+  `subNavHrefs` so the tenant is preserved. Nothing else on this page changed.
+- The shared sidebar wraps sub-navigation labels longer than 24 characters
+  (`data-long`, full sidebar and drawer only), so the new label is not clipped.
+  Other entries keep their single-line layout.
+- Record: [`whitelabel-finance-segments-resource-uses-v1.md`](whitelabel-finance-segments-resource-uses-v1.md).

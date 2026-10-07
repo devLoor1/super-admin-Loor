@@ -11,6 +11,7 @@ import {
   ListChecks,
   Mail,
   Settings,
+  Shapes,
   ShieldCheck,
   SlidersHorizontal,
   UsersRound,
@@ -60,6 +61,13 @@ export const PRIMARY_NAV: NavItem[] = [
     children: [
       { id: 'finance-gateways', label: 'Gateways e contas', icon: Link2, href: '#/whitelabels/wl_proto_01/finance/gateways' },
       { id: 'finance-modalities', label: 'Modalidades e regras', icon: ListChecks, href: '#/whitelabels/wl_proto_01/finance/modalities' },
+      // One entry for the combined screen: Segments and Resource Uses stay independent catalogs.
+      {
+        id: 'finance-catalogs',
+        label: 'Segmentos e usos dos recursos',
+        icon: Shapes,
+        href: '#/whitelabels/wl_proto_01/finance/segments-resource-uses',
+      },
     ],
   },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },

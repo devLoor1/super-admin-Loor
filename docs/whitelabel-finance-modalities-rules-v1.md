@@ -552,3 +552,26 @@ Account Control/Settings/Emails contracts merely to add this prototype.
 **Review outcome:** technically ready for final user visual review. Promotion
 remains subject to user approval. `dev`, `main` and the separate documentation
 branch remain at their starting commits.
+
+## Follow-up — Segmentos e usos dos recursos V1 (Claude, 2026-10-07)
+
+This section supersedes the earlier statements that Segmentos e usos dos
+recursos has no navigation entry, route or link. The rest of this record is
+unchanged.
+
+- Financeiro now lists a third entry, **Segmentos e usos dos recursos**
+  (`#/whitelabels/:id/finance/segments-resource-uses`), one entry for both
+  catalogs. This page passes it in `subNavHrefs` so the tenant is preserved.
+- The *Sobre modalidades e regras* sentence no longer says the catalogs are
+  "tratados em um bloco futuro". It now ends with a link, *Segmentos e usos dos
+  recursos*, to the displayed tenant's catalog screen (`AboutModalities`
+  receives `catalogsHref`; new `.aboutLink` style with a focus ring).
+- **Taxonomy is unchanged:** modalities are still Equity and Debt only.
+  "Capital de Giro" now appears in the built bundle, but only as illustrative
+  Segment and Resource Use records of the catalog module, never as a modality,
+  status, dependency or count. The catalog module imports nothing from the
+  modality modules.
+- The Modalidades flow check that asserted "no Segmentos entry" was replaced by
+  a check that the single *Segmentos e usos dos recursos* entry links to the
+  displayed tenant's route; all 58 checks pass.
+- Record: [`whitelabel-finance-segments-resource-uses-v1.md`](whitelabel-finance-segments-resource-uses-v1.md).

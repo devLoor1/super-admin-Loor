@@ -45,7 +45,11 @@ export function FinanceGatewaysPage({ whitelabelId }: { whitelabelId: string }) 
     <AppShell
       activeNav="financeiro"
       activeSubNav="finance-gateways"
-      subNavHrefs={{ financeiro: financeHref(whitelabelId), 'finance-gateways': financeHref(whitelabelId) }}
+      subNavHrefs={{
+        financeiro: financeHref(whitelabelId),
+        'finance-gateways': financeHref(whitelabelId),
+        'finance-modalities': `#/whitelabels/${whitelabelId}/finance/modalities`,
+      }}
       title="Financeiro / Gateways"
       location="Gateways"
       breadcrumbs={[
@@ -369,6 +373,7 @@ function FinanceSections({
         <div className={styles.areaSide}>
           <ModalitiesSummary settings={settings} />
           <QuickActions
+            modalitiesHref={`#/whitelabels/${whitelabel.id}/finance/modalities`}
             onConfigureGateway={() => setNewGateway(true)}
             onCreateBank={() => setBankDialog({ kind: 'form' })}
             onNotice={notify}

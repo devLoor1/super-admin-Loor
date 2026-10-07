@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode, type Ref } from 'react'
 import { AlertCircle, Check, Loader2, Pencil } from 'lucide-react'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
-import { StatusPill } from '../../components/ui/StatusPill'
+import { StatusPill, type StatusTone } from '../../components/ui/StatusPill'
 import { SECTION_STATUS_META, sectionStatus, type SectionPhase, type SectionStatus } from './settingsModel'
 import styles from './SettingsSection.module.css'
 
@@ -20,7 +20,7 @@ type SettingsSectionProps = {
   title: string
   subtitle: string
   /** Resting status (Configurado, Usando padrão…); local edit states take precedence. Omit for no badge. */
-  status?: SectionStatus
+  status?: SectionStatus | { label: string; tone: StatusTone }
   editor?: EditorState
   /** Sections whose controls are always live (no "Editar" button). */
   inlineEditing?: boolean
@@ -52,7 +52,16 @@ export function SettingsSection({
   className,
   children,
 }: SettingsSectionProps) {
-  const meta = status ? SECTION_STATUS_META[sectionStatus(status, editor)] : null
+  // Other prototype domains may supply presentation metadata without extending
+  // Settings' status catalog. Shared transient edit badges still take priority.
+  const transientStatus = sectionStatus('readonly', editor)
+  const meta = !status
+    ? null
+    : typeof status === 'string'
+      ? SECTION_STATUS_META[sectionStatus(status, editor)]
+      : transientStatus === 'readonly'
+        ? status
+        : SECTION_STATUS_META[transientStatus]
   const titleId = `${id}-title`
   const showBar = editor && (editor.editing && (!inlineEditing || editor.dirty || editor.phase === 'saving'))
   const sectionRef = useRef<HTMLElement>(null)

@@ -1,0 +1,190 @@
+/*
+ * Modalidades e regras V1. Desktop (approved composition): context row, local
+ * summary cards, page tabs (Modalidades / Regras gerais) with the modality list
+ * beside the selected-modality panel, then the explanatory panel beside quick
+ * actions. Below 1360px everything stacks. Same frame as Gateways e contas.
+ */
+.page {
+  position: relative;
+  isolation: isolate;
+  padding-top: 14px;
+}
+
+.layout {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- Context ---------- */
+
+.context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.intro {
+  min-width: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -4px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text-on-dark);
+}
+
+.back:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.subtitle {
+  max-width: 760px;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--text-on-dark-secondary);
+}
+
+/* ---------- Content ---------- */
+
+.content {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.content:focus {
+  outline: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(460px, 42%);
+  grid-template-areas:
+    'main detail'
+    'about side';
+  gap: 14px 15px;
+  min-width: 0;
+}
+
+.areaMain,
+.areaDetail,
+.areaAbout,
+.areaSide {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.areaMain {
+  grid-area: main;
+}
+
+.areaDetail {
+  grid-area: detail;
+}
+
+.areaAbout {
+  grid-area: about;
+}
+
+.areaSide {
+  grid-area: side;
+}
+
+.pageTabs {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.pagePanel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pagePanel[hidden] {
+  display: none;
+}
+
+.pagePanel > section {
+  flex: 1 1 auto;
+}
+
+.areaAbout > section {
+  flex: 1 1 auto;
+}
+
+.notFound {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  margin-top: 14px;
+  padding: 32px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.inlineLink {
+  color: #b9b4ff;
+}
+
+@media (max-width: 1359px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'main'
+      'detail'
+      'about'
+      'side';
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding-top: 6px;
+  }
+
+  .context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subtitle {
+    font-size: 13px;
+    line-height: 19px;
+  }
+}
+
+@media (max-width: 479px) {
+  .pageTabs {
+    align-self: stretch;
+  }
+
+  .pageTabs[role='tablist'][data-variant] [role='tab'] {
+    flex: 1 1 0;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+}

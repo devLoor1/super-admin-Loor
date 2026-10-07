@@ -8,6 +8,7 @@ import {
   House,
   LayoutGrid,
   Link2,
+  ListChecks,
   Mail,
   Settings,
   ShieldCheck,
@@ -58,6 +59,7 @@ export const PRIMARY_NAV: NavItem[] = [
     href: '#/whitelabels/wl_proto_01/finance/gateways',
     children: [
       { id: 'finance-gateways', label: 'Gateways e contas', icon: Link2, href: '#/whitelabels/wl_proto_01/finance/gateways' },
+      { id: 'finance-modalities', label: 'Modalidades e regras', icon: ListChecks, href: '#/whitelabels/wl_proto_01/finance/modalities' },
     ],
   },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },

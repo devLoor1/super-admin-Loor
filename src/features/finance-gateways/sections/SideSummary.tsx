@@ -35,14 +35,17 @@ export function ModalitiesSummary({ settings }: { settings: WhitelabelFinanceSet
   )
 }
 
-type QuickAction = { label: string; description: string; icon: LucideIcon; onClick: () => void }
+type QuickAction = { label: string; description: string; icon: LucideIcon } & ({ onClick: () => void } | { href: string })
 
-/** Shortcuts: existing local flows, or a notice for modules that do not exist yet. */
+/** Shortcuts: existing local flows and screens, or a notice for modules that do not exist yet. */
 export function QuickActions({
+  modalitiesHref,
   onConfigureGateway,
   onCreateBank,
   onNotice,
 }: {
+  /** Modalidades e regras of the displayed Whitelabel (existing screen). */
+  modalitiesHref: string
   onConfigureGateway: () => void
   onCreateBank: () => void
   onNotice: (message: string) => void
@@ -50,12 +53,7 @@ export function QuickActions({
   const actions: QuickAction[] = [
     { label: 'Configurar gateway', description: 'Nova configuração local', icon: Link2, onClick: onConfigureGateway },
     { label: 'Cadastrar banco', description: 'Conta do Whitelabel', icon: Landmark, onClick: onCreateBank },
-    {
-      label: 'Modalidades e regras',
-      description: 'Módulo futuro',
-      icon: ListChecks,
-      onClick: () => onNotice('Protótipo visual: o módulo Modalidades e Regras ainda não está disponível.'),
-    },
+    { label: 'Modalidades e regras', description: 'Governança por modalidade', icon: ListChecks, href: modalitiesHref },
     {
       label: 'Auditoria',
       description: 'Módulo futuro',
@@ -71,17 +69,28 @@ export function QuickActions({
       <ul className={styles.quickGrid}>
         {actions.map((action) => {
           const Icon = action.icon
+          const content = (
+            <>
+              <span className={styles.quickIcon} aria-hidden="true">
+                <Icon size={16} strokeWidth={1.8} />
+              </span>
+              <span className={styles.quickText}>
+                {action.label}
+                <span className={styles.quickMeta}>{action.description}</span>
+              </span>
+            </>
+          )
           return (
             <li key={action.label}>
-              <button type="button" className={styles.quick} onClick={action.onClick}>
-                <span className={styles.quickIcon} aria-hidden="true">
-                  <Icon size={16} strokeWidth={1.8} />
-                </span>
-                <span className={styles.quickText}>
-                  {action.label}
-                  <span className={styles.quickMeta}>{action.description}</span>
-                </span>
-              </button>
+              {'href' in action ? (
+                <a href={action.href} className={styles.quick}>
+                  {content}
+                </a>
+              ) : (
+                <button type="button" className={styles.quick} onClick={action.onClick}>
+                  {content}
+                </button>
+              )}
             </li>
           )
         })}

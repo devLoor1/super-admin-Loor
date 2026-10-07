@@ -3,8 +3,9 @@
 Visual prototype of the **Super Admin**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
-Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1** and
-**Finance / Gateways V1** (Financeiro). Frontend only.
+Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
+**Finance / Gateways V1** and **Modalidades e regras V1** (Financeiro).
+Frontend only.
 
 > **Status:** visual/product exploration. There is **no backend, no
 > authentication, no API calls and no business data**. The login only runs a
@@ -23,6 +24,9 @@ Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1** and
 > edits, activation and bank accounts are local, the connection test is
 > simulated, credentials are write-only (never stored or shown), and **no
 > provider or bank request and no financial operation ever happens**.
+> Modalidades e regras covers only Equity and Debt; enable/disable and the
+> generic rule concepts are local, nothing cascades, and **no Opportunity,
+> investment or payment is created or changed**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -33,6 +37,7 @@ Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1** and
 | Whitelabel Settings V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/settings` | [`docs/reference/super-admin-whitelabel-settings-approved.png`](docs/reference/super-admin-whitelabel-settings-approved.png) (visual direction only) |
 | Whitelabel E-mails V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/emails` | [`docs/reference/super-admin-whitelabel-emails-approved.png`](docs/reference/super-admin-whitelabel-emails-approved.png) (visual direction only) |
 | Finance / Gateways V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/gateways` | [`docs/reference/super-admin-whitelabel-finance-gateways-approved.png`](docs/reference/super-admin-whitelabel-finance-gateways-approved.png) (visual direction only) |
+| Modalidades e regras V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/modalities` | [`docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png`](docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png) (composition only) |
 
 The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
 shell screens are reached directly by URL because there is no authentication.
@@ -45,7 +50,8 @@ optional `?tipo=investidores|empreendedores|administradores`; the settings route
 that focuses that card. Within the tenant screens, the sidebar destinations
 preserve the displayed Whitelabel. **Financeiro** links to
 `#/whitelabels/:whitelabelId/finance/gateways` (first illustrative Whitelabel
-by default) and, while active, lists **Gateways e contas**; on that screen the
+by default) and, while active, lists **Gateways e contas** and **Modalidades e
+regras** (`#/whitelabels/:whitelabelId/finance/modalities`); on both screens the
 Financeiro links keep the displayed Whitelabel.
 
 ---
@@ -88,7 +94,8 @@ src/
   app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
                                     "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
                                     "#/whitelabels/:id/emails[?section=…]",
-                                    "#/whitelabels/:id/finance/gateways", else login
+                                    "#/whitelabels/:id/finance/gateways",
+                                    "#/whitelabels/:id/finance/modalities", else login
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
@@ -170,6 +177,13 @@ src/
       financeStore.ts               in-memory session store + session-only activity feed
       sections/                     summary cards, gateway list, gateway detail + tabs, bank accounts, modalities, quick actions
       dialogs/                      validate connection, deactivate, new gateway, bank form, bank confirmations
+    finance-modalities/
+      FinanceModalitiesPage.tsx     page layout, tenant context, page tabs, selection/filters, unsaved guards (page + modality switch)
+      modalitiesModel.ts            catalog metadata (Equity/Debt from financeModel), dependency derivation, generic rule concepts
+      prototypeModalities.ts        illustrative rule choices per Whitelabel (two generic concepts)
+      modalitiesStore.ts            in-memory rule choices + session-only activity (enablement stays in financeStore)
+      sections/                     summary cards, modality list, detail + tabs, rules editor, Regras gerais, about, quick actions
+      dialogs/                      disable confirmation
 docs/reference/                     approved concept images
 ```
 
@@ -483,9 +497,10 @@ review record for scope, evidence and fallback checks.
 - **Bank accounts** are a Whitelabel-level grouping by prototype premise (not
   authoritative). Account number and Pix key are write-only and reduced to
   masked hints on save; deactivate/remove are confirmed.
-- **Modalities** (Equity, Debt): Habilitada / Não configurada /
-  Dependência pendente (enabled but no active gateway serves it).
-  No editor; not Backend flags.
+- **Modalities** (Equity, Debt): Habilitada / Desabilitada / Não configurada /
+  Dependência pendente (enabled but no active gateway serves it). Summary only
+  here; enablement and rule concepts are edited in Modalidades e regras (same
+  local state). Not Backend flags.
 - **Product taxonomy:** Capital de Giro is not a modality. It is a valid
   example in both independent Segment and Resource Use catalogs; their CRUD
   scope is future work, not implemented here.
@@ -505,6 +520,46 @@ review record for scope, evidence and fallback checks.
 | 768–1359px | Single column (list, detail, banks, modalities, quick actions); summary cards 2 × 2 below 1200px. |
 | < 768px | Drawer navigation; table columns collapse by container width with key data moved under the name; detail tabs become a 2 × 2 grid; dialogs stack fields. |
 
+## Modalidades e regras V1 — decisions
+
+- **Placement.** Second Financeiro screen (`Modalidades e regras`), tenant-scoped
+  through the reused context card. Segmentos e usos dos recursos is a separate
+  future block — no navigation entry, route or CRUD here.
+- **Taxonomy.** Only Equity and Debt (catalog derived from the Finance model).
+  Capital de Giro is not a modality and never appears as one.
+- **Single source.** Enablement is the Finance store's `settings.modalities`
+  (shared with Gateways e contas; additive `disabled` state). Gateway dependency
+  reuses the Finance demo rule (any active local gateway, Sandbox included);
+  bank account, rules and documentation are informative only.
+- **Enable / disable** are local; disabling is confirmed and states that only
+  prototype state changes, Product/Backend define the operational impact and
+  existing Opportunities, investments and payments are not changed. Nothing
+  cascades.
+- **Generic rule prototype.** Six structural categories; two editable
+  three-state concepts (*Exige aprovação manual*, *Permite configuração no nível
+  da Oportunidade*: Padrão não definido / Sim / Não), one derived
+  (*Disponível*), three pending (eligibility, documents, limits). Every item is
+  marked as prototype configuration with Product decision and Backend contract
+  pending. No rates, percentages, amounts, terms or schedules.
+- **Default vs override** is conceptual only (Padrão não definido → Override do
+  Whitelabel); no inheritance exists.
+- **Save model** reuses `SettingsSection` / `useSectionEditor` (edit → dirty →
+  Salvar / Descartar); unsaved protection covers links, Back/Forward, reload,
+  tenant switch and modality switch; no global save.
+- **Summary cards** are derived locally; the official rule catalog shows "—"
+  (Aguardando Produto e Backend).
+- **Session activity** lists only this session's local actions — not audit.
+- Details, QA and Backend/Product dependencies:
+  [`docs/whitelabel-finance-modalities-rules-v1.md`](docs/whitelabel-finance-modalities-rules-v1.md).
+
+### Modalidades e regras responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1360px | Context row, four summary cards, page tabs + modality list beside the selected-modality panel, then Sobre beside Ações rápidas. |
+| 768–1359px | Single column (tabs + list, detail, Sobre, Ações rápidas); summary cards 2 × 2 below 1200px. |
+| < 768px | Drawer navigation; list columns collapse by container width (description and status move under the name); page tabs share the width; detail tabs become a 2 × 2 grid; rule rows stack. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -514,6 +569,20 @@ review record for scope, evidence and fallback checks.
 | < 768px (small tablet / mobile) | Header band shows text only; illustration hidden. Card spans the width with 16px gutters, 48px-tall controls, 16px input text (avoids iOS zoom). |
 
 ## Accessibility
+
+Modalidades e regras:
+
+- The modality table has a caption and `scope="col"` headers; row name buttons
+  use `aria-current` / `aria-controls`; edit buttons are named ("Editar regras de
+  Debt"). Search and status filter are labelled; statuses are text.
+- Page tabs (segmented) and detail tabs reuse `Tabs`; rule selects are labelled
+  by the concept and described by its explanation; pending values carry
+  visually hidden text. The disable dialog reuses `Dialog` (focus to Cancelar,
+  Escape, focus return to the toggle).
+- Claude reported axe-core 4.x (scratch copy) with no violations in 20 states.
+  Codex independently checked keyboard/focus, guards and responsive layouts;
+  a fresh axe run was unavailable because the QA-only package fetch failed TLS
+  certificate validation. See the implementation record for the evidence split.
 
 Finance / Gateways:
 
@@ -621,8 +690,9 @@ other than "Visão geral", real account pause/reactivate, tenant reassignment,
 Admin provisioning/invitations, RBAC, audit trail, questionnaire/
 classification editing, real payment-provider or bank integration, credential
 storage, financial operations of any kind (balances, payments, Pix charges,
-refunds, cashout, transfers, reconciliation), a detailed modalities/rules
-editor, other destination module screens (global Platform Settings,
+refunds, cashout, transfers, reconciliation), an authoritative modality rule
+catalog or financial rule values, Segment and Resource Use catalogs,
+Opportunity creation/configuration, other destination module screens (global Platform Settings,
 Indicadores, Oportunidades, Investimentos, Pagamentos, Wallet, KYC, Auditoria),
 further OriginKit assets, final brand system.
 
@@ -637,5 +707,6 @@ further OriginKit assets, final brand system.
 - [Whitelabel Settings V1 — local implementation and QA](docs/whitelabel-settings-v1.md)
 - [Whitelabel E-mails V1 — local implementation and QA](docs/whitelabel-emails-v1.md)
 - [Finance / Gateways V1 — local implementation, QA and Backend dependencies](docs/whitelabel-finance-gateways-v1.md)
+- [Modalidades e regras V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-modalities-rules-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

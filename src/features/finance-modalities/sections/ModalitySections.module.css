@@ -1,0 +1,468 @@
+/*
+ * Modalidades e regras — modality-specific pieces. Card, table, detail, tab,
+ * summary and quick-action primitives come from the Finance sections
+ * stylesheet (finance-gateways/sections/FinanceSections.module.css) so both
+ * Finance screens share one surface language.
+ */
+
+/* ---------- Modality list ---------- */
+
+.avatarIcon svg {
+  display: block;
+}
+
+.colDesc {
+  max-width: 260px;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.colActions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.depCell,
+.rulesCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.depDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-on-dark-faint);
+}
+
+.depCell[data-state='served'] .depDot {
+  background: #53f2c5;
+}
+
+.depCell[data-state='pending'] .depDot {
+  background: #f2c983;
+}
+
+.rulesCell strong {
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.descInline,
+.statusInline {
+  display: none;
+}
+
+/* Narrower list: description moves under the name, then counts, then status. */
+@container (max-width: 760px) {
+  .colDesc {
+    display: none;
+  }
+
+  .descInline {
+    display: block;
+    max-width: 320px;
+    font-size: 11.5px;
+    font-weight: 400;
+    line-height: 16px;
+    color: var(--text-on-dark-muted);
+    white-space: normal;
+  }
+}
+
+@container (max-width: 600px) {
+  .colRules {
+    display: none;
+  }
+}
+
+@container (max-width: 500px) {
+  .colDeps {
+    display: none;
+  }
+}
+
+@container (max-width: 430px) {
+  .colStatus,
+  .modTable thead {
+    display: none;
+  }
+
+  .statusInline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 0 49px;
+  }
+}
+
+/* Below 320px of panel space, keep the status pill from widening the table. */
+@container (max-width: 300px) {
+  .statusInline {
+    margin-left: 0;
+  }
+}
+
+/* ---------- Detail ---------- */
+
+.toggleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.toggleHint {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+/* Dependencies */
+.depList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dep {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #121826;
+}
+
+.depIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 8px;
+  background: var(--tone-indigo-bg);
+  color: var(--tone-indigo-fg);
+}
+
+.depText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.depTitle {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--text-on-dark);
+}
+
+.depDetail {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.depNote {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.depLink {
+  justify-self: start;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #b9b4ff;
+  text-underline-offset: 3px;
+}
+
+.depLink:focus-visible {
+  border-radius: 4px;
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* Rules */
+.ruleList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.rule:first-child {
+  padding-top: 2px;
+}
+
+.rule:last-child {
+  border-bottom: 0;
+}
+
+.ruleCategory {
+  grid-column: 1 / -1;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-on-dark-muted);
+}
+
+.ruleText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ruleLabel {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--text-on-dark);
+}
+
+.ruleDescription {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-secondary);
+}
+
+.ruleValue {
+  align-self: start;
+  justify-self: end;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  white-space: nowrap;
+}
+
+.ruleValue[data-empty] {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--text-on-dark-faint);
+}
+
+.ruleSelect {
+  width: min(220px, 100%);
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 9px;
+  background: #121826;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-on-dark);
+  cursor: pointer;
+}
+
+.ruleSelect option {
+  background: #121826;
+}
+
+.ruleSelect:focus-visible {
+  border-color: var(--color-accent-glow);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(139 129 255 / 0.22);
+}
+
+.tags {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+/* Status of every unconfirmed concept, as text (prototype / Product / Backend). */
+.markers {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+@container (max-width: 420px) {
+  .rule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ruleValue {
+    justify-self: start;
+  }
+}
+
+/* ---------- Regras gerais ---------- */
+
+.concept {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conceptStep {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+  padding: 11px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #121826;
+}
+
+.conceptLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.conceptNote {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.conceptArrow {
+  display: grid;
+  place-items: center;
+  color: var(--icon-on-dark);
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #121826;
+}
+
+.categoryTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 19px;
+  color: var(--text-on-dark);
+}
+
+.categoryDescription {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-secondary);
+}
+
+.categoryValues {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.categoryValues > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.categoryValues dt {
+  min-width: 52px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-on-dark-secondary);
+}
+
+.categoryValues dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-on-dark);
+}
+
+.generalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+@container (max-width: 560px) {
+  .categoryGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 520px) {
+  .concept {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .conceptArrow {
+    transform: rotate(90deg);
+  }
+}
+
+/* ---------- About ---------- */
+
+.about {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.aboutIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tone-blue-border);
+  border-radius: 50%;
+  background: var(--tone-blue-bg);
+  color: var(--tone-blue-fg);
+}
+
+.aboutText {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aboutText p {
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--text-on-dark-secondary);
+}

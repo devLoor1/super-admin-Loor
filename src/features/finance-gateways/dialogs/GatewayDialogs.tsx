@@ -100,6 +100,7 @@ export function DeactivateGatewayDialog({
   return (
     <Dialog
       title={`Desativar ${name}?`}
+      focusableBody
       description="Confirme a desativação local deste gateway."
       icon={PowerOff}
       tone="warning"

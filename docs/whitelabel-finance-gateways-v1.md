@@ -472,3 +472,32 @@ bulk operations.
   that this prototype counts any active local gateway, including Sandbox.
 - The tab labels "Dependências" (the brief offered "Regras/Dependências") and
   "Atividade da sessão".
+
+## Follow-up — Modalidades e regras V1 (Claude + Codex, 2026-10-07)
+
+- Financeiro now also lists **Modalidades e regras**
+  (`#/whitelabels/:id/finance/modalities`); this page passes it in `subNavHrefs`
+  so the tenant is preserved.
+- The *Modalidades e regras* quick action is now a link to that screen (it was
+  a "módulo futuro" notice). The shared `.quick` class gained
+  `text-decoration: none` for the link variant.
+- `ModalitySetting` gained the additive value `disabled` ("Desabilitada"), set
+  when a configured modality is disabled in Modalidades e regras; this page's
+  modality summary reads the same state.
+- Record: [`whitelabel-finance-modalities-rules-v1.md`](whitelabel-finance-modalities-rules-v1.md).
+
+Codex review refinements:
+
+- The **Modalidades habilitadas** card counts the Finance store's enabled flags,
+  including enabled modalities with a pending gateway. Previously it counted
+  only the derived `Habilitada` display status. That pre-existing distinction
+  made Loor show 1 here but 2 in Modalidades; both now show 2, or 1 after a local
+  disable. Gateway readiness remains a separate concern.
+- The pre-existing text-only **Desativar gateway** dialog's scroll body now opts
+  into a labelled, keyboard-focusable region. At 320×640, PageDown scrolls its
+  content; Escape closes it and restores focus to Desativar. Other dialogs keep
+  the existing default. No gateway deactivation was submitted during this check.
+- Source review and built-in-browser smoke checks found no unrelated Gateways
+  regression. The correction is not claimed as a fresh axe pass: an automated
+  axe rerun was unavailable due to certificate validation during its scratch
+  package fetch.

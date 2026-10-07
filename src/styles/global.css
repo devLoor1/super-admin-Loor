@@ -55,7 +55,8 @@ html[data-view='whitelabels'] body,
 html[data-view='accounts'] body,
 html[data-view='settings'] body,
 html[data-view='emails'] body,
-html[data-view='finance'] body {
+html[data-view='finance'] body,
+html[data-view='finance-modalities'] body {
   background: var(--shell-bg);
   color: var(--text-on-dark);
   color-scheme: dark;

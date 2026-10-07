@@ -19,7 +19,7 @@ export function SummaryCards({ settings }: { settings: WhitelabelFinanceSettings
   const { gateways, bankAccounts } = settings
   const configured = gateways.filter((gateway) => displayStatusOf(gateway) === 'configured').length
   const activeAccounts = bankAccounts.filter((account) => account.status === 'active').length
-  const enabled = MODALITIES.filter((modality) => modalityDisplay(settings, modality.id) === 'enabled').length
+  const enabled = MODALITIES.filter((modality) => settings.modalities[modality.id] === 'enabled').length
   const pending =
     gateways.filter((gateway) => gateway.active && setupOf(gateway) !== 'configured').length +
     MODALITIES.filter((modality) => modalityDisplay(settings, modality.id) === 'dependency_pending').length

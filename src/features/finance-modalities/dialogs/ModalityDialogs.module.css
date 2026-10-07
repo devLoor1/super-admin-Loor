@@ -1,0 +1,13 @@
+/* Content styles for the Modalidades e regras dialogs (inside components/ui/Dialog). */
+
+.calloutList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.calloutList li::marker {
+  color: #f2c983;
+}

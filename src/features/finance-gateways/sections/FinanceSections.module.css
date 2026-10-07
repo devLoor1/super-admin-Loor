@@ -971,6 +971,7 @@
   border-radius: 10px;
   background: #121826;
   text-align: left;
+  text-decoration: none;
   color: var(--text-on-dark);
   transition: border-color var(--transition-fast);
 }

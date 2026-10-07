@@ -16,6 +16,8 @@ type DialogProps = {
   initialFocusRef?: RefObject<HTMLElement | null>
   /** Focus target when the opener no longer exists after closing. */
   fallbackFocus?: () => HTMLElement | null
+  /** Text-only content can opt into keyboard scrolling at short viewport heights. */
+  focusableBody?: boolean
   size?: 'md' | 'lg'
 }
 
@@ -36,6 +38,7 @@ export function Dialog({
   footer,
   initialFocusRef,
   fallbackFocus,
+  focusableBody = false,
   size = 'md',
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -117,7 +120,14 @@ export function Dialog({
             <X size={18} strokeWidth={1.8} aria-hidden="true" />
           </button>
         </header>
-        <div className={styles.body}>{children}</div>
+        <div
+          className={styles.body}
+          tabIndex={focusableBody ? 0 : undefined}
+          role={focusableBody ? 'region' : undefined}
+          aria-label={focusableBody ? `${title} — detalhes e avisos` : undefined}
+        >
+          {children}
+        </div>
         <footer className={styles.footer}>{footer}</footer>
       </div>
     </dialog>

@@ -483,9 +483,12 @@ review record for scope, evidence and fallback checks.
 - **Bank accounts** are a Whitelabel-level grouping by prototype premise (not
   authoritative). Account number and Pix key are write-only and reduced to
   masked hints on save; deactivate/remove are confirmed.
-- **Modalities** (Equity, Debt, Capital de giro): Habilitada / Não configurada /
-  Planejada / Dependência pendente (enabled but no active gateway serves it).
+- **Modalities** (Equity, Debt): Habilitada / Não configurada /
+  Dependência pendente (enabled but no active gateway serves it).
   No editor; not Backend flags.
+- **Product taxonomy:** Capital de Giro is not a modality. It is a valid
+  example in both independent Segment and Resource Use catalogs; their CRUD
+  scope is future work, not implemented here.
 - **Unsaved changes** reuse `useUnsavedChangesGuard` (links, Back/Forward,
   reload, tenant switch) plus the same dialog when switching gateway; no global
   save.

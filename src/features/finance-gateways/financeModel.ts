@@ -158,21 +158,19 @@ export const BANK_STATUS_META: Record<BankAccountStatus, { label: string; tone: 
 
 /* ---------- Modalities (summary only) ---------- */
 
-export type ModalityId = 'equity' | 'debt' | 'workingCapital'
+export type ModalityId = 'equity' | 'debt'
 /** Prototype configuration of a modality for the tenant (not a Backend flag). */
-export type ModalitySetting = 'enabled' | 'not_configured' | 'planned'
+export type ModalitySetting = 'enabled' | 'not_configured'
 export type ModalityDisplay = ModalitySetting | 'dependency_pending'
 
 export const MODALITIES: { id: ModalityId; label: string }[] = [
   { id: 'equity', label: 'Equity' },
   { id: 'debt', label: 'Debt' },
-  { id: 'workingCapital', label: 'Capital de giro' },
 ]
 
 export const MODALITY_DISPLAY_META: Record<ModalityDisplay, { label: string; tone: StatusTone }> = {
   enabled: { label: 'Habilitada', tone: 'success' },
   not_configured: { label: 'Não configurada', tone: 'muted' },
-  planned: { label: 'Planejada', tone: 'neutral' },
   dependency_pending: { label: 'Dependência pendente', tone: 'warning' },
 }
 

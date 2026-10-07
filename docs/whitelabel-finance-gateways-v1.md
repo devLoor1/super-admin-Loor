@@ -92,14 +92,95 @@ Reused without changing their behaviour: `SettingsSection`,
 
 | Whitelabel | Gateways | Bank accounts | Modalities |
 | --- | --- | --- | --- |
-| Finapop (`wl_proto_01`) | Provedor Alfa: principal, produção, active, 4/4 credentials, serves Equity + Debt, linked account. Provedor Beta: secundário, sandbox, active, 2/4 credentials, serves Debt. Provedor Gama: contingência, produção, inactive, 4/4 credentials | Banco Exemplo, active, random Pix key (masked) | Equity enabled, Debt enabled, Capital de giro planned |
+| Finapop (`wl_proto_01`) | Provedor Alfa: principal, produção, active, 4/4 credentials, serves Equity + Debt, linked account. Provedor Beta: secundário, sandbox, active, 2/4 credentials, serves Debt. Provedor Gama: contingência, produção, inactive, 4/4 credentials | Banco Exemplo, active, random Pix key (masked) | Equity enabled, Debt enabled |
 | Loor (`wl_proto_02`) | Provedor Alfa: principal, sandbox, 3/4 credentials, Equity only | Banco Demonstração, inactive, e-mail Pix (masked) | Equity and Debt enabled, so Debt shows **Dependência pendente** |
-| Nova Plataforma (`wl_proto_03`) | none (empty state) | none (empty state) | Equity / Debt not configured, Capital de giro planned |
+| Nova Plataforma (`wl_proto_03`) | none (empty state) | none (empty state) | Equity / Debt not configured |
 
 - Providers ("Provedor Alfa/Beta/Gama/Delta") and banks (codes 901–903,
   "Banco Exemplo", "Banco Demonstração", "Cooperativa Exemplo") are fictitious.
   The real supported catalog is a Backend/Product decision.
 - No real provider or bank name appears in the page (checked in the flow).
+
+### Product taxonomy correction
+
+Capital de Giro is **not a financial modality**. It is a valid example in
+both the independent **Segment** and **Resource Use / Usos dos Recursos**
+catalogs. Each catalog will have its own insert, list/consult, update and
+delete scope; neither CRUD is implemented here. Current modalities are only
+Equity and Debt; adding any other modality requires explicit Product scope.
+
+The model and all three tenant seeds now contain only Equity and Debt. The
+summary cards, readiness states, gateway dependency controls and session
+descriptions derive from that same catalog; the denominator is two, with no
+replacement third item. The unused planned-modality state was also removed.
+
+The retained historical layout reference
+`docs/reference/super-admin-whitelabel-finance-gateways-approved.png` shows
+an obsolete third modality and count. That taxonomy is not authoritative
+and is not reproduced. The obsolete Modalidades e Regras image is not an
+implementation specification; no such page or catalog navigation was added.
+
+Canonical handoff correction is deferred to `docs/backend-handoff-v1`:
+
+- `docs/backend-handoff/07-whitelabel-finance-gateways.md`, Modalities summary.
+- `docs/backend-handoff/open-questions.md`, Q-GM-01.
+
+Those canonical files were inspected read-only and are not edited in this
+frontend correction.
+
+### Taxonomy audit and correction validation — 2026-10-07
+
+Baseline: `dev@6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9`.
+Correction branch: `fix/capital-de-giro-taxonomy`.
+Search covered the full frontend source, navigation, typed catalogs, seeds,
+derived modality consumers and frontend/reference documentation. Canonical
+handoff was searched separately at
+`origin/docs/backend-handoff-v1@7b0e75520469274fc954a4234113d004664cd869`.
+
+Occurrence classification (locations refer to the pre-correction baseline):
+
+- **A — incorrect modality:** ten source/text occurrences in
+  `financeModel.ts` (lines 161, 169), `prototypeFinance.ts` (71, 102, 108),
+  `README.md` (486), and this note (95, 97, 126, 347). All corrected; the
+  associated unused `planned` setting/display metadata was removed too.
+- **B — correct Segment / C — correct Resource Use:** no existing catalog
+  occurrence before the correction. The Product rule is now stated in this
+  note and README for both independent future catalogs, without adding code,
+  CRUD, a new page or navigation.
+- **D — historical reference:** the retained Finance/Gateways image named
+  above contains an obsolete Capital de Giro card and three-item count.
+  It is preserved only as layout history, not current taxonomy guidance.
+- **E — canonical handoff requiring later correction:** exactly the two
+  paths named above (Finance summary and Q-GM-01). The canonical README,
+  current scope, dependency/business-rule/permission/audit-event matrices
+  and other handoff files contain no additional Capital de Giro association.
+
+Validation of the corrected frontend:
+
+- `npm run typecheck`, `npm run lint`, `npm run build`, and
+  `git diff --check` passed. Only the existing >500 kB bundle advisory remains.
+- Focused Node assertions passed: only Equity/Debt in the catalog and all
+  tenant seeds; no planned state; readiness and counts match each tenant;
+  disabling all gateways produces pending dependencies for both modalities.
+- Built-in-browser readback: Finapop **2/2** enabled, **1** local pending;
+  Loor **1/2** enabled, Debt pending, **2** local pending; Nova Plataforma
+  **0/2**, both unconfigured, **0** local pending.
+- Selected-gateway dependency read view and editor show only Equity/Debt;
+  Tab moves from Equity to Debt. The untouched draft was cancelled, not saved.
+- Finance visual checks passed at 1672 × 941, 1440 × 810, 1280 × 810,
+  900 × 810, 390 × 844 and 320 × 844. No horizontal page overflow; two cards
+  fill the existing adaptive grid and stack at 320 px. No CSS redesign.
+- Browser smoke review passed for Login, Dashboard, Whitelabels/detail,
+  Account Control, Settings, E-mails and Finance/Gateways. E-mail Equity/Debt
+  switches remain independent, with their seed states unchanged.
+- No browser console errors/warnings observed. Captured network requests
+  were local GET assets only, with no XHR/Fetch or non-GET request. That
+  navigation sample's older events were evicted; a separate complete capture
+  of dependency-tab/editor/cancel interactions recorded **zero requests**.
+  Source inspection also found no API transport in the Finance module.
+- No Backend use, financial action, new dependency, canonical handoff edit,
+  Segment/Resource Use CRUD or Modalidades e Regras screen was introduced.
+  Login, Dashboard, shared shell and other feature source files are unchanged.
 
 ## States and local rules
 
@@ -123,8 +204,7 @@ Reused without changing their behaviour: `SettingsSection`,
   - An optional link to one of the tenant's bank accounts. Inactive accounts
     are labelled as such.
 - **Modalities summary:**
-  - States: Habilitada / Não configurada / Planejada (Capital de giro, a future
-    concept) / Dependência pendente.
+  - Equity and Debt states: Habilitada / Não configurada / Dependência pendente.
   - **Dependência pendente** means the tenant enabled the modality but no
     *active* gateway serves it.
   - There is no editor. A note says these are prototype states, not Backend
@@ -344,7 +424,7 @@ the repo). axe-core 4.x was a scratch copy, not a project dependency.
    holder rules, verification, Pix key ownership checks.
 9. **Relationships:** Whitelabel ↔ bank account ↔ Opportunity, and payout
    semantics (out of scope here).
-10. **Modality flags:** the authoritative Equity / Debt / Capital de giro
+10. **Modality flags:** the authoritative Equity / Debt
     enablement per tenant, and which gateways may serve each.
 11. **RBAC:** permissions for viewing, editing configuration, writing secrets,
     activating, validating and managing bank accounts. Suggested labels for

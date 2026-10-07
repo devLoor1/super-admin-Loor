@@ -68,7 +68,7 @@ export const PROTOTYPE_FINANCE: Record<string, WhitelabelFinanceSettings> = {
         status: 'active',
       },
     ],
-    modalities: { equity: 'enabled', debt: 'enabled', workingCapital: 'planned' },
+    modalities: { equity: 'enabled', debt: 'enabled' },
   },
   wl_proto_02: {
     whitelabelId: 'wl_proto_02',
@@ -99,12 +99,12 @@ export const PROTOTYPE_FINANCE: Record<string, WhitelabelFinanceSettings> = {
         status: 'inactive',
       },
     ],
-    modalities: { equity: 'enabled', debt: 'enabled', workingCapital: 'planned' },
+    modalities: { equity: 'enabled', debt: 'enabled' },
   },
   wl_proto_03: {
     whitelabelId: 'wl_proto_03',
     gateways: [],
     bankAccounts: [],
-    modalities: { equity: 'not_configured', debt: 'not_configured', workingCapital: 'planned' },
+    modalities: { equity: 'not_configured', debt: 'not_configured' },
   },
 }

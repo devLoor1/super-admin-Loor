@@ -4,6 +4,8 @@ import { FormField } from '../../components/form/FormField'
 import { PasswordField } from '../../components/form/PasswordField'
 import { SecurityNotice } from './SecurityNotice'
 import { TypeOnceHeading } from './TypeOnceHeading'
+import { ApiError } from '../../lib/api'
+import { loginWithCredentials } from '../../lib/authSession'
 import styles from './LoginForm.module.css'
 
 type FieldErrors = {
@@ -11,23 +13,18 @@ type FieldErrors = {
   password?: string
 }
 
-/**
- * Login card.
- *
- * VISUAL PROTOTYPE ONLY — nothing here authenticates or leaves the browser.
- * Submitting only runs a local "required fields" check and then shows a
- * neutral notice. Backend integration is intentionally out of scope.
- */
+/** Nest Control Plane login. Dev seed: superadmin@loor.local / ChangeMeDevOnly!123 */
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [notice, setNotice] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors: FieldErrors = {}
@@ -38,16 +35,30 @@ export function LoginForm() {
 
     if (nextErrors.email || nextErrors.password) {
       setNotice('')
-      // Move focus to the first invalid field so keyboard users land on the problem.
       ;(nextErrors.email ? emailRef : passwordRef).current?.focus()
       return
     }
 
-    setNotice('Protótipo visual: a autenticação ainda não está conectada.')
+    setSubmitting(true)
+    setNotice('')
+    try {
+      await loginWithCredentials(email.trim(), password)
+      window.location.hash = '#/dashboard'
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setNotice('Credenciais inválidas. Verifique e-mail e senha.')
+      } else if (error instanceof TypeError) {
+        setNotice('Não foi possível conectar ao Control Plane. Confira se o Nest está em :3334.')
+      } else {
+        setNotice(error instanceof Error ? error.message : 'Falha no login.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function handleForgotPassword() {
-    setNotice('Protótipo visual: a recuperação de senha ainda não está disponível.')
+    setNotice('Recuperação de senha do Super Admin ainda não está disponível.')
   }
 
   return (
@@ -95,8 +106,8 @@ export function LoginForm() {
           />
         </div>
 
-        <button type="submit" className={styles.submit}>
-          Entrar
+        <button type="submit" className={styles.submit} disabled={submitting}>
+          {submitting ? 'Entrando…' : 'Entrar'}
           <ArrowRight size={20} strokeWidth={1.8} aria-hidden="true" />
         </button>
 
@@ -104,7 +115,6 @@ export function LoginForm() {
           Esqueci minha senha
         </button>
 
-        {/* Live region is always mounted so screen readers announce updates. */}
         <p className={styles.notice} role="status">
           {notice}
         </p>

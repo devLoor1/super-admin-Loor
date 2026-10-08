@@ -1,16 +1,23 @@
 # Loor Super Admin — Frontend
 
-Visual prototype of the **Super Admin**: Login V1, the application-frame
+Frontend of the **Super Admin LOØR**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
 dos recursos V1** (Financeiro), and **Operation V1** — **Oportunidades**,
-**Investidores** and **Empreendedores** (Operação). Frontend only.
+**Investidores** and **Empreendedores** (Operação).
 
-> **Status:** visual/product exploration. There is **no backend, no
-> authentication, no API calls and no business data**. The login only runs a
-> local field check; the dashboard shows data-ready empty states
+Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
+
+> **Status (atual):** o **login está integrado** ao Control Plane Nest
+> (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
+> `App.tsx` (incluindo Operação) e **logout** no menu do header. Demais telas
+> ainda usam **dados ilustrativos locais** — saves/pause/testes não batem na
+> API. Contrato e próximos wire-ups:
+> [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
+>
+> The dashboard shows data-ready empty states
 > ("—", "Sem dados", "Aguardando integração") instead of metrics. The
 > Whitelabels page lists three clearly illustrative rows (prototype IDs, no
 > counts or dates). Contas uses illustrative accounts (example.com e-mails,
@@ -37,7 +44,7 @@ dos recursos V1** (Financeiro), and **Operation V1** — **Oportunidades**,
 > and Empreendedores are read-only projections of the illustrative Accounts
 > records with prototype KYC summaries and count-only relationships. Investments
 > and KYC destinations answer with a "módulo ainda não implementado" notice;
-> **no account, KYC or financial mutation exists**.
+> **no account, KYC or financial mutation exists in Operation**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -54,8 +61,9 @@ dos recursos V1** (Financeiro), and **Operation V1** — **Oportunidades**,
 | Investidores V1 | `http://localhost:5173/#/operation/investors` | [`docs/reference/super-admin-operation-investors-approved.png`](docs/reference/super-admin-operation-investors-approved.png) (composition only) |
 | Empreendedores V1 | `http://localhost:5173/#/operation/entrepreneurs` | [`docs/reference/super-admin-operation-entrepreneurs-approved.png`](docs/reference/super-admin-operation-entrepreneurs-approved.png) (composition only) |
 
-The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
-shell screens are reached directly by URL because there is no authentication.
+The views are selected by a hash switch (`src/app/App.tsx`) with a session
+guard. Without a stored token, shell routes redirect to login; with a session,
+they are reached by the URLs below.
 In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
 is active, lists its screens: **Whitelabels**, **Contas**, **Config. do Whitelabel**
 and **E-mails**. The accounts route is `#/whitelabels/:whitelabelId/accounts` with an
@@ -82,14 +90,30 @@ active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 
 Requires Node.js `^20.19.0 || >=22.12.0`.
 
+**Dependência para login:** Nest Control Plane em `http://localhost:3334`
+(`backend-super-admin-Loor` — ver README desse repo: Docker MySQL, migrate, seed).
+
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # typecheck (tsc -b) + production build to dist/
-npm run typecheck  # TypeScript only
-npm run lint       # oxlint
-npm run preview    # serve dist/
+cp .env.example .env   # VITE_API_BASE_URL=http://localhost:3334/api
+npm run dev            # http://localhost:5173
+npm run build          # typecheck (tsc -b) + production build to dist/
+npm run typecheck
+npm run lint           # oxlint
+npm run preview        # serve dist/
 ```
+
+### Login de desenvolvimento
+
+| Campo | Valor |
+| --- | --- |
+| E-mail | `superadmin@loor.local` |
+| Senha | `ChangeMeDevOnly!123` |
+
+(Criado pelo `npm run prisma:seed` do Nest.)
+
+Se o Nest não estiver no ar, o formulário mostra erro de conexão na `:3334`.
+Após login → `#/dashboard`. Logout → menu do avatar no header.
 
 ## Stack
 
@@ -113,7 +137,7 @@ handle panel-level responsiveness.
 ```
 src/
   main.tsx                          entry — renders <App />
-  app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
+  app/App.tsx                       session-guarded hash routes: "#/dashboard", "#/whitelabels",
                                     "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
                                     "#/whitelabels/:id/emails[?section=…]",
                                     "#/whitelabels/:id/finance/gateways",
@@ -121,6 +145,8 @@ src/
                                     "#/whitelabels/:id/finance/segments-resource-uses",
                                     "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
                                     "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]", else login
+  lib/api.ts                        Nest client (VITE_API_BASE_URL, Bearer, errors)
+  lib/authSession.ts                login / logout / session helpers
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/
@@ -841,17 +867,20 @@ Login:
 - Login validation, tab order, password toggle and static/motion fallbacks were
   rechecked; no new Login defect was observed.
 
-## Login local-only interactions
+## Login interactions
 
 - Empty e-mail / password or malformed e-mail → inline errors (cleared as the user types).
 - Show / hide password.
-- **Entrar** with a valid e-mail and non-empty password → neutral status message
-  ("Protótipo visual: a autenticação ainda não está conectada."). No request is made.
-- **Esqueci minha senha** → neutral status message; no flow.
+- **Entrar** with a valid e-mail and non-empty password → Control Plane login
+  request. Success stores the session and opens Dashboard; invalid credentials
+  and connection errors are shown in the form. The button is disabled while
+  submitting.
+- **Sair** in the header menu clears the stored session and returns to Login.
+- **Esqueci minha senha** → informative status message; no recovery flow yet.
 
 ## Out of scope (by design)
 
-Backend integration, authentication, API clients, real routing, tenant switching,
+Business API integration beyond Control Plane login, real routing, tenant switching,
 real search, persistence, whitelabel create/edit flows, real settings
 persistence/inheritance, file uploads, Terms re-acceptance, real SMTP connectivity or
 e-mail sending, secret storage, template editing, delivery logs/analytics, the Whitelabels detail tabs

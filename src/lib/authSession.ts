@@ -43,6 +43,12 @@ export function clearSession() {
   sessionStorage.removeItem(OPERATOR_KEY)
 }
 
+/** Clear Control Plane session and return to the login screen. */
+export function logout() {
+  clearSession()
+  window.location.hash = '#/login'
+}
+
 export async function loginWithCredentials(email: string, password: string) {
   const { apiRequest } = await import('./api')
   const payload = await apiRequest<LoginResponse>('/auth/login', {

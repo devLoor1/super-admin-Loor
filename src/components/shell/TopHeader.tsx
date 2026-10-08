@@ -1,5 +1,6 @@
-import { useEffect, useRef, type FormEvent, type Ref } from 'react'
-import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, Menu, Search } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
+import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, LogOut, Menu, Search } from 'lucide-react'
+import { getOperator, logout } from '../../lib/authSession'
 import { usePrototypeNotice } from './prototypeNotice'
 import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
@@ -22,12 +23,16 @@ const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(naviga
 
 /**
  * Application header: page title + location, global/whitelabel context
- * selector, search, notifications and user area. Every control is local-only
- * in this prototype (no tenant data, no search backend, no auth).
+ * selector, search, notifications and user area.
  */
 export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, menuButtonRef }: TopHeaderProps) {
   const notify = usePrototypeNotice()
   const searchRef = useRef<HTMLInputElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuId = useId()
+  const operator = getOperator()
+  const operatorLabel = operator?.name?.trim() || 'Super Admin'
 
   // Ctrl/⌘ + K focuses the search field, as hinted by the keyboard badge.
   useEffect(() => {
@@ -36,10 +41,20 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
         event.preventDefault()
         searchRef.current?.focus()
       }
+      if (event.key === 'Escape') setUserMenuOpen(false)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [navOpen])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const onPointerDown = (event: MouseEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [userMenuOpen])
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -151,18 +166,44 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
           <Bell size={19} strokeWidth={1.7} aria-hidden="true" />
         </button>
         <span className={styles.divider} aria-hidden="true" />
-        <button
-          type="button"
-          className={styles.user}
-          onClick={() => notify('Protótipo visual: o menu do usuário ainda não está disponível.')}
-          aria-label="Super Admin — menu do usuário"
-        >
-          <Avatar />
-          <span className={styles.userName} aria-hidden="true">
-            Super Admin
-          </span>
-          <ChevronDown className={styles.chevron} size={16} strokeWidth={1.8} aria-hidden="true" />
-        </button>
+        <div className={styles.userMenu} ref={userMenuRef}>
+          <button
+            type="button"
+            className={styles.user}
+            onClick={() => setUserMenuOpen((open) => !open)}
+            aria-label={`${operatorLabel} — menu do usuário`}
+            aria-haspopup="menu"
+            aria-expanded={userMenuOpen}
+            aria-controls={userMenuId}
+          >
+            <Avatar />
+            <span className={styles.userName}>
+              {operatorLabel}
+            </span>
+            <ChevronDown className={styles.chevron} size={16} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          {userMenuOpen ? (
+            <div id={userMenuId} className={styles.userDropdown} role="menu">
+              {operator?.email ? (
+                <p className={styles.userEmail} role="presentation">
+                  {operator.email}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className={styles.logout}
+                role="menuitem"
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  logout()
+                }}
+              >
+                <LogOut size={16} strokeWidth={1.8} aria-hidden="true" />
+                Sair
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   )

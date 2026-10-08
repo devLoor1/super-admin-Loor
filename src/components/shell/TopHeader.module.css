@@ -325,6 +325,65 @@
   margin-left: -6px;
 }
 
+.userMenu {
+  position: relative;
+  margin-left: 15px;
+}
+
+.userMenu .user {
+  margin-left: 0;
+}
+
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 8px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 12px;
+  background: #171b2c;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+}
+
+.userEmail {
+  margin: 0;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  color: #9aa3b8;
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #f0f3ff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.logout:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
 /* ---------- Laptop: tighter spacing ---------- */
 
 @media (max-width: 1439px) {

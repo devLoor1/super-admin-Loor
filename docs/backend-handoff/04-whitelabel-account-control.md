@@ -2,9 +2,9 @@
 
 ## Approved frontend prototype
 
-Whitelabel Account Control V1 was approved at `cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a` and remains **FRONTEND PROTOTYPED** in current `dev@df87de8e5d3ded2da3915c5de602620c282ab5ba`, with the Terms coherence update noted below. Source: `src/features/whitelabel-accounts/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/df87de8e5d3ded2da3915c5de602620c282ab5ba/src/features/whitelabel-accounts)). Route: `#/whitelabels/:whitelabelId/accounts`, with optional `?tipo=investidores`, `?tipo=empreendedores` or `?tipo=administradores`.
+Whitelabel Account Control V1 was approved at `cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a` and remains **FRONTEND PROTOTYPED** in current `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, retaining the Terms coherence update from `df87de8e5d3ded2da3915c5de602620c282ab5ba` noted below. Source: `src/features/whitelabel-accounts/` ([current approved module](https://github.com/devLoor1/super-admin-Loor/tree/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/whitelabel-accounts)). Route: `#/whitelabels/:whitelabelId/accounts`, with optional `?tipo=investidores`, `?tipo=empreendedores` or `?tipo=administradores`.
 
-The UI includes Whitelabel context, three account tabs, search, separate access/business filters, sorting/paging, account detail, account-specific states, dependency summaries, Terms/profile display, pause/reactivate, Change Whitelabel simulation, local Admin creation and local history/feedback. Responsive and accessible interaction states were reviewed, including keyboard/focus/dialog behavior and reduced-motion/static fallbacks. All data/actions are illustrative and local; reload resets them. No authentication, business API, authoritative persistence or financial mutation exists in this prototype.
+The UI includes Whitelabel context, three account tabs, search, separate access/business filters, sorting/paging, account detail, account-specific states, dependency summaries, Terms/profile display, pause/reactivate, Change Whitelabel simulation, local Admin creation and local history/feedback. Responsive and accessible interaction states were reviewed, including keyboard/focus/dialog behavior and reduced-motion/static fallbacks. Account data/actions are illustrative and local; reload resets them. No account business API, authoritative persistence or financial mutation exists in this prototype. Shell authentication now has separate [frontend integration](01-current-frontend-scope.md#login-v1), not account-command integration or live E2E proof.
 
 Architecture sections 9, 13–14, 20, 24 and 30 still establish the management/read boundaries. UI approval demonstrates the flow; it does not authorize unresolved domain behavior or establish a Backend contract.
 
@@ -15,6 +15,12 @@ Architecture sections 9, 13–14, 20, 24 and 30 still establish the management/r
 | Entrepreneur | Illustrative identity, Company/CNPJ/validation, dependency/history summaries and access state | Scoped Admin list/detail/create/update/company services exist. No generic pause, deletion or reassignment domain found. Company validation is not account access state. |
 
 Proposed reads should preserve missing/null distinctions and expose only fields permitted for the operator. Existing Investor Terms revision/acceptance and profile classification are relevant detail sources; equivalent Terms acceptance for every other actor is not evidenced. No account password, recovery token or credential plaintext should be returned.
+
+## Operation projections and account ownership
+
+Accounts owns identity, authentication/access context, account lifecycle/mutations and account-level tenant association. [Operation Investors](11-operation-investors.md) and [Entrepreneurs](12-operation-entrepreneurs.md) read prototype account context only; no account mutations are duplicated there. Their Ver conta links select the existing tenant/type tab, not a particular account: **CONTROL PLANE CONTRACT / DEEP LINK TO DEFINE**.
+
+Pause/reactivate changes in this page's local state are **not automatically synchronized** into Operation's original seed projections. This is a **FRONTEND PROTOTYPE LIMITATION / INTEGRATION CONTRACT REQUIRED**, not Backend behavior, an authoritative access readback or evidence of cross-screen enforcement. Actual identity mapping, freshness and synchronization require an agreed Core-backed contract; see [cross-cutting questions](open-questions.md#operation-cross-cutting).
 
 ## Pause and reactivate account
 

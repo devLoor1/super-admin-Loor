@@ -4,7 +4,7 @@ Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** a
 
 Route: `#/whitelabels/:whitelabelId/finance/modalities`. Source: `src/features/finance-modalities/` ([approved source](https://github.com/devLoor1/super-admin-Loor/tree/4098158b1aa8f58ea20692f0e9bb177b36a49e97/src/features/finance-modalities), [implementation and local review evidence](https://github.com/devLoor1/super-admin-Loor/blob/4098158b1aa8f58ea20692f0e9bb177b36a49e97/docs/whitelabel-finance-modalities-rules-v1.md)). Those references describe the approved UI, not a Backend contract or deployment.
 
-This is Whitelabel-scoped configuration/governance only. Local state survives in-app navigation, resets on reload and has no business API, authentication, authoritative persistence or financial integration. Existing Core evidence remains the retained read-only audit, not a fresh investigation.
+This is Whitelabel-scoped configuration/governance only. Local state survives in-app navigation, resets on reload and has no business API, authoritative persistence or financial integration. The cited SHA is this phase's approval; current `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929` retains it and adds separate [shell authentication](01-current-frontend-scope.md#login-v1) and [Operation Opportunities](10-operation-opportunities.md). Operation reads the Equity/Debt catalog and informative local rule/dependency state; it does not enforce the illustrative approval/configuration rules or financial parameters. Existing Core evidence remains the retained read-only audit, not a fresh investigation.
 
 ## Catalog and taxonomy
 

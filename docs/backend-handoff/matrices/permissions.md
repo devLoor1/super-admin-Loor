@@ -1,6 +1,6 @@
 # Permissions
 
-These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status below refers to the approved local prototype at `ec86b475e0126667e2fbece490730bdecc271584`, not delivered RBAC or authoritative commands. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
+These are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. No operator role mapping, privilege grant, UI action or Core middleware is created by this document. Current Core guards and `Admin.isSuperAdmin` do not implement this matrix. Frontend status refers to approved `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, not delivered RBAC or authoritative business commands. Frontend session guards do not implement server permission/resource enforcement. Admin permission areas display **A definir**; conceptual function labels assign no effective grants.
 
 Architecture sections 24 and 30 require independent operator authorization plus validated resource/tenant ownership. Global reads need an explicitly granted global scope; tenant-scoped permission does not imply access to every tenant. A frontend filter or hidden button is never an authorization control.
 
@@ -10,17 +10,21 @@ Architecture sections 24 and 30 require independent operator authorization plus 
 | WHITELABEL_CREATE | Provision tenant | Not prototyped; notice only | Validated creation, audit, readback |
 | WHITELABEL_UPDATE | Mutable tenant fields | Not prototyped; notice only | Allowed fields and resource scope |
 | WHITELABEL_PAUSE | Tenant lifecycle action | Not prototyped | Agreed lifecycle semantics; not account pause |
+| OPPORTUNITY_VIEW | Global/tenant Opportunity list/detail | FRONTEND PROTOTYPED; local only | Explicit authorized global/assigned-tenant and field/resource scope |
+| OPPORTUNITY_CREATE | Opportunity creation under approved owner/context | FRONTEND PROTOTYPED; local only | Authoritative validation/relationships, permitted tenant, safe readback/audit; not publication/financial authority |
+| OPPORTUNITY_UPDATE | Allowed Opportunity fields/classification | FRONTEND PROTOTYPED; local edit | Agreed mutable fields/cardinalities, resource ownership/version checks; no implicit tenant migration |
+| OPPORTUNITY_STATUS_UPDATE | Agreed Opportunity transition | FRONTEND PROTOTYPED; UX state model only | Official workflow/preconditions, result/readback/audit; no implicit approval/publication/delete grant |
 | WHITELABEL_ADMIN_VIEW | Tenant Admin list/detail | FRONTEND PROTOTYPED; local | Safe fields; no password/recovery token |
 | WHITELABEL_ADMIN_CREATE | Tenant Admin provisioning | FRONTEND PROTOTYPED; local addition only | Agreed invitation/provisioning, credential/duplicate/RBAC policy |
 | WHITELABEL_ADMIN_UPDATE | Tenant Admin metadata | Not prototyped; no update editor | Protect privilege and tenant ownership |
 | WHITELABEL_ADMIN_PAUSE | Admin access control | FRONTEND PROTOTYPED; local access state | New Core access-state semantics and audit; actor coverage pending |
 | WHITELABEL_ADMIN_REACTIVATE | Restore Admin access | FRONTEND PROTOTYPED; local access state | Preserve invitation/function; privileged/last-admin policy pending |
 | WHITELABEL_ADMIN_CHANGE_WHITELABEL | Explicit Admin reassignment command | FRONTEND PROTOTYPED; simulation only | Eligibility, destination scope/grants and historical lineage policy pending |
-| INVESTOR_VIEW | Investor/detail/history projection | FRONTEND PROTOTYPED; local | Tenant ownership and field-level data policy |
+| INVESTOR_VIEW | Accounts reads and Operation Investor projection | FRONTEND PROTOTYPED; read-only local context | Tenant/resource and field policy; shared conceptual label is not a grant to account/KYC/financial commands |
 | INVESTOR_PAUSE | Investor access control | FRONTEND PROTOTYPED; local access state | Preserve validation/financial lineage |
 | INVESTOR_REACTIVATE | Restore Investor access | FRONTEND PROTOTYPED; local access state | Do not implicitly approve KYC or verification |
 | INVESTOR_CHANGE_WHITELABEL | Explicit reassignment command | FRONTEND PROTOTYPED; simulation only | Preflight and historical lineage policy |
-| ENTREPRENEUR_VIEW | Entrepreneur/company/Opportunity reads | FRONTEND PROTOTYPED; local summaries | Tenant ownership and safe related data |
+| ENTREPRENEUR_VIEW | Accounts reads and Operation Entrepreneur/company/Opportunity projection | FRONTEND PROTOTYPED; read-only local summaries | Tenant/resource and safe related fields; no account/KYC/Opportunity command grant |
 | ENTREPRENEUR_PAUSE | Entrepreneur access control | FRONTEND PROTOTYPED; local access state | Preserve Company and Opportunity state |
 | ENTREPRENEUR_REACTIVATE | Restore Entrepreneur access | FRONTEND PROTOTYPED; local access state | Do not implicitly validate Company or approve Opportunity |
 | ENTREPRENEUR_CHANGE_WHITELABEL | Explicit reassignment command | FRONTEND PROTOTYPED; simulation only | Core-owned migration policy and audit |
@@ -69,6 +73,12 @@ Architecture sections 24 and 30 require independent operator authorization plus 
 `TERMS_PUBLISH` refines the prior provisional `TERMS_UPDATE` specification label; this is not a deployed permission rename or grant migration. Emails labels above specify separate read/update/test operations, not effective grants, roles or settled permission inheritance. Settings' SMTP summary shortcut does not authorize configuration or sending. `EMAIL_TEMPLATE_UPDATE` describes later capability, not a current editor/publisher.
 
 The Admin reactivation/reassignment labels above only identify existing prototype flows; they do not approve V1 actor coverage or grant authority. Tenant activation/counterpart labels, Dashboard/audit reads, questionnaire/classification management and secret-configuration permission policy must still be completed before exposure. All account commands remain **BACKEND IMPLEMENTATION NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING** where the audit found no command. Settings/Emails commands likewise remain **CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**, with Backend implementation/contract/security work where applicable. This is an initial matrix, not a complete production RBAC catalog. Decisions are in [Q-RB-01–04](../open-questions.md#rbac), [Q-PA-07](../open-questions.md#pause-reactivate), [Q-TR-01–04](../open-questions.md#tenant-reassignment), [Settings questions](../open-questions.md#settings), [SMTP](../open-questions.md#smtp), [event](../open-questions.md#email-events) and [template decisions](../open-questions.md#email-templates).
+
+## Operation permission boundaries
+
+The four Opportunity labels plus `INVESTOR_VIEW` and `ENTREPRENEUR_VIEW` are **SPECIFICATION LABELS ONLY — RBAC NOT IMPLEMENTED**. Existing participant-view rows are extended, not duplicated as competing permissions. Final role/grant/scope policies are [Q-OC-02](../open-questions.md#operation-cross-cutting) under Q-RB-01–04. Client session/token presence does not grant cross-tenant visibility or commands.
+
+Accounts owns account/access/tenant-association mutations and their authorization. Finance owns investments/financial actions; Compliance owns KYC review/decisions; Opportunities owns its allowed writes. Cross-domain navigation must honor destination-domain read grants, and any later destination mutation requires its own owning-domain command permission. No view/update label implicitly grants publication/approval, tenant migration, deletion, Investment, Payment, wallet, Pix or KYC decisions. No per-account deep-link or effective grant is invented by a frontend hash route.
 
 Proposed acceptance: unauthorized operator, unauthorized tenant, wrong resource ownership and ordinary actor/service-token confusion are rejected server-side. Tests should cover global versus tenant scope, privilege escalation and disabled operators. Do not reuse a customer's token as service authentication or log credential payloads during permission diagnostics.
 

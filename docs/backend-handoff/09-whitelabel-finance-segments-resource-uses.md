@@ -4,6 +4,8 @@ Status: **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE 
 
 Route: `#/whitelabels/:whitelabelId/finance/segments-resource-uses`. Source: `src/features/finance-catalogs/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/ec86b475e0126667e2fbece490730bdecc271584/src/features/finance-catalogs), [implementation and frontend review](https://github.com/devLoor1/super-admin-Loor/blob/ec86b475e0126667e2fbece490730bdecc271584/docs/whitelabel-finance-segments-resource-uses-v1.md)). These references establish the approved prototype, not a Backend delivery or runtime persistence claim.
 
+The cited SHA is catalog phase approval. Current `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929` retains both catalogs and adds [Operation Opportunity consumption](10-operation-opportunities.md#classification-and-cardinality), not authoritative relationship/usage integration.
+
 ## Two independent catalogs
 
 V1 is **one screen containing two independent catalog domains** for operational convenience:
@@ -43,7 +45,7 @@ The frontend treats these as separate concepts:
 - **DELETE:** remove only the local prototype record from its own collection.
 - **INACTIVE:** retain the record with inactive status, selected through its local create/edit form; it can be changed back to active locally.
 
-There is no reference/usage lookup or cascade. Neither action changes an Opportunity or a same-name record in the other catalog. Local removal is not proof of a hard-delete API; local reactivation is not proof that Backend supports it.
+There is no authoritative usage lookup, reference protection or cascade. Neither action writes the Opportunity store or a same-name record in the other catalog. Operation resolves references live: inactive records are labelled; deleted references remain stored and display missing-catalog feedback. This is prototype presentation, not historical retention enforcement. Local removal is not proof of a hard-delete API; local reactivation is not proof that Backend supports it.
 
 Product/Backend must define hard versus soft delete, whether referenced records may be deleted, whether inactivation replaces deletion after use, historical retention, inactive selection semantics, reactivation and impact on new/existing Opportunities. See [Q-CAT-06–09](open-questions.md#segments--resource-uses). Do not claim current Backend semantics or resolve these choices through the UI alone.
 
@@ -58,11 +60,13 @@ The frontend is tenant-scoped for presentation and local state. This is **NOT au
 
 Classification: **PRODUCT DECISION REQUIRED / BACKEND CONTRACT TO DEFINE**. Backend must establish the source of truth separately for Segment and Resource Use, stable identity and resource/scope enforcement. Frontend grouping is not permission or evidence of a tenant-owned Core table. See [Q-CAT-01–03](open-questions.md#segments--resource-uses).
 
-## Future Opportunity consumption
+## Opportunity consumption and reverse usage
 
-Segments and Resource Uses are expected to be consumed during future Opportunity creation/configuration. V1 does **not** implement Opportunity CRUD, associations, usage counts, migration or assignment.
+Operation Opportunities now consumes the two independent catalogs for local create/edit/classification via the shared read-only catalog snapshot. Selections store catalog IDs separately; only active records are offered, while already-selected inactive/missing references remain labelled/removable. There is no automatic cross-catalog linking. This is **FRONTEND PROTOTYPED**, not a Core association contract. Catalog administration itself does not perform Opportunity CRUD, migration or assignment.
 
-Cardinality remains unresolved independently: one or multiple Segments per Opportunity, and one or multiple Resource Uses per Opportunity. Required/optional selection, active-record eligibility, retention of historical references and change effects also need explicit contracts. There is no automatic relationship between the two selections. See [Q-CAT-08–09](open-questions.md#segments--resource-uses).
+Reverse **usage in Opportunities** remains `—`: no authoritative usage/count read, protection preflight or reverse integration is implemented. Backend needs a usage/reference contract if required; do not fabricate counts from local seeds or claim reference enforcement.
+
+Cardinality remains unresolved independently: one or multiple Segments per Opportunity, and one or multiple Resource Uses per Opportunity. Current multi-select is **PROTOTYPE UX BEHAVIOR**, not final cardinality. Required/optional selection, authoritative active-record eligibility, retention of historical references and change effects need explicit contracts. See [Q-CAT-08–09](open-questions.md#segments--resource-uses) and [Opportunity questions](open-questions.md#operation-opportunities).
 
 ## Expected Control Plane capabilities
 

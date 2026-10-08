@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@ec86b475e0126667e2fbece490730bdecc271584`, including Finance / Gateways, Modalities / Rules and Segments / Resource Uses V1. It has no business API integration. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, retaining prior modules and adding complete Operation V1 plus frontend Control Plane login/session/guard/logout/authentication refresh. Operation and other business modules remain non-integrated prototypes. This acknowledges newer frontend code, not live Backend auth E2E or a new Backend foundation audit. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -43,6 +43,18 @@ The [approved Segments / Resource Uses screen](09-whitelabel-finance-segments-re
 The retained audit does not establish either catalog's source of truth, official seeds, CRUD, ownership, uniqueness/validation, lifecycle/delete, reference protection, Opportunity associations/cardinality, hierarchy/codes/order or version/concurrency contracts. **A-10/A-13** are narrower modality/provider evidence and must not be relabeled as catalog support. **A-11** does not establish the future catalog event names, durable audit or RBAC. Status remains **CORE SUPPORT TO VERIFY / PRODUCT DECISION REQUIRED / CONTROL PLANE EXPOSURE NEEDED / INTEGRATION PENDING / E2E VALIDATION PENDING**; missing implementation is determined after support/contract verification.
 
 No Core source, live endpoint or provider was newly inspected. No retained finding A-01–13, source link or Core audit SHA is altered; [catalog dependencies](matrices/backend-dependencies.md#segments--resource-uses-v1-dependencies) and [Q-CAT-01–13](open-questions.md#segments--resource-uses) document the new targets without inventing support.
+
+### Operation prototype mapping — no new Core finding
+
+The approved baseline adds three distinct frontend domains: [Opportunities](10-operation-opportunities.md) (local list/create/detail/edit/status/classification), [Investors](11-operation-investors.md) (read-only projection) and [Entrepreneurs](12-operation-entrepreneurs.md) (read-only projection with live local Opportunity relationships). These are **FRONTEND PROTOTYPED**, not target Backend capabilities or E2E evidence.
+
+Retained **A-05** supports narrower scoped Admin Investor/Entrepreneur/Company reads; **A-07** supports separate tenant/Opportunity/Investment lineage, not target CRUD, migration or official workflow. **A-10/A-13** supports narrower modality/provider evidence, not authoritative Opportunity classification/cardinality or catalog management. **A-06** describes route-specific validation gates, not an Operation KYC contract. **A-11** remains limited other-domain/best-effort audit evidence. None establishes the three target Control Plane projections, permissions, durable Operation audit or participant deep links.
+
+Accounts-derived prototype IDs are not definitive global/tenant identity contracts. Entrepreneur KYC is **FRONTEND ILLUSTRATIVE DATA**, not an equivalent Accounts/Core source; Investor context and Investment references/counts are prototype values without amounts. Accounts page pause/reactivate state does not automatically synchronize into Operation seeds: a **FRONTEND PROTOTYPE LIMITATION / INTEGRATION CONTRACT REQUIRED**, not observed Backend behavior. Catalog consumption now exists locally, but reverse usage/count remains `—` and no authoritative reference safeguard is inferred.
+
+Prototype statuses, validation limits, multi-select and tenant-change clearing are UX assumptions/safety behavior. Official workflow/publication/approval, independent cardinalities, tenant move, person/company/representative identity, KYC/Investment sources, financial parameters and final validators remain explicit Product/Backend questions. Accounts, Finance and Compliance retain their ownership; Control Plane must not duplicate operational persistence.
+
+**A-02/A-12 and the empty-Control-Plane finding remain historical audited evidence.** Current frontend authentication calls/session guards supersede the old local-login-notice description; this update does not infer current Backend absence, deployed auth/RBAC guarantees or live auth E2E from that code. No new Core source, live endpoint, provider or account was inspected for this documentation task. Findings A-01–13 and their pinned source evidence are preserved. See [Operation dependencies](matrices/backend-dependencies.md#operation-v1-dependencies) and [Operation decisions](open-questions.md#operation-opportunities): **CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**, with implementation conditional on verified gaps.
 
 ## Current route families and proposed exposure
 

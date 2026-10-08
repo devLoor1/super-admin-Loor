@@ -8,7 +8,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | --- | --- | --- |
 | C-01 | Architecture sections 2–5, 39 | Core remains the operational source of truth; Control Plane uses internal services, without direct DB access or operational duplication. |
 | C-02 | Architecture sections 24, 30 | Operator authorization and service authentication are separate; requested tenant filters are not permission grants. |
-| C-03 | Approved frontend source at ec86b475e0126667e2fbece490730bdecc271584 | Login, Dashboard, Whitelabels, Whitelabel Account Control, Whitelabel Settings, Whitelabel Emails, Finance / Gateways, Modalities / Rules and Segments / Resource Uses V1 are FRONTEND PROTOTYPED without authentication/business API integration. Actions/saves/activity are local and reset on reload; no real email, provider, banking or financial operation occurs. |
+| C-03 | Approved frontend source at 400c1dceeafb47f7d8308af7f797f7b42aa30929 | Earlier modules and three Operation V1 siblings are present. Business modules remain FRONTEND PROTOTYPED with local state/activity, no business API integration or financial operation. Frontend Control Plane login/session/guard/logout/authentication refresh is implemented separately; no live auth E2E/RBAC claim. |
 | C-04 | Current user intent and approved local prototype | Pause intent is temporary access prevention with data/history preservation; the prototype requires a reason and changes only local access state. Reactivate restores local access without changing unrelated business/validation state. Real enforcement is not implemented; policy is PARTIALLY DEFINED. |
 | C-05 | Core audit | Investor validation denial/self soft-deletion, tenant active flag and owner-tool disable are separate behaviors, not generic account pause. |
 | C-06 | Core Terms service/auth | Current tenant revision is required at Investor registration; rejected acceptance/stale revision fail before Investor creation in the audited path. Existing-user forced reacceptance was not found. |
@@ -28,7 +28,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | C-20 | Explicit corrected Product taxonomy and approved frontend catalog | Equity and Debt are the only current prototype modalities, not proof of the complete production catalog. Capital de Giro is not a modality; it may exist independently in the separate Segments / Resource Uses catalogs, now presented in their own combined prototype screen. |
 | C-21 | Approved Modalities / Rules frontend and financial boundary | Regras gerais is read-only; the sole editor is modality-specific. Shared Finance enablement and local rule choices/activity are in-memory. No Opportunity editing or wallet/payment/Pix/Investment/refund/cashout/withdrawal/transfer/reconciliation mutation occurs. This confirms prototype boundaries, not real rule ownership or enforcement. |
 | C-22 | Corrected Product taxonomy and approved catalog model/store | Segment and Resource Use are separate domains with independent identity/lifecycle. Same-name records, including Capital de Giro in both, are not aliases, synchronized records or an automatic mapping. Shared presentation does not merge domains. |
-| C-23 | Approved Segments / Resource Uses prototype | Each catalog has independent local CRUD, search/filter/sort/pagination and status. Activity is local/session-only, not authoritative audit; no Opportunity CRUD, association, usage count, migration, assignment or financial mutation occurs. This confirms frontend behavior, not Backend support. |
+| C-23 | Approved Segments / Resource Uses prototype | Each catalog has independent local CRUD, search/filter/sort/pagination and status. Catalog administration has no Opportunity CRUD, association writes, authoritative usage count, migration, assignment or financial mutation. Operation separately consumes local references. Activity is session-only, not audit; this confirms frontend boundaries, not Backend support. |
 
 ## Segment and Resource Use rules
 
@@ -44,8 +44,38 @@ See [chapter 09](../09-whitelabel-finance-segments-resource-uses.md). **CONFIRME
 | CAT-06 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Hard/soft delete, deletion of used records, inactivation instead of deletion, reference protection and historical retention are unresolved; prototype delete only removes the local record (Q-CAT-07). |
 | CAT-07 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Global, per-Whitelabel, global plus tenant overrides or global plus per-tenant enablement remain alternatives; tenant presentation does not define ownership (Q-CAT-01). |
 | CAT-08 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Official Segment and Resource Use datasets/source of truth, lifecycle, hierarchy/codes/order remain unresolved independently (Q-CAT-02–03, Q-CAT-10). |
-| CAT-09 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Expected future Opportunity consumption is not implemented; one/multiple Segments and one/multiple Resource Uses must be decided separately. No inferred associations/migration/assignment (Q-CAT-08–09). |
+| CAT-09 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Operation now consumes independent local catalog references; multi-select is PROTOTYPE UX BEHAVIOR, not final one/multiple or required/optional policy. Reverse usage/count and authoritative relationships remain unresolved; no inferred migration/assignment (Q-CAT-08–09, Q-OP-04–05). |
 | CAT-10 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Final per-domain permissions, durable audit, concurrency/versioning, sanitized errors and authoritative readback remain to define (Q-CAT-11–13, Q-RB-01–04, Q-AU-01–03). |
+
+## Operation rules and unresolved contracts
+
+**CONFIRMED** here identifies explicit ownership/taxonomy or observed frontend boundaries, not authoritative Backend workflow. **PROTOTYPE UX RULE** includes local state models, safety behavior and constraints; **PRODUCT DECISION REQUIRED** and **BACKEND DECISION REQUIRED** preserve policy/contract uncertainty separately.
+
+| ID | Classification | Rule / evidence boundary |
+| --- | --- | --- |
+| OP-01 | CONFIRMED | Equity/Debt are the only current prototype modalities; Capital de Giro is not a modality or financial rule. Official catalog coverage remains Q-GM-01-A/Q-MO-01. |
+| OP-02 | CONFIRMED | Segment and Resource Use are independent catalogs; Capital de Giro may exist in each with separate identity/lifecycle, without automatic linking or coupled selection. |
+| OP-03 | PROTOTYPE UX RULE | Rascunho/Ativa/Pausada are a PROTOTYPE UX STATE MODEL, not official transitions, approval/publication or financial eligibility (Q-OP-01–02). |
+| OP-04 | PROTOTYPE UX RULE | Name 3–80, description ≤300, Whitelabel/modality required are PROTOTYPE UX CONSTRAINTS, not authoritative validators (Q-OP-10). |
+| OP-05 | PROTOTYPE UX RULE | Segment/Resource Use multi-select is PROTOTYPE UX BEHAVIOR; one-modality and optional-one-Entrepreneur are prototype composition only (Q-OP-03–06). |
+| OP-06 | PROTOTYPE UX RULE | Tenant change clears Entrepreneur/Segment/Resource Use refs, retaining modality: PROTOTYPE SAFETY BEHAVIOR, not migration authorization (Q-OP-07). |
+| OP-07 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Official workflow/status, publication/approval, pause/resume, cancellation/archive/delete and retention are unresolved (Q-OP-01–02, Q-OP-08). |
+| OP-08 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Modality, Segment, Resource Use and Entrepreneur required/optional cardinalities remain independent unresolved decisions (Q-OP-03–06, Q-CAT-08–09). |
+| OP-09 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Tenant ownership/move eligibility, restricted/clone-migration/forbidden alternatives and lineage safeguards remain unresolved (Q-OP-07). |
+| OP-10 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Actual financial parameters and validators must be defined by owning domains, never inferred from Equity/Debt labels (Q-OP-09–10). |
+| OP-11 | CONFIRMED frontend boundary | Investors and Entrepreneurs are read-only operational views; no participant creation, account/KYC/financial mutation or Opportunity write inside participant modules. |
+| OP-12 | CONFIRMED ownership boundary | Accounts owns identity/access/account lifecycle and account-level tenant relation; Finance owns financial Investment/payment/Pix/wallet operations; Compliance owns KYC review/decisions. |
+| OP-13 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Investor global/tenant identity, Account/profile relation, deduplication, profile/KYC/Investment sources and deep links remain unresolved (Q-OI-01–05). |
+| OP-14 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Entrepreneur identity, person/company/legal-entity/representative model, Account mapping and authoritative Opportunity cardinality remain unresolved (Q-OE-01–03). |
+| OP-15 | CONFIRMED frontend boundary | Entrepreneur Opportunity summaries read the Opportunity local store live, not duplicated records; writes stay in Opportunities. Not authoritative relationship/readback evidence. |
+| OP-16 | CONFIRMED frontend evidence limit | Entrepreneur KYC is FRONTEND ILLUSTRATIVE DATA; Investor KYC is prototype contextual data. Neither establishes Core KYC source/state or a decision workflow (Q-OI-03, Q-OE-04). |
+| OP-17 | CONFIRMED prototype limitation | Accounts page pause/reactivate does not automatically update Operation seed projections: FRONTEND PROTOTYPE LIMITATION / INTEGRATION CONTRACT REQUIRED (Q-OC-01). |
+| OP-18 | CONFIRMED prototype limitation | Catalog consumption exists; reverse usage remains `—`, without authoritative count/reference protection. Stored missing references are not historical enforcement (Q-CAT-06–09). |
+| OP-19 | CONFIRMED frontend boundary | Dashboard Operation additions are navigation-only; KPIs remain non-integrated/empty, not local Operation aggregates. |
+| OP-20 | BACKEND DECISION REQUIRED / PRODUCT DECISION REQUIRED | Operation source/query/errors, concurrency/versioning, resource permissions, destination contracts and durable audit remain unresolved (Q-OC-01–06). |
+| OP-21 | CONFIRMED frontend boundary | Session activity is local, non-persistent, non-authoritative and not audit. Participant VIEWED events are only AUDIT POLICY DECISION REQUIRED candidates (Q-OC-03). |
+
+See the independent [Opportunity](../10-operation-opportunities.md), [Investor](../11-operation-investors.md) and [Entrepreneur](../12-operation-entrepreneurs.md) handoffs. No Core capability, Product rule or Backend validation is invented to close the prototype.
 
 ## Modality prototype assumptions
 
@@ -112,6 +142,10 @@ The authoritative question text exists only in [open-questions.md](../open-quest
 | Gateway/modality and Sandbox/Production semantics | [Q-GM-01–02](../open-questions.md#gateway--modality-relationship) |
 | Modality catalog, tenant transitions/impact, rule ownership/catalog/defaults, dependencies, RBAC and audit | [Q-MO-01–12](../open-questions.md#modalities--rules) |
 | Independent Segment/Resource Use ownership, official datasets, validation, lifecycle/delete, Opportunity cardinality, structural metadata, permissions/audit/versioning | [Q-CAT-01–13](../open-questions.md#segments--resource-uses) |
+| Opportunity workflow/publication, independent cardinalities, tenant move, deletion/retention and financial/validation boundary | [Q-OP-01–10](../open-questions.md#operation-opportunities) |
+| Investor identity/profile, Account mapping, KYC/Investment sources and deep links | [Q-OI-01–05](../open-questions.md#operation-investors) |
+| Entrepreneur identity/person-company/representatives, Account mapping, Opportunity/KYC sources and deep links | [Q-OE-01–05](../open-questions.md#operation-entrepreneurs) |
+| Operation synchronization, permissions, audit, versioning, errors and pagination/search | [Q-OC-01–06](../open-questions.md#operation-cross-cutting) |
 | RBAC and audit guarantees | [Q-RB-01–04](../open-questions.md#rbac), [Q-AU-01–03](../open-questions.md#audit) |
 
 Do not convert seed comments, UI labels, nullable columns, domain-specific denial or architecture route examples into settled Product rules.

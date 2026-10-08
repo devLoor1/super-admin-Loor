@@ -2,9 +2,11 @@
 
 Start here for Backend review of the approved frontend and the capabilities needed to integrate it. This is a documentation handoff, not authorization to implement every proposed capability.
 
-Approved frontend baseline: `dev@ec86b475e0126667e2fbece490730bdecc271584` (Login V1, Dashboard V1, Whitelabels V1, Whitelabel Account Control V1, Whitelabel Settings V1, Whitelabel Emails V1, Finance / Gateways V1, Modalities / Rules V1, Segments / Resource Uses V1). All nine are **FRONTEND PROTOTYPED**, without business API integration or authentication. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-07.
+Approved frontend baseline: `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`. It contains Login V1, Dashboard V1, Whitelabels V1, Account Control V1, Settings V1, Emails V1, Finance / Gateways V1, Modalities / Rules V1, Segments / Resource Uses V1 and complete Operation V1 (Opportunities, Investors and Entrepreneurs). Business modules remain **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Core audit baseline remains `eb12e282c52230114553bf5e8722542adc9efe78`. Documentation prepared on 2026-10-05; current scope updated on 2026-10-08.
 
-The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/ec86b475e0126667e2fbece490730bdecc271584) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+The [approved source tree](https://github.com/devLoor1/super-admin-Loor/tree/400c1dceeafb47f7d8308af7f797f7b42aa30929) is reference-only: frontend code is not merged into this documentation branch. The original architecture/audit evidence and earlier phase source links retain their historical frontend baselines; this README and [current frontend scope](01-current-frontend-scope.md) identify the current approved scope. Prototype approval does not resolve Backend/Product decisions or prove authoritative persistence.
+
+The baseline now includes frontend integration for Control Plane login, session storage, route guards, header logout and authentication refresh. The older local-login-notice description no longer describes current code. This is not a claim of live Backend authentication E2E, server-side authorization, delivered RBAC or Operation API integration; see [Login V1](01-current-frontend-scope.md#login-v1).
 
 The architecture boundary is **Super Admin frontend → Control Plane → Core**. Operational entities and rules remain authoritative in Core; the frontend receives neither Core service credentials nor direct database access.
 
@@ -12,8 +14,9 @@ The architecture boundary is **Super Admin frontend → Control Plane → Core**
 
 1. [Context and architecture](00-context-and-architecture.md) and [current frontend scope](01-current-frontend-scope.md).
 2. [Dashboard](02-dashboard.md), [Whitelabels](03-whitelabels.md), [Whitelabel Account Control V1](04-whitelabel-account-control.md), [Whitelabel Settings V1](05-whitelabel-settings.md), [Whitelabel Emails V1](06-whitelabel-emails.md), [Finance / Gateways V1](07-whitelabel-finance-gateways.md), [Modalities / Rules V1](08-whitelabel-finance-modalities-rules.md), and [Segments / Resource Uses V1](09-whitelabel-finance-segments-resource-uses.md).
-3. [Backend dependencies](matrices/backend-dependencies.md), [permissions](matrices/permissions.md), [business rules](matrices/business-rules.md), and [audit events](matrices/audit-events.md).
-4. [Audit findings and source references](audit-findings.md), then [canonical open questions](open-questions.md).
+3. Operation's distinct domains: [Opportunities V1](10-operation-opportunities.md), [Investors V1](11-operation-investors.md), and [Entrepreneurs V1](12-operation-entrepreneurs.md).
+4. [Backend dependencies](matrices/backend-dependencies.md), [permissions](matrices/permissions.md), [business rules](matrices/business-rules.md), and [audit events](matrices/audit-events.md).
+5. [Audit findings and source references](audit-findings.md), then [canonical open questions](open-questions.md).
 
 Open questions have stable IDs in one file. Other documents reference those IDs rather than maintain competing decision lists.
 
@@ -45,4 +48,6 @@ Modalities / Rules is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL P
 
 Segments / Resource Uses is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. One screen presents two independent catalogs with local CRUD and active/inactive state. Capital de Giro may exist independently in both; it is never a modality or an automatic mapping. Ownership, Opportunity cardinality, deletion and authoritative validation remain unresolved. See [chapter 09](09-whitelabel-finance-segments-resource-uses.md).
 
-Backend review should first confirm the foundation and read contracts, then resolve Product-dependent writes. An existing Core table or actor endpoint does not by itself constitute a Super Admin capability.
+Operation V1 is **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**. Opportunities has local create/detail/edit/status/classification; Investors and Entrepreneurs are read-only operational projections. Accounts retains identity/access/account mutations, Finance retains financial operations, and Compliance retains KYC decisions. Prototype states, cardinalities, identity mappings and validation are not authoritative contracts. Session activity is not audit.
+
+Backend review should first confirm the foundation and read contracts, then resolve Product-dependent writes. An existing Core table or actor endpoint does not by itself constitute a Super Admin capability. Missing Backend support is not automatically unfinished frontend work or a frontend blocker; classify policy, support verification, exposure, implementation and E2E separately.

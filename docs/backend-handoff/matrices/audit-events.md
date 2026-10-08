@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `ec86b475e0126667e2fbece490730bdecc271584` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails adds local SMTP/event feedback, and Finance adds local gateway/bank/test, modality enable/disable/rule-save/discard and independent Segment/Resource Use create/update/delete activity. Catalog status edits are local updates, not separate authoritative activation events. No real email, provider, banking or financial operation occurs. They do not implement the future uppercase event names below, command authorization, audit durability or an event query API.
+Approved frontend `400c1dceeafb47f7d8308af7f797f7b42aa30929` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails local SMTP/event feedback, Finance local configuration/catalog activity, and Operation local Opportunity create/edit/classification/status plus participant-view/navigation activity. All are local, non-persistent, non-authoritative and **not audit**. Catalog status edits are not authoritative activation events. No real email, provider, banking or financial operation occurs. This feedback does not implement future uppercase events, authorization, durability or an event query API. Frontend auth integration is separate and does not prove Backend login-audit coverage.
 
 ## Future Super Admin requirements
 
@@ -33,6 +33,10 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | ACCOUNT_WHITELABEL_CHANGED | Authorized reassignment | Source/target tenant IDs and migration operation reference |
 | ADMIN_CREATED | Managed tenant Admin provisioning | Admin/tenant IDs and provisioning mode; no password |
 | ADMIN_UPDATED | Allowed Admin update | Safe changed-field list and permission/scope context |
+| OPPORTUNITY_CREATED | Future authorized authoritative creation | Operator, tenant/context, Opportunity ID, sanitized created state, result/time/correlation |
+| OPPORTUNITY_UPDATED | Future validated permitted field update | Opportunity/resource scope, safe changed fields and sanitized before/after/version, result/time/correlation |
+| OPPORTUNITY_STATUS_CHANGED | Future allowed official transition | Prior/resulting official state, policy/result and operator/context/correlation; not a mapping from prototype states |
+| OPPORTUNITY_CLASSIFICATION_CHANGED | Future validated independent classification update | Safe modality/Segment/Resource Use reference differences, context/version/result/time/correlation; no financial payload |
 | TERMS_PUBLISHED | Authorized authoritative tenant revision publication | Core revision ID/number and prior current revision reference, tenant/operator/correlation/result; no full legal content needed |
 | PLATFORM_SETTINGS_UPDATED | Validated Identity/Experience configuration update/reset | Section/key, default-versus-override operation and allowed sanitized difference; tenant/operator/correlation/result; omit secrets |
 | PLATFORM_ASSET_UPDATED | Authorized asset upload/replace/remove or agreed default reset | Tenant/asset ID and type, operation, permitted old/new references and correlation/result; no file bytes or signed-access tokens |
@@ -70,6 +74,17 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | RESOURCE_USE_DELETED | Future authorized Resource Use deletion under reference/retention policy | Resource Use/catalog/context reference, safe policy outcome and result/time/correlation; no implied Segment or Opportunity cascade |
 | RESOURCE_USE_ACTIVATED | Future supported Resource Use activation/reactivation | Independent Resource Use identity, sanitized prior/new state, operator/context/result/time/correlation |
 | RESOURCE_USE_INACTIVATED | Future supported Resource Use inactivation | Independent Resource Use identity, state and safe constraint outcome, operator/context/result/time/correlation; not deletion |
+
+## Operation audit policy
+
+The four Opportunity names above are future conceptual events, **not delivered Core/Control Plane writer calls**. Prototype create/edit/status/classification activity emits none of them. Audit coverage, failure/denial policy, durability/query and Core/Control Plane correlation remain [Q-OC-03](../open-questions.md#operation-cross-cutting) under Q-AU-01–03.
+
+| Possible read event | Classification | Potential safe record focus |
+| --- | --- | --- |
+| INVESTOR_VIEWED | AUDIT POLICY DECISION REQUIRED; not mandatory or delivered | Operator, permitted tenant/context, record ID, result/time/correlation only as required by agreed policy |
+| ENTREPRENEUR_VIEWED | AUDIT POLICY DECISION REQUIRED; not mandatory or delivered | Same safe minimized read metadata, not copied identity/KYC/financial contents |
+
+Do not promote participant tab/view/navigation session feedback to durable audit or require recording every read without policy approval. Future mutation metadata may include operator, tenant/context, record ID, sanitized before/after, result, timestamp and `correlation_id`; never credential values, unnecessary identity/KYC information or sensitive financial payloads. Current auth integration is not evidence that this audit model exists. See the [three domain handoffs](../README.md#read-order).
 
 Architecture also requires relevant login success/failure, SMTP/gateway changes/tests and authorized Opportunity actions. Event coverage must be completed as those commands are scoped, without adding financial controls through this documentation task.
 

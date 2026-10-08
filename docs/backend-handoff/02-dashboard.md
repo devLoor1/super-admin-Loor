@@ -6,7 +6,7 @@ The [page](../../src/features/dashboard/DashboardPage.tsx) presents five KPI lab
 
 [Operational status](../../src/features/dashboard/OperationalStatusPanel.tsx) lists Pagamentos, Wallet, Compliance, E-mail/SMTP and Gateways as `Aguardando integração`. Configuration presence and actual service health are distinct. [Recent events](../../src/features/dashboard/RecentEventsPanel.tsx) has empty rows with Evento, Whitelabel, Módulo, Usuário and Data e hora columns.
 
-The header remains `Visão global`; selecting a tenant is not implemented. The [Whitelabel shortcut](../../src/features/dashboard/QuickActionsPanel.tsx) and KPI link open `#/whitelabels`. Other module links show notices. A rotating decorative title does not change filter scope.
+The header remains `Visão global`; selecting a tenant is not implemented. At current `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, the Whitelabel shortcut/KPI open `#/whitelabels`; Opportunity and Investor KPI links open their Operation lists, and Abrir Operação opens `#/operation/opportunities`. Source: [current quick actions](https://github.com/devLoor1/super-admin-Loor/blob/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/dashboard/QuickActionsPanel.tsx). These changes are **navigation-only**: metrics remain empty/non-integrated, not authoritative Operation counts. Other unimplemented destinations show notices. Header logout uses [current session integration](01-current-frontend-scope.md#login-v1); a rotating decorative title does not change filter scope.
 
 ## Expected data
 

@@ -1,36 +1,17 @@
 # Loor Super Admin — Frontend
 
-Visual prototype of the **Super Admin**: Login V1, the application-frame
-**App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
-**Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
-Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
-**Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
-dos recursos V1** (Financeiro). Frontend only.
+Frontend do **Super Admin LOØR**: Login V1, App Shell + Dashboard, Whitelabels,
+Contas, Settings, E-mails e Financeiro (Gateways / Modalidades / Segmentos).
 
-> **Status:** visual/product exploration. There is **no backend, no
-> authentication, no API calls and no business data**. The login only runs a
-> local field check; the dashboard shows data-ready empty states
-> ("—", "Sem dados", "Aguardando integração") instead of metrics. The
-> Whitelabels page lists three clearly illustrative rows (prototype IDs, no
-> counts or dates). Contas uses illustrative accounts (example.com e-mails,
-> masked documents, no amounts); pause/reactivate, Whitelabel change and the
-> Admin form only change local state — **Backend: implementation pending**.
-> Configurações uses illustrative per-tenant settings; every section save and
-> the Terms publication are local to the browser session (lost on reload).
-> E-mails uses illustrative SMTP values (reserved example domains) and event
-> preferences; saves are local, the test send is simulated and **no e-mail is
-> ever sent**. The SMTP password is write-only and never stored or shown.
-> Financeiro / Gateways uses fictitious providers and banks; configuration
-> edits, activation and bank accounts are local, the connection test is
-> simulated, credentials are write-only (never stored or shown), and **no
-> provider or bank request and no financial operation ever happens**.
-> Modalidades e regras covers only Equity and Debt; enable/disable and the
-> generic rule concepts are local, nothing cascades, and **no Opportunity,
-> investment or payment is created or changed**.
-> Segmentos e usos dos recursos holds two independent illustrative catalogs;
-> create, edit, activate/inactivate and delete are local to the browser
-> session, the two catalogs are never linked, and **no Opportunity is created,
-> changed or counted**.
+Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
+
+> **Status (atual):** o **login está integrado** ao Control Plane Nest
+> (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
+> `App.tsx` e **logout** no menu do header. Demais telas (Dashboard KPIs,
+> Whitelabels, Contas, Settings, E-mails, Financeiro) ainda usam **dados
+> ilustrativos locais** — saves/pause/testes não batem na API. Contrato e
+> próximos wire-ups:
+> [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -44,22 +25,11 @@ dos recursos V1** (Financeiro). Frontend only.
 | Modalidades e regras V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/modalities` | [`docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png`](docs/reference/super-admin-whitelabel-finance-modalities-rules-approved.png) (composition only) |
 | Segmentos e usos dos recursos V1 | `http://localhost:5173/#/whitelabels/wl_proto_01/finance/segments-resource-uses` | [`docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png`](docs/reference/super-admin-whitelabel-finance-segments-resource-uses-approved.png) (composition only) |
 
-The views are selected by a prototype-only hash switch (`src/app/App.tsx`);
-shell screens are reached directly by URL because there is no authentication.
-In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
-is active, lists its screens: **Whitelabels**, **Contas**, **Config. do Whitelabel**
-and **E-mails**. The accounts route is `#/whitelabels/:whitelabelId/accounts` with an
-optional `?tipo=investidores|empreendedores|administradores`; the settings route is
-`#/whitelabels/:whitelabelId/settings`; the e-mails route is
-`#/whitelabels/:whitelabelId/emails` with an optional `?section=smtp|envios|templates`
-that focuses that card. Within the tenant screens, the sidebar destinations
-preserve the displayed Whitelabel. **Financeiro** links to
-`#/whitelabels/:whitelabelId/finance/gateways` (first illustrative Whitelabel
-by default) and, while active, lists **Gateways e contas**, **Modalidades e
-regras** (`#/whitelabels/:whitelabelId/finance/modalities`) and **Segmentos e usos
-dos recursos** (`#/whitelabels/:whitelabelId/finance/segments-resource-uses`, one
-entry for both catalogs); on all three screens the Financeiro links keep the
-displayed Whitelabel.
+As views usam hash switch (`src/app/App.tsx`). Sem token válido, o app
+redireciona para o login. Com sessão, shell screens abrem pelas rotas abaixo.
+Na sidebar, **Plataformas** → `#/whitelabels` (Whitelabels, Contas, Config.,
+E-mails). Contas: `#/whitelabels/:whitelabelId/accounts?tipo=…`. Settings /
+E-mails / Financeiro preservam o Whitelabel exibido.
 
 ---
 
@@ -67,14 +37,30 @@ displayed Whitelabel.
 
 Requires Node.js `^20.19.0 || >=22.12.0`.
 
+**Dependência para login:** Nest Control Plane em `http://localhost:3334`
+(`backend-super-admin-Loor` — ver README desse repo: Docker MySQL, migrate, seed).
+
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # typecheck (tsc -b) + production build to dist/
-npm run typecheck  # TypeScript only
-npm run lint       # oxlint
-npm run preview    # serve dist/
+cp .env.example .env   # VITE_API_BASE_URL=http://localhost:3334/api
+npm run dev            # http://localhost:5173
+npm run build          # typecheck (tsc -b) + production build to dist/
+npm run typecheck
+npm run lint           # oxlint
+npm run preview        # serve dist/
 ```
+
+### Login de desenvolvimento
+
+| Campo | Valor |
+| --- | --- |
+| E-mail | `superadmin@loor.local` |
+| Senha | `ChangeMeDevOnly!123` |
+
+(Criado pelo `npm run prisma:seed` do Nest.)
+
+Se o Nest não estiver no ar, o formulário mostra erro de conexão na `:3334`.
+Após login → `#/dashboard`. Logout → menu do avatar no header.
 
 ## Stack
 
@@ -98,12 +84,9 @@ handle panel-level responsiveness.
 ```
 src/
   main.tsx                          entry — renders <App />
-  app/App.tsx                       prototype view switch: "#/dashboard", "#/whitelabels",
-                                    "#/whitelabels/:id/accounts[?tipo=…]", "#/whitelabels/:id/settings",
-                                    "#/whitelabels/:id/emails[?section=…]",
-                                    "#/whitelabels/:id/finance/gateways",
-                                    "#/whitelabels/:id/finance/modalities",
-                                    "#/whitelabels/:id/finance/segments-resource-uses", else login
+  app/App.tsx                       hash routes + auth guard (no token → login)
+  lib/api.ts                        Nest client (VITE_API_BASE_URL, Bearer, errors)
+  lib/authSession.ts                login / logout / session helpers
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   styles/

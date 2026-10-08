@@ -59,7 +59,10 @@ html[data-view='finance'] body,
 html[data-view='finance-modalities'] body,
 html[data-view='finance-catalogs'] body,
 html[data-view^='finance-'] body,
-html[data-view^='operation-'] body {
+html[data-view^='operation-'] body,
+html[data-view^='compliance-'] body,
+html[data-view='audit'] body,
+html[data-view='audit-event'] body {
   background: var(--shell-bg);
   color: var(--text-on-dark);
   color-scheme: dark;

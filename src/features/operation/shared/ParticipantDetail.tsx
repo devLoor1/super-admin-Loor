@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { ExternalLink, Info, SearchX, ShieldCheck, UserRound } from 'lucide-react'
 import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import { StatusPill } from '../../../components/ui/StatusPill'
 import { Tabs } from '../../../components/ui/Tabs'
@@ -10,6 +9,7 @@ import { tabId, tabPanelId } from '../../../components/ui/tabIds'
 import { BusinessBadge } from '../../whitelabel-accounts/AccountBadges'
 import { ACCESS_META } from '../../whitelabel-accounts/accountModel'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
+import { kycDestinationForParticipant } from '../../compliance-kyc/kycLinks'
 import { addOperationActivity, useOperationActivity } from './operationActivity'
 import { KYC_META, accountsHref, crumbLabel, formatDateTime, initials, pendingModuleMessage } from './operationModel'
 import type { ParticipantProfile } from './participants'
@@ -45,6 +45,8 @@ export type RelationTab = {
  * relationship tab, a Compliance/KYC summary and session activity. Account,
  * KYC and financial actions live in their own domains; here they are links
  * (existing modules) or pending-module notices — never mutations.
+ * "Ver no Compliance" opens Compliance › KYC: the participant's case when it
+ * is unique, otherwise the KYC list filtered by the participant.
  */
 export function ParticipantDetail({
   section,
@@ -139,10 +141,14 @@ function ProfileContent({
     if (next === 'kyc') log('Compliance / KYC consultado', 'Resumo somente leitura')
   }
 
-  const notifyCompliance = () => {
-    log('Navegação para Compliance solicitada', 'Módulo Compliance › KYC pendente — nenhuma navegação feita')
-    notify(pendingModuleMessage('compliance'))
-  }
+  const compliance = kycDestinationForParticipant(profile.id)
+  const complianceTarget =
+    compliance.caseCount === 1
+      ? 'Caso KYC do participante'
+      : compliance.caseCount === 0
+        ? 'Nenhum caso KYC — lista filtrada pelo participante'
+        : `${compliance.caseCount} casos KYC — lista filtrada pelo participante`
+  const onCompliance = () => log('Navegação para Compliance › KYC solicitada', complianceTarget)
   const notifyRelationPending = () => {
     notify(pendingModuleMessage('investments'))
   }
@@ -168,10 +174,10 @@ function ProfileContent({
     {
       key: 'compliance',
       label: 'Ver no Compliance',
-      description: 'Dados e processos de KYC',
+      description: `Compliance › KYC — ${complianceTarget.charAt(0).toLowerCase()}${complianceTarget.slice(1)}`,
       icon: ShieldCheck,
-      onSelect: notifyCompliance,
-      pending: true,
+      href: compliance.href,
+      onSelect: onCompliance,
     },
   ]
 
@@ -215,10 +221,10 @@ function ProfileContent({
             Ver conta
             <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
           </a>
-          <OutlineButton className={shared.secondaryButton} onClick={notifyCompliance} data-view-compliance>
+          <a href={compliance.href} className={`${outline.button} ${shared.secondaryButton}`} onClick={onCompliance} data-view-compliance>
             <ShieldCheck size={15} strokeWidth={1.8} aria-hidden="true" />
             Ver no Compliance
-          </OutlineButton>
+          </a>
         </div>
       </section>
 
@@ -284,15 +290,14 @@ function ProfileContent({
             <p className={shared.callout} style={{ marginTop: 12 }}>
               <Info size={15} strokeWidth={1.8} aria-hidden="true" />
               <span>
-                Aprovar, reprovar, solicitar documentos ou classificar risco acontece no módulo de Compliance. Esta tela não altera o
-                KYC.
+                Revisar evidências, pendências e decisões acontece em Compliance › KYC. Esta tela não altera o KYC, e registros locais
+                feitos no KYC não atualizam este resumo.
               </span>
             </p>
-            <OutlineButton className={shared.blockButton} onClick={notifyCompliance} data-kyc-compliance>
+            <a href={compliance.href} className={`${outline.button} ${shared.blockButton}`} onClick={onCompliance} data-kyc-compliance>
               <ShieldCheck size={16} strokeWidth={1.8} aria-hidden="true" />
               Ver no Compliance
-              <span className={shared.pendingTag}>Módulo pendente</span>
-            </OutlineButton>
+            </a>
           </section>
         </div>
       </Panel>

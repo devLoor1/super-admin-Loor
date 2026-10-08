@@ -2,7 +2,6 @@ import { ArrowRight, FileText } from 'lucide-react'
 import { Panel } from '../../components/ui/Panel'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
-import { moduleUnavailable, usePrototypeNotice } from '../../components/shell/prototypeNotice'
 import styles from './RecentEventsPanel.module.css'
 
 const COLUMNS = [
@@ -15,18 +14,18 @@ const COLUMNS = [
 
 /**
  * Table structure prepared for future audit/activity entries. It renders the
- * header and an empty state only — no audit records are fabricated.
+ * header and an empty state only — no audit records are fabricated (the
+ * Auditoria module's illustrative events are not dashboard data). "Ver todos"
+ * opens Auditoria.
  */
 export function RecentEventsPanel({ className }: { className?: string }) {
-  const notify = usePrototypeNotice()
-
   return (
     <Panel
       className={className}
       title="Últimos eventos"
       subtitle="Atividade recente em todas as whitelabels."
       actions={
-        <OutlineButton onClick={() => notify(moduleUnavailable('Auditoria'))}>
+        <OutlineButton onClick={() => window.location.assign('#/audit')} data-recent-events-all>
           Ver todos
           <ArrowRight size={15} strokeWidth={1.8} aria-hidden="true" />
         </OutlineButton>

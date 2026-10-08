@@ -38,29 +38,31 @@ export function AboutModalities({ catalogsHref }: { catalogsHref: string }) {
 
 type QuickAction = { label: string; description: string; icon: LucideIcon; onClick: () => void; data?: string }
 
-/** Shortcuts: local flows of this screen, or a notice for modules that do not exist yet. */
+/** Shortcuts: local flows of this screen and the Auditoria consultation. */
 export function ModalityQuickActions({
   selectedName,
+  auditHref,
   onConfigure,
   onGeneralRules,
   onDependencies,
-  onNotice,
 }: {
   selectedName: string
+  /** Auditoria filtered by this Whitelabel (read-only, illustrative events). */
+  auditHref: string
   onConfigure: () => void
   onGeneralRules: () => void
   onDependencies: () => void
-  onNotice: (message: string) => void
 }) {
   const actions: QuickAction[] = [
     { label: 'Configurar regras', description: `Modalidade ${selectedName}`, icon: SlidersHorizontal, onClick: onConfigure, data: 'rules' },
     { label: 'Regras gerais', description: 'Categorias estruturais', icon: ListChecks, onClick: onGeneralRules, data: 'general' },
     { label: 'Ver dependências', description: 'Gateway, conta, regras', icon: Network, onClick: onDependencies, data: 'dependencies' },
+    // Ações locais desta tela não geram eventos na Auditoria; o atalho só consulta eventos ilustrativos.
     {
       label: 'Auditoria',
-      description: 'Módulo futuro',
+      description: 'Eventos deste Whitelabel',
       icon: FileSearch,
-      onClick: () => onNotice('Protótipo visual: o módulo Auditoria ainda não está disponível. A atividade desta tela é apenas da sessão.'),
+      onClick: () => window.location.assign(auditHref),
       data: 'audit',
     },
   ]

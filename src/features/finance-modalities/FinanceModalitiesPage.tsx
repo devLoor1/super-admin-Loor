@@ -293,6 +293,7 @@ function ModalitySections({
         <div className={styles.areaSide} data-detail-stage>
           <ModalityQuickActions
             selectedName={selected.name}
+            auditHref={`#/audit?whitelabel=${whitelabel.id}`}
             onConfigure={() => editRules(selectedId)}
             onGeneralRules={() => {
               setPageTab('general')
@@ -310,7 +311,6 @@ function ModalitySections({
                 tab?.focus({ preventScroll: true })
               })
             }}
-            onNotice={notify}
           />
         </div>
       </div>

@@ -375,9 +375,9 @@ function FinanceSections({
           <ModalitiesSummary settings={settings} />
           <QuickActions
             modalitiesHref={`#/whitelabels/${whitelabel.id}/finance/modalities`}
+            auditHref={`#/audit?whitelabel=${whitelabel.id}&resourceType=gateway`}
             onConfigureGateway={() => setNewGateway(true)}
             onCreateBank={() => setBankDialog({ kind: 'form' })}
-            onNotice={notify}
           />
         </div>
       </div>

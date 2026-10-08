@@ -511,3 +511,13 @@ Codex review refinements:
   (`data-long`, full sidebar and drawer only), so the new label is not clipped.
   Other entries keep their single-line layout.
 - Record: [`whitelabel-finance-segments-resource-uses-v1.md`](whitelabel-finance-segments-resource-uses-v1.md).
+
+## Follow-up — Compliance › KYC + Auditoria V1 (Claude, 2026-10-08)
+
+- The *Auditoria* quick action (previously a "módulo futuro" notice) is now a
+  link to `#/audit?whitelabel=:whitelabelId&resourceType=gateway` — the
+  read-only Auditoria list filtered by this Whitelabel's gateway events
+  (illustrative events). Local actions on this page still create **no**
+  Auditoria event. `QuickActions` gained an `auditHref` prop and no longer
+  needs `onNotice`. Nothing else on this page changed.
+- Record: [`governance-audit-v1.md`](governance-audit-v1.md).

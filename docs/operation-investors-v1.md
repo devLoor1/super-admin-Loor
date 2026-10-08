@@ -30,7 +30,7 @@ No create route and no "Novo investidor" action.
 | --- | --- | --- |
 | Contas | identity, access state, account administration, account Whitelabel | read-only context + *Ver conta* link |
 | Financeiro › Investimentos (Finance Core V1, read-only) | investment records and any financial operation | illustrative count-only associations + *Ver investimentos* link to the Finance list filtered by the investor |
-| Compliance › KYC (not implemented) | KYC review and decisions | read-only summary + pending-module notice |
+| Compliance › KYC (Compliance › KYC V1) | KYC cases, evidences, pending issues and decisions | read-only summary + *Ver no Compliance* link (case, or list filtered by participant) |
 | Operação › Oportunidades | Opportunities | names/modality/status read live for the associations |
 
 ## Local / mock state
@@ -54,7 +54,10 @@ No create route and no "Novo investidor" action.
 - **KYC summary.** The status is derived from the account's existing "KYC"
   dependency in Accounts (Verificado → Aprovado, Em análise → Em análise,
   Pendente / Não iniciado → Pendente), so both screens agree. Last update and
-  process reference are illustrative seeds (`kyc_proto_…` or "—"). The summary
+  process reference are illustrative seeds (`kyc_proto_…` or "—"); the
+  reference is the participant's current Compliance › KYC case id
+  (Compliance › KYC V1 aligned `inv_proto_007` → `kyc_proto_0007`). Local
+  KYC session actions never update this summary. The summary
   names its source. States are restrained prototype values, not the official
   KYC workflow.
 - **Investment associations** (`investors/prototypeInvestments.ts`): 13
@@ -87,14 +90,14 @@ No create route and no "Novo investidor" action.
 - **Visão geral:** Informações principais (full name, ID, e-mail, phone,
   Whitelabel, account status, created at, last activity — all read-only) and
   **Navegação para domínios responsáveis** (Ver conta / Ver investimentos /
-  Ver no Compliance; pending modules are tagged "Módulo pendente" before
-  activation); module note.
+  Ver no Compliance); module note.
 - **Investimentos:** count summary by Opportunity status and the associations
   table (Opportunity link + ID, modality, status, illustrative registration
   date); *Ver investimentos* (link to Financeiro › Investimentos, filtered by
   this investor).
 - **Compliance / KYC:** status, last update, pending summary, process
-  reference, source; ownership callout; *Ver no Compliance* (pending notice).
+  reference, source; ownership callout; *Ver no Compliance* (link to
+  Compliance › KYC).
 - **Atividade da sessão:** profile viewed, investments viewed, Compliance/KYC
   viewed, account / investments / Compliance navigation requested. Explicitly
   not audit; repeated identical entries within 1.5 s are ignored.
@@ -111,8 +114,13 @@ No create route and no "Novo investidor" action.
   pending-module notice. The Operation associations stay illustrative and
   separate from the Finance investment records (no synchronisation); see
   [finance-core-v1.md](finance-core-v1.md).
-- **Ver no Compliance** → notice "Módulo Compliance › KYC ainda não
-  implementado. Nenhuma navegação foi feita."
+- **Ver no Compliance** (hero, domain navigation and Compliance / KYC tab) →
+  Compliance › KYC: the investor's case when exactly one exists
+  (`#/compliance/kyc/:kycCaseId`), otherwise the KYC list filtered by the
+  participant (`#/compliance/kyc?participant=:investorId`; e.g. Maria Silva
+  has two cases, Larissa Torres none). Updated in Compliance › KYC V1
+  (2026-10-08): before that module existed this was a pending-module notice.
+  See [compliance-kyc-v1.md](compliance-kyc-v1.md).
 - Opportunity names link to the Opportunity detail (existing module).
 
 ## Exact action boundary

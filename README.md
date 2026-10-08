@@ -6,8 +6,9 @@ Frontend of the **Super Admin LOØR**: Login V1, the application-frame
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
 dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
-**Investidores** and **Empreendedores** (Operação) — and **Finance Core V1** —
-**Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro).
+**Investidores** and **Empreendedores** (Operação) — **Finance Core V1** —
+**Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro) — and
+**Compliance › KYC V1** plus **Auditoria V1** (Governança).
 
 Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 
@@ -44,8 +45,9 @@ Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 > parameters) with a local create/edit/status flow — no delete; Investidores
 > and Empreendedores are read-only projections of the illustrative Accounts
 > records with prototype KYC summaries and count-only relationships. *Ver
-> investimentos* opens Financeiro › Investimentos filtered by the investor; the
-> KYC destination answers with a "módulo ainda não implementado" notice;
+> investimentos* opens Financeiro › Investimentos filtered by the investor;
+> *Ver no Compliance* opens Compliance › KYC (the participant's case, or the
+> list filtered by participant);
 > **no account, KYC or financial mutation exists in Operation**.
 > Finance Core (Investimentos, Pagamentos / PIX, Wallet) is **read-only
 > supervision** over illustrative, frozen records that reference each other
@@ -54,6 +56,16 @@ Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 > payable QR Code, "Saldo representado" is a prototype representation, and
 > **no charge, confirmation, settlement, refund, credit/debit, transfer or
 > any other financial operation exists**.
+> Compliance › KYC lists illustrative cases that reference Operation
+> participants; evidences are metadata only (no file, upload, OCR or
+> biometrics), and reviewing evidence, adding / resolving / reopening pending
+> issues and registering an approval or rejection are **local, non-authoritative
+> session actions** that change only the KYC case — **never an account,
+> access, participant, investment, opportunity, payment, wallet or Auditoria**.
+> Auditoria is a **completely read-only**, separate module over a frozen,
+> illustrative event dataset (secrets always masked; "Hoje" uses the fixed
+> reference date 08/10/2026); nothing — KYC included — writes to it, and no
+> edit, delete, revert, reprocess or export exists.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -72,6 +84,8 @@ Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 | Investimentos V1 | `http://localhost:5173/#/finance/investments` | [`docs/reference/super-admin-finance-core-investments-approved.png`](docs/reference/super-admin-finance-core-investments-approved.png) (composition only) |
 | Pagamentos / PIX V1 | `http://localhost:5173/#/finance/payments` | [`docs/reference/super-admin-finance-core-payments-pix-approved.png`](docs/reference/super-admin-finance-core-payments-pix-approved.png) (composition only) |
 | Wallet V1 | `http://localhost:5173/#/finance/wallets` | [`docs/reference/super-admin-finance-core-wallet-approved.png`](docs/reference/super-admin-finance-core-wallet-approved.png) (composition only) |
+| Compliance › KYC V1 | `http://localhost:5173/#/compliance/kyc` | [`docs/reference/super-admin-compliance-kyc-approved.png`](docs/reference/super-admin-compliance-kyc-approved.png) (composition only) |
+| Auditoria V1 | `http://localhost:5173/#/audit` | [`docs/reference/super-admin-governance-audit-approved.png`](docs/reference/super-admin-governance-audit-approved.png) (composition only) |
 
 The views are selected by a hash switch (`src/app/App.tsx`) with a session
 guard. Without a stored token, shell routes redirect to login; with a session,
@@ -99,7 +113,12 @@ active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 (global screens across Whitelabels): `#/operation/opportunities` (optional
 `?empreendedor=:id`), `/new`, `/:opportunityId`, `/:opportunityId/edit` (optional
 `?secao=classificacao`), `#/operation/investors[/:investorId]` and
-`#/operation/entrepreneurs[/:entrepreneurId]`.
+`#/operation/entrepreneurs[/:entrepreneurId]`. **Compliance** links to
+`#/compliance/kyc` and, while active, lists only **KYC**: `#/compliance/kyc`
+(optional `?participant=`, `?whitelabel=`, `?status=`) and
+`#/compliance/kyc/:kycCaseId`. **Auditoria** is its own top-level destination:
+`#/audit` (optional `?resourceType=`, `?resourceId=`, `?whitelabel=`,
+`?actor=`, `?action=`) and `#/audit/:auditEventId`.
 
 ---
 
@@ -163,11 +182,14 @@ src/
                                     "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
                                     "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]",
                                     "#/finance/investments[?investidor=…|?wallet=…]", "/:id",
-                                    "#/finance/payments[?wallet=…]", "/:id", "#/finance/wallets", "/:id[?movimento=…]", else login
+                                    "#/finance/payments[?wallet=…]", "/:id", "#/finance/wallets", "/:id[?movimento=…]",
+                                    "#/compliance/kyc[?participant=…&whitelabel=…&status=…]", "/:id",
+                                    "#/audit[?resourceType=…&resourceId=…&whitelabel=…&actor=…&action=…]", "/:id", else login
   lib/api.ts                        Nest client (VITE_API_BASE_URL, Bearer, errors)
   lib/authSession.ts                login / logout / session helpers
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
+  app/routeQuery.ts                 URL-backed list context: build hash, replace entry keeping scroll (no business state)
   styles/
     tokens.css                      prototype visual tokens (login + dark app shell)
     global.css                      reset + base typography
@@ -179,7 +201,8 @@ src/
       AppShell.tsx (+ .css)         sidebar + header + content frame, mobile drawer logic
       Sidebar.tsx (+ .css)          brand, primary/utility navigation, decorative backdrop
       TopHeader.tsx (+ .css)        title/location, context selector, search, notifications, user
-      navigation.ts                 navigation model (top-level domains + nested screens of Plataformas / Financeiro)
+      navigation.ts                 navigation model (top-level domains + nested screens of Plataformas / Operação /
+                                    Financeiro / Compliance; Auditoria top-level)
       PrototypeNoticeProvider.tsx   toast for controls whose destination does not exist yet
       prototypeNotice.ts            notice context + standard copy
     ui/
@@ -206,8 +229,8 @@ src/
       ActivityPanel.tsx             time-series container, empty
       WhitelabelDistributionPanel   donut placeholder, empty
       OperationalStatusPanel.tsx    neutral "Aguardando integração" list
-      RecentEventsPanel.tsx         audit-ready table header + empty state
-      QuickActionsPanel.tsx         shortcuts (Whitelabels, Operação and Pagamentos / PIX open; others are prototype notices)
+      RecentEventsPanel.tsx         audit-ready table header + empty state ("Ver todos" opens Auditoria)
+      QuickActionsPanel.tsx         shortcuts (Whitelabels, Operação, Pagamentos / PIX and Auditoria open)
     whitelabels/
       WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
       WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
@@ -273,6 +296,10 @@ src/
       investments/                  Investimentos list + read-only detail (Visão geral, Pagamento / PIX, Wallet / Movimentações)
       payments/                     Pagamentos / PIX list + read-only detail (Visão geral, PIX, Relações financeiras)
       wallets/                      Wallet list + read-only detail (movements with inline detail, Relações financeiras)
+    compliance-kyc/                 Compliance › KYC: model, frozen case seeds, session store (KYC only), live participant
+                                    resolution, list, case detail (4 tabs), local-action dialogs, navigation helper for other modules
+    governance-audit/               Auditoria: model, frozen sanitized event seeds, redaction / diff helpers, resource
+                                    destinations, read-only list and event detail (4 tabs)
 docs/reference/                     approved concept images
 ```
 
@@ -786,6 +813,49 @@ review record for scope, evidence and fallback checks.
 | Sidebar | Six Financeiro entries: decorative lines hidden ≤ 1020px tall, slightly denser rows ≤ 860px (full sidebar) and ≤ 650 / 580px (icon rail). |
 | < 768px | Drawer navigation; header row of tables hidden, statuses and amounts inline. |
 
+## Compliance › KYC V1 + Auditoria V1 — decisions
+
+- **Two separate domain modules** (`features/compliance-kyc`,
+  `features/governance-audit`): separate models, separate data, no shared
+  business store and no synchronisation. KYC keeps an in-memory session store
+  for its local actions; Auditoria has no store at all (frozen dataset). They
+  only link to each other by URL. Shared code is presentation only (Operation /
+  Finance Core UI pieces) plus the routing helper `app/routeQuery.ts`.
+- **Navigation correction:** Compliance └─ KYC (only); Auditoria stays a
+  top-level destination; no Monitoramento, Relatórios, Políticas e regras,
+  Dot Matrix or "Governança" entries.
+- **KYC:** prototype states Pendente / Em análise / Aprovado / Reprovado with
+  visible "não é o fluxo oficial" copy; evidences are metadata only; local
+  review / pending-issue / decision actions change only the KYC case, record
+  "Atividade da sessão" (explicitly *not* Auditoria) and never touch accounts,
+  access, participants, Finance, Opportunities or Auditoria. Participant data
+  is read live from Operation / Accounts. Operação *Ver no Compliance* opens
+  the case (unique) or the list filtered by participant; the Dashboard KYC card
+  opens the list and keeps "Aguardando integração". Accounts is unchanged (no
+  contextual KYC entry point exists there).
+- **Auditoria:** completely read-only; field-oriented before / after; secrets
+  masked ("••••••••" / "[redacted]") and never stored; IP / user agent /
+  correlation id fictitious; *Ir para recurso* only where a screen exists,
+  otherwise a "destino ainda não implementado" notice. Count-only cards; "Hoje"
+  / "Últimos 7 dias" use the fixed reference date 08/10/2026.
+- **Taxonomy preserved:** modalities are Equity and Debt only; Capital de Giro
+  appears only as a Segment / Resource Use (e.g. the audit diff of an
+  Opportunity's Usos dos recursos).
+- Records: [Compliance › KYC + Auditoria V1](docs/compliance-audit-v1.md)
+  (architecture, boundaries, QA, open questions),
+  [Compliance › KYC V1](docs/compliance-kyc-v1.md),
+  [Auditoria V1](docs/governance-audit-v1.md).
+
+### Compliance › KYC + Auditoria responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| KYC list card ≥ 1280px | Search, four selects and *Limpar filtros* on one row; all nine columns from a ≈1300px card (1672px viewport). |
+| Auditoria list card | Search + *Limpar filtros*, then six selects (one row ≥ 1500px card); all eight columns from a ≈1240px card. |
+| Narrower list cards | Columns collapse by container width and their data moves under the case / event; an *Ordenar por* select appears once sortable columns collapse; header row hidden on phone-width cards. |
+| Detail | Header card, four tabs (2 × 2 grid on phone-width cards), cards in auto-fit columns; evidence / issue rows and the before / after diff compact on phone-width cards (no sideways scroll). |
+| < 768px | Drawer navigation; dialogs keep the footer visible. |
+
 ## Login responsive behavior
 
 | Width | Layout |
@@ -961,10 +1031,14 @@ catalog or financial rule values, Backend-owned Segment / Resource Use catalogs
 Opportunity financial parameters, deletion or publication, authoritative
 Opportunity cardinalities (entrepreneur, Segment, Resource Use, modality),
 links between catalogs, investor/entrepreneur creation or account actions from
-Operation, KYC decisions, investment creation or changes, payment / PIX
+Operation, an official KYC workflow or authoritative KYC decisions, real
+identity documents / uploads / OCR / biometrics, KYC side effects on accounts
+or access, a real audit infrastructure or Backend-emitted audit events, audit
+export, investment creation or changes, payment / PIX
 charges or confirmations, wallet balances as real value, credits/debits,
 transfers, other destination module screens (global Platform Settings,
-Indicadores, Transferências, Compliance/KYC, Auditoria),
+Indicadores, Transferências, Compliance Monitoramento / Relatórios /
+Políticas e regras, Sistema),
 further OriginKit assets, final brand system.
 
 ## Review records
@@ -987,5 +1061,8 @@ further OriginKit assets, final brand system.
 - [Financeiro › Investimentos V1](docs/finance-investments-v1.md)
 - [Financeiro › Pagamentos / PIX V1](docs/finance-payments-pix-v1.md)
 - [Financeiro › Wallet V1](docs/finance-wallet-v1.md)
+- [Compliance › KYC V1 + Auditoria V1 — architecture, domain boundaries, QA and open questions](docs/compliance-audit-v1.md)
+- [Compliance › KYC V1](docs/compliance-kyc-v1.md)
+- [Governança › Auditoria V1](docs/governance-audit-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

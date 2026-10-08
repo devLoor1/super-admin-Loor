@@ -37,29 +37,26 @@ export function ModalitiesSummary({ settings }: { settings: WhitelabelFinanceSet
 
 type QuickAction = { label: string; description: string; icon: LucideIcon } & ({ onClick: () => void } | { href: string })
 
-/** Shortcuts: existing local flows and screens, or a notice for modules that do not exist yet. */
+/** Shortcuts: existing local flows and screens. */
 export function QuickActions({
   modalitiesHref,
+  auditHref,
   onConfigureGateway,
   onCreateBank,
-  onNotice,
 }: {
   /** Modalidades e regras of the displayed Whitelabel (existing screen). */
   modalitiesHref: string
+  /** Auditoria filtered by this Whitelabel's gateway events (read-only, illustrative events). */
+  auditHref: string
   onConfigureGateway: () => void
   onCreateBank: () => void
-  onNotice: (message: string) => void
 }) {
   const actions: QuickAction[] = [
     { label: 'Configurar gateway', description: 'Nova configuração local', icon: Link2, onClick: onConfigureGateway },
     { label: 'Cadastrar banco', description: 'Conta do Whitelabel', icon: Landmark, onClick: onCreateBank },
     { label: 'Modalidades e regras', description: 'Governança por modalidade', icon: ListChecks, href: modalitiesHref },
-    {
-      label: 'Auditoria',
-      description: 'Módulo futuro',
-      icon: FileSearch,
-      onClick: () => onNotice('Protótipo visual: o módulo Auditoria ainda não está disponível. A atividade desta tela é apenas da sessão.'),
-    },
+    // Ações locais desta tela não geram eventos na Auditoria; o link só consulta eventos ilustrativos.
+    { label: 'Auditoria', description: 'Eventos de gateways', icon: FileSearch, href: auditHref },
   ]
   return (
     <section className={styles.card} aria-labelledby="fin-quick-title" data-detail-stage>

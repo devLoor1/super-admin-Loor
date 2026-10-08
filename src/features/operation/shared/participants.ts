@@ -47,10 +47,14 @@ export type ParticipantProfile = InvestorProfile | EntrepreneurProfile
 type KycDetail = { updatedAt: string | null; reference: string | null; status?: KycStatus }
 
 /**
- * Illustrative details keyed by account id. For investors the STATUS is not
- * stored here: it is derived from the account's existing "KYC" dependency in
- * Accounts, so the two screens never disagree. Entrepreneur accounts have no
- * KYC dependency in Accounts, so their prototype status is seeded here.
+ * Illustrative details keyed by account id. `reference` is the participant's
+ * current Compliance › KYC case id (`kyc_proto_…`; earlier, concluded cases
+ * exist only in Compliance); participants without a case show "—". Local
+ * KYC session actions never update this summary. For investors the STATUS
+ * is not stored here: it is derived from the account's existing "KYC"
+ * dependency in Accounts, so the two screens never disagree. Entrepreneur
+ * accounts have no KYC dependency in Accounts, so their prototype status is
+ * seeded here.
  */
 const KYC_DETAILS: Record<string, KycDetail> = {
   inv_proto_001: { updatedAt: '2026-03-16T16:20:00-03:00', reference: 'kyc_proto_0001' },
@@ -59,7 +63,7 @@ const KYC_DETAILS: Record<string, KycDetail> = {
   inv_proto_004: { updatedAt: '2026-04-03T11:40:00-03:00', reference: 'kyc_proto_0004' },
   inv_proto_005: { updatedAt: '2026-08-12T08:40:00-03:00', reference: 'kyc_proto_0005' },
   inv_proto_006: { updatedAt: '2026-05-20T09:30:00-03:00', reference: 'kyc_proto_0006' },
-  inv_proto_007: { updatedAt: null, reference: null },
+  inv_proto_007: { updatedAt: '2026-09-20T18:10:00-03:00', reference: 'kyc_proto_0007' },
   inv_proto_008: { updatedAt: null, reference: null },
   inv_proto_009: { updatedAt: '2026-02-27T15:02:00-03:00', reference: 'kyc_proto_0009' },
   inv_proto_010: { updatedAt: '2026-10-01T07:58:00-03:00', reference: 'kyc_proto_0010' },
@@ -72,7 +76,7 @@ const KYC_DETAILS: Record<string, KycDetail> = {
   emp_proto_001: { status: 'approved', updatedAt: '2026-02-12T14:00:00-03:00', reference: 'kyc_proto_e001' },
   emp_proto_002: { status: 'in_review', updatedAt: '2026-09-30T16:20:00-03:00', reference: 'kyc_proto_e002' },
   emp_proto_003: { status: 'approved', updatedAt: '2026-01-10T09:10:00-03:00', reference: 'kyc_proto_e003' },
-  emp_proto_004: { status: 'pending', updatedAt: null, reference: null },
+  emp_proto_004: { status: 'pending', updatedAt: '2026-10-01T18:20:00-03:00', reference: 'kyc_proto_e004' },
   emp_proto_005: { status: 'approved', updatedAt: '2026-04-29T11:25:00-03:00', reference: 'kyc_proto_e005' },
   emp_proto_006: { status: 'in_review', updatedAt: '2026-09-29T15:45:00-03:00', reference: 'kyc_proto_e006' },
   emp_proto_007: { status: 'approved', updatedAt: '2026-03-23T10:30:00-03:00', reference: 'kyc_proto_e007' },

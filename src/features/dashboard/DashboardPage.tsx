@@ -39,6 +39,8 @@ const DESTINATIONS: Record<string, string> = {
   investidores: '#/operation/investors',
   oportunidades: '#/operation/opportunities',
   pagamentos: '#/finance/payments',
+  // The card keeps its "Aguardando integração" state: it only opens the KYC list.
+  kyc: '#/compliance/kyc',
 }
 
 function DashboardContent() {

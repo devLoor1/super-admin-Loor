@@ -1,0 +1,458 @@
+/*
+ * Auditoria V1 (Governança). Page frame, filters, table, hero, tabs, notes and
+ * navigation items come from the Operation stylesheet
+ * (operation/shared/Operation.module.css), the shared Finance surfaces
+ * (finance-gateways/sections/FinanceSections.module.css) and the Finance Core
+ * detail pieces (finance-core/shared/FinanceCore.module.css).
+ */
+
+/* ---------- Shared values ---------- */
+
+.code {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: #c9cdf0;
+  overflow-wrap: anywhere;
+}
+
+.moduleTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 24px;
+  padding: 1px 9px 1px 7px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 12px;
+  background: var(--tone-indigo-bg);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--tone-indigo-fg);
+}
+
+.moduleTag[data-module='financeiro'] {
+  border-color: var(--tone-teal-border);
+  background: var(--tone-teal-bg);
+  color: var(--tone-teal-fg);
+}
+
+.moduleTag[data-module='compliance'] {
+  border-color: var(--tone-violet-border);
+  background: var(--tone-violet-bg);
+  color: var(--tone-violet-fg);
+}
+
+.moduleTag[data-module='sistema'] {
+  border-color: var(--surface-border-strong);
+  background: rgb(255 255 255 / 0.03);
+  color: var(--text-on-dark-secondary);
+}
+
+.moduleIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 9px;
+  background: var(--tone-indigo-bg);
+  color: var(--tone-indigo-fg);
+}
+
+.moduleIcon[data-size='lg'] {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.moduleIcon[data-module='financeiro'] {
+  border-color: var(--tone-teal-border);
+  background: var(--tone-teal-bg);
+  color: var(--tone-teal-fg);
+}
+
+.moduleIcon[data-module='compliance'] {
+  border-color: var(--tone-violet-border);
+  background: var(--tone-violet-bg);
+  color: var(--tone-violet-fg);
+}
+
+.moduleIcon[data-module='sistema'] {
+  border-color: var(--surface-border-strong);
+  background: rgb(255 255 255 / 0.03);
+  color: var(--text-on-dark-secondary);
+}
+
+@media (max-width: 479px) {
+  .moduleIcon[data-size='lg'] {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+}
+
+.avatar {
+  flex: none;
+}
+
+.anonymous {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: 50%;
+  color: var(--text-on-dark-muted);
+}
+
+.actorName,
+.resourceLabel {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.globalTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-on-dark-secondary);
+}
+
+.changesTag {
+  display: inline-block;
+  width: fit-content;
+  padding: 1px 7px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--text-on-dark-muted);
+}
+
+.changesTag[data-changed] {
+  border-color: rgb(247 191 109 / 0.45);
+  background: rgb(247 191 109 / 0.08);
+  color: #f1d39a;
+}
+
+/* ---------- List ---------- */
+
+.eventIcon {
+  display: flex;
+  flex: none;
+}
+
+.ignoredNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #e8cf9c;
+}
+
+.ignoredNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.table {
+  table-layout: auto;
+}
+
+.colEvent {
+  min-width: 220px;
+}
+
+.colAction {
+  min-width: 170px;
+  max-width: 230px;
+}
+
+.colAction > span {
+  gap: 5px;
+}
+
+.colModule {
+  min-width: 150px;
+}
+
+.colActor {
+  min-width: 150px;
+}
+
+.colWl,
+.colResult,
+.colDate {
+  white-space: nowrap;
+}
+
+.metaAction,
+.metaModule,
+.metaContext,
+.metaDate {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.metaStates {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 7px;
+}
+
+/* Columns collapse by the list card's container width; their data moves under the event. */
+@container (max-width: 1240px) {
+  .sortVisible.sortVisible {
+    display: flex;
+  }
+
+  .colAction {
+    display: none;
+  }
+
+  .metaAction {
+    display: block;
+  }
+}
+
+@container (max-width: 1100px) {
+  .colWl,
+  .colActor {
+    display: none;
+  }
+
+  .metaContext {
+    display: block;
+  }
+}
+
+@container (max-width: 900px) {
+  .colModule {
+    display: none;
+  }
+
+  .metaModule {
+    display: block;
+  }
+}
+
+@container (max-width: 700px) {
+  .colDate,
+  .colResult {
+    display: none;
+  }
+
+  .metaDate {
+    display: block;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .eventIcon {
+    display: none;
+  }
+
+  .colEvent {
+    min-width: 0;
+  }
+
+  .changesTag {
+    white-space: normal;
+  }
+}
+
+/* ---------- Detail ---------- */
+
+.changesGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 14px 15px;
+  align-items: start;
+  min-width: 0;
+}
+
+@media (max-width: 1279px) {
+  .changesGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.diffTable th[scope='row'] {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--surface-divider);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-on-dark-muted);
+  white-space: normal;
+  vertical-align: middle;
+}
+
+.diffTable tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.diffField {
+  width: 30%;
+}
+
+.diffValue {
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.diffValue[data-after] {
+  color: var(--text-on-dark);
+  font-weight: 500;
+}
+
+.masked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-on-dark-muted);
+  white-space: nowrap;
+}
+
+/* Phone-width cards: the masked marker and the cells get compact so the diff never scrolls sideways. */
+@container (max-width: 380px) {
+  .masked {
+    gap: 0;
+    padding: 1px 5px;
+    letter-spacing: 0.02em;
+  }
+
+  .masked svg {
+    display: none;
+  }
+
+  .diffTable th,
+  .diffTable td {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+}
+
+.raw {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-divider);
+}
+
+.raw summary {
+  width: fit-content;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-on-dark-secondary);
+  cursor: pointer;
+}
+
+.raw summary:hover {
+  color: var(--text-on-dark);
+}
+
+.raw summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.rawNote {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.rawPre {
+  max-height: 320px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #0f1420;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 17px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #c9cdf0;
+}
+
+.rawPre:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.calloutSpaced {
+  margin-top: 12px;
+}
+
+.relatedList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.02);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-on-dark-secondary);
+}
+
+.copyButton:hover {
+  border-color: #4b51b4;
+  color: var(--text-on-dark);
+}
+
+.copyButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.userAgent {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}

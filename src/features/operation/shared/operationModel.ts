@@ -41,7 +41,6 @@ export const KYC_PENDING_SUMMARY: Record<KycStatus, string> = {
  */
 export const PENDING_MODULES = {
   investments: 'Financeiro › Investimentos',
-  compliance: 'Compliance › KYC',
 } as const
 
 export type PendingModule = keyof typeof PENDING_MODULES

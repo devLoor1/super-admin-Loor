@@ -31,7 +31,7 @@ No create route and no "Novo empreendedor" action.
 | --- | --- | --- |
 | Contas | identity, access, company registration data | read-only context + *Ver conta* link |
 | Operação › Oportunidades | Opportunities (create/edit/status) | live read-only relationship + *Ver oportunidades* link |
-| Compliance › KYC (not implemented) | KYC review and decisions | read-only summary + pending-module notice |
+| Compliance › KYC (Compliance › KYC V1) | KYC cases, evidences, pending issues and decisions | read-only summary + *Ver no Compliance* link (case, or list filtered by participant) |
 
 ## Local / mock state
 
@@ -52,7 +52,10 @@ No create route and no "Novo empreendedor" action.
 - **KYC summary:** Accounts has no KYC dependency for entrepreneurs, so the
   prototype status (Pendente / Em análise / Aprovado), last update and process
   reference are illustrative Operation seeds, labelled "Resumo ilustrativo de
-  Operação (protótipo)". Not the official KYC workflow.
+  Operação (protótipo)". Not the official KYC workflow. The reference is the
+  entrepreneur's current Compliance › KYC case id (Compliance › KYC V1
+  aligned `emp_proto_004` → `kyc_proto_e004`); local KYC session actions never
+  update this summary.
 - **Live relationship.** The Opportunities count, list and summary are read
   from the Opportunities store through `useOpportunities()` (references only).
   Opportunities created, edited or re-assigned during the session appear here
@@ -77,7 +80,7 @@ No create route and no "Novo empreendedor" action.
 - **Visão geral:** Informações principais (name, ID, e-mail, phone,
   Whitelabel, account status, created at, last activity, company from
   Accounts) and **Navegação para domínios responsáveis** (Ver conta / Ver
-  oportunidades / Ver no Compliance — the last tagged "Módulo pendente").
+  oportunidades / Ver no Compliance).
 - **Oportunidades:** summary (total, ativas, rascunho, pausadas, última
   atualização) and linked Opportunities (name + ID link, Whitelabel,
   Segment / Resource Use summary, modality, status); *Ver oportunidades*.
@@ -86,7 +89,7 @@ No create route and no "Novo empreendedor" action.
   Callout: Opportunities are managed in their own module; one entrepreneur
   reference per Opportunity is the V1 composition, not final cardinality.
 - **Compliance / KYC:** read-only summary + ownership callout + *Ver no
-  Compliance* (pending notice).
+  Compliance* (link to Compliance › KYC).
 - **Atividade da sessão:** profile viewed, opportunities viewed, Compliance/KYC
   viewed, account / opportunities / Compliance navigation requested. Not audit.
 
@@ -97,7 +100,12 @@ No create route and no "Novo empreendedor" action.
 - **Ver oportunidades** → `#/operation/opportunities?empreendedor=:id`: the
   Opportunities list opens filtered by this entrepreneur with a removable
   context chip.
-- **Ver no Compliance** → pending-module notice; no navigation.
+- **Ver no Compliance** → Compliance › KYC: the entrepreneur's case when
+  exactly one exists (`#/compliance/kyc/:kycCaseId`), otherwise the KYC list
+  filtered by the participant (`#/compliance/kyc?participant=:id`; Daniela
+  Pires has two cases). Updated in Compliance › KYC V1 (2026-10-08): before
+  that module existed this was a pending-module notice. See
+  [compliance-kyc-v1.md](compliance-kyc-v1.md).
 
 ## Exact action boundary
 

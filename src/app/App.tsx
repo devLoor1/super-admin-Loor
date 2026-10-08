@@ -21,6 +21,10 @@ import { PaymentsPage } from '../features/finance-core/payments/PaymentsPage'
 import { PaymentDetailPage } from '../features/finance-core/payments/PaymentDetailPage'
 import { WalletsPage } from '../features/finance-core/wallets/WalletsPage'
 import { WalletDetailPage } from '../features/finance-core/wallets/WalletDetailPage'
+import { KycListPage } from '../features/compliance-kyc/KycListPage'
+import { KycDetailPage } from '../features/compliance-kyc/KycDetailPage'
+import { AuditListPage } from '../features/governance-audit/AuditListPage'
+import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
@@ -51,6 +55,10 @@ type View =
   | 'finance-payment'
   | 'finance-wallets'
   | 'finance-wallet'
+  | 'compliance-kyc'
+  | 'compliance-kyc-case'
+  | 'audit'
+  | 'audit-event'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
@@ -72,6 +80,18 @@ type Route =
   | { view: 'finance-payment'; paymentId: string }
   | { view: 'finance-wallets' }
   | { view: 'finance-wallet'; walletId: string; movementId?: string }
+  | { view: 'compliance-kyc'; participant?: string; whitelabel?: string; status?: string; search: string }
+  | { view: 'compliance-kyc-case'; kycCaseId: string }
+  | {
+      view: 'audit'
+      resourceType?: string
+      resourceId?: string
+      whitelabel?: string
+      actor?: string
+      action?: string
+      search: string
+    }
+  | { view: 'audit-event'; auditEventId: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -97,6 +117,10 @@ const TITLES: Record<View, string> = {
   'finance-payment': 'Super Admin · Financeiro / Pagamento',
   'finance-wallets': 'Super Admin · Financeiro / Wallet',
   'finance-wallet': 'Super Admin · Financeiro / Wallet (detalhe)',
+  'compliance-kyc': 'Super Admin · Compliance / KYC',
+  'compliance-kyc-case': 'Super Admin · Compliance / Caso KYC',
+  audit: 'Super Admin · Auditoria',
+  'audit-event': 'Super Admin · Auditoria / Evento',
 }
 
 /** Views rendered inside the dark App Shell (require Control Plane session). */
@@ -123,6 +147,10 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'finance-payment',
   'finance-wallets',
   'finance-wallet',
+  'compliance-kyc',
+  'compliance-kyc-case',
+  'audit',
+  'audit-event',
 ])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
@@ -139,6 +167,9 @@ const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
 const INVESTMENT_PATH = /^finance\/investments\/([^/]+)$/
 const PAYMENT_PATH = /^finance\/payments\/([^/]+)$/
 const WALLET_PATH = /^finance\/wallets\/([^/]+)$/
+/** Compliance › KYC and Auditoria detail ids: any non-empty segment (malformed ids → not-found). */
+const KYC_CASE_PATH = /^compliance\/kyc\/([^/]+)$/
+const AUDIT_EVENT_PATH = /^audit\/([^/]+)$/
 
 function decodeSegment(value: string) {
   try {
@@ -162,7 +193,11 @@ function decodeSegment(value: string) {
  * Finance Core (global): `#/finance/investments` (optional `?investidor=` / `?wallet=`),
  * `#/finance/investments/:investmentId`, `#/finance/payments` (optional `?wallet=`),
  * `#/finance/payments/:paymentId`, `#/finance/wallets`,
- * `#/finance/wallets/:walletId` (optional `?movimento=:movementId`)
+ * `#/finance/wallets/:walletId` (optional `?movimento=:movementId`),
+ * Compliance › KYC: `#/compliance/kyc` (optional `?participant=`, `?whitelabel=`,
+ * `?status=`), `#/compliance/kyc/:kycCaseId`,
+ * Auditoria: `#/audit` (optional `?resourceType=`, `?resourceId=`, `?whitelabel=`,
+ * `?actor=`, `?action=`), `#/audit/:auditEventId`
  * → session-guarded shell screens; anything else → login.
  */
 function routeFromHash(): Route {
@@ -230,6 +265,25 @@ function routeFromHash(): Route {
   if (wallet) {
     return { view: 'finance-wallet', walletId: decodeSegment(wallet[1]), movementId: params.get('movimento') ?? undefined }
   }
+  const param = (key: string) => params.get(key) || undefined
+  if (path === 'compliance/kyc') {
+    return { view: 'compliance-kyc', participant: param('participant'), whitelabel: param('whitelabel'), status: param('status'), search }
+  }
+  const kycCase = KYC_CASE_PATH.exec(path)
+  if (kycCase) return { view: 'compliance-kyc-case', kycCaseId: decodeSegment(kycCase[1]) }
+  if (path === 'audit') {
+    return {
+      view: 'audit',
+      resourceType: param('resourceType'),
+      resourceId: param('resourceId'),
+      whitelabel: param('whitelabel'),
+      actor: param('actor'),
+      action: param('action'),
+      search,
+    }
+  }
+  const auditEvent = AUDIT_EVENT_PATH.exec(path)
+  if (auditEvent) return { view: 'audit-event', auditEventId: decodeSegment(auditEvent[1]) }
   return { view: 'login' }
 }
 
@@ -311,5 +365,22 @@ export function App() {
   if (route.view === 'finance-wallet') {
     return <WalletDetailPage key={route.walletId} walletId={route.walletId} movementId={route.movementId} />
   }
+  if (route.view === 'compliance-kyc') {
+    return <KycListPage participant={route.participant} whitelabel={route.whitelabel} status={route.status} routeKey={route.search} />
+  }
+  if (route.view === 'compliance-kyc-case') return <KycDetailPage key={route.kycCaseId} kycCaseId={route.kycCaseId} />
+  if (route.view === 'audit') {
+    return (
+      <AuditListPage
+        resourceType={route.resourceType}
+        resourceId={route.resourceId}
+        whitelabel={route.whitelabel}
+        actor={route.actor}
+        action={route.action}
+        routeKey={route.search}
+      />
+    )
+  }
+  if (route.view === 'audit-event') return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} />
   return <LoginPage />
 }

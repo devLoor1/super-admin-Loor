@@ -13,6 +13,7 @@ import {
   Link2,
   ListChecks,
   Mail,
+  ScanFace,
   Settings,
   Shapes,
   ShieldCheck,
@@ -91,9 +92,17 @@ export const PRIMARY_NAV: NavItem[] = [
       { id: 'finance-wallets', label: 'Wallet', icon: Wallet, href: '#/finance/wallets' },
     ],
   },
-  { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
+  {
+    id: 'compliance',
+    label: 'Compliance',
+    icon: ShieldCheck,
+    href: '#/compliance/kyc',
+    // Only KYC exists in V1. Monitoramento, Relatórios and Políticas e regras are not destinations.
+    children: [{ id: 'compliance-kyc', label: 'KYC', icon: ScanFace, href: '#/compliance/kyc' }],
+  },
   { id: 'sistema', label: 'Sistema', icon: Settings },
-  { id: 'auditoria', label: 'Auditoria', icon: FileSearch },
+  // Governance audit: its own top-level destination, independent from Compliance.
+  { id: 'auditoria', label: 'Auditoria', icon: FileSearch, href: '#/audit' },
 ]
 
 export const UTILITY_NAV: NavItem[] = [

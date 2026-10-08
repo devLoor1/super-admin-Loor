@@ -174,7 +174,10 @@ Every value is derived from local state, and a note says so:
 - Configurar regras.
 - Regras gerais (switches the page tab and focuses it).
 - Ver dependências.
-- Auditoria (notice: "módulo futuro").
+- Auditoria (notice: "módulo futuro"). Updated in Compliance › KYC +
+  Auditoria V1 (2026-10-08): opens `#/audit?whitelabel=:whitelabelId` —
+  read-only, illustrative events; local actions of this screen still create
+  no Auditoria event. See [governance-audit-v1.md](governance-audit-v1.md).
 
 ## Enable / disable
 

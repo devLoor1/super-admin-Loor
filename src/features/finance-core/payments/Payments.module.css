@@ -1,0 +1,152 @@
+/*
+ * Pagamentos / PIX V1 — list columns. Columns collapse by the list card's
+ * container width; their data moves under the payment id.
+ */
+
+.table {
+  table-layout: auto;
+}
+
+/* Sort select (FinanceCoreUi) once sortable columns start to collapse. */
+@container (max-width: 1320px) {
+  .sortVisible.sortVisible {
+    display: flex;
+  }
+}
+
+.colId {
+  min-width: 96px;
+}
+
+.colInvestor {
+  min-width: 160px;
+}
+
+.colOpportunity {
+  min-width: 130px;
+}
+
+.colInvestment,
+.colWl,
+.colMethod,
+.colGateway,
+.colAmount,
+.colStatus,
+.colUpdated {
+  white-space: nowrap;
+}
+
+.metaRelations,
+.metaOpportunity,
+.metaContext,
+.metaUpdated {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.metaStates {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 7px;
+}
+
+.metaAmount {
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-dark);
+}
+
+@container (max-width: 1320px) {
+  .colUpdated {
+    display: none;
+  }
+
+  .metaUpdated {
+    display: block;
+  }
+}
+
+@container (max-width: 1180px) {
+  .colWl,
+  .colGateway {
+    display: none;
+  }
+
+  .metaContext {
+    display: block;
+  }
+}
+
+@container (max-width: 1000px) {
+  .colOpportunity,
+  .colMethod {
+    display: none;
+  }
+
+  .metaOpportunity {
+    display: block;
+  }
+}
+
+@container (max-width: 800px) {
+  .colInvestment,
+  .colInvestor {
+    display: none;
+  }
+
+  .metaRelations {
+    display: block;
+  }
+
+  .colId {
+    min-width: 0;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .colAmount,
+  .colStatus {
+    display: none;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}
+
+/* ---------- Detail ---------- */
+
+/* Never a scannable code: a dashed frame with a generic icon and the notice. */
+.qrPlaceholder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.015);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.qrPlaceholder svg {
+  flex: none;
+  color: var(--icon-on-dark);
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}

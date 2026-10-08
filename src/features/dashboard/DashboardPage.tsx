@@ -38,6 +38,7 @@ const DESTINATIONS: Record<string, string> = {
   whitelabels: '#/whitelabels',
   investidores: '#/operation/investors',
   oportunidades: '#/operation/opportunities',
+  pagamentos: '#/finance/payments',
 }
 
 function DashboardContent() {

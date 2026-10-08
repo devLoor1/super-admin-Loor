@@ -34,6 +34,14 @@ export function useFinanceSettings(whitelabelId: string): WhitelabelFinanceSetti
   return useSyncExternalStore(subscribe, getState).settings[whitelabelId]
 }
 
+/**
+ * Read-only view of every Whitelabel's configuration (used by Pagamentos / PIX
+ * to resolve the gateway a payment references). Never mutate the result.
+ */
+export function useAllFinanceSettings(): Readonly<Record<string, WhitelabelFinanceSettings>> {
+  return useSyncExternalStore(subscribe, getState).settings
+}
+
 export function useFinanceActivity(whitelabelId: string): FinanceActivity[] {
   return useSyncExternalStore(subscribe, getState).activity[whitelabelId] ?? NO_ACTIVITY
 }

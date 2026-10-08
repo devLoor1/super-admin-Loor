@@ -1,5 +1,5 @@
-import { ChartColumn, Info } from 'lucide-react'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
+import { ChartColumn, ExternalLink, Info } from 'lucide-react'
+import outline from '../../../components/ui/OutlineButton.module.css'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import { useOpportunities } from '../opportunities/opportunityStore'
 import { ModalityChip, OpportunityStatusPill } from '../opportunities/OpportunityParts'
@@ -12,6 +12,8 @@ import shared from '../shared/Operation.module.css'
 import styles from '../shared/Participants.module.css'
 import { associationsOf } from './prototypeInvestments'
 
+const investmentsHref = (investorId: string) => `#/finance/investments?investidor=${encodeURIComponent(investorId)}`
+
 /** `#/operation/investors/:investorId` — read-only operational profile. */
 export function InvestorDetailPage({ investorId }: { investorId: string }) {
   const profile = investorById(investorId)
@@ -23,18 +25,15 @@ export function InvestorDetailPage({ investorId }: { investorId: string }) {
       relation={{
         label: 'Investimentos',
         viewedTitle: 'Investimentos consultados',
-        render: ({ notifyPending }) =>
-          profile ? <InvestmentsTab profile={profile} notifyPending={notifyPending} /> : null,
-        navItem: ({ notifyPending, log }) => ({
+        render: () => (profile ? <InvestmentsTab profile={profile} /> : null),
+        // Financeiro › Investimentos now exists: navigate normally, filtered by this investor.
+        navItem: ({ log }) => ({
           key: 'investments',
           label: 'Ver investimentos',
-          description: 'Financeiro › Investimentos — oportunidades investidas',
+          description: 'Financeiro › Investimentos — registros deste investidor',
           icon: ChartColumn,
-          pending: true,
-          onSelect: () => {
-            log('Navegação para Investimentos solicitada', 'Módulo Financeiro › Investimentos pendente — nenhuma navegação feita')
-            notifyPending()
-          },
+          href: investmentsHref(investorId),
+          onSelect: () => log('Navegação para Investimentos solicitada', 'Financeiro › Investimentos (filtrado por este investidor)'),
         }),
       }}
       moduleNote={
@@ -47,7 +46,7 @@ export function InvestorDetailPage({ investorId }: { investorId: string }) {
   )
 }
 
-function InvestmentsTab({ profile, notifyPending }: { profile: InvestorProfile; notifyPending: () => void }) {
+function InvestmentsTab({ profile }: { profile: InvestorProfile }) {
   const opportunities = useOpportunities()
   const associations = associationsOf(profile.id).map((association) => ({
     association,
@@ -58,9 +57,8 @@ function InvestmentsTab({ profile, notifyPending }: { profile: InvestorProfile; 
   function viewInvestments() {
     addOperationActivity(profile.id, {
       title: 'Navegação para Investimentos solicitada',
-      detail: 'Módulo Financeiro › Investimentos pendente — nenhuma navegação feita',
+      detail: 'Financeiro › Investimentos (filtrado por este investidor)',
     })
-    notifyPending()
   }
 
   return (
@@ -158,18 +156,24 @@ function InvestmentsTab({ profile, notifyPending }: { profile: InvestorProfile; 
               Nenhum vínculo de investimento neste protótipo.
             </p>
           )}
-          <OutlineButton className={shared.blockButton} onClick={viewInvestments} data-view-investments>
+          <a
+            href={investmentsHref(profile.id)}
+            className={`${outline.button} ${shared.blockButton}`}
+            onClick={viewInvestments}
+            data-view-investments
+          >
             <ChartColumn size={16} strokeWidth={1.8} aria-hidden="true" />
             Ver investimentos
-            <span className={shared.pendingTag}>Módulo pendente</span>
-          </OutlineButton>
+            <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+          </a>
         </section>
       </div>
       <p className={shared.callout}>
         <Info size={15} strokeWidth={1.8} aria-hidden="true" />
         <span>
-          Vínculos ilustrativos para a experiência de Operação. Status e modalidade vêm da oportunidade (Operação › Oportunidades). A
-          fonte oficial de investimentos será Financeiro › Investimentos; aqui não há valores nem ações financeiras.
+          Vínculos ilustrativos para a experiência de Operação. Status e modalidade vêm da oportunidade (Operação › Oportunidades). Os
+          registros de investimento (valor, status, pagamento) ficam em Financeiro › Investimentos; aqui não há valores nem ações
+          financeiras.
         </span>
       </p>
     </>

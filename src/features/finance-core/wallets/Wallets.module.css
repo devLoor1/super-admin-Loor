@@ -1,0 +1,320 @@
+/*
+ * Wallet V1 — list columns (collapse by the list card's container width,
+ * data moved under the wallet id) and the Movimentações tab with its inline
+ * movement detail.
+ */
+
+.table {
+  table-layout: auto;
+}
+
+/* Sort select (FinanceCoreUi) once sortable columns start to collapse. */
+@container (max-width: 1100px) {
+  .sortVisible.sortVisible {
+    display: flex;
+  }
+}
+
+.colId {
+  min-width: 96px;
+}
+
+.colOwner {
+  min-width: 170px;
+}
+
+.colWl,
+.colCurrency,
+.colBalance,
+.colMovements,
+.colStatus,
+.colUpdated {
+  white-space: nowrap;
+}
+
+.ownerName {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.contextMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 50%;
+  background: #1b2133;
+  color: var(--text-on-dark-secondary);
+}
+
+.metaOwner,
+.metaContext,
+.metaUpdated {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.metaStates {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 7px;
+}
+
+.metaAmount {
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-dark);
+}
+
+@container (max-width: 1100px) {
+  .colUpdated {
+    display: none;
+  }
+
+  .metaUpdated {
+    display: block;
+  }
+}
+
+@container (max-width: 900px) {
+  .colWl,
+  .colCurrency {
+    display: none;
+  }
+
+  .metaContext {
+    display: block;
+  }
+}
+
+@container (max-width: 700px) {
+  .colOwner,
+  .colMovements {
+    display: none;
+  }
+
+  .metaOwner {
+    display: block;
+  }
+
+  .colId {
+    min-width: 0;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .colBalance,
+  .colStatus {
+    display: none;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}
+
+/* ---------- Detail ---------- */
+
+.prototypeTag {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px dashed rgb(164 176 236 / 0.4);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--status-neutral-fg);
+  white-space: nowrap;
+}
+
+.summaryLink {
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+
+.summaryStats > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-divider);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.015);
+}
+
+.summaryStats dt {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.summaryStats dd {
+  display: flex;
+  align-items: center;
+  min-height: 26px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-dark);
+}
+
+/* Table + inline detail: side by side when the tab panel is wide, stacked otherwise. */
+.movementsArea {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.movementLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+
+@container (min-width: 1080px) {
+  .movementLayout[data-has-detail] {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  }
+}
+
+.movementTable td {
+  vertical-align: middle;
+}
+
+.movementId {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 19px;
+  color: var(--text-on-dark);
+  white-space: nowrap;
+}
+
+.mvDirection,
+.mvAmount,
+.mvStatus,
+.mvDate,
+.mvSource {
+  white-space: nowrap;
+}
+
+.mvDescription {
+  min-width: 160px;
+}
+
+.metaDescription,
+.metaSource {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+@container (max-width: 940px) {
+  .mvSource {
+    display: none;
+  }
+
+  .metaSource {
+    display: block;
+  }
+}
+
+@container (max-width: 720px) {
+  .mvDescription,
+  .mvDate {
+    display: none;
+  }
+
+  .metaDescription {
+    display: block;
+  }
+}
+
+@container (max-width: 520px) {
+  .movementTable thead,
+  .mvDirection,
+  .mvAmount,
+  .mvStatus {
+    display: none;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}
+
+.movementDetail {
+  scroll-margin-top: 16px;
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.detailHead h3 {
+  border-radius: 4px;
+}
+
+.detailHead h3:focus {
+  outline: none;
+}
+
+.detailHead h3:focus-visible {
+  box-shadow: var(--focus-ring-dark);
+}
+
+.transferList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.transferList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px dashed rgb(247 191 109 / 0.35);
+  border-radius: 10px;
+}
+
+.transferButton {
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}

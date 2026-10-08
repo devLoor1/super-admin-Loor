@@ -5,8 +5,9 @@ Frontend of the **Super Admin LOØR**: Login V1, the application-frame
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
-dos recursos V1** (Financeiro), and **Operation V1** — **Oportunidades**,
-**Investidores** and **Empreendedores** (Operação).
+dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
+**Investidores** and **Empreendedores** (Operação) — and **Finance Core V1** —
+**Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro).
 
 Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 
@@ -42,9 +43,17 @@ Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 > Operação uses illustrative Opportunities (no amounts or financial
 > parameters) with a local create/edit/status flow — no delete; Investidores
 > and Empreendedores are read-only projections of the illustrative Accounts
-> records with prototype KYC summaries and count-only relationships. Investments
-> and KYC destinations answer with a "módulo ainda não implementado" notice;
+> records with prototype KYC summaries and count-only relationships. *Ver
+> investimentos* opens Financeiro › Investimentos filtered by the investor; the
+> KYC destination answers with a "módulo ainda não implementado" notice;
 > **no account, KYC or financial mutation exists in Operation**.
+> Finance Core (Investimentos, Pagamentos / PIX, Wallet) is **read-only
+> supervision** over illustrative, frozen records that reference each other
+> only by explicit ids: no status, amount or balance is synchronised or
+> computed, the PIX tab never shows a payload, key, copy-and-paste code or
+> payable QR Code, "Saldo representado" is a prototype representation, and
+> **no charge, confirmation, settlement, refund, credit/debit, transfer or
+> any other financial operation exists**.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -60,6 +69,9 @@ Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
 | Oportunidades V1 | `http://localhost:5173/#/operation/opportunities` | [`docs/reference/super-admin-operation-opportunities-approved.png`](docs/reference/super-admin-operation-opportunities-approved.png) (composition only) |
 | Investidores V1 | `http://localhost:5173/#/operation/investors` | [`docs/reference/super-admin-operation-investors-approved.png`](docs/reference/super-admin-operation-investors-approved.png) (composition only) |
 | Empreendedores V1 | `http://localhost:5173/#/operation/entrepreneurs` | [`docs/reference/super-admin-operation-entrepreneurs-approved.png`](docs/reference/super-admin-operation-entrepreneurs-approved.png) (composition only) |
+| Investimentos V1 | `http://localhost:5173/#/finance/investments` | [`docs/reference/super-admin-finance-core-investments-approved.png`](docs/reference/super-admin-finance-core-investments-approved.png) (composition only) |
+| Pagamentos / PIX V1 | `http://localhost:5173/#/finance/payments` | [`docs/reference/super-admin-finance-core-payments-pix-approved.png`](docs/reference/super-admin-finance-core-payments-pix-approved.png) (composition only) |
+| Wallet V1 | `http://localhost:5173/#/finance/wallets` | [`docs/reference/super-admin-finance-core-wallet-approved.png`](docs/reference/super-admin-finance-core-wallet-approved.png) (composition only) |
 
 The views are selected by a hash switch (`src/app/App.tsx`) with a session
 guard. Without a stored token, shell routes redirect to login; with a session,
@@ -77,7 +89,12 @@ by default) and, while active, lists **Gateways e contas**, **Modalidades e
 regras** (`#/whitelabels/:whitelabelId/finance/modalities`) and **Segmentos e usos
 dos recursos** (`#/whitelabels/:whitelabelId/finance/segments-resource-uses`, one
 entry for both catalogs); on all three screens the Financeiro links keep the
-displayed Whitelabel. **Operação** links to `#/operation/opportunities` and, while
+displayed Whitelabel. Financeiro also lists the three global Finance Core
+screens: **Investimentos** (`#/finance/investments`, optional `?investidor=:id`
+or `?wallet=:id` context, and `/:investmentId`), **Pagamentos / PIX**
+(`#/finance/payments`, optional `?wallet=:id`, and `/:paymentId`) and **Wallet**
+(`#/finance/wallets` and `/:walletId`, optional `?movimento=:movementId` that
+opens the inline movement detail). **Operação** links to `#/operation/opportunities` and, while
 active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 (global screens across Whitelabels): `#/operation/opportunities` (optional
 `?empreendedor=:id`), `/new`, `/:opportunityId`, `/:opportunityId/edit` (optional
@@ -144,7 +161,9 @@ src/
                                     "#/whitelabels/:id/finance/modalities",
                                     "#/whitelabels/:id/finance/segments-resource-uses",
                                     "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
-                                    "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]", else login
+                                    "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]",
+                                    "#/finance/investments[?investidor=…|?wallet=…]", "/:id",
+                                    "#/finance/payments[?wallet=…]", "/:id", "#/finance/wallets", "/:id[?movimento=…]", else login
   lib/api.ts                        Nest client (VITE_API_BASE_URL, Bearer, errors)
   lib/authSession.ts                login / logout / session helpers
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
@@ -188,7 +207,7 @@ src/
       WhitelabelDistributionPanel   donut placeholder, empty
       OperationalStatusPanel.tsx    neutral "Aguardando integração" list
       RecentEventsPanel.tsx         audit-ready table header + empty state
-      QuickActionsPanel.tsx         shortcuts (Whitelabels and Operação open; others are prototype notices)
+      QuickActionsPanel.tsx         shortcuts (Whitelabels, Operação and Pagamentos / PIX open; others are prototype notices)
     whitelabels/
       WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
       WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
@@ -248,6 +267,12 @@ src/
       opportunities/                list, create/edit page, detail + tabs, status dialog, catalog pickers, model, seeds, store
       investors/                    list + read-only profile, illustrative count-only investment associations
       entrepreneurs/                list + read-only profile (live Opportunities relationship)
+    finance-core/
+      shared/                       models (Investment ≠ Payment ≠ Wallet ≠ WalletMovement), frozen seeds, explicit-reference
+                                    lookups, read-only references to Operation / Gateways, Finance Core frame, session activity
+      investments/                  Investimentos list + read-only detail (Visão geral, Pagamento / PIX, Wallet / Movimentações)
+      payments/                     Pagamentos / PIX list + read-only detail (Visão geral, PIX, Relações financeiras)
+      wallets/                      Wallet list + read-only detail (movements with inline detail, Relações financeiras)
 docs/reference/                     approved concept images
 ```
 
@@ -294,9 +319,9 @@ docs/reference/                     approved concept images
   quick actions, "Ver todos", the context selector, period selector, search
   (Enter), notifications and the user menu show a short "Protótipo visual: …"
   toast. No destination screen is created. Ctrl/⌘ + K focuses the search field.
-  Destinations that now exist open them instead: the Whitelabels, Investidores
-  and Oportunidades KPI cards and the *Ver Whitelabels* / *Abrir Operação*
-  quick actions.
+  Destinations that now exist open them instead: the Whitelabels, Investidores,
+  Oportunidades and Pagamentos KPI cards and the *Ver Whitelabels* / *Abrir
+  Operação* / *Consultar Pagamentos* quick actions.
 - **Context selector** stays on "Visão global"; no whitelabel names are invented.
 - **Shared illustration primitives.** `components/illustration/IsoScene.tsx` was
   extracted from the login artwork; the SVG definitions and visible drawing tree
@@ -680,10 +705,11 @@ review record for scope, evidence and fallback checks.
   Investidores, Empreendedores), global across Whitelabels. Shared pieces live
   in `features/operation/shared`; modules only read each other's state.
 - **Boundaries.** Accounts owns identity/access (Operation links to the existing
-  `accounts?tipo=` route — no per-account deep link exists); Financeiro ›
-  Investimentos and Compliance › KYC are not implemented, so their buttons show
-  a "módulo ainda não implementado" notice instead of a broken route or an
-  empty placeholder module. Operation performs no account, KYC or financial
+  `accounts?tipo=` route — no per-account deep link exists); *Ver
+  investimentos* opens Financeiro › Investimentos (Finance Core V1) filtered by
+  the investor; Compliance › KYC is not implemented, so its buttons show a
+  "módulo ainda não implementado" notice instead of a broken route or an empty
+  placeholder module. Operation performs no account, KYC or financial
   mutation.
 - **Oportunidades.** Local list (search, Whitelabel, status, modality, Segment
   and Resource Use filters, sort, pagination), dedicated create/edit page,
@@ -718,6 +744,47 @@ review record for scope, evidence and fallback checks.
 | < 1000px card | Selects 3 → 2 → 1 per row; Whitelabel / participant columns (≤ 820px) and statuses (≤ 560px) move under the name. |
 | Detail | Header card, tabs (2 × 2 grid on phone-width cards), panels in auto-fit columns; create/edit cards side by side when each gets ≥ 440px. |
 | < 768px | Drawer navigation; intro actions full width. |
+
+## Finance Core V1 — decisions
+
+- **Three global, read-only supervision modules** under Financeiro
+  (Investimentos, Pagamentos / PIX, Wallet) next to the three tenant-first
+  configuration screens. Shared pieces live in `features/finance-core/shared`.
+- **Four independent record types.** Investment ≠ Payment ≠ WalletMovement ≠
+  Wallet ("Saldo representado"). Relationships exist only where a record
+  carries the other id (Investment.paymentId, Payment.investmentId,
+  WalletMovement.sourceType/sourceId); nothing derives, recalculates or
+  synchronises a status, amount or balance. Seeds are frozen.
+- **Existing records reused read-only.** Investors and opportunities are the
+  Operation records (names read live from the Opportunities store; an
+  Operation edit never changes the investment's own Whitelabel / modality — a
+  callout shows the difference). Gateways are resolved against the live
+  Gateways e contas configuration (no per-gateway deep link: *Ver gateway* opens
+  the Whitelabel's Gateways screen).
+- **Prototype states only** — Investimento: Pendente / Ativo / Encerrado;
+  Pagamento: Pendente / Em processamento / Pago / Falhou; Wallet: Ativa /
+  Bloqueada; Movimentação: Pendente / Concluído / Falhou. Text + dot, never
+  colour alone. No action changes any of them.
+- **No financial operation.** No create, edit, confirm, settle, cancel, refund,
+  reverse, reprocess, generate PIX, credit/debit, transfer, cashout, deposit,
+  block/unblock, reconcile or delete. PIX tab: fictitious charge id / TxID and
+  "QR Code não disponível no protótipo." Transfers referenced by movements
+  answer with "Módulo Financeiro › Transferências ainda não implementado".
+- **Session activity** per record, labelled "Não representa trilha de
+  auditoria"; only reads and navigation requests are recorded.
+- Records: [Finance Core V1](docs/finance-core-v1.md) (shared architecture,
+  safety boundaries, QA, open questions), [Investimentos](docs/finance-investments-v1.md),
+  [Pagamentos / PIX](docs/finance-payments-pix-v1.md), [Wallet](docs/finance-wallet-v1.md).
+
+### Finance Core responsive behavior
+
+| Width | Layout |
+| --- | --- |
+| List card ≥ 1280px (4 selects) | Search, selects and *Limpar filtros* on one row (Pagamentos, with 5 selects, from 1500px). |
+| Narrower list cards | Columns collapse by container width and their data moves under the record id; an *Ordenar por* select appears once sortable columns collapse. |
+| Detail | Header card, tabs (2 × 2 grid on phone-width cards), label/value cards in auto-fit columns; the wallet movement detail sits beside the table when the panel is ≥ 1080px, below it otherwise. |
+| Sidebar | Six Financeiro entries: decorative lines hidden ≤ 1020px tall, slightly denser rows ≤ 860px (full sidebar) and ≤ 650 / 580px (icon rail). |
+| < 768px | Drawer navigation; header row of tables hidden, statuses and amounts inline. |
 
 ## Login responsive behavior
 
@@ -894,9 +961,10 @@ catalog or financial rule values, Backend-owned Segment / Resource Use catalogs
 Opportunity financial parameters, deletion or publication, authoritative
 Opportunity cardinalities (entrepreneur, Segment, Resource Use, modality),
 links between catalogs, investor/entrepreneur creation or account actions from
-Operation, KYC decisions, investment creation or amounts, other destination
-module screens (global Platform Settings, Indicadores, Investimentos,
-Pagamentos, Wallet, Compliance/KYC, Auditoria),
+Operation, KYC decisions, investment creation or changes, payment / PIX
+charges or confirmations, wallet balances as real value, credits/debits,
+transfers, other destination module screens (global Platform Settings,
+Indicadores, Transferências, Compliance/KYC, Auditoria),
 further OriginKit assets, final brand system.
 
 ## Review records
@@ -915,5 +983,9 @@ further OriginKit assets, final brand system.
 - [Operação › Oportunidades V1 — local implementation, Operation QA and open questions](docs/operation-opportunities-v1.md)
 - [Operação › Investidores V1 — boundaries, local state and open questions](docs/operation-investors-v1.md)
 - [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md)
+- [Financeiro › Finance Core V1 — scope, safety boundaries, relationships, QA and open questions](docs/finance-core-v1.md)
+- [Financeiro › Investimentos V1](docs/finance-investments-v1.md)
+- [Financeiro › Pagamentos / PIX V1](docs/finance-payments-pix-v1.md)
+- [Financeiro › Wallet V1](docs/finance-wallet-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

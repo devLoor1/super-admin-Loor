@@ -11,8 +11,12 @@ const ACTIONS: { id: string; title: string; description: string; module: string;
   { id: 'auditoria', title: 'Acessar Auditoria', description: 'Consulte logs e histórico', module: 'Auditoria', icon: FileSearch, tone: 'plum' },
 ]
 
-/** Whitelabels and Operação are available locally; remaining destinations show prototype notices. */
-const DESTINATIONS: Record<string, string> = { whitelabels: '#/whitelabels', operacao: '#/operation/opportunities' }
+/** Whitelabels, Operação and Pagamentos / PIX are available locally; remaining destinations show prototype notices. */
+const DESTINATIONS: Record<string, string> = {
+  whitelabels: '#/whitelabels',
+  operacao: '#/operation/opportunities',
+  pagamentos: '#/finance/payments',
+}
 
 export function QuickActionsPanel({ className }: { className?: string }) {
   const notify = usePrototypeNotice()

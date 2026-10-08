@@ -29,7 +29,7 @@ No create route and no "Novo investidor" action.
 | Domain | Owns | In Investidores V1 |
 | --- | --- | --- |
 | Contas | identity, access state, account administration, account Whitelabel | read-only context + *Ver conta* link |
-| Financeiro › Investimentos (not implemented) | investments and any financial operation | illustrative count-only associations + pending-module notice |
+| Financeiro › Investimentos (Finance Core V1, read-only) | investment records and any financial operation | illustrative count-only associations + *Ver investimentos* link to the Finance list filtered by the investor |
 | Compliance › KYC (not implemented) | KYC review and decisions | read-only summary + pending-module notice |
 | Operação › Oportunidades | Opportunities | names/modality/status read live for the associations |
 
@@ -91,7 +91,8 @@ No create route and no "Novo investidor" action.
   activation); module note.
 - **Investimentos:** count summary by Opportunity status and the associations
   table (Opportunity link + ID, modality, status, illustrative registration
-  date); *Ver investimentos* (pending notice).
+  date); *Ver investimentos* (link to Financeiro › Investimentos, filtered by
+  this investor).
 - **Compliance / KYC:** status, last update, pending summary, process
   reference, source; ownership callout; *Ver no Compliance* (pending notice).
 - **Atividade da sessão:** profile viewed, investments viewed, Compliance/KYC
@@ -104,8 +105,12 @@ No create route and no "Novo investidor" action.
   Accounts has no per-account deep link, so Operation uses the existing route
   with the investor type tab selected; no fragile route was invented and
   Accounts was not changed.
-- **Ver investimentos** → notice "Módulo Financeiro › Investimentos ainda não
-  implementado. Nenhuma navegação foi feita." No fake Finance module.
+- **Ver investimentos** → `#/finance/investments?investidor=:investorId`
+  (Financeiro › Investimentos, removable investor context chip). Updated in
+  Finance Core V1 (2026-10-08): before that module existed this was a
+  pending-module notice. The Operation associations stay illustrative and
+  separate from the Finance investment records (no synchronisation); see
+  [finance-core-v1.md](finance-core-v1.md).
 - **Ver no Compliance** → notice "Módulo Compliance › KYC ainda não
   implementado. Nenhuma navegação foi feita."
 - Opportunity names link to the Opportunity detail (existing module).

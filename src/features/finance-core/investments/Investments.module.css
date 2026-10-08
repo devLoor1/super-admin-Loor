@@ -1,0 +1,128 @@
+/*
+ * Investimentos V1 — list columns. Columns collapse by the list card's
+ * container width and their data moves under the investment id instead of
+ * disappearing (same approach as the Operation lists).
+ */
+
+.table {
+  table-layout: auto;
+}
+
+/* Sort select (FinanceCoreUi) once sortable columns start to collapse. */
+@container (max-width: 1260px) {
+  .sortVisible.sortVisible {
+    display: flex;
+  }
+}
+
+.colId {
+  min-width: 96px;
+}
+
+.colInvestor {
+  min-width: 168px;
+}
+
+.colOpportunity {
+  min-width: 150px;
+}
+
+.colWl,
+.colMod,
+.colAmount,
+.colStatus,
+.colPayment,
+.colUpdated {
+  white-space: nowrap;
+}
+
+.metaParties,
+.metaWl,
+.metaMod,
+.metaPayment,
+.metaUpdated {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.metaStates {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 7px;
+}
+
+.metaAmount {
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-dark);
+}
+
+@container (max-width: 1260px) {
+  .colUpdated,
+  .colWl {
+    display: none;
+  }
+
+  .metaWl,
+  .metaUpdated {
+    display: block;
+  }
+
+  .colId {
+    min-width: 188px;
+  }
+}
+
+@container (max-width: 1100px) {
+  .colMod {
+    display: none;
+  }
+
+  .metaMod {
+    display: block;
+  }
+}
+
+@container (max-width: 900px) {
+  .colPayment {
+    display: none;
+  }
+
+  .metaPayment {
+    display: block;
+  }
+}
+
+@container (max-width: 740px) {
+  .colInvestor,
+  .colOpportunity {
+    display: none;
+  }
+
+  .metaParties {
+    display: block;
+  }
+
+  .colId {
+    min-width: 0;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .colAmount,
+  .colStatus {
+    display: none;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}

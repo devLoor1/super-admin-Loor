@@ -15,6 +15,12 @@ import { InvestorsPage } from '../features/operation/investors/InvestorsPage'
 import { InvestorDetailPage } from '../features/operation/investors/InvestorDetailPage'
 import { EntrepreneursPage } from '../features/operation/entrepreneurs/EntrepreneursPage'
 import { EntrepreneurDetailPage } from '../features/operation/entrepreneurs/EntrepreneurDetailPage'
+import { InvestmentsPage } from '../features/finance-core/investments/InvestmentsPage'
+import { InvestmentDetailPage } from '../features/finance-core/investments/InvestmentDetailPage'
+import { PaymentsPage } from '../features/finance-core/payments/PaymentsPage'
+import { PaymentDetailPage } from '../features/finance-core/payments/PaymentDetailPage'
+import { WalletsPage } from '../features/finance-core/wallets/WalletsPage'
+import { WalletDetailPage } from '../features/finance-core/wallets/WalletDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
@@ -39,6 +45,12 @@ type View =
   | 'operation-investor'
   | 'operation-entrepreneurs'
   | 'operation-entrepreneur'
+  | 'finance-investments'
+  | 'finance-investment'
+  | 'finance-payments'
+  | 'finance-payment'
+  | 'finance-wallets'
+  | 'finance-wallet'
 
 type Route =
   | { view: 'login' | 'dashboard' | 'whitelabels' }
@@ -54,6 +66,12 @@ type Route =
   | { view: 'operation-opportunity-edit'; opportunityId: string; focusClassification: boolean }
   | { view: 'operation-investor'; investorId: string }
   | { view: 'operation-entrepreneur'; entrepreneurId: string }
+  | { view: 'finance-investments'; investorId?: string; walletId?: string }
+  | { view: 'finance-investment'; investmentId: string }
+  | { view: 'finance-payments'; walletId?: string }
+  | { view: 'finance-payment'; paymentId: string }
+  | { view: 'finance-wallets' }
+  | { view: 'finance-wallet'; walletId: string; movementId?: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -73,6 +91,12 @@ const TITLES: Record<View, string> = {
   'operation-investor': 'Super Admin · Operação / Investidor',
   'operation-entrepreneurs': 'Super Admin · Operação / Empreendedores',
   'operation-entrepreneur': 'Super Admin · Operação / Empreendedor',
+  'finance-investments': 'Super Admin · Financeiro / Investimentos',
+  'finance-investment': 'Super Admin · Financeiro / Investimento',
+  'finance-payments': 'Super Admin · Financeiro / Pagamentos / PIX',
+  'finance-payment': 'Super Admin · Financeiro / Pagamento',
+  'finance-wallets': 'Super Admin · Financeiro / Wallet',
+  'finance-wallet': 'Super Admin · Financeiro / Wallet (detalhe)',
 }
 
 /** Views rendered inside the dark App Shell (require Control Plane session). */
@@ -93,6 +117,12 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'operation-investor',
   'operation-entrepreneurs',
   'operation-entrepreneur',
+  'finance-investments',
+  'finance-investment',
+  'finance-payments',
+  'finance-payment',
+  'finance-wallets',
+  'finance-wallet',
 ])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
@@ -105,6 +135,18 @@ const OPPORTUNITY_PATH = /^operation\/opportunities\/([\w-]+)$/
 const OPPORTUNITY_EDIT_PATH = /^operation\/opportunities\/([\w-]+)\/edit$/
 const INVESTOR_PATH = /^operation\/investors\/([\w-]+)$/
 const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
+/** Finance Core detail ids: any non-empty segment, so malformed ids reach the not-found state. */
+const INVESTMENT_PATH = /^finance\/investments\/([^/]+)$/
+const PAYMENT_PATH = /^finance\/payments\/([^/]+)$/
+const WALLET_PATH = /^finance\/wallets\/([^/]+)$/
+
+function decodeSegment(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
 
 /**
  * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
@@ -116,7 +158,11 @@ const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
  * Operation (global): `#/operation/opportunities` (optional `?empreendedor=:id`),
  * `#/operation/opportunities/new`, `#/operation/opportunities/:opportunityId`
  * (`/edit`, optional `?secao=classificacao`), `#/operation/investors[/:investorId]`,
- * `#/operation/entrepreneurs[/:entrepreneurId]`
+ * `#/operation/entrepreneurs[/:entrepreneurId]`,
+ * Finance Core (global): `#/finance/investments` (optional `?investidor=` / `?wallet=`),
+ * `#/finance/investments/:investmentId`, `#/finance/payments` (optional `?wallet=`),
+ * `#/finance/payments/:paymentId`, `#/finance/wallets`,
+ * `#/finance/wallets/:walletId` (optional `?movimento=:movementId`)
  * → session-guarded shell screens; anything else → login.
  */
 function routeFromHash(): Route {
@@ -167,6 +213,23 @@ function routeFromHash(): Route {
   if (investor) return { view: 'operation-investor', investorId: investor[1] }
   const entrepreneur = ENTREPRENEUR_PATH.exec(path)
   if (entrepreneur) return { view: 'operation-entrepreneur', entrepreneurId: entrepreneur[1] }
+  if (path === 'finance/investments') {
+    return {
+      view: 'finance-investments',
+      investorId: params.get('investidor') ?? undefined,
+      walletId: params.get('wallet') ?? undefined,
+    }
+  }
+  if (path === 'finance/payments') return { view: 'finance-payments', walletId: params.get('wallet') ?? undefined }
+  if (path === 'finance/wallets') return { view: 'finance-wallets' }
+  const investment = INVESTMENT_PATH.exec(path)
+  if (investment) return { view: 'finance-investment', investmentId: decodeSegment(investment[1]) }
+  const payment = PAYMENT_PATH.exec(path)
+  if (payment) return { view: 'finance-payment', paymentId: decodeSegment(payment[1]) }
+  const wallet = WALLET_PATH.exec(path)
+  if (wallet) {
+    return { view: 'finance-wallet', walletId: decodeSegment(wallet[1]), movementId: params.get('movimento') ?? undefined }
+  }
   return { view: 'login' }
 }
 
@@ -237,6 +300,16 @@ export function App() {
   if (route.view === 'operation-entrepreneurs') return <EntrepreneursPage />
   if (route.view === 'operation-entrepreneur') {
     return <EntrepreneurDetailPage key={route.entrepreneurId} entrepreneurId={route.entrepreneurId} />
+  }
+  if (route.view === 'finance-investments') return <InvestmentsPage investorId={route.investorId} walletId={route.walletId} />
+  if (route.view === 'finance-investment') {
+    return <InvestmentDetailPage key={route.investmentId} investmentId={route.investmentId} />
+  }
+  if (route.view === 'finance-payments') return <PaymentsPage walletId={route.walletId} />
+  if (route.view === 'finance-payment') return <PaymentDetailPage key={route.paymentId} paymentId={route.paymentId} />
+  if (route.view === 'finance-wallets') return <WalletsPage />
+  if (route.view === 'finance-wallet') {
+    return <WalletDetailPage key={route.walletId} walletId={route.walletId} movementId={route.movementId} />
   }
   return <LoginPage />
 }

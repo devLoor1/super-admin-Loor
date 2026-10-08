@@ -616,3 +616,72 @@
     height: 40px;
   }
 }
+
+/* Financeiro lists six nested screens (three tenant-first + three global
+   Finance Core lists). Same approach as above, one step denser and only when
+   the active domain has five or more entries: the decorative lines go first,
+   then laptop heights tighten the rows so the utility entries stay visible
+   (shorter windows keep the sidebar's own scroll, as before). */
+@media (max-height: 1020px) and (min-width: 1200px) {
+  .sidebar:has(.subList > li:nth-child(5)) .footer {
+    display: none;
+  }
+}
+
+@media (max-height: 860px) and (min-width: 1200px) {
+  .sidebar:has(.subList > li:nth-child(5)) {
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .brandRow {
+    margin-bottom: 20px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .item {
+    height: 44px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .listCompact .item {
+    height: 40px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 30px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem:has(> .subLabel[data-long]) {
+    height: auto;
+    min-height: 30px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subLabel[data-long] {
+    padding: 5px 0;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .bottom {
+    padding-top: 16px;
+  }
+}
+
+/* Short icon rail with five or more nested entries: slightly shorter rows. */
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 650px) {
+  .sidebar:has(.subList > li:nth-child(5)) .subList {
+    margin: 2px 0 0;
+    padding-top: 2px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 26px;
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 580px) {
+  .sidebar:has(.subList > li:nth-child(5)) .item {
+    height: 32px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 24px;
+  }
+}

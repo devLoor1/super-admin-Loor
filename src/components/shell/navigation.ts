@@ -2,9 +2,11 @@ import {
   Box,
   Briefcase,
   Building2,
+  ChartColumn,
   ChartColumnIncreasing,
   CircleHelp,
   Cog,
+  CreditCard,
   FileSearch,
   House,
   LayoutGrid,
@@ -18,6 +20,7 @@ import {
   Target,
   TrendingUp,
   UsersRound,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -82,6 +85,10 @@ export const PRIMARY_NAV: NavItem[] = [
         icon: Shapes,
         href: '#/whitelabels/wl_proto_01/finance/segments-resource-uses',
       },
+      // Finance Core: global (not tenant-first) supervision lists of three independent record types.
+      { id: 'finance-investments', label: 'Investimentos', icon: ChartColumn, href: '#/finance/investments' },
+      { id: 'finance-payments', label: 'Pagamentos / PIX', icon: CreditCard, href: '#/finance/payments' },
+      { id: 'finance-wallets', label: 'Wallet', icon: Wallet, href: '#/finance/wallets' },
     ],
   },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },

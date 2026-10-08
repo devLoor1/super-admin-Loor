@@ -2,7 +2,7 @@
 
 ## Baseline and purpose
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`. Source: [Entrepreneur module](https://github.com/devLoor1/super-admin-Loor/tree/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/entrepreneurs), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/docs/operation-entrepreneurs-v1.md).
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@d2a51753047d447983fe12145d53d9f42334e547`. Source: [Entrepreneur module](https://github.com/devLoor1/super-admin-Loor/tree/d2a51753047d447983fe12145d53d9f42334e547/src/features/operation/entrepreneurs), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/d2a51753047d447983fe12145d53d9f42334e547/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/d2a51753047d447983fe12145d53d9f42334e547/docs/operation-entrepreneurs-v1.md).
 
 This independent **read-only operational projection** finds an originator/representative, shows account/Company and KYC context, reads linked Opportunities and navigates to the responsible domain. It does not duplicate Accounts or Opportunity mutations. Core remains authoritative; no duplicate Entrepreneur/profile persistence belongs in Control Plane. Current shell login/session integration is separate from this non-integrated business prototype.
 
@@ -13,7 +13,7 @@ This independent **read-only operational projection** finds an originator/repres
 | `#/operation/entrepreneurs` | Global list across explicit Whitelabel contexts |
 | `#/operation/entrepreneurs/:entrepreneurId` | Read-only profile; unknown ID shows not-found |
 
-Current behavior includes name/email/ID search, tenant/account/KYC/Opportunity-relationship filters, sorting/pagination, local summary counts, account and limited Company context, KYC summary, linked Opportunities, session activity and navigation to Accounts/Opportunities/future Compliance. Detail separates overview, Opportunities, Compliance/KYC and activity. Global visibility is not a global authorization grant.
+Current behavior includes name/email/ID search, tenant/account/KYC/Opportunity-relationship filters, sorting/pagination, local summary counts, account and limited Company context, illustrative KYC summary, linked Opportunities, session activity and navigation to Accounts/Opportunities/Compliance. Detail separates overview, Opportunities, Compliance/KYC and activity. Global visibility is not a global authorization grant.
 
 **No Entrepreneur creation, account mutation, Opportunity mutation inside this module or KYC mutation exists.** No corporate/bank/document editor or financial operation is introduced.
 
@@ -37,7 +37,7 @@ The prototype has one optional Entrepreneur reference per Opportunity. Actual re
 
 Entrepreneur KYC is **FRONTEND ILLUSTRATIVE DATA**. Existing Accounts prototype records lack equivalent Entrepreneur KYC, so Operation supplies illustrative status/date/process references explicitly labelled as a prototype summary. These values are **not Core/Backend evidence**, Company validation readback or official KYC workflow.
 
-**Compliance / KYC owns reviews/decisions** and is not implemented in this frontend. There is no approve/reject, document validation or risk decision. Ver no Compliance gives a controlled pending-module notice without navigation. Authoritative source/state/Company-validation relation and safe fields remain Q-OE-04.
+[Compliance / KYC V1](16-compliance-kyc.md) now owns separate local case/review/decision examples. There is still no approve/reject, document validation or risk decision inside Entrepreneurs. Local case decisions do not update this summary, Company validation or Accounts access. Authoritative source/state/Company-validation relation, cardinality and safe fields remain Q-OE-04 and Q-KYC-01–06; metadata coherence is not Backend delivery.
 
 ## Cross-domain navigation
 
@@ -46,7 +46,7 @@ Entrepreneur KYC is **FRONTEND ILLUSTRATIVE DATA**. Existing Accounts prototype 
 | Ver conta | `#/whitelabels/:whitelabelId/accounts?tipo=empreendedores` | Existing tenant/type tab, not a per-account deep link |
 | Ver oportunidades | `#/operation/opportunities?empreendedor=:id` | Prototype contextual relationship/filter; authoritative source/cardinality unresolved |
 | Opportunity reference | `#/operation/opportunities/:opportunityId` | Existing local detail; writes remain in Opportunities |
-| Ver no Compliance | Pending-module feedback; no navigation | Compliance summary/process destination to define |
+| Ver no Compliance | Unique prototype case → `#/compliance/kyc/:kycCaseId`; none/multiple → `#/compliance/kyc?participant=:entrepreneurId` | FRONTEND PROTOTYPED NAVIGATION; authoritative case/cardinality/source/deep-link/read permission still to define |
 
 Desired account/process deep links are **CONTROL PLANE CONTRACT / DEEP LINK TO DEFINE** (Q-OE-05); no Backend route or permission is invented. Finance retains investments/payments/Pix/wallet and financial mutations; no such action belongs here.
 

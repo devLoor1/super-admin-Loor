@@ -2,7 +2,7 @@
 
 ## Baseline and purpose
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`. Source: [Investor module](https://github.com/devLoor1/super-admin-Loor/tree/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/investors), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/docs/operation-investors-v1.md).
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@d2a51753047d447983fe12145d53d9f42334e547`. Source: [Investor module](https://github.com/devLoor1/super-admin-Loor/tree/d2a51753047d447983fe12145d53d9f42334e547/src/features/operation/investors), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/d2a51753047d447983fe12145d53d9f42334e547/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/d2a51753047d447983fe12145d53d9f42334e547/docs/operation-investors-v1.md).
 
 This is an independent **read-only operational projection**: find an Investor, inspect account/KYC/Investment context, then navigate to the responsible domain. It is not a second Accounts screen, an Investment editor or a Compliance decision surface. Core remains authoritative; Control Plane must not create a duplicate Investor/profile database to copy prototype records. Current shell authentication is acknowledged separately, not live Investor business integration/E2E evidence.
 
@@ -31,7 +31,7 @@ Investment associations are illustrative, read-only and reference/count-oriented
 
 **Finance owns financial Investment concerns**, not Operation. [Finance / Investments V1](13-finance-investments.md) now supplies a read-only supervision destination; Ver investimentos opens `#/finance/investments?investidor=:investorId`. This is **FRONTEND PROTOTYPED NAVIGATION**, not a definitive Backend deep-link contract or financial action. [Operation Opportunities](10-operation-opportunities.md) owns Opportunity writes; Investor profile only reads/navigates. [Payments](14-finance-payments-pix.md) and [Wallet](15-finance-wallet.md) also consume participant/context references read-only; no account/financial/KYC mutation ownership is transferred.
 
-KYC is a read-only contextual summary derived from the Accounts prototype dependency; its process/date metadata is illustrative. The display labels do not define the official KYC workflow. **Compliance / KYC owns review and decisions** and is not yet implemented in this frontend. There is no approval, rejection, document validation or risk decision here. Authoritative status/source/read policy remains Q-OI-03; KYC must not be inferred from access or suitability state.
+KYC remains a read-only contextual summary derived from the Accounts prototype dependency; process/date metadata is illustrative. [Compliance / KYC V1](16-compliance-kyc.md) now owns a separate local case prototype with review/decision examples; those actions do not synchronize into Operation's summary or Accounts access/validation. There is no approval/rejection/document validation/risk decision inside Investors. Official workflow/source/read policy remains Q-OI-03 and Q-KYC-01–05; KYC must not be inferred from access or suitability.
 
 ## Cross-domain navigation
 
@@ -40,7 +40,7 @@ KYC is a read-only contextual summary derived from the Accounts prototype depend
 | Ver conta | `#/whitelabels/:whitelabelId/accounts?tipo=investidores` | Existing tenant/type tab only; no per-account deep-link contract |
 | Opportunity reference | `#/operation/opportunities/:opportunityId` | Existing local Opportunity detail, not an Investment editor |
 | Ver investimentos | `#/finance/investments?investidor=:investorId` | FRONTEND PROTOTYPED NAVIGATION; authoritative Finance source/IDs/read permissions/deep-link contract still to define |
-| Ver no Compliance | Pending-module notice; no navigation | Compliance / KYC summary/deep link to define |
+| Ver no Compliance | Unique prototype case → `#/compliance/kyc/:kycCaseId`; none/multiple → `#/compliance/kyc?participant=:investorId` | FRONTEND PROTOTYPED NAVIGATION, not authoritative case IDs/cardinality; Compliance summary/deep-link/read permissions still to define |
 
 **CONTROL PLANE CONTRACT / DEEP LINK TO DEFINE** applies to the desired per-account/Investment/Compliance target semantics (Q-OI-05). These frontend hashes do not prescribe Backend routes or grants. Following a link does not authorize a destination-domain mutation.
 

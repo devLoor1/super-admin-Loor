@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`, retaining prior modules, complete Operation V1 and frontend Control Plane login/session/guard/logout/authentication refresh, and adding read-only Complete Finance Core V1. Operation, Finance Core and other business modules remain non-integrated prototypes. This acknowledges newer frontend code, not live Backend auth E2E or a new Backend foundation/financial audit. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@d2a51753047d447983fe12145d53d9f42334e547`, retaining authentication/session/logout, prior modules, Operation and Finance Core, and adding distinct Compliance KYC and immutable/read-only Governance Audit prototypes. All current planned frontend V1 blocks are covered as prototypes, not Backend/integration/E2E completeness. This acknowledges frontend code only, not a new Backend investigation or security/legal/production readiness. The retained Core evidence below stays pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -72,6 +72,24 @@ Separate the evidence classes:
 No automatic financial synchronization is implemented or confirmed. A Payment marked Pago does not prove Investment activation, Wallet credit or investor receipt; a movement is not a Payment/state update; represented balance is not a sum/available funds/settled balance/ledger guarantee. Transfers, settlement, refunds/reversals and reconciliation stay unresolved. Capital de Giro remains independently valid in Segment/Resource Use, not a modality.
 
 Findings A-01–13 and every retained Core source link/SHA are unchanged; **no new Core source, live endpoint, provider or account was inspected** for this documentation update. No Wallet/ledger support or official finance lifecycle is promoted to CORE EXISTS. Target classification remains **CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**, with **BACKEND IMPLEMENTATION NEEDED** only for verified target gaps and retained historical foundation/audit gaps. See [dependencies](matrices/backend-dependencies.md#finance-core-v1-dependencies), [rules](matrices/business-rules.md#finance-core-rules-and-unresolved-contracts) and [canonical Finance questions](open-questions.md#finance-core-cross-cutting).
+
+### Compliance and Audit prototype mapping — no new Core finding
+
+The approved frontend adds separate [Compliance KYC](16-compliance-kyc.md) case supervision/local actions and [Governance Audit](17-governance-audit.md) immutable illustrative event consultation. These are **FRONTEND PROTOTYPED**, not authoritative persistence, real KYC decisions/documents or Backend audit integration. Existing findings A-01–13, source links and the Core audit SHA are unchanged.
+
+| Evidence class | Established evidence | Unresolved target |
+| --- | --- | --- |
+| Existing Core evidence | A-05 narrower actor reads and A-06 route-specific validation/KYC gates | Official case source/IDs/mapping/cardinality/workflow, evidence/provider/storage and decision authority/effects; CORE SUPPORT TO VERIFY |
+| Existing Audit evidence | A-11 limited other-domain writers, best-effort persistence and absent general query/append-only contract at the historical audit | Canonical Control Plane Audit API, authoritative emission/durability/immutability/integrity/redaction/read permissions; no new CORE EXISTS claim |
+| Frontend prototype behavior | KYC metadata/issues/local decisions/session activity; Audit frozen examples/sanitized before-after/navigation | No real decision, Account/access/eligibility/financial effects, durable history or KYC → Audit synchronization |
+| Desired Control Plane requirements | Separate safe authorized KYC case contracts and canonical Audit reads/emission with correlation | Support/exposure/implementation and E2E require verified contracts; UI examples are not delivery |
+| Unresolved Product decisions | Questions explicitly retained/extended | KYC workflow/PF-PJ/AML-PEP-sanctions if applicable, decision effects/permissions; Audit taxonomies/retention/read auditing/export/integrity |
+
+**NO AUTOMATIC KYC → AUDIT SYNCHRONIZATION EXISTS.** KYC session activity is local/ephemeral and not canonical Audit. Pre-seeded Audit KYC events are illustrative, not generated by local actions or current Core writers. Safe frontend masks/fail-closed formatting require authoritative Backend redaction; they do not prove secure server storage or delivery. Audit never changes source resources.
+
+Investor/Entrepreneur Compliance, Gateways/Modalities Audit and Dashboard KYC/Audit links now have frontend destinations. These are navigation-only, not canonical case cardinality, event coverage, API/deep-link contracts or live KPIs; Dashboard stays `Aguardando integração`. Equity and Debt remain the only modalities; Capital de Giro remains independently valid as Segment/Resource Use, never a modality in event examples.
+
+No Backend source, live API, provider or account was newly inspected for this documentation update. Separate **CORE SUPPORT TO VERIFY**, **CONTROL PLANE EXPOSURE NEEDED**, **BACKEND IMPLEMENTATION NEEDED** for retained/verified gaps, **PRODUCT DECISION REQUIRED**, **INTEGRATION PENDING** and **E2E VALIDATION PENDING**. See [KYC dependencies](matrices/backend-dependencies.md#compliance-kyc-v1-dependencies), [Audit dependencies](matrices/backend-dependencies.md#governance-audit-v1-dependencies) and [canonical questions](open-questions.md#compliance-kyc).
 
 ## Current route families and proposed exposure
 

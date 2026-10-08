@@ -21,7 +21,9 @@ Future integration must preserve this boundary. Configuration commands must not 
 
 ## Payments reference boundary
 
-Current `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30` retains this configuration prototype and adds independent [Payment supervision](14-finance-payments-pix.md). Payments reads an explicit Gateway ID against the local configuration; Ver gateway opens the Payment tenant's `#/whitelabels/:whitelabelId/finance/gateways`, with no per-Gateway selection/deep-link contract. This is frontend read/navigation, not provider connectivity, payment readiness or synchronization. Gateways e contas continues to own credentials/secrets, provider activation, environment and connectivity configuration; Payments owns none of those writes. Safe identity/read/deep-link/event contracts remain Q-FP-03 and Q-GW-01–04; no Core support is newly claimed.
+Current `dev@d2a51753047d447983fe12145d53d9f42334e547` retains this configuration prototype and independent [Payment supervision](14-finance-payments-pix.md). Payments reads an explicit Gateway ID against the local configuration; Ver gateway opens the Payment tenant's `#/whitelabels/:whitelabelId/finance/gateways`, with no per-Gateway selection/deep-link contract. This is frontend read/navigation, not provider connectivity, payment readiness or synchronization. Gateways e contas continues to own credentials/secrets, provider activation, environment and connectivity configuration; Payments owns none of those writes. Safe identity/read/deep-link/event contracts remain Q-FP-03 and Q-GW-01–04; no Core support is newly claimed.
+
+The former “Auditoria — módulo futuro” shortcut now opens `#/audit?whitelabel=:whitelabelId&resourceType=gateway`. This is **FRONTEND PROTOTYPED NAVIGATION** to [immutable Audit consultation](17-governance-audit.md), not proof of Backend gateway events/filtering/deep links. Configuration/test session activity does not append to Audit; masks/read examples do not deliver secure Backend credential storage or provider health.
 
 ## Gateway configuration
 

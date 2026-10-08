@@ -15,7 +15,9 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `9f8abc6d55410e63a2edaf6d8efeafcd217b7a30` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails local SMTP/event feedback, Finance local configuration/catalog activity, and Operation local Opportunity create/edit/classification/status plus participant-view/navigation activity. Finance Core adds view/tab/reference navigation feedback for separate Investment, Payment, Wallet and movement records. All are local, non-persistent, non-authoritative and **not audit**. Catalog status edits are not authoritative activation events. No real email, provider, banking or financial operation occurs. This feedback does not implement future uppercase events, authorization, durability or an event query API. Frontend auth integration is separate and does not prove Backend login-audit coverage.
+Approved frontend `d2a51753047d447983fe12145d53d9f42334e547` retains account-control history, Settings/Terms, Emails, Finance configuration/catalog, Operation and Finance Core view/action session feedback. KYC adds local evidence review, pending-issue add/resolve/reopen and approval/rejection activity. All are local, ephemeral, in-memory, non-authoritative, reset on reload and **not canonical Audit**. No Core/Control Plane event is emitted or persisted by these prototypes. No real email, document/KYC/provider, banking or financial operation occurs. Frontend authentication integration does not prove Backend login-audit coverage.
+
+The separate Audit UI is now **FRONTEND PROTOTYPED / READ-ONLY / IMMUTABLE FRONTEND PROTOTYPE** with pre-seeded illustrative events across domains, including KYC. These are neither CURRENT CORE EVENT evidence nor emitted local events. **NO AUTOMATIC KYC → AUDIT SYNCHRONIZATION EXISTS.** KYC session decisions do not append/modify Audit records. Future canonical emission belongs to the authoritative Backend/Control Plane. See [KYC](../16-compliance-kyc.md#session-activity-is-not-audit) and [Audit](../17-governance-audit.md#illustrative-coverage-and-kyc-events).
 
 ## Future Super Admin requirements
 
@@ -74,6 +76,28 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | RESOURCE_USE_DELETED | Future authorized Resource Use deletion under reference/retention policy | Resource Use/catalog/context reference, safe policy outcome and result/time/correlation; no implied Segment or Opportunity cascade |
 | RESOURCE_USE_ACTIVATED | Future supported Resource Use activation/reactivation | Independent Resource Use identity, sanitized prior/new state, operator/context/result/time/correlation |
 | RESOURCE_USE_INACTIVATED | Future supported Resource Use inactivation | Independent Resource Use identity, state and safe constraint outcome, operator/context/result/time/correlation; not deletion |
+
+## Compliance and Audit event policy
+
+Three evidence classes remain separate: retained **CURRENT CORE EVENT** writer calls at the historical audit SHA; **PRE-SEEDED ILLUSTRATIVE FRONTEND EVENTS** in the frozen Audit dataset; and future authoritative event requirements. Neither prototype activity nor an example action such as `kyc_case.decision_recorded` proves a Backend writer. No KYC/Audit source-domain event delivery was newly audited.
+
+| Possible source-domain event | Classification | Future trigger / safe record focus |
+| --- | --- | --- |
+| KYC_STATUS_CHANGED | FUTURE SUPER ADMIN REQUIREMENT; not delivered | Official authorized case transition; case/participant/context reference, permitted sanitized status difference, actor/result/time/version/correlation |
+| KYC_DECISION_RECORDED | FUTURE SUPER ADMIN REQUIREMENT; not delivered | Official decision contract, if approved; case/actor/outcome and minimized rationale reference, result/time/correlation; no full personal/document payload |
+| KYC_PENDING_ITEM_ADDED | FUTURE SUPER ADMIN REQUIREMENT; not delivered | Authoritative issue creation, if supported; case/issue reference and safe minimized metadata; no copied sensitive free text by default |
+| KYC_EVIDENCE_REVIEWED | FUTURE SUPER ADMIN REQUIREMENT; not delivered | Official review, if supported; case/evidence reference and allowed outcome metadata, never document bytes/identity contents/provider secrets |
+
+Status/decision/evidence/issue semantics, required successes/failures/denials and writers remain [Q-KYC-03–09](../open-questions.md#compliance-kyc) and Q-AU-01–03/07. No local action emits these names. Canonical emission must come from the authoritative Backend/Control Plane with agreed durability/correlation, not frontend copying of session activity. Other issue resolve/reopen coverage is decided with that contract, not silently claimed delivered.
+
+| Possible read event | Classification | Policy boundary |
+| --- | --- | --- |
+| KYC_CASE_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented or mandatory | Whether reads need recording, permitted/denied coverage, minimized operator/case/context/result/time/correlation |
+| AUDIT_EVENT_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented or mandatory | Audit-of-audit policy, read permission and safe metadata without recursive event generation |
+
+Read-event auditing is [Q-AU-10](../open-questions.md#audit), separate from source-domain mutation events and the immutable V1 consultation UI. No manual Audit create/edit/delete/correction, rollback/restore/replay/reprocess or export event workflow is implemented.
+
+Desired canonical records need an agreed actor/action/domain/resource/tenant/global/result/timestamp/correlation model and sanitized before/after contract. Current Campo/Antes/Depois, masks/[redacted], safe fictitious IP/user-agent and prototype taxonomy are presentation evidence only. Authoritative sanitization must exclude passwords/session-refresh-service tokens/Authorization headers/API keys/gateway-webhook-SMTP secrets/cookies/private credentials and full sensitive KYC/document payloads in API, storage, logs and errors. Immutability/integrity, retention, actor identity, timestamp/order, query/read permissions, export and source-resource deep links remain [Q-AU-01–10](../open-questions.md#audit). Frontend frozen data is not Backend append-only protection or a duplicate canonical source.
 
 ## Finance Core audit policy
 

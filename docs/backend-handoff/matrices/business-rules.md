@@ -8,7 +8,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | --- | --- | --- |
 | C-01 | Architecture sections 2–5, 39 | Core remains the operational source of truth; Control Plane uses internal services, without direct DB access or operational duplication. |
 | C-02 | Architecture sections 24, 30 | Operator authorization and service authentication are separate; requested tenant filters are not permission grants. |
-| C-03 | Approved frontend source at 9f8abc6d55410e63a2edaf6d8efeafcd217b7a30 | Earlier modules, three Operation V1 siblings and complete Finance Core supervision are present. Business modules remain FRONTEND PROTOTYPED with local state/activity, no business API integration or financial operation. Frontend Control Plane login/session/guard/logout/authentication refresh is implemented separately; no live auth E2E/RBAC claim. |
+| C-03 | Approved frontend source at d2a51753047d447983fe12145d53d9f42334e547 | All current planned V1 blocks are covered as frontend prototypes, including distinct Compliance KYC and read-only Governance Audit. No business API/authoritative persistence, real KYC or financial operation is inferred. Frontend auth/session/logout is separate; Backend/integration/E2E/security/legal/production readiness is not claimed. |
 | C-04 | Current user intent and approved local prototype | Pause intent is temporary access prevention with data/history preservation; the prototype requires a reason and changes only local access state. Reactivate restores local access without changing unrelated business/validation state. Real enforcement is not implemented; policy is PARTIALLY DEFINED. |
 | C-05 | Core audit | Investor validation denial/self soft-deletion, tenant active flag and owner-tool disable are separate behaviors, not generic account pause. |
 | C-06 | Core Terms service/auth | Current tenant revision is required at Investor registration; rejected acceptance/stale revision fail before Investor creation in the audited path. Existing-user forced reacceptance was not found. |
@@ -29,6 +29,25 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | C-21 | Approved Modalities / Rules frontend and financial boundary | Regras gerais is read-only; the sole editor is modality-specific. Shared Finance enablement and local rule choices/activity are in-memory. No Opportunity editing or wallet/payment/Pix/Investment/refund/cashout/withdrawal/transfer/reconciliation mutation occurs. This confirms prototype boundaries, not real rule ownership or enforcement. |
 | C-22 | Corrected Product taxonomy and approved catalog model/store | Segment and Resource Use are separate domains with independent identity/lifecycle. Same-name records, including Capital de Giro in both, are not aliases, synchronized records or an automatic mapping. Shared presentation does not merge domains. |
 | C-23 | Approved Segments / Resource Uses prototype | Each catalog has independent local CRUD, search/filter/sort/pagination and status. Catalog administration has no Opportunity CRUD, association writes, authoritative usage count, migration, assignment or financial mutation. Operation separately consumes local references. Activity is session-only, not audit; this confirms frontend boundaries, not Backend support. |
+
+## Compliance and Audit rules
+
+**CONFIRMED / FRONTEND STRUCTURAL** means the approved frontend boundary, not official Core workflow or delivered Backend support. See distinct [KYC](../16-compliance-kyc.md) and [Audit](../17-governance-audit.md) chapters; canonical questions remain open.
+
+| ID | Classification | Rule / unresolved boundary |
+| --- | --- | --- |
+| KYA-01 | CONFIRMED / FRONTEND STRUCTURAL | KYC and Audit are distinct routes/models/responsibilities, not a merged case/event domain. |
+| KYA-02 | CONFIRMED / FRONTEND STRUCTURAL | Audit V1 is immutable/read-only; no append/edit/delete, rollback/restore/replay/reprocess, source mutation or V1 export. |
+| KYA-03 | CONFIRMED / FRONTEND STRUCTURAL | KYC session activity is ephemeral in-memory feedback lost on reload, not canonical Audit. NO AUTOMATIC KYC → AUDIT SYNCHRONIZATION EXISTS. |
+| KYA-04 | CONFIRMED / FRONTEND STRUCTURAL | Local KYC review/issues/decision affect only its own case/activity; no Account, access, Operation summary, Finance or Audit effect. |
+| KYA-05 | PROTOTYPE UX RULE / PROTOTYPE UX STATE MODEL | KYC Pendente/Em análise/Aprovado/Reprovado are not official Core states/transitions (Q-KYC-03). |
+| KYA-06 | PROTOTYPE UX RULE | Evidence Pendente/Recebida/Revisada is metadata-only; no real file/provider/identity validation. Issue Aberta/Resolvida and local add/resolve/reopen are not official workflow (Q-KYC-06–07). |
+| KYA-07 | PROTOTYPE UX RULE / PROTOTYPE COMPLIANCE ACTION | Local approval/rejection/note limits/warnings do not establish manual-decision authority, preconditions or downstream effects (Q-KYC-04–05). |
+| KYA-08 | PROTOTYPE UX RULE | `kyc_proto_*` preserves existing prototype references only; unique-case versus filtered-list navigation does not define canonical IDs/cardinality (Q-KYC-01–02). |
+| KYA-09 | PROTOTYPE UX RULE | Frozen Audit examples, Sucesso/Falha, action/module/resource/filter labels and fixed-date periods are not canonical event/result/time taxonomies (Q-AU-04). Pre-seeded KYC events are never produced by local actions. |
+| KYA-10 | CONFIRMED desired safety requirement; Backend delivery unproven | Never expose secrets or complete sensitive KYC/document payloads. Client masks/[redacted]/fail-closed formatting require authoritative Backend sanitization, not plaintext delivery (Q-AU-02/06). |
+| KYA-11 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Official KYC source/workflow/cardinality, approval/rejection/permissions/effects, evidence/PF-PJ/provider/storage, pending issues/versioning and AML/PEP/sanctions if applicable remain open (Q-KYC-01–10). |
+| KYA-12 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Canonical Audit source/model/taxonomies, actor/time/diff/redaction/correlation, IP/user-agent, retention, immutability/integrity, query/deep links, read permissions/audit-of-audit and export remain open (Q-AU-01–10). |
 
 ## Segment and Resource Use rules
 
@@ -172,6 +191,8 @@ The authoritative question text exists only in [open-questions.md](../open-quest
 | Payment/PIX lifecycles, Gateway events, settlement/retries/expiration/cancellation/refunds/reversals/reconciliation | [Q-FP-01–08](../open-questions.md#finance-payments--pix) |
 | Wallet ownership/currency/balance/ledger/movements/Transfers/consistency/idempotency/reconciliation | [Q-FW-01–09](../open-questions.md#finance-wallet) |
 | Financial domain synchronization, safe source/query/readback, permissions/audit/versioning/errors | [Q-FC-01–04](../open-questions.md#finance-core-cross-cutting) |
+| Compliance case source/workflow/cardinality/decisions/evidence/PF-PJ/provider/side effects/versioning/emission | [Q-KYC-01–10](../open-questions.md#compliance-kyc) |
+| Canonical Audit schema/actors/taxonomies/time/diff/redaction/correlation/query/deep links/export/read-auditing policy | [Q-AU-01–10](../open-questions.md#audit) |
 | RBAC and audit guarantees | [Q-RB-01–04](../open-questions.md#rbac), [Q-AU-01–03](../open-questions.md#audit) |
 
 Do not convert seed comments, UI labels, nullable columns, domain-specific denial or architecture route examples into settled Product rules.

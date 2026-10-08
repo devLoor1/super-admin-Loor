@@ -2,7 +2,7 @@
 
 ## Baseline and evidence
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at approved `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`. Source: [Opportunity module](https://github.com/devLoor1/super-admin-Loor/tree/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/operation/opportunities), [frontend implementation/review record](https://github.com/devLoor1/super-admin-Loor/blob/400c1dceeafb47f7d8308af7f797f7b42aa30929/docs/operation-opportunities-v1.md). Earlier local QA is retained evidence, not a new Backend audit or live E2E claim.
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at approved `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`. Source: [Opportunity module](https://github.com/devLoor1/super-admin-Loor/tree/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/opportunities), [frontend implementation/review record](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/docs/operation-opportunities-v1.md). Earlier local QA is retained evidence, not a new Backend audit or live E2E claim.
 
 Operation V1 has three independent siblings; this chapter owns Opportunities only. [Investors](11-operation-investors.md) and [Entrepreneurs](12-operation-entrepreneurs.md) read relationships and navigate; they do not write Opportunities. Core remains authoritative for operational entities; Control Plane must expose/orchestrate Core services without duplicating them. Current [shell authentication integration](01-current-frontend-scope.md#login-v1) does not connect Opportunity business APIs.
 
@@ -21,7 +21,7 @@ The prototype provides global list, name/ID search, Whitelabel/status/modality/S
 
 Detail separates overview, classification, configuration and session activity. Create/edit have local validation, save/discard and unsaved-change protection. The configuration tab shows a controlled pending-parameters state and informative modality-rule context, not a financial editor. **No delete, official publication/approval workflow or financial operation exists.**
 
-The [Opportunity store](https://github.com/devLoor1/super-admin-Loor/blob/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/operation/opportunities/opportunityStore.ts) is in-memory and supports create/update/status only. State survives in-app navigation but resets on reload. IDs, dates, counts and field names are prototype data, not an API schema, persistence evidence or production aggregates.
+The [Opportunity store](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/opportunities/opportunityStore.ts) is in-memory and supports create/update/status only. State survives in-app navigation but resets on reload. IDs, dates, counts and field names are prototype data, not an API schema, persistence evidence or production aggregates.
 
 ## Prototype status model
 
@@ -54,7 +54,9 @@ Changing the Whitelabel clears Entrepreneur, Segment and Resource Use references
 
 Opportunity V1 does **not** define investment minimum, funding target, valuation, interest rate, yield, return, maturity, amortization, payment schedule, fees, wallet, Pix or payments. Equity/Debt labels do not supply these values or formulas. Opportunity-specific financial requirements and ownership need explicit Product/domain contracts (Q-OP-09).
 
-Accounts owns identity, authentication/access, account lifecycle/mutations and account-level tenant relationship. Compliance owns KYC review/decisions. Finance / Investments owns Investment and financial operations. Current links reach the Entrepreneur profile and tenant-preserving Finance modality/catalog pages; those links neither mutate those domains nor confer their permissions.
+Accounts owns identity, authentication/access, account lifecycle/mutations and account-level tenant relationship. Compliance owns KYC review/decisions. Finance owns Investment/payment/wallet concerns; current Finance Core V1 is read-only/supervisory, not execution. Opportunity links reach the Entrepreneur profile and tenant-preserving Finance modality/catalog pages; those links neither mutate those domains nor confer their permissions.
+
+At current `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`, [Investment](13-finance-investments.md) and [Payment](14-finance-payments-pix.md) detail consume Opportunity names/context read-only and navigate to Opportunity detail. An Investment retains its own tenant/modality even if local Opportunity context changes; no financial record is synchronized. This is frontend reference/navigation, not authoritative relationship, lifecycle or Backend deep-link support. Financial parameters and official workflow remain Q-OP-01–02/Q-OP-09 and Q-FI/Q-FP/Q-FC questions.
 
 ## Required contracts and completion boundary
 

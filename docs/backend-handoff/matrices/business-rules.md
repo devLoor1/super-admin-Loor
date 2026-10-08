@@ -8,7 +8,7 @@ Confirmed architecture boundaries are requirements for the handoff, not claims t
 | --- | --- | --- |
 | C-01 | Architecture sections 2–5, 39 | Core remains the operational source of truth; Control Plane uses internal services, without direct DB access or operational duplication. |
 | C-02 | Architecture sections 24, 30 | Operator authorization and service authentication are separate; requested tenant filters are not permission grants. |
-| C-03 | Approved frontend source at 400c1dceeafb47f7d8308af7f797f7b42aa30929 | Earlier modules and three Operation V1 siblings are present. Business modules remain FRONTEND PROTOTYPED with local state/activity, no business API integration or financial operation. Frontend Control Plane login/session/guard/logout/authentication refresh is implemented separately; no live auth E2E/RBAC claim. |
+| C-03 | Approved frontend source at 9f8abc6d55410e63a2edaf6d8efeafcd217b7a30 | Earlier modules, three Operation V1 siblings and complete Finance Core supervision are present. Business modules remain FRONTEND PROTOTYPED with local state/activity, no business API integration or financial operation. Frontend Control Plane login/session/guard/logout/authentication refresh is implemented separately; no live auth E2E/RBAC claim. |
 | C-04 | Current user intent and approved local prototype | Pause intent is temporary access prevention with data/history preservation; the prototype requires a reason and changes only local access state. Reactivate restores local access without changing unrelated business/validation state. Real enforcement is not implemented; policy is PARTIALLY DEFINED. |
 | C-05 | Core audit | Investor validation denial/self soft-deletion, tenant active flag and owner-tool disable are separate behaviors, not generic account pause. |
 | C-06 | Core Terms service/auth | Current tenant revision is required at Investor registration; rejected acceptance/stale revision fail before Investor creation in the audited path. Existing-user forced reacceptance was not found. |
@@ -76,6 +76,28 @@ See [chapter 09](../09-whitelabel-finance-segments-resource-uses.md). **CONFIRME
 | OP-21 | CONFIRMED frontend boundary | Session activity is local, non-persistent, non-authoritative and not audit. Participant VIEWED events are only AUDIT POLICY DECISION REQUIRED candidates (Q-OC-03). |
 
 See the independent [Opportunity](../10-operation-opportunities.md), [Investor](../11-operation-investors.md) and [Entrepreneur](../12-operation-entrepreneurs.md) handoffs. No Core capability, Product rule or Backend validation is invented to close the prototype.
+
+## Finance Core rules and unresolved contracts
+
+**CONFIRMED** describes explicit domain/taxonomy boundaries and observed frontend V1, not future Backend financial policy. **PROTOTYPE UX RULE** does not define official workflow. The [three chapters](../README.md#read-order) retain independent records, references and ownership; no operational rule is inferred to close the prototype.
+
+| ID | Classification | Rule / evidence boundary |
+| --- | --- | --- |
+| FC-01 | CONFIRMED | Investment ≠ Payment ≠ WalletMovement ≠ Wallet balance. Four concepts/models remain independent; references do not collapse ownership, lifecycle or balance. |
+| FC-02 | CONFIRMED frontend V1 boundary | No automatic cross-domain financial synchronization implemented or confirmed. Payment paid → Investment active/Wallet credit, Investment state → Payment state, movement → Payment state, or represented balance → sum of visible movements is not a rule (Q-FC-01). |
+| FC-03 | CONFIRMED | Equity/Debt only current modalities; Capital de Giro may independently be Segment and Resource Use, never a modality. Finance examples do not redefine taxonomy. |
+| FC-04 | PROTOTYPE UX RULE | Investment Pendente/Ativo/Encerrado is a PROTOTYPE UX STATE MODEL, not official lifecycle, cancellation or settlement policy (Q-FI-02). |
+| FC-05 | PROTOTYPE UX RULE | Payment Pendente/Em processamento/Pago/Falhou and reused Status PIX are presentation-only, not official Payment/PIX state mapping or payment/receipt evidence (Q-FP-01, Q-FP-04). |
+| FC-06 | PROTOTYPE UX RULE | Wallet Ativa/Bloqueada is presentation-only, not an access enforcement/block-unblock workflow (Q-FW-09). |
+| FC-07 | PROTOTYPE UX RULE | WalletMovement Crédito/Débito and Pendente/Concluído/Falhou are separate presentation concepts, not authoritative posting/ledger state/type/direction (Q-FW-04). |
+| FC-08 | PROTOTYPE UX RULE | REPRESENTED BALANCE is static/non-authoritative, not calculated from displayed movements, not available/withdrawable or necessarily settled balance, not a ledger guarantee (Q-FW-03). |
+| FC-09 | CONFIRMED frontend V1 boundary | Read-only/supervisory; no payment, real PIX, settlement/refund/reversal/transfer/cashout/deposit/withdrawal, balance adjustment/manual credit-debit, movement creation, reconciliation or real Gateway call. |
+| FC-10 | CONFIRMED frontend boundary | Operation Investor → filtered Investments and Dashboard → Payments are navigation-only; KPIs remain non-integrated/Aguardando integração. Links/references grant no commands or scope. |
+| FC-11 | CONFIRMED ownership boundary | Accounts retains identity/access mutations; Compliance KYC; Operation participant/Opportunity context; Gateways e contas credentials/provider configuration. Payments owns none of those configuration commands. |
+| FC-12 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Official lifecycles, settlement/receipt, retries/expiration/cancellation, refunds/reversals/chargeback, relationships/cardinalities and synchronization/events remain unresolved (Q-FI-01–06, Q-FP-01–08, Q-FC-01). |
+| FC-13 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Wallet ownership, one/multiple Wallets, currency, balance composition, ledger/movement semantics, posting/order/consistency/idempotency/reconciliation remain unresolved (Q-FW-01–09). |
+| FC-14 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Transfers remains an independent possible future domain; pending notice is not API/lifecycle/sender/receiver/cashout/withdrawal/settlement implementation (Q-FW-06). |
+| FC-15 | PRODUCT DECISION REQUIRED / BACKEND DECISION REQUIRED | Safe source/query/errors/readback, permissions, concurrency/versioning and audit policy remain unresolved; activity is session-only and not audit (Q-FC-02–04). |
 
 ## Modality prototype assumptions
 
@@ -146,6 +168,10 @@ The authoritative question text exists only in [open-questions.md](../open-quest
 | Investor identity/profile, Account mapping, KYC/Investment sources and deep links | [Q-OI-01–05](../open-questions.md#operation-investors) |
 | Entrepreneur identity/person-company/representatives, Account mapping, Opportunity/KYC sources and deep links | [Q-OE-01–05](../open-questions.md#operation-entrepreneurs) |
 | Operation synchronization, permissions, audit, versioning, errors and pagination/search | [Q-OC-01–06](../open-questions.md#operation-cross-cutting) |
+| Investment source/amount/lifecycle/relationships/cardinality/cancellation/settlement | [Q-FI-01–06](../open-questions.md#finance-investments) |
+| Payment/PIX lifecycles, Gateway events, settlement/retries/expiration/cancellation/refunds/reversals/reconciliation | [Q-FP-01–08](../open-questions.md#finance-payments--pix) |
+| Wallet ownership/currency/balance/ledger/movements/Transfers/consistency/idempotency/reconciliation | [Q-FW-01–09](../open-questions.md#finance-wallet) |
+| Financial domain synchronization, safe source/query/readback, permissions/audit/versioning/errors | [Q-FC-01–04](../open-questions.md#finance-core-cross-cutting) |
 | RBAC and audit guarantees | [Q-RB-01–04](../open-questions.md#rbac), [Q-AU-01–03](../open-questions.md#audit) |
 
 Do not convert seed comments, UI labels, nullable columns, domain-specific denial or architecture route examples into settled Product rules.

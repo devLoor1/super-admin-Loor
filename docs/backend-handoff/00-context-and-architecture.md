@@ -6,7 +6,7 @@ This handoff reconciles the completed read-only account-control audit, the appro
 
 Existing [Dashboard review](../dashboard-v1-review.md), [Whitelabels review](../whitelabels-v1-review.md), and [design QA](../../design-qa.md) contain historical phase results. Current source and the approved baseline take precedence over earlier statements that an integration or shortcut had not yet been added.
 
-Current frontend baseline is `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, including complete Operation V1 and frontend login/session/guard/logout integration. The earlier frontend SHA above is the original architecture/audit context, not the current scope. This update does not repeat the Core audit or establish live authentication/Operation E2E.
+Current frontend baseline is `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`, including complete Operation V1, frontend login/session/guard/logout integration and Complete Finance Core V1 read-only supervision. The earlier frontend SHA above is the original architecture/audit context, not the current scope. This update does not repeat the Core audit or establish live authentication/Operation/financial E2E.
 
 ## Responsibility boundary
 
@@ -59,6 +59,6 @@ The architecture recommends short-lived service JWTs; exact provisioning, rotati
 
 ## Scope and acceptance
 
-This package covers current screens and mapped account/configuration/Operation dependencies. It adds documentation only, not screens, auth, Backend code or deployments. Operation's three frontend modules now exist; Finance / Investments and Compliance / KYC management do not. The broader architecture is not proof that other proposed screens exist. No generic wallet balance edit or parallel financial rule implementation is permitted.
+This package covers current screens and mapped account/configuration/Operation/Finance Core dependencies. It adds documentation only, not screens, auth, Backend code or deployments. Operation's three modules and Finance Core's Investments, Payments / PIX and Wallet read-only supervision now exist; Compliance / KYC management, Transfers and financial execution do not. Investment, Payment, WalletMovement and Wallet balance stay distinct; represented balance is non-authoritative. The broader architecture is not proof that other proposed screens exist. No generic wallet balance edit or parallel financial rule implementation is permitted.
 
 Read integration requires authoritative scoped records, pagination/error/empty states, safe fields and permission enforcement. Write integration additionally requires agreed transition semantics, readback, audit and ambiguous-response handling. New pause/reactivate intent is recorded separately from existing validation and deletion behaviors. Product-dependent work remains pending until the [canonical questions](open-questions.md) are answered.

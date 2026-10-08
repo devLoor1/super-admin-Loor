@@ -8,7 +8,7 @@ Audited Core remote `dev`: **`eb12e282c52230114553bf5e8722542adc9efe78`**. This 
 - Local Core `dev` was `fe054bb8ff1d8f431f9b78afbc6a415d0d729baa`, 87 commits behind the audited remote. Local source was not treated as current delivery evidence.
 - Core remote `main` was `66299ee8117b0d2bdaaafd5aee3e25a42e35f21c`; `main` and `dev` diverged. No Production parity or deployment claim is made.
 - `backend-super-admin-Loor` was reported empty, with no branches, at audit time; no local checkout was found. This is an evidence limit for that repository, not a statement about uninspected infrastructure.
-- Current approved Super Admin frontend is `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`, retaining prior modules and adding complete Operation V1 plus frontend Control Plane login/session/guard/logout/authentication refresh. Operation and other business modules remain non-integrated prototypes. This acknowledges newer frontend code, not live Backend auth E2E or a new Backend foundation audit. The retained Core evidence below remains pinned to its original read-only audit SHA.
+- Current approved Super Admin frontend is `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`, retaining prior modules, complete Operation V1 and frontend Control Plane login/session/guard/logout/authentication refresh, and adding read-only Complete Finance Core V1. Operation, Finance Core and other business modules remain non-integrated prototypes. This acknowledges newer frontend code, not live Backend auth E2E or a new Backend foundation/financial audit. The retained Core evidence below remains pinned to its original read-only audit SHA.
 
 ## Findings and implications
 
@@ -55,6 +55,23 @@ Accounts-derived prototype IDs are not definitive global/tenant identity contrac
 Prototype statuses, validation limits, multi-select and tenant-change clearing are UX assumptions/safety behavior. Official workflow/publication/approval, independent cardinalities, tenant move, person/company/representative identity, KYC/Investment sources, financial parameters and final validators remain explicit Product/Backend questions. Accounts, Finance and Compliance retain their ownership; Control Plane must not duplicate operational persistence.
 
 **A-02/A-12 and the empty-Control-Plane finding remain historical audited evidence.** Current frontend authentication calls/session guards supersede the old local-login-notice description; this update does not infer current Backend absence, deployed auth/RBAC guarantees or live auth E2E from that code. No new Core source, live endpoint, provider or account was inspected for this documentation task. Findings A-01–13 and their pinned source evidence are preserved. See [Operation dependencies](matrices/backend-dependencies.md#operation-v1-dependencies) and [Operation decisions](open-questions.md#operation-opportunities): **CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**, with implementation conditional on verified gaps.
+
+### Finance Core prototype mapping — no new Core finding
+
+The approved frontend adds separate [Investments](13-finance-investments.md), [Payments / PIX](14-finance-payments-pix.md) and [Wallet](15-finance-wallet.md) supervision, with a distinct WalletMovement model and non-authoritative represented balance. It retains authentication/session/logout, Operation and the three Finance configuration modules. Investor → filtered Investments and Dashboard → Payments are frontend navigation; financial KPIs/health remain non-integrated. No business API/provider or financial operation occurs.
+
+Separate the evidence classes:
+
+| Evidence class | What is established | What remains unproven |
+| --- | --- | --- |
+| Existing Core evidence | Retained A-05 narrower portfolio reads and A-07 independent operational/financial lineage at the historical Core audit SHA | Target global supervisory Investment/Payment/Wallet/ledger source/contracts, lifecycles, ownership and query/consistency guarantees |
+| Existing Gateway evidence | A-10/A-13 narrower modality policy, provider resolver and safe PAG resource | Generic tenant Gateway configuration, payment readiness, event/webhook/retry/reconciliation semantics or secret-contract delivery |
+| Frontend prototype requirements | Frozen independent models; six guarded list/detail routes; explicit reference navigation; prototype states; represented balance; local session feedback | Authoritative amounts/status/receipt/balances, ledger completeness, RBAC, durable audit, financial execution or E2E |
+| Desired Control Plane contracts | Authorized safe Core-backed projections, stable scoped IDs/relations/query/readback/errors/versioning | Delivered APIs, official policy, service foundation, operational commands or duplicate financial persistence |
+
+No automatic financial synchronization is implemented or confirmed. A Payment marked Pago does not prove Investment activation, Wallet credit or investor receipt; a movement is not a Payment/state update; represented balance is not a sum/available funds/settled balance/ledger guarantee. Transfers, settlement, refunds/reversals and reconciliation stay unresolved. Capital de Giro remains independently valid in Segment/Resource Use, not a modality.
+
+Findings A-01–13 and every retained Core source link/SHA are unchanged; **no new Core source, live endpoint, provider or account was inspected** for this documentation update. No Wallet/ledger support or official finance lifecycle is promoted to CORE EXISTS. Target classification remains **CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE NEEDED / PRODUCT DECISION REQUIRED / INTEGRATION PENDING / E2E VALIDATION PENDING**, with **BACKEND IMPLEMENTATION NEEDED** only for verified target gaps and retained historical foundation/audit gaps. See [dependencies](matrices/backend-dependencies.md#finance-core-v1-dependencies), [rules](matrices/business-rules.md#finance-core-rules-and-unresolved-contracts) and [canonical Finance questions](open-questions.md#finance-core-cross-cutting).
 
 ## Current route families and proposed exposure
 

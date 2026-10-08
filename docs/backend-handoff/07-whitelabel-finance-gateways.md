@@ -19,6 +19,10 @@ Finance / Gateways V1 is **CONFIGURATION / GOVERNANCE**, not **FINANCIAL OPERATI
 
 Future integration must preserve this boundary. Configuration commands must not implicitly mutate existing Investment, Payment, wallet or settlement state.
 
+## Payments reference boundary
+
+Current `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30` retains this configuration prototype and adds independent [Payment supervision](14-finance-payments-pix.md). Payments reads an explicit Gateway ID against the local configuration; Ver gateway opens the Payment tenant's `#/whitelabels/:whitelabelId/finance/gateways`, with no per-Gateway selection/deep-link contract. This is frontend read/navigation, not provider connectivity, payment readiness or synchronization. Gateways e contas continues to own credentials/secrets, provider activation, environment and connectivity configuration; Payments owns none of those writes. Safe identity/read/deep-link/event contracts remain Q-FP-03 and Q-GW-01–04; no Core support is newly claimed.
+
 ## Gateway configuration
 
 The frontend prototypes tenant-scoped provider identity, role, environment, configured state, active/inactive state and credential status. It supports local edit/save/discard, shared unsaved-change protection, simulated connection validation and local activation/deactivation.

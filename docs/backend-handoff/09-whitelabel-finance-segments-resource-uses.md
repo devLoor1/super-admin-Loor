@@ -4,7 +4,7 @@ Status: **FRONTEND PROTOTYPED / CORE SUPPORT TO VERIFY / CONTROL PLANE EXPOSURE 
 
 Route: `#/whitelabels/:whitelabelId/finance/segments-resource-uses`. Source: `src/features/finance-catalogs/` ([approved module](https://github.com/devLoor1/super-admin-Loor/tree/ec86b475e0126667e2fbece490730bdecc271584/src/features/finance-catalogs), [implementation and frontend review](https://github.com/devLoor1/super-admin-Loor/blob/ec86b475e0126667e2fbece490730bdecc271584/docs/whitelabel-finance-segments-resource-uses-v1.md)). These references establish the approved prototype, not a Backend delivery or runtime persistence claim.
 
-The cited SHA is catalog phase approval. Current `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929` retains both catalogs and adds [Operation Opportunity consumption](10-operation-opportunities.md#classification-and-cardinality), not authoritative relationship/usage integration.
+The cited SHA is catalog phase approval. Current `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30` retains both catalogs and [Operation Opportunity consumption](10-operation-opportunities.md#classification-and-cardinality), and adds separate [Finance Core supervision](01-current-frontend-scope.md#complete-finance-core-v1), not authoritative relationship/usage integration. Capital de Giro remains independently valid in Segment and Resource Use, never a modality or a financial lifecycle rule. Financial examples/references do not synchronize these catalogs or give Finance Core classification write ownership.
 
 ## Two independent catalogs
 

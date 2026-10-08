@@ -2,7 +2,7 @@
 
 ## Baseline and purpose
 
-Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@400c1dceeafb47f7d8308af7f797f7b42aa30929`. Source: [Entrepreneur module](https://github.com/devLoor1/super-admin-Loor/tree/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/operation/entrepreneurs), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/400c1dceeafb47f7d8308af7f797f7b42aa30929/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/400c1dceeafb47f7d8308af7f797f7b42aa30929/docs/operation-entrepreneurs-v1.md).
+Status: **FRONTEND PROTOTYPED / INTEGRATION PENDING / E2E VALIDATION PENDING** at `dev@9f8abc6d55410e63a2edaf6d8efeafcd217b7a30`. Source: [Entrepreneur module](https://github.com/devLoor1/super-admin-Loor/tree/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/entrepreneurs), [participant projection](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/src/features/operation/shared/participants.ts), [frontend review record](https://github.com/devLoor1/super-admin-Loor/blob/9f8abc6d55410e63a2edaf6d8efeafcd217b7a30/docs/operation-entrepreneurs-v1.md).
 
 This independent **read-only operational projection** finds an originator/representative, shows account/Company and KYC context, reads linked Opportunities and navigates to the responsible domain. It does not duplicate Accounts or Opportunity mutations. Core remains authoritative; no duplicate Entrepreneur/profile persistence belongs in Control Plane. Current shell login/session integration is separate from this non-integrated business prototype.
 

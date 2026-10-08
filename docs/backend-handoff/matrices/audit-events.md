@@ -15,7 +15,7 @@ The current table has Admin ID, module, entity ID, action, JSON metadata and tim
 
 ## Frontend local feedback — not an audit capability
 
-Approved frontend `400c1dceeafb47f7d8308af7f797f7b42aa30929` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails local SMTP/event feedback, Finance local configuration/catalog activity, and Operation local Opportunity create/edit/classification/status plus participant-view/navigation activity. All are local, non-persistent, non-authoritative and **not audit**. Catalog status edits are not authoritative activation events. No real email, provider, banking or financial operation occurs. This feedback does not implement future uppercase events, authorization, durability or an event query API. Frontend auth integration is separate and does not prove Backend login-audit coverage.
+Approved frontend `9f8abc6d55410e63a2edaf6d8efeafcd217b7a30` includes account-control local history for pause, reactivate, simulated Whitelabel-change requests and Admin additions. Its illustrative history is session-only and reset on reload; no Core/Control Plane event is emitted or persisted. Settings adds local save/Terms feedback, Emails local SMTP/event feedback, Finance local configuration/catalog activity, and Operation local Opportunity create/edit/classification/status plus participant-view/navigation activity. Finance Core adds view/tab/reference navigation feedback for separate Investment, Payment, Wallet and movement records. All are local, non-persistent, non-authoritative and **not audit**. Catalog status edits are not authoritative activation events. No real email, provider, banking or financial operation occurs. This feedback does not implement future uppercase events, authorization, durability or an event query API. Frontend auth integration is separate and does not prove Backend login-audit coverage.
 
 ## Future Super Admin requirements
 
@@ -74,6 +74,19 @@ All names below are **FUTURE SUPER ADMIN REQUIREMENT**, not implemented event na
 | RESOURCE_USE_DELETED | Future authorized Resource Use deletion under reference/retention policy | Resource Use/catalog/context reference, safe policy outcome and result/time/correlation; no implied Segment or Opportunity cascade |
 | RESOURCE_USE_ACTIVATED | Future supported Resource Use activation/reactivation | Independent Resource Use identity, sanitized prior/new state, operator/context/result/time/correlation |
 | RESOURCE_USE_INACTIVATED | Future supported Resource Use inactivation | Independent Resource Use identity, state and safe constraint outcome, operator/context/result/time/correlation; not deletion |
+
+## Finance Core audit policy
+
+These are possible future read/audit concepts, **AUDIT POLICY DECISION REQUIRED**, not delivered writer calls, mandatory read events or a financial mutation workflow. [Q-FC-03](../open-questions.md#finance-core-cross-cutting) extends Q-AU-01–03 for whether any read must be audited, successful/failed/denied coverage, minimization/retention, durability/query and Core/Control Plane correlation.
+
+| Possible read event | Classification | Potential safe record focus |
+| --- | --- | --- |
+| INVESTMENT_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented | Permitted operator/context/Investment ID, result/time/correlation only as required by agreed policy |
+| PAYMENT_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented | Permitted Payment ID and minimized read metadata, not PIX payload/provider secrets |
+| WALLET_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented | Permitted Wallet ID/context and minimized read metadata, not copied balances or owner identity data |
+| WALLET_MOVEMENT_VIEWED | AUDIT POLICY DECISION REQUIRED; not implemented | Independent movement/Wallet IDs and minimized metadata, not a posting/payment event |
+
+Finance Core session activity emits none of these events and does not implement an authoritative audit trail. No financial mutation events are introduced as current behavior. Settlement, refund/reversal, transfer, posting and reconciliation event design, if later approved, belongs to separate future Backend/domain contracts. Do not log passwords/tokens/Gateway credentials, real PIX keys/payloads, bank/account details or unnecessary personal/financial contents. See [Finance Core dependencies](backend-dependencies.md#finance-core-v1-dependencies).
 
 ## Operation audit policy
 

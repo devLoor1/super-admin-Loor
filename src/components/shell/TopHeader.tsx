@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
 import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, LogOut, Menu, Search } from 'lucide-react'
-import { getOperator, logout } from '../../lib/authSession'
+import { logout, useSessionOperator } from '../../lib/authSession'
 import { usePrototypeNotice } from './prototypeNotice'
 import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
@@ -31,7 +31,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
   const userMenuRef = useRef<HTMLDivElement>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuId = useId()
-  const operator = getOperator()
+  const operator = useSessionOperator()
   const operatorLabel = operator?.name?.trim() || 'Super Admin'
 
   // Ctrl/⌘ + K focuses the search field, as hinted by the keyboard badge.

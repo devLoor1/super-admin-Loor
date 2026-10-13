@@ -28,7 +28,7 @@ import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
 import type { AccountType } from '../features/whitelabel-accounts/accountModel'
-import { isAuthenticated } from '../lib/authSession'
+import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
 
 type View =
@@ -61,7 +61,8 @@ type View =
   | 'audit-event'
 
 type Route =
-  | { view: 'login' | 'dashboard' | 'whitelabels' }
+  | { view: 'login' | 'dashboard' }
+  | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; initialType?: AccountType }
   | { view: 'settings'; whitelabelId: string }
   | { view: 'emails'; whitelabelId: string; section?: EmailsSection }
@@ -180,7 +181,8 @@ function decodeSegment(value: string) {
 }
 
 /**
- * `#/dashboard`, `#/whitelabels`, `#/whitelabels/:whitelabelId/accounts`
+ * `#/dashboard`, `#/whitelabels` (optional `?id=` Backend Whitelabel id, `?page=`,
+ * `?search=`, `?status=active|inactive`), `#/whitelabels/:whitelabelId/accounts`
  * (optional `?tipo=investidores|empreendedores|administradores`),
  * `#/whitelabels/:whitelabelId/settings`, `#/whitelabels/:whitelabelId/emails`
  * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`,
@@ -202,7 +204,12 @@ function decodeSegment(value: string) {
  */
 function routeFromHash(): Route {
   const [path, search = ''] = window.location.hash.replace(/^#\/?/, '').split('?')
-  if (path === 'dashboard' || path === 'whitelabels') return { view: path }
+  if (path === 'dashboard') return { view: path }
+  if (path === 'whitelabels') {
+    const query = new URLSearchParams(search)
+    const value = (key: string) => query.get(key) || undefined
+    return { view: 'whitelabels', whitelabelId: value('id'), page: value('page'), query: value('search'), status: value('status'), search }
+  }
   const accounts = ACCOUNTS_PATH.exec(path)
   if (accounts) {
     return {
@@ -307,6 +314,19 @@ export function App() {
     }
   }, [])
 
+  // Login, hydration, logout and a central 401 all re-evaluate the session gate.
+  useEffect(() => subscribeSession(() => setAuthed(isAuthenticated())), [])
+
+  // A session restored from storage is confirmed by the server in the
+  // background (`GET /auth/me`); the shell renders meanwhile. A 401 clears
+  // the session through the subscription above.
+  useEffect(() => {
+    if (!authed) return
+    const controller = new AbortController()
+    void validateSession(controller.signal)
+    return () => controller.abort()
+  }, [authed])
+
   useEffect(() => {
     document.title = TITLES[route.view]
     document.documentElement.dataset.view = route.view
@@ -316,14 +336,25 @@ export function App() {
   }, [route.view])
 
   useEffect(() => {
+    // Replace (not push): Back from Login must not bounce into a guarded page again.
     if (SHELL_VIEWS.has(route.view) && !authed) {
-      window.location.hash = '#/login'
+      window.location.replace('#/login')
     }
   }, [route.view, authed])
 
   if (!authed || route.view === 'login') return <LoginPage />
   if (route.view === 'dashboard') return <DashboardPage />
-  if (route.view === 'whitelabels') return <WhitelabelsPage />
+  if (route.view === 'whitelabels') {
+    return (
+      <WhitelabelsPage
+        whitelabelId={route.whitelabelId}
+        page={route.page}
+        search={route.query}
+        status={route.status}
+        routeKey={route.search}
+      />
+    )
+  }
   if (route.view === 'accounts') {
     return <WhitelabelAccountsPage whitelabelId={route.whitelabelId} initialType={route.initialType} />
   }

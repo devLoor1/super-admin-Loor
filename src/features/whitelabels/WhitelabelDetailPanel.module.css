@@ -122,6 +122,98 @@
   border-radius: var(--radius-tile);
 }
 
+/* ---------- Loading / not-found / error states (Backend reads) ---------- */
+
+.statusBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 320px;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.diagnostic {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.inlineCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.skeletonHeader {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 7px 0 6px;
+}
+
+.skeletonAvatar {
+  flex: none;
+  width: 51px;
+  height: 51px;
+  border-radius: 11px;
+  background: var(--surface-track);
+}
+
+.skeletonLines {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+}
+
+.skeletonLine {
+  display: block;
+  width: 46%;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--surface-track);
+}
+
+.skeletonLine[data-width='wide'] {
+  width: 72%;
+}
+
+.skeletonCard {
+  display: grid;
+  gap: 18px;
+  min-height: 260px;
+  margin-top: 26px;
+  padding: 20px 15px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background: #141b2a;
+}
+
+.skeletonAvatar,
+.skeletonLine {
+  opacity: 0.55;
+  animation: wl-detail-skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes wl-detail-skeleton {
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonAvatar,
+  .skeletonLine {
+    animation: none;
+  }
+}
+
 /* ---------- Inner cards ---------- */
 
 .card {

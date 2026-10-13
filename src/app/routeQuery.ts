@@ -31,7 +31,18 @@ export function replaceRouteKeepingScroll(hash: string) {
   window.location.replace(hash)
 }
 
-/** Restores the scroll position saved by `replaceRouteKeepingScroll` once the new route renders. */
+/**
+ * Same page, new selection that deserves its own history entry (e.g. the
+ * Whitelabel shown in the detail panel): push the entry and keep the scroll
+ * position, so Back / Forward step through selections.
+ */
+export function pushRouteKeepingScroll(hash: string) {
+  if (window.location.hash === hash) return
+  pendingScroll = window.scrollY
+  window.location.hash = hash
+}
+
+/** Restores the scroll position saved by `replaceRouteKeepingScroll` / `pushRouteKeepingScroll` once the new route renders. */
 export function useRestoreReplacedScroll(routeKey: string) {
   useLayoutEffect(() => {
     if (pendingScroll === null) return

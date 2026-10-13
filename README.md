@@ -10,19 +10,26 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 **Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro) — and
 **Compliance › KYC V1** plus **Auditoria V1** (Governança).
 
-Branch de trabalho: **`dev`**. Homologação sobe só pela branch **`homolog`**.
+Frontend homologation: canonical **`dev`** → Git-connected Netlify
+(`loor-super-admin.netlify.app`). Reviewed feature branches require separate
+promotion authorization; this read integration has not been pushed or deployed.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
-> `App.tsx` (incluindo Operação) e **logout** no menu do header. Demais telas
-> ainda usam **dados ilustrativos locais** — saves/pause/testes não batem na
-> API. Contrato e próximos wire-ups:
+> `App.tsx` (incluindo Operação) e **logout** (local) no menu do header. Uma
+> sessão restaurada é validada com `GET /api/auth/me` e um 401 do servidor
+> encerra a sessão de forma centralizada. A **lista e o detalhe de
+> Whitelabels** leem o Control Plane (`GET /api/whitelabels`,
+> `GET /api/whitelabels/:id`) — somente leitura; criar/editar/ativar/desativar
+> segue pendente. Ver [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md).
+> Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
+> não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
 >
 > The dashboard shows data-ready empty states
 > ("—", "Sem dados", "Aguardando integração") instead of metrics. The
-> Whitelabels page lists three clearly illustrative rows (prototype IDs, no
-> counts or dates). Contas uses illustrative accounts (example.com e-mails,
+> Whitelabels page lists Backend records (its KPI cards stay "Aguardando
+> integração"). Contas uses illustrative accounts (example.com e-mails,
 > masked documents, no amounts); pause/reactivate, Whitelabel change and the
 > Admin form only change local state — **Backend: implementation pending**.
 > Configurações uses illustrative per-tenant settings; every section save and
@@ -185,8 +192,10 @@ src/
                                     "#/finance/payments[?wallet=…]", "/:id", "#/finance/wallets", "/:id[?movimento=…]",
                                     "#/compliance/kyc[?participant=…&whitelabel=…&status=…]", "/:id",
                                     "#/audit[?resourceType=…&resourceId=…&whitelabel=…&actor=…&action=…]", "/:id", else login
-  lib/api.ts                        Nest client (VITE_API_BASE_URL, Bearer, errors)
-  lib/authSession.ts                login / logout / session helpers
+  lib/api.ts                        Nest transport (VITE_API_BASE_URL, X-Correlation-ID, timeout, typed errors)
+  lib/apiClient.ts                  authenticatedGet: Bearer token + central 401 (GET only)
+  lib/apiErrors.ts                  safe user-facing messages for API failures
+  lib/authSession.ts                login, /auth/me validation, central 401, local logout, session subscription
   app/prototypeNavigation.ts        hash-switch subscription + single page guard (Back/Forward)
   app/useUnsavedChangesGuard.ts     shared unsaved-change guard (links, history, reload, tenant switch)
   app/routeQuery.ts                 URL-backed list context: build hash, replace entry keeping scroll (no business state)
@@ -232,10 +241,13 @@ src/
       RecentEventsPanel.tsx         audit-ready table header + empty state ("Ver todos" opens Auditoria)
       QuickActionsPanel.tsx         shortcuts (Whitelabels, Operação, Pagamentos / PIX and Auditoria open)
     whitelabels/
-      WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, page state
-      WhitelabelListPanel.tsx       search, status select + chips, sortable/selectable table, footer
-      WhitelabelDetailPanel.tsx     identity, tabs, main information, summary cards, quick actions
-      prototypeWhitelabels.ts       illustrative rows + status vocabulary (not backend data)
+      WhitelabelsPage.tsx (+ .css)  page grid: shared KPI row + list/detail split, URL-backed state
+      WhitelabelListPanel.tsx       server search / status / pagination, table, loading / error / empty states
+      WhitelabelDetailPanel.tsx     Backend detail + loading / not-found / error region, tabs, quick actions
+      whitelabelApi.ts              GET /whitelabels(/:id) client + strict parsing (Backend contract)
+      useWhitelabelData.ts          abortable list / detail requests with retry
+      whitelabelRoute.ts            `?id=&page=&search=&status=` parsing and hrefs
+      prototypeWhitelabels.ts       illustrative rows for the tenant modules still in prototype (not used by this page)
       visuals/                      approved Dot Matrix background, identity reveal
     whitelabel-accounts/
       WhitelabelAccountsPage.tsx    page layout + local state (accounts, events, filters, dialogs)
@@ -382,6 +394,12 @@ the menu target remains 40px wide; brand tracking tightens and the redundant use
 chevron hides instead of shrinking the menu target.
 
 ## Whitelabels V1 — decisions
+
+> **Superseded for data:** the list / detail now read the Control Plane —
+> see [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md)
+> (status Ativo / Inativo only, server search / filter / pagination, URL
+> `?id=&page=&search=&status=`). The layout decisions below still apply; the
+> "illustrative rows" and "local-only behavior" bullets describe V1.
 
 - **Reference scale.** The approved image (1672 × 941) is reproduced 1:1 at a
   1672 × 941 CSS viewport inside the unchanged App Shell; the page fits that

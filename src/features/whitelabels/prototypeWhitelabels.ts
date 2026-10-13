@@ -3,6 +3,11 @@ import type { StatusTone } from '../../components/ui/StatusPill'
 /**
  * ILLUSTRATIVE PROTOTYPE ROWS — not production data and not a backend contract.
  *
+ * No longer used by the Whitelabels list / detail screen, which now reads the
+ * Control Plane (see whitelabelApi.ts). Kept for the tenant modules that are
+ * still prototypes (Contas, Configurações, E-mails, Financeiro, Operação,
+ * Compliance, Auditoria) and still key their illustrative data by these ids.
+ *
  * Three rows taken from the approved Whitelabels V1 image so the table,
  * filters and selection can be demonstrated. Counts and dates are left empty
  * (null → "—") on purpose: nothing here comes from an integration.

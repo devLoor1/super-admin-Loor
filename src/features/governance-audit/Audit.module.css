@@ -128,6 +128,23 @@
   color: var(--text-on-dark-secondary);
 }
 
+.result {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.result > span[data-tone='muted'] {
+  max-width: 100%;
+  height: auto;
+  min-height: 26px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  line-height: 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .changesTag {
   display: inline-block;
   width: fit-content;
@@ -342,6 +359,13 @@
   letter-spacing: 0.08em;
   color: var(--text-on-dark-muted);
   white-space: nowrap;
+  max-width: 100%;
+}
+
+.masked > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 /* Phone-width cards: the masked marker and the cells get compact so the diff never scrolls sideways. */
@@ -455,4 +479,88 @@
   line-height: 17px;
   color: var(--text-on-dark-secondary);
   overflow-wrap: anywhere;
+}
+
+/* ---------- Recorded data (Audit Read Integration V1): sanitized, structure-preserving ---------- */
+
+.dataSides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 767px) {
+  .dataSides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dataSide {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.02);
+}
+
+.dataSideTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-on-dark-secondary);
+}
+
+.dataTree {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+
+.dataTree .dataTree,
+.dataTree .dataList {
+  margin-top: 4px;
+  padding-left: 10px;
+  border-left: 1px solid var(--surface-border);
+}
+
+/* Nested structures stack key above value, so depth never squeezes the columns. */
+.dataTree .dataTree .dataRow,
+.dataRow:has(> dd > .dataTree),
+.dataRow:has(> dd > .dataList) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dataRow {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.4fr) minmax(0, 1fr);
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.dataRow dt {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.dataRow dd {
+  margin: 0;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.dataList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 18px;
 }

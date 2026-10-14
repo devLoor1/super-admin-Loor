@@ -1,5 +1,11 @@
 # Governança › Auditoria V1 — local implementation record
 
+> **Superseded for data and behaviour by
+> [Audit Read Integration V1](audit-read-integration-v1.md).** Auditoria now
+> reads the Control Plane audit log (`GET /api/audit`); the illustrative events,
+> context filters, module column and resource destinations described below are
+> no longer shown. This record is kept for the approved composition and history.
+
 Part of Compliance › KYC V1 + Auditoria V1, initially implemented by Claude
 and independently reviewed by Codex on 2026-10-08, on
 `feature/super-admin-compliance-audit-v1` from baseline

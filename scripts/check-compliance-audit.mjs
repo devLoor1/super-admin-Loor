@@ -5,7 +5,9 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
-// Focused source checks using the existing TypeScript compiler; no test dependency.
+// Canonical KYC/Audit boundary checks. KYC remains illustrative; Audit is an
+// independent server read. Deleted seed/period assertions are obsolete, not a
+// reason to retain a fake log. No network or real identities here.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(pathToFileURL(resolve(root, 'package.json')))
 const modules = new Map()
@@ -13,7 +15,7 @@ async function moduleUrl(path) {
   if (modules.has(path)) return modules.get(path)
   let code = ts.transpileModule(await readFile(path, 'utf8'), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
-  }).outputText
+  }).outputText.replaceAll('import.meta.env', '({VITE_API_BASE_URL:"https://control-plane.example.invalid/api"})')
   for (const match of [...code.matchAll(/from\s+(['"])([^'"]+)\1/g)]) {
     const specifier = match[2]
     const url = specifier.startsWith('.')
@@ -26,11 +28,11 @@ async function moduleUrl(path) {
   return url
 }
 const load = async (path) => import(await moduleUrl(resolve(root, path)))
-const model = await load('src/features/governance-audit/auditModel.ts')
-const format = await load('src/features/governance-audit/auditFormat.ts')
-const { PROTOTYPE_AUDIT_EVENTS: events } = await load('src/features/governance-audit/prototypeAudit.ts')
+const present = await load('src/features/governance-audit/auditPresent.ts')
+const route = await load('src/features/governance-audit/auditRoute.ts')
 const { PROTOTYPE_KYC_CASES: cases } = await load('src/features/compliance-kyc/prototypeKyc.ts')
 const { kycDestinationForParticipant: destination } = await load('src/features/compliance-kyc/kycLinks.ts')
+const { auditHrefForCase } = await load('src/features/compliance-kyc/kycRefs.ts')
 let checks = 0
 function check(condition) { assert.ok(condition); checks += 1 }
 function frozen(value) {
@@ -38,41 +40,44 @@ function frozen(value) {
   check(Object.isFrozen(value))
   Object.values(value).forEach(frozen)
 }
-check(events.length === 28 && cases.length === 23)
-frozen(events)
+check(cases.length === 23)
 frozen(cases)
-for (const value of ['toString', 'constructor', '__proto__', 'unknown', '', undefined]) {
-  check(!model.isAuditAction(value))
-  check(!model.isAuditResourceType(value))
+for (const value of ['toString', 'constructor', '__proto__', 'FUTURE_ACTION']) {
+  check(present.actionLabel(value) === value)
+  check(present.resultMeta(value).tone === 'muted')
+  check(present.resourceLabel(value) === value)
 }
-for (const value of model.AUDIT_ACTIONS) check(model.isAuditAction(value))
-for (const value of Object.keys(model.AUDIT_RESOURCE_LABEL)) check(model.isAuditResourceType(value))
-check(format.fieldLabel('toString') === 'toString')
 for (const key of ['password', 'refreshToken', 'Authorization', 'authHeaders', 'apiKey', 'webhookSecret', 'smtpPassword', 'cookies', 'cpf', 'cnpj', 'identity', 'documentPayload']) {
-  check(format.formatAuditValue(key, 'synthetic-sentinel').sensitive)
-  const raw = format.sanitizedRaw({ oldValue: { [key]: 'synthetic-sentinel' }, newValue: null })
-  check(!raw.includes('synthetic-sentinel') && raw.includes('[redacted]'))
+  const node = present.sanitizeAuditData({ oldValue: { [key]: 'synthetic-sentinel' }, newValue: null })
+  check(present.isSensitiveAuditKey(key))
+  check(!JSON.stringify(present.sanitizedJson(node)).includes('synthetic-sentinel'))
 }
 for (const value of [{ nested: { password: 'synthetic-sentinel' } }, [{ token: 'synthetic-sentinel' }], Infinity]) {
-  check(format.formatAuditValue('context', value).sensitive)
-  check(!format.sanitizedRaw({ oldValue: null, newValue: { context: value } }).includes('synthetic-sentinel'))
+  check(!JSON.stringify(present.sanitizedJson(present.sanitizeAuditData(value))).includes('synthetic-sentinel'))
 }
-check(format.formatAuditValue('resourceUses', ['Modernização', 'Capital de Giro']).text === 'Modernização, Capital de Giro')
-check(format.formatAuditValue('active', false).text === 'Não')
-check(format.formatAuditValue('status', undefined).text === '—')
-check(model.inPeriod('2026-10-09T01:00:00Z', 'today')) // still Oct 8 in São Paulo
-check(!model.inPeriod('2026-10-09T03:00:00Z', 'today'))
+check(JSON.stringify(present.sanitizedJson(present.sanitizeAuditData({ resourceUses: ['Modernização', 'Capital de Giro'] }))).includes('Capital de Giro'))
+check(present.sanitizeAuditData(false).text === 'Não')
+check(present.sanitizeAuditData(undefined).kind === 'empty')
 check(destination('inv_proto_001').href.endsWith('/kyc_proto_0001'))
 check(destination('inv_proto_002').caseCount === 2 && destination('inv_proto_002').href.includes('?participant='))
 check(destination('inv_proto_008').caseCount === 0 && destination('inv_proto_008').href.includes('?participant='))
 check(destination('emp_proto_004').href.endsWith('/kyc_proto_e004'))
-for (const event of events) {
-  if (event.resourceType === 'kyc_case') check(cases.some((item) => item.kycCaseId === event.resourceId))
-  check(/^(192\.0\.2|198\.51\.100|203\.0\.113)\./.test(event.ip))
-  for (const map of [event.oldValue, event.newValue]) {
-    for (const [key, value] of Object.entries(map ?? {})) {
-      if (format.isSensitiveKey(key)) check(value === null || value.redacted === true)
-    }
-  }
+for (const item of cases) {
+  const params = new URLSearchParams(auditHrefForCase(item.kycCaseId).split('?')[1])
+  const parsed = route.parseAuditRoute(Object.fromEntries(params))
+  check(params.get('resourceType') === 'kyc_case')
+  check(params.get('resourceId') === item.kycCaseId)
+  check(parsed.ignored.length === 2)
+  check(parsed.state.search === '' && parsed.state.page === 1 && parsed.state.order === 'desc')
+  check(route.auditListHref(parsed.state) === '#/audit') // never fake a KYC-filtered Audit page
 }
-console.log(`Compliance/Audit focused source checks: ${checks} passed`)
+const auditApi = await readFile(resolve(root, 'src/features/governance-audit/auditApi.ts'), 'utf8')
+const auditDetail = await readFile(resolve(root, 'src/features/governance-audit/AuditDetailPage.tsx'), 'utf8')
+const kycStore = await readFile(resolve(root, 'src/features/compliance-kyc/kycStore.ts'), 'utf8')
+check(!/prototypeKyc|kycStore|PROTOTYPE_/.test(auditApi))
+check(!/auditApi|listAuditEvents|fetch\(/.test(kycStore))
+check(/loadedAuditRecord\(auditEventId\)/.test(auditDetail))
+check(/data-audit-detail-state="unavailable"/.test(auditDetail))
+check(/ID do protótipo/.test(auditDetail))
+check(!/authenticatedGet\(|fetch\(/.test(auditDetail))
+console.log(`Compliance/Audit canonical boundary checks: ${checks} passed (synthetic, no network)`)

@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Copy, ExternalLink, FileSearch, Filter, Info, Link2, Lock, UserRound } from 'lucide-react'
+import { ArrowLeft, Copy, FileSearch, Info, Link2, Lock, Search } from 'lucide-react'
 import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
-import outline from '../../components/ui/OutlineButton.module.css'
 import { Tabs } from '../../components/ui/Tabs'
 import fin from '../finance-gateways/sections/FinanceSections.module.css'
 import { KeyValueList, TabPanel } from '../finance-core/shared/FinanceCoreUi'
@@ -10,136 +10,143 @@ import fc from '../finance-core/shared/FinanceCore.module.css'
 import { BackLink, DomainNavCard, InfoNote, type DomainNavItem } from '../operation/shared/OperationUi'
 import { formatDateTime } from '../operation/shared/operationModel'
 import shared from '../operation/shared/Operation.module.css'
-import { diffRows, formatAuditValue, sanitizedRaw } from './auditFormat'
-import { AUDIT_ACTION_LABEL, AUDIT_MODULE_META, AUDIT_RESOURCE_LABEL, AUDIT_RESULT_META, actorById, auditEventHref, type AuditEvent, type AuditValue } from './auditModel'
-import { auditListHref, copyIdentifier, resourceDestination, whitelabelLabel } from './auditRefs'
-import { PROTOTYPE_AUDIT_EVENTS, auditEventById } from './prototypeAudit'
-import { ActorCell, AuditEventNotFound, AuditShell, ChangesTag, EventWhitelabel, ModuleIcon, ModuleTag, ResultPill } from './AuditUi'
+import { loadedAuditRecord, type AuditRecord } from './auditApi'
+import { actionLabel, actorEmail, actorName, hasRecordedData, resourceText, safeAuditText, sanitizeAuditData, sanitizedJson, type SanitizedNode } from './auditPresent'
+import { copyIdentifier } from './auditRefs'
+import { auditListHref, auditListReturnHash } from './auditRoute'
+import { ActorCell, AuditShell, EventIcon, EventWhitelabel, ResultPill } from './AuditUi'
 import styles from './Audit.module.css'
 
-type Tab = 'overview' | 'changes' | 'context' | 'metadata'
+type Tab = 'overview' | 'data' | 'metadata'
 const TAB_PREFIX = 'audit-detail'
 
-/** `#/audit/:auditEventId` — one frozen, illustrative event. Read-only: no action changes it. */
-export function AuditDetailPage({ auditEventId }: { auditEventId: string }) {
-  const event = auditEventById(auditEventId)
-  if (!event) return <AuditEventNotFound id={auditEventId} />
+/**
+ * `#/audit/:auditEventId` — one Control Plane audit row, READ-ONLY.
+ *
+ * The Control Plane has NO detail endpoint (no `GET /audit/:id`). The list
+ * returns the complete stored row, so this screen presents a row this session
+ * loaded from the list — labelled as such. A direct link or a reload (row not
+ * in memory) shows an explicit "detalhe indisponível" state: nothing is
+ * fetched by id, guessed, or taken from the old illustrative dataset.
+ */
+export function AuditDetailPage({ auditEventId, returnTo }: { auditEventId: string; returnTo?: string }) {
+  const listHref = auditListReturnHash(returnTo)
+  const record = loadedAuditRecord(auditEventId)
+  if (!record) return <AuditDetailUnavailable id={auditEventId} listHref={listHref} />
   return (
-    <AuditShell trail={[`Evento ${event.id}`]}>
-      <AuditEventContent event={event} />
+    <AuditShell trail={[`Evento ${record.id}`]}>
+      <AuditEventContent record={record} listHref={listHref} />
     </AuditShell>
   )
 }
 
-function AuditEventContent({ event }: { event: AuditEvent }) {
+function AuditDetailUnavailable({ id, listHref }: { id: string; listHref: string }) {
+  const prototypeId = /^AUD-\d+$/i.test(id) || /_proto_/.test(id)
+  return (
+    <AuditShell trail={['Detalhe indisponível']}>
+      <div className={shared.notFound} data-audit-detail-state="unavailable">
+        <EmptyState
+          icon={FileSearch}
+          title="Detalhe do evento indisponível"
+          description={
+            <>
+              {prototypeId
+                ? `“${id}” é um ID do protótipo de Auditoria (eventos ilustrativos que não existem no Control Plane). `
+                : `O Control Plane não oferece consulta de um evento por ID, e o evento “${id}” não foi carregado pela lista nesta sessão. `}
+              Abra o evento a partir da lista de Auditoria.{' '}
+              <a href={listHref} className={shared.inlineLink}>
+                Voltar para Auditoria
+              </a>
+            </>
+          }
+        />
+      </div>
+    </AuditShell>
+  )
+}
+
+function AuditEventContent({ record, listHref }: { record: AuditRecord; listHref: string }) {
   const notify = usePrototypeNotice()
   const [tab, setTab] = useState<Tab>('overview')
-  const actor = actorById(event.actorId)
-  const destination = resourceDestination(event)
-  const rows = diffRows(event)
-  const related = PROTOTYPE_AUDIT_EVENTS.filter((item) => item.correlationId === event.correlationId && item.id !== event.id)
+  const before = sanitizeAuditData(record.beforeData)
+  const after = sanitizeAuditData(record.afterData)
+  const hasData = hasRecordedData(before) || hasRecordedData(after)
+  const resource = resourceText(record)
+  const when = formatDateTime(record.createdAt) ?? '—'
+  const correlation = safeAuditText(record.correlationId)
+  const copyableCorrelation = correlation !== null && correlation === record.correlationId && /^[A-Za-z0-9_-]{1,64}$/.test(correlation) ? correlation : null
 
   async function copy(label: string, value: string) {
     const copied = await copyIdentifier(value)
     notify(copied ? `${label} copiado: ${value}` : `Não foi possível copiar automaticamente. ${label}: ${value}`)
   }
 
-  const goToResource = () => {
-    if (destination.kind === 'unavailable') notify(destination.message)
-  }
-
   const navItems: DomainNavItem[] = [
-    destination.kind === 'link'
-      ? { key: 'resource', label: destination.label, description: destination.description, icon: ExternalLink, href: destination.href }
-      : { key: 'resource', label: destination.label, description: destination.description, icon: ExternalLink, onSelect: goToResource, pending: true },
-    ...(event.resourceId
+    {
+      key: 'search-action',
+      label: 'Buscar eventos com este código de ação',
+      description: `Busca do Control Plane por “${record.action}” (código da ação, tipo ou ID do recurso)`,
+      icon: Search,
+      href: auditListHref({ search: record.action }),
+    },
+    { key: 'copy-event', label: 'Copiar ID do evento', description: record.id, icon: Copy, onSelect: () => void copy('ID do evento', record.id) },
+    ...(copyableCorrelation
       ? [
           {
-            key: 'filter-resource',
-            label: 'Filtrar por este recurso',
-            description: `Outros eventos de ${AUDIT_RESOURCE_LABEL[event.resourceType].toLowerCase()} ${event.resourceId}`,
-            icon: Filter,
-            href: auditListHref({ resourceType: event.resourceType, resourceId: event.resourceId }),
+            key: 'copy-correlation',
+            label: 'Copiar Correlation ID',
+            description: copyableCorrelation,
+            icon: Link2,
+            onSelect: () => void copy('Correlation ID', copyableCorrelation),
           },
         ]
       : []),
-    ...(event.actorId
-      ? [
-          {
-            key: 'filter-actor',
-            label: 'Filtrar por este ator',
-            description: `Ver outros eventos de ${actor?.name ?? event.actorId}`,
-            icon: UserRound,
-            href: auditListHref({ actor: event.actorId }),
-          },
-        ]
-      : []),
-    {
-      key: 'copy-event',
-      label: 'Copiar ID do evento',
-      description: event.id,
-      icon: Copy,
-      onSelect: () => void copy('ID do evento', event.id),
-    },
-    {
-      key: 'copy-correlation',
-      label: 'Copiar Correlation ID',
-      description: event.correlationId,
-      icon: Link2,
-      onSelect: () => void copy('Correlation ID', event.correlationId),
-    },
+    { key: 'back', label: 'Voltar para a lista', description: 'Mesma busca, ordem e página', icon: ArrowLeft, href: listHref },
   ]
 
   const tabs: { value: Tab; label: string }[] = [
     { value: 'overview', label: 'Visão geral' },
-    { value: 'changes', label: 'Alterações' },
-    { value: 'context', label: 'Contexto' },
+    { value: 'data', label: 'Dados registrados' },
     { value: 'metadata', label: 'Metadados' },
   ]
 
   return (
     <>
       <div>
-        <BackLink href="#/audit" label="Voltar para Auditoria" />
+        <BackLink href={listHref} label="Voltar para Auditoria" />
       </div>
 
-      <section className={`${fc.heroCard} ${shared.hero}`} aria-labelledby="audit-event-title">
-        <ModuleIcon module={event.module} size="lg" />
+      <section className={`${fc.heroCard} ${shared.hero}`} aria-labelledby="audit-event-title" data-audit-detail-state="loaded">
+        <EventIcon size="lg" />
         <div className={shared.heroHeading}>
           <div className={shared.heroTitleRow}>
             <h2 id="audit-event-title" className={shared.heroTitle}>
-              Evento {event.id}
+              {actionLabel(record.action)}
             </h2>
-            <ResultPill result={event.result} />
-            <ChangesTag changed={rows.length > 0} />
+            <ResultPill result={record.result} />
           </div>
-          <p className={shared.heroId}>{AUDIT_ACTION_LABEL[event.action]}</p>
+          <p className={shared.heroId}>Evento {record.id}</p>
           <div className={shared.heroMeta}>
-            <HeroMeta label="Módulo" value={<ModuleTag module={event.module} />} />
-            <HeroMeta label="Recurso" value={event.resourceLabel} />
-            <HeroMeta label="Whitelabel" value={<EventWhitelabel whitelabelId={event.whitelabelId} />} />
+            <HeroMeta label="Código da ação" value={<code className={styles.code}>{record.action}</code>} />
+            <HeroMeta label="Ator" value={actorName(record)} />
+            <HeroMeta label="Data e hora" value={when} />
           </div>
         </div>
         <div className={shared.heroActions}>
-          {destination.kind === 'link' ? (
-            <a href={destination.href} className={`${outline.button} ${shared.secondaryButton}`} data-hero-resource>
-              Ir para recurso
-              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-            </a>
-          ) : (
-            <OutlineButton className={shared.secondaryButton} onClick={goToResource} data-hero-resource>
-              Ir para recurso
-            </OutlineButton>
-          )}
-          <OutlineButton className={shared.secondaryButton} onClick={() => void copy('ID do evento', event.id)} data-copy-event>
+          <OutlineButton className={shared.secondaryButton} onClick={() => void copy('ID do evento', record.id)} data-copy-event>
             <Copy size={15} strokeWidth={1.8} aria-hidden="true" />
             Copiar ID do evento
           </OutlineButton>
         </div>
       </section>
 
+      <InfoNote>
+        <strong>Registro da listagem.</strong> Este registro foi retornado pela lista de Auditoria nesta sessão; não houve consulta individual por ID.
+        Ao recarregar a página, abra o evento novamente pela lista.
+      </InfoNote>
+
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label={`Seções do evento ${event.id}`} tabs={tabs} value={tab} onChange={setTab} />
+        <Tabs idPrefix={TAB_PREFIX} label={`Seções do evento ${record.id}`} tabs={tabs} value={tab} onChange={setTab} />
       </div>
 
       <TabPanel prefix={TAB_PREFIX} tab="overview" current={tab}>
@@ -150,85 +157,51 @@ function AuditEventContent({ event }: { event: AuditEvent }) {
             </h2>
             <KeyValueList
               rows={[
-                { label: 'ID do evento', value: event.id },
-                { label: 'Evento', value: AUDIT_ACTION_LABEL[event.action] },
-                { label: 'Código da ação', value: <code className={styles.code}>{event.action}</code> },
-                { label: 'Módulo', value: <ModuleTag module={event.module} /> },
-                { label: 'Recurso', value: `${AUDIT_RESOURCE_LABEL[event.resourceType]} · ${event.resourceLabel}` },
-                { label: 'ID do recurso', value: event.resourceId ?? '—' },
-                { label: 'Whitelabel', value: <EventWhitelabel whitelabelId={event.whitelabelId} /> },
-                { label: 'Ator', value: actor?.name ?? 'Não autenticado' },
-                { label: 'ID do ator', value: event.actorId ?? '—' },
-                { label: 'Resultado', value: <ResultPill result={event.result} /> },
-                { label: 'Data e hora', value: formatDateTime(event.createdAt) ?? '—' },
-                { label: 'Resumo', value: event.summary },
+                { label: 'ID do evento', value: <code className={styles.code}>{record.id}</code> },
+                { label: 'Evento', value: actionLabel(record.action) },
+                { label: 'Código da ação', value: <code className={styles.code}>{record.action}</code> },
+                { label: 'Resultado', value: <ResultPill result={record.result} /> },
+                { label: 'Data e hora', value: when },
+                { label: 'Ator', value: <ActorCell record={record} /> },
+                { label: 'E-mail do ator', value: actorEmail(record) ?? '—' },
+                { label: 'Recurso', value: resource ?? 'Sem recurso registrado' },
+                { label: 'Whitelabel', value: <EventWhitelabel whitelabelId={record.whitelabelId} /> },
               ]}
             />
           </section>
           <DomainNavCard
             title="Ações e navegação"
-            intro="Consulte conteúdos relacionados a este evento. Nenhuma ação altera o evento ou o recurso de origem."
+            intro="Somente consulta: nenhuma ação altera o evento ou o recurso citado."
             items={navItems}
           />
         </div>
-        <InfoNote>
-          <strong>Auditoria V1 é um módulo de consulta somente leitura.</strong> Não permite editar, excluir, alterar antes / depois,
-          restaurar estado, reverter ou reprocessar eventos.
-        </InfoNote>
       </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="changes" current={tab}>
+      <TabPanel prefix={TAB_PREFIX} tab="data" current={tab}>
         <div className={styles.changesGrid}>
-          <section className={fin.card} aria-labelledby="audit-diff-title">
-            <h2 id="audit-diff-title" className={fin.cardTitleSm}>
-              Alterações registradas
+          <section className={fin.card} aria-labelledby="audit-data-title" data-recorded-data>
+            <h2 id="audit-data-title" className={fin.cardTitleSm}>
+              Dados registrados
             </h2>
             <p className={fin.cardSubtitle}>
-              {rows.length === 0
-                ? 'Este evento não registra alterações de campos.'
-                : event.oldValue === null
-                  ? 'Evento de criação: não há valores anteriores.'
-                  : 'Somente os campos registrados pelo evento, antes e depois.'}
+              {hasData ? 'Valores registrados pelo Control Plane antes e depois da ação, com dados sensíveis ocultos.' : 'Este evento não registrou dados antes / depois.'}
             </p>
-            {rows.length ? (
-              <div className={fc.tableWrap}>
-                <table className={`${shared.miniTable} ${styles.diffTable}`} data-diff-table>
-                  <caption className="visually-hidden">Campos alterados no evento {event.id}</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Campo</th>
-                      <th scope="col">Antes</th>
-                      <th scope="col">Depois</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.key} data-diff-field={row.key} data-sensitive={row.sensitive || undefined}>
-                        <th scope="row" className={styles.diffField}>
-                          {row.label}
-                        </th>
-                        <td>
-                          <DiffValue field={row.key} value={row.before} />
-                        </td>
-                        <td>
-                          <DiffValue field={row.key} value={row.after} highlight />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {hasData ? (
+              <div className={styles.dataSides}>
+                <DataSide title="Antes" node={before} />
+                <DataSide title="Depois" node={after} />
               </div>
             ) : (
               <p className={fc.emptyLine}>
                 <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Eventos como login, logout e testes de envio registram apenas o fato e o resultado.
+                Eventos de login registram apenas o fato, o resultado e o contexto técnico.
               </p>
             )}
             <details className={styles.raw} data-raw-view>
-              <summary>Ver registro bruto sanitizado</summary>
-              <p className={styles.rawNote}>Visão técnica secundária. Valores sensíveis aparecem como “[redacted]”.</p>
-              <pre className={styles.rawPre} tabIndex={0} aria-label={`Registro bruto sanitizado do evento ${event.id}`}>
-                {sanitizedRaw(event)}
+              <summary>Ver registro sanitizado (JSON)</summary>
+              <p className={styles.rawNote}>Visão técnica secundária. Valores sensíveis aparecem como “[oculto]”; e-mails, parcialmente.</p>
+              <pre className={styles.rawPre} tabIndex={0} aria-label={`Registro sanitizado do evento ${record.id}`}>
+                {JSON.stringify({ beforeData: sanitizedJson(before), afterData: sanitizedJson(after) }, null, 2)}
               </pre>
             </details>
           </section>
@@ -239,73 +212,15 @@ function AuditEventContent({ event }: { event: AuditEvent }) {
             <p className={`${shared.callout} ${styles.calloutSpaced}`}>
               <Lock size={15} strokeWidth={1.8} aria-hidden="true" />
               <span>
-                Senhas, tokens de acesso, cabeçalhos de autorização, chaves de API, segredos de gateway e de webhook, senha SMTP, cookies,
-                credenciais, documentos de identificação e payloads de KYC <strong>nunca são exibidos</strong>: aparecem como “••••••••”
-                ou “[redacted]”, ou são omitidos.
+                Senhas, tokens, chaves, segredos, credenciais, cabeçalhos de autorização, dados de cartão e conta, documentos e payloads
+                <strong> reconhecidos como sensíveis são ocultos</strong>; valores que o Control Plane já ocultou aparecem como “[redacted]”. E-mails aparecem
+                parcialmente. Esta proteção é adicional: o Control Plane continua responsável pelo armazenamento e pela redação na origem.
               </span>
             </p>
             <p className={`${shared.callout} ${styles.calloutSpaced}`}>
               <Info size={15} strokeWidth={1.8} aria-hidden="true" />
               <span>Antes e depois são somente leitura: não existe ação para alterar, restaurar ou reverter estes valores.</span>
             </p>
-          </section>
-        </div>
-      </TabPanel>
-
-      <TabPanel prefix={TAB_PREFIX} tab="context" current={tab}>
-        <div className={shared.panelGrid}>
-          <section className={fin.card} aria-labelledby="audit-context-title">
-            <h2 id="audit-context-title" className={fin.cardTitleSm}>
-              Contexto do evento
-            </h2>
-            <KeyValueList
-              rows={[
-                { label: 'Whitelabel', value: whitelabelLabel(event.whitelabelId) },
-                { label: 'Módulo', value: AUDIT_MODULE_META[event.module].label },
-                { label: 'Tipo de recurso', value: AUDIT_RESOURCE_LABEL[event.resourceType] },
-                { label: 'Recurso (no evento)', value: event.resourceLabel },
-                { label: 'ID do recurso', value: event.resourceId ?? '—' },
-                { label: 'Ator', value: <ActorCell actorId={event.actorId} /> },
-                { label: 'Perfil do ator', value: actor?.role ?? '—' },
-              ]}
-            />
-            <p className={`${shared.callout} ${styles.calloutSpaced}`}>
-              <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-              <span>O rótulo do recurso é o registrado no momento do evento; o estado atual fica no módulo responsável.</span>
-            </p>
-          </section>
-          <section className={fin.card} aria-labelledby="audit-related-title">
-            <h2 id="audit-related-title" className={fin.cardTitleSm}>
-              Eventos com o mesmo Correlation ID
-            </h2>
-            <p className={fin.cardSubtitle}>
-              <code className={styles.code}>{event.correlationId}</code>
-            </p>
-            {related.length ? (
-              <ul className={styles.relatedList}>
-                {related.map((item) => (
-                  <li key={item.id}>
-                    <a href={auditEventHref(item.id)} className={shared.navItem} data-related-event={item.id}>
-                      <span className={shared.navIcon} aria-hidden="true">
-                        <FileSearch size={17} strokeWidth={1.7} />
-                      </span>
-                      <span className={shared.navText}>
-                        {AUDIT_ACTION_LABEL[item.action]}
-                        <span className={shared.navMeta}>
-                          {item.id} · {formatDateTime(item.createdAt)} · {AUDIT_RESULT_META[item.result].label}
-                        </span>
-                      </span>
-                      <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={fc.emptyLine}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Nenhum outro evento ilustrativo compartilha este Correlation ID.
-              </p>
-            )}
           </section>
         </div>
       </TabPanel>
@@ -320,28 +235,31 @@ function AuditEventContent({ event }: { event: AuditEvent }) {
               rows={[
                 {
                   label: 'Correlation ID',
-                  value: (
+                  value: correlation ? (
                     <>
-                      <code className={styles.code}>{event.correlationId}</code>
-                      <button
-                        type="button"
-                        className={styles.copyButton}
-                        onClick={() => void copy('Correlation ID', event.correlationId)}
-                        aria-label={`Copiar Correlation ID ${event.correlationId}`}
-                        data-copy-correlation
-                      >
-                        <Copy size={13} strokeWidth={1.9} aria-hidden="true" />
-                        Copiar
-                      </button>
+                      <code className={styles.code}>{correlation}</code>
+                      {copyableCorrelation ? (
+                        <button
+                          type="button"
+                          className={styles.copyButton}
+                          onClick={() => void copy('Correlation ID', copyableCorrelation)}
+                          aria-label={`Copiar Correlation ID ${copyableCorrelation}`}
+                          data-copy-correlation
+                        >
+                          <Copy size={13} strokeWidth={1.9} aria-hidden="true" />
+                          Copiar
+                        </button>
+                      ) : null}
                     </>
+                  ) : (
+                    '—'
                   ),
                 },
-                { label: 'IP de origem', value: <code className={styles.code}>{event.ip}</code> },
-                { label: 'User agent', value: <span className={styles.userAgent}>{event.userAgent}</span> },
-                { label: 'Timestamp (ISO 8601)', value: <code className={styles.code}>{event.createdAt}</code> },
-                { label: 'Data e hora (Brasília)', value: formatDateTime(event.createdAt) ?? '—' },
-                { label: 'Código da ação', value: <code className={styles.code}>{event.action}</code> },
-                { label: 'Resultado', value: AUDIT_RESULT_META[event.result].label },
+                { label: 'IP de origem', value: record.ip ? <code className={styles.code}>{safeAuditText(record.ip)}</code> : '—' },
+                { label: 'User agent', value: record.userAgent ? <span className={styles.userAgent}>{safeAuditText(record.userAgent)}</span> : '—' },
+                { label: 'Timestamp (ISO 8601)', value: <code className={styles.code}>{record.createdAt}</code> },
+                { label: 'Data e hora (Brasília)', value: when },
+                { label: 'ID do operador', value: record.actorId ? <code className={styles.code}>{record.actorId}</code> : '—' },
               ]}
             />
           </section>
@@ -352,8 +270,8 @@ function AuditEventContent({ event }: { event: AuditEvent }) {
             <p className={`${shared.callout} ${styles.calloutSpaced}`}>
               <Info size={15} strokeWidth={1.8} aria-hidden="true" />
               <span>
-                Evento <strong>ilustrativo</strong> do protótipo, congelado no código. Não foi emitido pelo Backend e não representa uma
-                integração existente. IP (faixas de documentação RFC 5737), user agent e Correlation ID são fictícios.
+                Evento do registro de auditoria do Control Plane (<code className={styles.code}>GET /audit</code>), gravado pelo próprio
+                Control Plane. Não é atividade operacional e não comprova a integração de outros módulos.
               </span>
             </p>
           </section>
@@ -372,22 +290,72 @@ function HeroMeta({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-/** One side of a diff row: "—" for null / absent, masked for sensitive values. */
-function DiffValue({ field, value, highlight = false }: { field: string; value: AuditValue | undefined; highlight?: boolean }) {
-  const formatted = formatAuditValue(field, value)
-  if (formatted.sensitive) {
-    return (
-      <span className={styles.masked} data-masked>
-        <Lock size={12} strokeWidth={2} aria-hidden="true" />
-        <span aria-hidden="true">{formatted.text}</span>
-        <span className="visually-hidden">Valor sensível oculto</span>
-      </span>
-    )
-  }
-  if (formatted.empty) return <span className={shared.muted}>—</span>
+function DataSide({ title, node }: { title: string; node: SanitizedNode }) {
   return (
-    <span className={styles.diffValue} data-after={highlight || undefined}>
-      {formatted.text}
-    </span>
+    <div className={styles.dataSide} data-data-side={title}>
+      <h3 className={styles.dataSideTitle}>{title}</h3>
+      {hasRecordedData(node) ? <DataNode node={node} /> : <span className={shared.muted}>Nada registrado</span>}
+    </div>
   )
+}
+
+/** Structure-preserving, sanitized view of recorded JSON. */
+function DataNode({ node }: { node: SanitizedNode }) {
+  switch (node.kind) {
+    case 'empty':
+      return <span className={shared.muted}>—</span>
+    case 'text':
+      return (
+        <span className={styles.diffValue}>
+          {node.text}
+          {node.truncated ? <span className="visually-hidden"> (texto truncado)</span> : null}
+        </span>
+      )
+    case 'masked':
+      return (
+        <span className={styles.masked} data-masked={node.reason}>
+          <Lock size={12} strokeWidth={2} aria-hidden="true" />
+          <span aria-hidden={node.reason === 'email' ? undefined : 'true'}>{node.text}</span>
+          {node.reason === 'email' ? (
+            <span className="visually-hidden"> (e-mail parcialmente oculto)</span>
+          ) : (
+            <span className="visually-hidden">
+              {node.reason === 'redacted-by-backend' ? 'Valor ocultado pelo Control Plane' : 'Valor sensível oculto'}
+            </span>
+          )}
+        </span>
+      )
+    case 'too-deep':
+      return <span className={shared.muted}>Estrutura muito profunda — omitida</span>
+    case 'array':
+      return (
+        <ol className={styles.dataList}>
+          {node.items.map((item, index) => (
+            <li key={index}>
+              <DataNode node={item} />
+            </li>
+          ))}
+          {node.omitted ? <li className={shared.muted}>+{node.omitted} itens omitidos</li> : null}
+        </ol>
+      )
+    case 'object':
+      return (
+        <dl className={styles.dataTree}>
+          {node.entries.map(({ key, node: child }, index) => (
+            <div key={`${index}:${key}`} className={styles.dataRow} data-data-key={key}>
+              <dt>{key}</dt>
+              <dd>
+                <DataNode node={child} />
+              </dd>
+            </div>
+          ))}
+          {node.omitted ? (
+            <div className={styles.dataRow}>
+              <dt>…</dt>
+              <dd className={shared.muted}>+{node.omitted} campos omitidos</dd>
+            </div>
+          ) : null}
+        </dl>
+      )
+  }
 }

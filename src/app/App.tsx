@@ -87,6 +87,9 @@ type Route =
   | { view: 'compliance-kyc-case'; kycCaseId: string }
   | {
       view: 'audit'
+      page?: string
+      query?: string
+      order?: string
       resourceType?: string
       resourceId?: string
       whitelabel?: string
@@ -94,7 +97,7 @@ type Route =
       action?: string
       search: string
     }
-  | { view: 'audit-event'; auditEventId: string }
+  | { view: 'audit-event'; auditEventId: string; returnTo?: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -202,8 +205,9 @@ function decodeSegment(value: string) {
  * `#/finance/wallets/:walletId` (optional `?movimento=:movementId`),
  * Compliance › KYC: `#/compliance/kyc` (optional `?participant=`, `?whitelabel=`,
  * `?status=`), `#/compliance/kyc/:kycCaseId`,
- * Auditoria: `#/audit` (optional `?resourceType=`, `?resourceId=`, `?whitelabel=`,
- * `?actor=`, `?action=`), `#/audit/:auditEventId`
+ * Auditoria (Control Plane audit log): `#/audit` (optional `?search=`, `?order=asc`, `?page=`;
+ * the prototype's `?resourceType=` / `?resourceId=` / `?whitelabel=` / `?actor=` / `?action=`
+ * are reported as unsupported), `#/audit/:auditEventId` (optional `?returnTo=` list context)
  * → session-guarded shell screens; anything else → login.
  */
 function routeFromHash(): Route {
@@ -303,6 +307,9 @@ function routeFromHash(): Route {
   if (path === 'audit') {
     return {
       view: 'audit',
+      page: param('page'),
+      query: param('search'),
+      order: param('order'),
       resourceType: param('resourceType'),
       resourceId: param('resourceId'),
       whitelabel: param('whitelabel'),
@@ -312,7 +319,7 @@ function routeFromHash(): Route {
     }
   }
   const auditEvent = AUDIT_EVENT_PATH.exec(path)
-  if (auditEvent) return { view: 'audit-event', auditEventId: decodeSegment(auditEvent[1]) }
+  if (auditEvent) return { view: 'audit-event', auditEventId: decodeSegment(auditEvent[1]), returnTo: param('returnTo') }
   return { view: 'login' }
 }
 
@@ -429,6 +436,9 @@ export function App() {
   if (route.view === 'audit') {
     return (
       <AuditListPage
+        page={route.page}
+        search={route.query}
+        order={route.order}
         resourceType={route.resourceType}
         resourceId={route.resourceId}
         whitelabel={route.whitelabel}
@@ -438,6 +448,8 @@ export function App() {
       />
     )
   }
-  if (route.view === 'audit-event') return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} />
+  if (route.view === 'audit-event') {
+    return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} returnTo={route.returnTo} />
+  }
   return <LoginPage />
 }

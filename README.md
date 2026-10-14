@@ -12,9 +12,12 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
 (`loor-super-admin.netlify.app`). Reviewed feature branches require separate
-promotion authorization. Whitelabel, Investor and Entrepreneur reads are deployed from `692f3ac`.
-Dashboard reads are a local reviewed feature on `feature/dashboard-read-integration-v1`,
-pending separate promotion authorization and deployed UI-to-live-API E2E.
+promotion authorization. Auth/session, Whitelabel, Investor, Entrepreneur and
+Dashboard reads are included in the accepted deployed baseline `afe24bf`.
+Audit reads are independently reviewed on `feature/audit-read-integration-v1`,
+pending separate promotion and deployed UI-to-live-API E2E. The single direct
+real-CUID local case is blocked: the earlier live ID was not retained and the
+upstream API subsequently returned 502/timeouts; no ID was fabricated or retried.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
@@ -40,6 +43,12 @@ pending separate promotion authorization and deployed UI-to-live-API E2E.
 > indicadores, gráficos, distribuição, status operacional e últimos eventos
 > seguem "aguardando integração" — sem métricas, saúde ou eventos inferidos. Ver
 > [`docs/dashboard-read-integration-v1.md`](docs/dashboard-read-integration-v1.md).
+> **Auditoria** lê o registro de auditoria do Control Plane (`GET /api/audit`:
+> paginação, busca e ordem por data no servidor) — somente leitura; não há
+> endpoint de detalhe, então o detalhe mostra a linha carregada pela lista nesta
+> sessão (recarregar mostra "detalhe indisponível"); dados sensíveis e e-mails são
+> mascarados. Auditoria não é atividade operacional do Dashboard. Ver
+> [`docs/audit-read-integration-v1.md`](docs/audit-read-integration-v1.md).
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
@@ -86,10 +95,10 @@ pending separate promotion authorization and deployed UI-to-live-API E2E.
 > issues and registering an approval or rejection are **local, non-authoritative
 > session actions** that change only the KYC case — **never an account,
 > access, participant, investment, opportunity, payment, wallet or Auditoria**.
-> Auditoria is a **completely read-only**, separate module over a frozen,
-> illustrative event dataset (secrets always masked; "Hoje" uses the fixed
-> reference date 08/10/2026); nothing — KYC included — writes to it, and no
-> edit, delete, revert, reprocess or export exists.
+> Auditoria is a **completely read-only**, separate module over the Control
+> Plane audit log (Audit Read Integration V1; secrets and e-mails masked);
+> nothing — KYC included — writes to it from the frontend, and no edit, delete,
+> revert, reprocess or export exists.
 
 | Screen | URL (dev server) | Approved reference |
 | --- | --- | --- |
@@ -141,8 +150,9 @@ active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 `#/compliance/kyc` and, while active, lists only **KYC**: `#/compliance/kyc`
 (optional `?participant=`, `?whitelabel=`, `?status=`) and
 `#/compliance/kyc/:kycCaseId`. **Auditoria** is its own top-level destination:
-`#/audit` (optional `?resourceType=`, `?resourceId=`, `?whitelabel=`,
-`?actor=`, `?action=`) and `#/audit/:auditEventId`.
+`#/audit` (optional `?search=`, `?order=asc`, `?page=`; the prototype's
+`?resourceType=` / `?resourceId=` / `?whitelabel=` / `?actor=` / `?action=` are
+reported as unsupported) and `#/audit/:auditEventId` (optional `?returnTo=`).
 
 ---
 
@@ -331,8 +341,8 @@ src/
       wallets/                      Wallet list + read-only detail (movements with inline detail, Relações financeiras)
     compliance-kyc/                 Compliance › KYC: model, frozen case seeds, session store (KYC only), live participant
                                     resolution, list, case detail (4 tabs), local-action dialogs, navigation helper for other modules
-    governance-audit/               Auditoria: model, frozen sanitized event seeds, redaction / diff helpers, resource
-                                    destinations, read-only list and event detail (4 tabs)
+    governance-audit/               Auditoria: GET /audit reads (auditApi, URL state, sanitizer / labels), read-only list
+                                    and event detail (3 tabs); prototype model / seeds / diff helpers unused by the screens
 docs/reference/                     approved concept images
 ```
 
@@ -881,7 +891,10 @@ review record for scope, evidence and fallback checks.
   the case (unique) or the list filtered by participant; the Dashboard KYC card
   opens the list and keeps "Aguardando integração". Accounts is unchanged (no
   contextual KYC entry point exists there).
-- **Auditoria:** completely read-only; field-oriented before / after; secrets
+- **Auditoria** now reads `GET /api/audit` — see
+  [Audit Read Integration V1](docs/audit-read-integration-v1.md); the bullet
+  below describes the V1 prototype only.
+- **Auditoria (prototype):** completely read-only; field-oriented before / after; secrets
   masked ("••••••••" / "[redacted]") and never stored; IP / user agent /
   correlation id fictitious; *Ir para recurso* only where a screen exists,
   otherwise a "destino ainda não implementado" notice. Count-only cards; "Hoje"
@@ -1113,6 +1126,7 @@ further OriginKit assets, final brand system.
 - [Financeiro › Wallet V1](docs/finance-wallet-v1.md)
 - [Compliance › KYC V1 + Auditoria V1 — architecture, domain boundaries, QA and open questions](docs/compliance-audit-v1.md)
 - [Compliance › KYC V1](docs/compliance-kyc-v1.md)
-- [Governança › Auditoria V1](docs/governance-audit-v1.md)
+- [Governança › Auditoria V1](docs/governance-audit-v1.md) (prototype record, superseded for data by the read integration)
+- [Audit Read Integration V1 — live /audit contract, detail availability, sanitization, open questions](docs/audit-read-integration-v1.md)
 - [Canonical Backend handoff — preserved separate documentation branch](https://github.com/devLoor1/super-admin-Loor/tree/bbda57265f27724b540fd16546228523fbc0ba7d/docs/backend-handoff)
 - [Visual QA record](design-qa.md)

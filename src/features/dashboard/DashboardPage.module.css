@@ -22,6 +22,48 @@
   min-width: 0;
 }
 
+/* `GET /dashboard` failed: the cards show "—"; this row explains why and offers a retry. */
+.kpiError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.kpiError > svg {
+  flex: none;
+  color: #e8cf9c;
+}
+
+.kpiErrorText {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.kpiErrorText strong {
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.kpiErrorCode {
+  font-size: 11.5px;
+  color: var(--text-on-dark);
+}
+
+.kpiRetry {
+  flex: none;
+}
+
 .middle {
   display: grid;
   grid-template-columns: minmax(0, 527fr) minmax(0, 422fr) minmax(344px, 359fr);

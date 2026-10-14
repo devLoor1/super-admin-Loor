@@ -12,8 +12,9 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
 (`loor-super-admin.netlify.app`). Reviewed feature branches require separate
-promotion authorization. Whitelabel and Investor reads are deployed from `e8e97f0`.
-Entrepreneur reads remain a local reviewed feature pending promotion authorization.
+promotion authorization. Whitelabel, Investor and Entrepreneur reads are deployed from `692f3ac`.
+Dashboard reads are a local reviewed feature on `feature/dashboard-read-integration-v1`,
+pending separate promotion authorization and deployed UI-to-live-API E2E.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
@@ -34,12 +35,18 @@ Entrepreneur reads remain a local reviewed feature pending promotion authorizati
 > empresa, KYC e oportunidades aparecem como "aguardando integração". O contrato
 > não tem entidade Empresa: **o requisito "Empresas" continua em aberto**. Ver
 > [`docs/entrepreneur-read-integration-v1.md`](docs/entrepreneur-read-integration-v1.md).
+> **Dashboard Global:** os cards **Whitelabels** e **Investidores** leem
+> `GET /api/dashboard` (agregado global do Core, somente leitura); os demais
+> indicadores, gráficos, distribuição, status operacional e últimos eventos
+> seguem "aguardando integração" — sem métricas, saúde ou eventos inferidos. Ver
+> [`docs/dashboard-read-integration-v1.md`](docs/dashboard-read-integration-v1.md).
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
 >
-> The dashboard shows data-ready empty states
-> ("—", "Sem dados", "Aguardando integração") instead of metrics. The
+> Apart from the Whitelabels and Investidores KPIs, the dashboard shows
+> data-ready empty states ("—", "Sem dados", "Aguardando integração") instead
+> of metrics. The
 > Whitelabels page lists Backend records (its KPI cards stay "Aguardando
 > integração"). Contas uses illustrative accounts (example.com e-mails,
 > masked documents, no amounts); pause/reactivate, Whitelabel change and the
@@ -243,7 +250,9 @@ src/
   features/
     login/                          Login V1 (unchanged visually)
     dashboard/
-      DashboardPage.tsx (+ .css)    page grid + KPI row
+      DashboardPage.tsx (+ .css)    page grid + KPI row (Whitelabels / Investidores from GET /dashboard)
+      dashboardApi.ts               GET /dashboard: parser (envelope, scope guard, per-field counts), labels
+      useDashboardOverview.ts       one read per visit (useRemote), explicit retry only
       GlobalOverviewPanel.tsx       "Supervisão global" panel (+ GlobalOverviewIllustration)
       ActivityPanel.tsx             time-series container, empty
       WhitelabelDistributionPanel   donut placeholder, empty
@@ -354,6 +363,10 @@ docs/reference/                     approved concept images
   are unchanged by the Dashboard phase.
 
 ## App Shell + Dashboard V1 — decisions
+
+> **Dashboard Read Integration V1:** the Whitelabels and Investidores KPIs now
+> read `GET /api/dashboard`; the bullets below still describe every other
+> panel. See [docs/dashboard-read-integration-v1.md](docs/dashboard-read-integration-v1.md).
 
 - **Reference scale.** The approved dashboard image (1672 × 941) is reproduced
   **1:1 at a 1672 × 941 CSS viewport** (sidebar 262px, KPI row at y=110, rows
@@ -1079,6 +1092,7 @@ further OriginKit assets, final brand system.
 ## Review records
 
 - [Dashboard V1 review, architecture boundaries and validation](docs/dashboard-v1-review.md)
+- [Dashboard Read Integration V1 — live /dashboard contract, proven KPIs, pending elements](docs/dashboard-read-integration-v1.md)
 - [App Shell / Dashboard OriginKit opportunity mapping](docs/dashboard-originkit-mapping.md)
 - [Approved Dashboard OriginKit integration, performance and architecture review](docs/dashboard-originkit-integration.md)
 - [Whitelabels V1 review and validation](docs/whitelabels-v1-review.md)

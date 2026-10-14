@@ -79,6 +79,39 @@
   color: var(--text-on-dark-muted);
 }
 
+/* Control Plane read states (integrated KPIs only). */
+.card[data-state='ready'] .value {
+  /* Preserve the full authoritative count, even at the safe-integer limit. */
+  overflow-wrap: anywhere;
+}
+
+.value .skeleton {
+  display: inline-block;
+  width: 64px;
+  height: 14px;
+  border-radius: 6px;
+  background: var(--surface-track);
+  vertical-align: middle;
+  opacity: 0.55;
+  animation: metric-skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes metric-skeleton {
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value .skeleton {
+    animation: none;
+  }
+}
+
+.card[data-state='unavailable'] .status {
+  color: #e8cf9c;
+}
+
 .open {
   grid-area: arrow;
   justify-self: end;

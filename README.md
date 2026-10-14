@@ -12,8 +12,8 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
 (`loor-super-admin.netlify.app`). Reviewed feature branches require separate
-promotion authorization. Whitelabel reads are deployed from `74f003f`;
-Investor reads remain a local reviewed feature pending promotion authorization.
+promotion authorization. Whitelabel and Investor reads are deployed from `e8e97f0`.
+Entrepreneur reads remain a local reviewed feature pending promotion authorization.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
@@ -28,6 +28,12 @@ Investor reads remain a local reviewed feature pending promotion authorization.
 > `GET /api/whitelabels/:id/accounts?tipo=investidores`) — somente leitura; KYC e
 > investimentos aparecem como "aguardando integração". Ver
 > [`docs/investor-read-integration-v1.md`](docs/investor-read-integration-v1.md).
+> **Operação › Empreendedores** (lista global, separação por Whitelabel e detalhe)
+> lê o Control Plane (`GET /api/entrepreneurs`, `GET /api/entrepreneurs/:id`,
+> `GET /api/whitelabels/:id/accounts?tipo=empreendedores`) — somente leitura;
+> empresa, KYC e oportunidades aparecem como "aguardando integração". O contrato
+> não tem entidade Empresa: **o requisito "Empresas" continua em aberto**. Ver
+> [`docs/entrepreneur-read-integration-v1.md`](docs/entrepreneur-read-integration-v1.md).
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
@@ -56,11 +62,9 @@ Investor reads remain a local reviewed feature pending promotion authorization.
 > changes or counts no Opportunity**.
 > Operação uses illustrative Opportunities (no amounts or financial
 > parameters) with a local create/edit/status flow — no delete; Investidores
-> and Empreendedores are read-only projections of the illustrative Accounts
-> records with prototype KYC summaries and count-only relationships. *Ver
-> investimentos* opens Financeiro › Investimentos filtered by the investor;
-> *Ver no Compliance* opens Compliance › KYC (the participant's case, or the
-> list filtered by participant);
+> and Empreendedores read the Control Plane (see above) and their KYC,
+> investment, opportunity and account actions are notices — never links with
+> real ids into the prototype modules;
 > **no account, KYC or financial mutation exists in Operation**.
 > Finance Core (Investimentos, Pagamentos / PIX, Wallet) is **read-only
 > supervision** over illustrative, frozen records that reference each other
@@ -308,7 +312,8 @@ src/
       opportunities/                list, create/edit page, detail + tabs, status dialog, catalog pickers, model, seeds, store
       investors/                    Control Plane reads: global / Whitelabel-scoped list, profile (investorApi, URL state);
                                     KYC and investments pending (unused Investor association seed removed)
-      entrepreneurs/                list + read-only profile (live Opportunities relationship)
+      entrepreneurs/                Control Plane reads: global / Whitelabel-scoped list, profile (entrepreneurApi,
+                                    URL state); Company, KYC and opportunities pending (no Company in the contract)
     finance-core/
       shared/                       models (Investment ≠ Payment ≠ Wallet ≠ WalletMovement), frozen seeds, explicit-reference
                                     lookups, read-only references to Operation / Gateways, Finance Core frame, session activity
@@ -774,10 +779,11 @@ review record for scope, evidence and fallback checks.
   separately, as a Resource Use — never as a modality. Name 3–80 / description
   300 / Whitelabel and modality required are prototype UX constraints.
   Configuração shows no financial parameter.
-- **Investidores** now read the Control Plane — see
-  [Investor Read Integration V1](docs/investor-read-integration-v1.md); the
-  projection bullet below describes the V1 prototype (still true for
-  Empreendedores).
+- **Investidores** and **Empreendedores** now read the Control Plane — see
+  [Investor Read Integration V1](docs/investor-read-integration-v1.md) and
+  [Entrepreneur Read Integration V1](docs/entrepreneur-read-integration-v1.md)
+  (no Company in the contract: Empresas remains open). The projection bullet
+  below describes the V1 prototype only.
 - **Investidores / Empreendedores.** Read-only projections of the Accounts
   prototype records (operational id = account prototype id; tenant context on
   every record; no cross-tenant identity). KYC is a prototype summary owned by
@@ -1085,7 +1091,8 @@ further OriginKit assets, final brand system.
 - [Segmentos e usos dos recursos V1 — local implementation, QA and Backend/Product dependencies](docs/whitelabel-finance-segments-resource-uses-v1.md)
 - [Operação › Oportunidades V1 — local implementation, Operation QA and open questions](docs/operation-opportunities-v1.md)
 - [Operação › Investidores V1 — boundaries, local state and open questions](docs/operation-investors-v1.md)
-- [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md)
+- [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md) (prototype record, superseded for data by the read integration)
+- [Entrepreneur Read Integration V1 — live contract, identity, Company finding (Empresas still open)](docs/entrepreneur-read-integration-v1.md)
 - [Financeiro › Finance Core V1 — scope, safety boundaries, relationships, QA and open questions](docs/finance-core-v1.md)
 - [Financeiro › Investimentos V1](docs/finance-investments-v1.md)
 - [Financeiro › Pagamentos / PIX V1](docs/finance-payments-pix-v1.md)

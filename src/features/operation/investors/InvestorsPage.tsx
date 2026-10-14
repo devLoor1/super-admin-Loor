@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import {
   ChartColumn,
   ChevronLeft,
@@ -16,6 +16,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
+import { useUrlSearchDraft } from '../../../app/useUrlSearchDraft'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { StatusPill } from '../../../components/ui/StatusPill'
@@ -72,7 +73,6 @@ export function InvestorsPage(props: InvestorsPageProps) {
 }
 
 type SortKey = 'name' | 'createdAt'
-const SEARCH_DEBOUNCE_MS = 400
 const SKELETON_ROWS = 6
 
 function sortRows(rows: InvestorRecord[], sort: SortState<SortKey> | null) {
@@ -125,8 +125,20 @@ function InvestorList({ whitelabel, page: pageParam, search: searchParam, routeK
   const [sort, setSort] = useState<SortState<SortKey> | null>(null)
   const rows = useMemo(() => (data ? (sortable ? sortRows(data.rows, sort) : data.rows) : []), [data, sortable, sort])
 
+  // Search: typed text is debounced into the URL (and so into `?search=` on the API).
+  const search = useUrlSearchDraft({
+    urlSearch: route.search,
+    urlKey: routeKey,
+    maxLength: INVESTOR_SEARCH_MAX_LENGTH,
+    commit: (next) => replaceRouteKeepingScroll(investorsHref({ whitelabelId: route.whitelabelId, search: next })),
+  })
+  const draft = search.draft
+
+  // Scope / page changes carry the pending search, never the stale URL value.
   function navigate(next: Partial<InvestorRouteState>) {
-    replaceRouteKeepingScroll(investorsHref({ whitelabelId: route.whitelabelId, search: route.search, ...next }))
+    const pendingSearch = search.pendingSearch()
+    replaceRouteKeepingScroll(investorsHref({ whitelabelId: route.whitelabelId, search: pendingSearch, ...next,
+      page: pendingSearch !== route.search ? undefined : next.page }))
   }
 
   // Clamp an out-of-range page to the last one reported by the Backend.
@@ -138,27 +150,9 @@ function InvestorList({ whitelabel, page: pageParam, search: searchParam, routeK
     }
   }, [data, route.page, route.search, route.whitelabelId])
 
-  // Search: typed text is debounced into the URL (and so into `?search=` on the API).
-  const [draft, setDraft] = useState(route.search)
-  const ownSearch = useRef<string | null>(null)
-  useEffect(() => {
-    if (ownSearch.current !== route.search) setDraft(route.search)
-    ownSearch.current = null
-  }, [route.search])
-  useEffect(() => {
-    const next = draft.trim().slice(0, INVESTOR_SEARCH_MAX_LENGTH)
-    if (next === route.search) return
-    const timer = window.setTimeout(() => {
-      ownSearch.current = next
-      replaceRouteKeepingScroll(investorsHref({ whitelabelId: route.whitelabelId, search: next }))
-    }, SEARCH_DEBOUNCE_MS)
-    return () => window.clearTimeout(timer)
-  }, [draft, route.search, route.whitelabelId])
-
   const filtersActive = route.search !== '' || draft.trim() !== '' || route.whitelabelId !== undefined
   function clearFilters() {
-    if (route.search !== '') ownSearch.current = ''
-    setDraft('')
+    search.clear()
     replaceRouteKeepingScroll(investorsHref())
   }
 
@@ -209,7 +203,7 @@ function InvestorList({ whitelabel, page: pageParam, search: searchParam, routeK
               value={draft}
               maxLength={INVESTOR_SEARCH_MAX_LENGTH}
               placeholder="Buscar investidores…"
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => search.setDraft(event.target.value)}
             />
           </label>
           <div className={shared.filterSelects}>

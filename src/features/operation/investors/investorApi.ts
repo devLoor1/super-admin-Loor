@@ -2,7 +2,7 @@ import type { StatusTone } from '../../../components/ui/StatusPill'
 import { ApiError } from '../../../lib/api'
 import { authenticatedGet } from '../../../lib/apiClient'
 import { ACCESS_META, type BusinessTone } from '../../whitelabel-accounts/accountModel'
-import { getWhitelabel, isServerWhitelabelId, parseWhitelabelList, type WhitelabelListResult } from '../../whitelabels/whitelabelApi'
+import { isServerWhitelabelId } from '../../whitelabels/whitelabelApi'
 
 /*
  * Investor reads — Control Plane (Nest) → Core `/internal/super-admin/v1/investors`,
@@ -189,17 +189,8 @@ export async function getInvestor(id: string, signal?: AbortSignal) {
   return detail
 }
 
-/** Whitelabel names for the selector and the Whitelabel column (authoritative registry). */
-export async function listWhitelabelOptions(signal?: AbortSignal): Promise<WhitelabelListResult> {
-  return parseWhitelabelList(await authenticatedGet('/whitelabels', { signal, query: { page: 1, perPage: 100 } }))
-}
-
-/** A tenant-name lookup must describe the requested tenant, never a different one. */
-export async function getInvestorWhitelabel(id: string, signal?: AbortSignal) {
-  const record = await getWhitelabel(id, signal)
-  if (record.id !== id) throw malformed()
-  return record
-}
+/** Whitelabel registry / tenant lookup — shared with Empreendedores (operation/shared/whitelabelContext.ts). */
+export { listWhitelabelOptions, getTenantWhitelabel as getInvestorWhitelabel } from '../shared/whitelabelContext'
 
 /* ---------- presentation (derived from Backend tokens; unknown tokens shown as sent) ---------- */
 

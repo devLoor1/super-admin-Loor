@@ -35,6 +35,8 @@ const finance = await load('src/features/finance-core/shared/financeCoreRecords.
 const participants = await load('src/features/operation/shared/participants.ts')
 const { PROTOTYPE_KYC_CASES: cases } = await load('src/features/compliance-kyc/prototypeKyc.ts')
 const investor = await load('src/features/operation/investors/investorApi.ts')
+const entrepreneur = await load('src/features/operation/entrepreneurs/entrepreneurApi.ts')
+const entrepreneurRoute = await load('src/features/operation/entrepreneurs/entrepreneurRoute.ts')
 const route = await load('src/features/operation/investors/investorRoute.ts')
 const operation = await load('src/features/operation/shared/operationModel.ts')
 const before = JSON.stringify([finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS])
@@ -77,6 +79,10 @@ for (const item of cases.filter(item => item.participantType === 'investor')) {
   check(investor.isPrototypeId(item.participantId), 'KYC prototypes still use prototype identity, never silently remapped')
   check(!investor.isServerInvestorId(item.participantId), 'Prototype KYC participant cannot be sent to Core')
 }
+for (const item of cases.filter(item => item.participantType === 'entrepreneur')) {
+  check(entrepreneur.isPrototypeId(item.participantId), 'KYC Entrepreneur identity remains prototype-only')
+  check(!entrepreneur.isServerEntrepreneurId(item.participantId), 'KYC prototypes cannot become Core Entrepreneurs')
+}
 
 const list = await readFile(resolve(root, 'src/features/operation/investors/InvestorsPage.tsx'), 'utf8')
 const detail = await readFile(resolve(root, 'src/features/operation/investors/InvestorDetailPage.tsx'), 'utf8')
@@ -94,6 +100,43 @@ check(!/\b(?:apiRequest|authenticatedPost|authenticatedPut|authenticatedPatch|au
 check(app.includes('returnTo={route.returnTo}'), 'Detail return context survives a full document reload')
 await assert.rejects(access(resolve(root, 'src/features/operation/investors/prototypeInvestments.ts')))
 checks += 1
+const entrepreneurList = await readFile(resolve(root, 'src/features/operation/entrepreneurs/EntrepreneursPage.tsx'), 'utf8')
+const entrepreneurDetail = await readFile(resolve(root, 'src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx'), 'utf8')
+for (const source of [entrepreneurList, entrepreneurDetail]) {
+  check(!/from\s+['"][^'"]*(?:shared\/participants|prototypeKyc|opportunityStore|financeCoreRecords)['"]/.test(source), 'No prototype join in authoritative Entrepreneur screens')
+  check(!/sessionStorage|localStorage|\bfetch\s*\(/.test(source), 'Entrepreneurs use canonical auth/read transport')
+}
+check(entrepreneurDetail.includes('`entrepreneur:${id}`'), 'Activity identity is namespaced against numeric Investor overlap')
+check(entrepreneurDetail.includes('Aguardando integração da empresa'), 'Missing Company is pending, not fabricated')
+check(entrepreneurDetail.includes('prototypeLink ? null : entrepreneurId'), 'Prototype-origin Entrepreneur links do not reach Core')
+check(entrepreneurDetail.includes('Nenhuma navegação foi feita'), 'Real Entrepreneur ids do not enter prototype destinations')
+for (const component of ['ParticipantList.tsx', 'ParticipantDetail.tsx']) {
+  await assert.rejects(access(resolve(root, `src/features/operation/shared/${component}`)))
+  checks += 1
+}
+for (const source of [list, entrepreneurList]) check(source.includes('search.pendingSearch()'), 'Both participant lists carry pending search into navigation')
+const entrepreneurContext = entrepreneurRoute.entrepreneursHref({ whitelabelId: '4', page: 2, search: 'Synthetic' })
+const entrepreneurReturn = new URLSearchParams(entrepreneurRoute.entrepreneurHref('41', entrepreneurContext).split('?')[1]).get('returnTo')
+check(entrepreneurRoute.entrepreneurListReturnHash(entrepreneurReturn) === entrepreneurContext, 'Entrepreneur return context survives reload')
+for (const sourceText of [list, entrepreneurList]) {
+  const tree = ts.createSourceFile('Page.tsx', sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  let declaration
+  function visit(node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === 'navigate') declaration = node
+    ts.forEachChild(node, visit)
+  }
+  visit(tree)
+  assert.ok(declaration, 'Actual list navigation must remain tested')
+  const compiled = ts.transpileModule(declaration.getText(tree), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+  let destination
+  const navigate = new Function('route', 'search', 'replaceRouteKeepingScroll', 'investorsHref', 'entrepreneursHref', `${compiled}; return navigate`)(
+    { whitelabelId: '4', page: 2, search: 'old' }, { pendingSearch: () => 'new' }, value => { destination = value },
+    route.investorsHref, entrepreneurRoute.entrepreneursHref,
+  )
+  navigate({ page: 3 })
+  const query = new URLSearchParams(destination.split('?')[1])
+  check(query.get('search') === 'new' && !query.has('page'), 'Pending search plus pagination resets to page one, not a page of the old result')
+}
 
 function localFunction(name) {
   const source = ts.createSourceFile('InvestorsPage.tsx', list, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)

@@ -1,10 +1,7 @@
 import { useRemote } from '../../../lib/useRemoteResource'
-import { type WhitelabelListResult, type WhitelabelRecord } from '../../whitelabels/whitelabelApi'
 import {
   getInvestor,
-  getInvestorWhitelabel,
   listInvestors,
-  listWhitelabelOptions,
   type InvestorDetail,
   type InvestorListParams,
   type InvestorListResult,
@@ -24,12 +21,5 @@ export function useInvestorDetail(id: string | null) {
   return useRemote<InvestorDetail>(id, (signal) => getInvestor(id!, signal))
 }
 
-/** Authoritative Whitelabel registry (`GET /whitelabels?perPage=100`) for names and the selector. */
-export function useWhitelabelOptions() {
-  return useRemote<WhitelabelListResult>('whitelabel-options', (signal) => listWhitelabelOptions(signal))
-}
-
-/** `GET /whitelabels/:id` — confirms a Whitelabel the registry page did not include. */
-export function useWhitelabelRecord(id: string | null) {
-  return useRemote<WhitelabelRecord>(id, (signal) => getInvestorWhitelabel(id!, signal))
-}
+/** Whitelabel registry / tenant lookup — shared with Empreendedores. */
+export { useWhitelabelOptions, useWhitelabelRecord } from '../shared/whitelabelContext'

@@ -1,5 +1,13 @@
 # Operação › Empreendedores V1 — local implementation record
 
+> **Superseded for data and behaviour by
+> [Entrepreneur Read Integration V1](entrepreneur-read-integration-v1.md).**
+> List and detail now read the Control Plane. The prototype projection,
+> company validation states, KYC summaries and Opportunities relationship
+> described below are no longer shown. The Control Plane contract has no
+> Company entity, so the "Empresas" requirement remains open. This record is
+> kept for the approved composition and its history.
+
 Part of Operation V1, implemented by Claude on 2026-10-07 from `ec86b47…`,
 then reviewed and consolidated locally by Codex on
 `feature/super-admin-operation-v1`. No push or deployment. Shared

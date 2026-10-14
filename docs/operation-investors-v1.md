@@ -1,5 +1,10 @@
 # Operação › Investidores V1 — local implementation record
 
+> **Superseded for data by [Investor Read Integration V1](investor-read-integration-v1.md):**
+> list and detail now read the Control Plane (real Core ids, server-scoped
+> Whitelabel separation); KYC and investment associations are shown as
+> pending. This record describes the V1 prototype.
+
 Part of Operation V1, implemented by Claude on 2026-10-07 from `ec86b47…`,
 then reviewed and consolidated locally by Codex on
 `feature/super-admin-operation-v1`. No push or deployment. Shared

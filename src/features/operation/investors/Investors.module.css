@@ -1,0 +1,131 @@
+/*
+ * Investidores — Backend read states only (loading / error / unavailable).
+ * Layout, table and hero styles stay in the shared Operation modules.
+ */
+
+.ignoredNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #e8cf9c;
+}
+
+.ignoredNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.scopeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.scopeNote svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--icon-on-dark);
+}
+
+.skeletonRow td {
+  cursor: default;
+}
+
+.skeleton {
+  display: block;
+  width: min(100%, 110px);
+  height: 10px;
+  border-radius: 6px;
+  background: var(--surface-track);
+  opacity: 0.55;
+  animation: inv-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeletonRow:nth-child(even) .skeleton {
+  width: min(100%, 80px);
+}
+
+.skeletonWide {
+  width: min(100%, 170px);
+  height: 12px;
+}
+
+@keyframes inv-skeleton {
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 34px 16px 26px;
+  text-align: center;
+}
+
+.diagnostic {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.pending {
+  color: var(--text-on-dark-muted);
+}
+
+.validationHeading {
+  white-space: normal;
+}
+
+.pageGap {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 34px;
+  font-size: 12.5px;
+  color: var(--text-on-dark-muted);
+}
+
+.heroSkeleton {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.heroSkeleton .skeleton:first-child {
+  width: min(100%, 260px);
+  height: 16px;
+}
+
+.unavailable {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 28px 16px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: var(--radius-tile);
+}

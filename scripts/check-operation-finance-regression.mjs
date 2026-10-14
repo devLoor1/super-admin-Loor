@@ -1,0 +1,120 @@
+import assert from 'node:assert/strict'
+import { readFile, access } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import ts from 'typescript'
+
+// Maintained source/model regression checks. No browser, real token or network.
+// Historical browser runners lived only in scratch sessions, not this repository.
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const require = createRequire(pathToFileURL(resolve(root, 'package.json')))
+const modules = new Map()
+async function moduleUrl(path) {
+  if (modules.has(path)) return modules.get(path)
+  let code = ts.transpileModule(await readFile(path, 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+  }).outputText.replaceAll('import.meta.env', '({VITE_API_BASE_URL:"https://contract.example.invalid/api"})')
+  for (const match of [...code.matchAll(/from\s+(['"])([^'"]+)\1/g)]) {
+    const specifier = match[2]
+    const url = specifier.startsWith('.')
+      ? await moduleUrl(resolve(dirname(path), `${specifier}.ts`))
+      : pathToFileURL(require.resolve(specifier)).href
+    code = code.replace(match[0], `from ${JSON.stringify(url)}`)
+  }
+  const url = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
+  modules.set(path, url)
+  return url
+}
+const load = async (path) => import(await moduleUrl(resolve(root, path)))
+globalThis.fetch = () => { throw new Error('Unexpected network operation in model regression') }
+let checks = 0
+function check(condition, message) { assert.ok(condition, message); checks += 1 }
+
+const finance = await load('src/features/finance-core/shared/financeCoreRecords.ts')
+const participants = await load('src/features/operation/shared/participants.ts')
+const { PROTOTYPE_KYC_CASES: cases } = await load('src/features/compliance-kyc/prototypeKyc.ts')
+const investor = await load('src/features/operation/investors/investorApi.ts')
+const route = await load('src/features/operation/investors/investorRoute.ts')
+const operation = await load('src/features/operation/shared/operationModel.ts')
+const before = JSON.stringify([finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS])
+
+for (const rows of [finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS]) {
+  check(rows.length > 0, 'Existing Finance records must be retained')
+  check(Object.isFrozen(rows), 'Finance arrays remain read-only')
+  for (const item of rows) check(Object.isFrozen(item), 'Finance records remain read-only')
+}
+for (const item of finance.INVESTMENTS) {
+  check(finance.investmentById(item.investmentId) === item, 'Investment identity remains independent')
+  for (const ref of finance.movementsForInvestment(item)) {
+    check(ref.via === 'investment'
+      ? ref.movement.sourceType === 'investment' && ref.movement.sourceId === item.investmentId
+      : ref.movement.sourceType === 'payment' && ref.movement.sourceId === item.paymentId,
+    'Movement relationships use explicit foreign references, not amount/name inference')
+  }
+  if (item.investorId) check(investor.isPrototypeId(item.investorId), 'Finance prototype ids must not become Core Investor ids')
+}
+for (const item of finance.PAYMENTS) {
+  check(finance.paymentById(item.paymentId) === item, 'Payment identity remains independent')
+  for (const movement of finance.movementsForPayment(item.paymentId)) {
+    check(movement.sourceType === 'payment' && movement.sourceId === item.paymentId, 'Payment lineage remains explicit')
+  }
+}
+for (const wallet of finance.WALLETS) {
+  check(finance.walletById(wallet.walletId) === wallet, 'Wallet identity remains independent')
+  const refs = finance.walletRelations(wallet.walletId)
+  check(refs.movements.every(item => item.walletId === wallet.walletId), 'Wallet movement scope is retained')
+  check(finance.walletIdsOf(refs.movements).every(id => id === wallet.walletId), 'No inferred cross-wallet relationship')
+  for (const ref of refs.payments) check(ref.movementIds.every(id => refs.movements.some(m => m.movementId === id && m.sourceId === ref.paymentId)), 'Explicit payment relation')
+}
+check(before === JSON.stringify([finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS]), 'Read lookups cannot synchronize balances/statuses')
+check(participants.ENTREPRENEUR_PROFILES.length > 0, 'Entrepreneur prototype remains available')
+for (const item of participants.ENTREPRENEUR_PROFILES) {
+  check(item.kind === 'entrepreneur' && item.id === item.account.id, 'Entrepreneur identity retained')
+  check(item.whitelabelId === item.account.whitelabelId, 'Entrepreneur tenant retained')
+}
+for (const item of cases.filter(item => item.participantType === 'investor')) {
+  check(investor.isPrototypeId(item.participantId), 'KYC prototypes still use prototype identity, never silently remapped')
+  check(!investor.isServerInvestorId(item.participantId), 'Prototype KYC participant cannot be sent to Core')
+}
+
+const list = await readFile(resolve(root, 'src/features/operation/investors/InvestorsPage.tsx'), 'utf8')
+const detail = await readFile(resolve(root, 'src/features/operation/investors/InvestorDetailPage.tsx'), 'utf8')
+const api = await readFile(resolve(root, 'src/features/operation/investors/investorApi.ts'), 'utf8')
+const app = await readFile(resolve(root, 'src/app/App.tsx'), 'utf8')
+for (const source of [list, detail]) {
+  check(!/from\s+['"][^'"]*(?:prototypeInvestments|shared\/participants|prototypeFinanceCore|prototypeKyc)['"]/.test(source), 'No prototype record fallback in authoritative Investor screens')
+  check(!/sessionStorage|localStorage|\bfetch\s*\(/.test(source), 'Screens must use canonical read/auth layer')
+  check(source.includes('Validação do cadastro'), 'Registration validation is explicitly distinct from KYC')
+}
+check(detail.includes('Investimentos — aguardando integração') && detail.includes('Compliance / KYC — aguardando integração'), 'KYC/Finance panels remain unavailable')
+check(detail.includes('prototypeLink ? null : investorId'), 'Prototype links reach a controlled not-found state without a request')
+check(detail.includes('Nenhuma navegação foi feita'), 'Real Investor ids cannot enter prototype destinations')
+check(!/\b(?:apiRequest|authenticatedPost|authenticatedPut|authenticatedPatch|authenticatedDelete)\s*\(/.test(api), 'Adapter is GET-only')
+check(app.includes('returnTo={route.returnTo}'), 'Detail return context survives a full document reload')
+await assert.rejects(access(resolve(root, 'src/features/operation/investors/prototypeInvestments.ts')))
+checks += 1
+
+function localFunction(name) {
+  const source = ts.createSourceFile('InvestorsPage.tsx', list, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  const declaration = source.statements.find(item => ts.isFunctionDeclaration(item) && item.name?.text === name)
+  assert.ok(declaration, `${name} must remain covered`)
+  const code = ts.transpileModule(declaration.getText(source), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText
+  return new Function('compareText', `${code}; return ${name}`)(operation.compareText)
+}
+const pages = localFunction('pageItems')
+for (const [current, last] of [[1, 1], [1, 3], [1, 596], [300, 596], [596, 596]]) {
+  const items = pages(current, last)
+  check(items.includes(current) && items.includes(1) && items.includes(last), 'Pagination includes current/first/last')
+  check(items.length <= 7, 'Pagination does not render hundreds of page buttons')
+  check(items.filter(x => x !== 'gap').every(x => x >= 1 && x <= last), 'Pagination is bounded')
+}
+const sort = localFunction('sortRows')
+const rows = [{ id: '1', createdAt: '2026-10-13T10:00:00-03:00' }, { id: '2', createdAt: '2026-10-13T12:00:00Z' }, { id: '3', createdAt: null }]
+check(sort(rows, { key: 'createdAt', direction: 'ascending' }).map(x => x.id).join() === '2,1,3', 'Dates sort by instant, null last')
+check(sort(rows, { key: 'createdAt', direction: 'descending' }).map(x => x.id).join() === '1,2,3', 'Descending dates preserve null last')
+check(rows.map(x => x.id).join() === '1,2,3', 'Local sort never mutates source records')
+const scoped = route.investorsHref({ whitelabelId: '4', page: 2, search: 'Synthetic' })
+const returnTo = new URLSearchParams(route.investorHref('41', scoped).split('?')[1]).get('returnTo')
+check(route.investorListReturnHash(returnTo) === scoped, 'Scoped detail returns to exact context after reload')
+console.log(`Operation/Finance/Investor boundary regression: ${checks} passed (source/models, no network)`)

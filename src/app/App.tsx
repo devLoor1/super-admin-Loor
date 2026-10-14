@@ -70,10 +70,11 @@ type Route =
   | { view: 'finance-modalities'; whitelabelId: string }
   | { view: 'finance-catalogs'; whitelabelId: string }
   | { view: 'operation-opportunities'; entrepreneurId?: string }
-  | { view: 'operation-opportunity-new' | 'operation-investors' | 'operation-entrepreneurs' }
+  | { view: 'operation-opportunity-new' | 'operation-entrepreneurs' }
+  | { view: 'operation-investors'; whitelabel?: string; page?: string; query?: string; search: string }
   | { view: 'operation-opportunity'; opportunityId: string }
   | { view: 'operation-opportunity-edit'; opportunityId: string; focusClassification: boolean }
-  | { view: 'operation-investor'; investorId: string }
+  | { view: 'operation-investor'; investorId: string; returnTo?: string }
   | { view: 'operation-entrepreneur'; entrepreneurId: string }
   | { view: 'finance-investments'; investorId?: string; walletId?: string }
   | { view: 'finance-investment'; investmentId: string }
@@ -190,7 +191,8 @@ function decodeSegment(value: string) {
  * `#/whitelabels/:whitelabelId/finance/segments-resource-uses`,
  * Operation (global): `#/operation/opportunities` (optional `?empreendedor=:id`),
  * `#/operation/opportunities/new`, `#/operation/opportunities/:opportunityId`
- * (`/edit`, optional `?secao=classificacao`), `#/operation/investors[/:investorId]`,
+ * (`/edit`, optional `?secao=classificacao`), `#/operation/investors` (optional `?whitelabel=`
+ * Core Whitelabel id, `?page=`, `?search=`), `#/operation/investors/:investorId` (Core id),
  * `#/operation/entrepreneurs[/:entrepreneurId]`,
  * Finance Core (global): `#/finance/investments` (optional `?investidor=` / `?wallet=`),
  * `#/finance/investments/:investmentId`, `#/finance/payments` (optional `?wallet=`),
@@ -239,7 +241,15 @@ function routeFromHash(): Route {
     return { view: 'operation-opportunities', entrepreneurId: params.get('empreendedor') ?? undefined }
   }
   if (path === 'operation/opportunities/new') return { view: 'operation-opportunity-new' }
-  if (path === 'operation/investors') return { view: 'operation-investors' }
+  if (path === 'operation/investors') {
+    return {
+      view: 'operation-investors',
+      whitelabel: params.get('whitelabel') || undefined,
+      page: params.get('page') || undefined,
+      query: params.get('search') || undefined,
+      search,
+    }
+  }
   if (path === 'operation/entrepreneurs') return { view: 'operation-entrepreneurs' }
   const opportunityEdit = OPPORTUNITY_EDIT_PATH.exec(path)
   if (opportunityEdit) {
@@ -252,7 +262,7 @@ function routeFromHash(): Route {
   const opportunity = OPPORTUNITY_PATH.exec(path)
   if (opportunity) return { view: 'operation-opportunity', opportunityId: opportunity[1] }
   const investor = INVESTOR_PATH.exec(path)
-  if (investor) return { view: 'operation-investor', investorId: investor[1] }
+  if (investor) return { view: 'operation-investor', investorId: investor[1], returnTo: params.get('returnTo') ?? undefined }
   const entrepreneur = ENTREPRENEUR_PATH.exec(path)
   if (entrepreneur) return { view: 'operation-entrepreneur', entrepreneurId: entrepreneur[1] }
   if (path === 'finance/investments') {
@@ -380,8 +390,10 @@ export function App() {
   if (route.view === 'operation-opportunity') {
     return <OpportunityDetailPage key={route.opportunityId} opportunityId={route.opportunityId} />
   }
-  if (route.view === 'operation-investors') return <InvestorsPage />
-  if (route.view === 'operation-investor') return <InvestorDetailPage key={route.investorId} investorId={route.investorId} />
+  if (route.view === 'operation-investors') {
+    return <InvestorsPage whitelabel={route.whitelabel} page={route.page} search={route.query} routeKey={route.search} />
+  }
+  if (route.view === 'operation-investor') return <InvestorDetailPage key={route.investorId} investorId={route.investorId} returnTo={route.returnTo} />
   if (route.view === 'operation-entrepreneurs') return <EntrepreneursPage />
   if (route.view === 'operation-entrepreneur') {
     return <EntrepreneurDetailPage key={route.entrepreneurId} entrepreneurId={route.entrepreneurId} />

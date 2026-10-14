@@ -1,181 +1,345 @@
-import { ChartColumn, ExternalLink, Info } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ChartColumn, CircleAlert, Info, RotateCw, SearchX, ShieldCheck, UserRound } from 'lucide-react'
+import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
+import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
+import { OutlineButton } from '../../../components/ui/OutlineButton'
+import { StatusPill } from '../../../components/ui/StatusPill'
+import { Tabs } from '../../../components/ui/Tabs'
+import { tabId, tabPanelId } from '../../../components/ui/tabIds'
+import { describeApiError } from '../../../lib/apiErrors'
+import { BusinessBadge } from '../../whitelabel-accounts/AccountBadges'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { useOpportunities } from '../opportunities/opportunityStore'
-import { ModalityChip, OpportunityStatusPill } from '../opportunities/OpportunityParts'
-import type { Opportunity } from '../opportunities/opportunityModel'
-import { addOperationActivity } from '../shared/operationActivity'
-import { countLabel, formatDateTime, whitelabelName } from '../shared/operationModel'
-import { investorById, type InvestorProfile } from '../shared/participants'
-import { ParticipantDetail } from '../shared/ParticipantDetail'
+import { formatWhitelabelDate } from '../../whitelabels/whitelabelApi'
+import { addOperationActivity, useOperationActivity } from '../shared/operationActivity'
+import { crumbLabel, initials } from '../shared/operationModel'
+import { BackLink, DetailList, DomainNavCard, InfoNote, OperationShell, SessionActivityCard, type DomainNavItem } from '../shared/OperationUi'
 import shared from '../shared/Operation.module.css'
 import styles from '../shared/Participants.module.css'
-import { associationsOf } from './prototypeInvestments'
+import own from './Investors.module.css'
+import {
+  accessMeta,
+  investorTypeLabel,
+  isPrototypeId,
+  maskPhone,
+  validationMeta,
+  type InvestorDetail,
+} from './investorApi'
+import { investorListReturnHash } from './investorRoute'
+import { useInvestorDetail, useWhitelabelRecord } from './useInvestorData'
 
-const investmentsHref = (investorId: string) => `#/finance/investments?investidor=${encodeURIComponent(investorId)}`
+type Tab = 'overview' | 'relation' | 'kyc' | 'activity'
+const TAB_PREFIX = 'participant-detail'
 
-/** `#/operation/investors/:investorId` — read-only operational profile. */
-export function InvestorDetailPage({ investorId }: { investorId: string }) {
-  const profile = investorById(investorId)
+const PENDING = {
+  account: 'Contas do Whitelabel ainda é um protótipo e não reconhece investidores do Control Plane. Nenhuma navegação foi feita.',
+  investments:
+    'Financeiro › Investimentos ainda é um protótipo; investimentos deste investidor não estão integrados. Nenhuma navegação foi feita.',
+  compliance:
+    'Compliance › KYC ainda é um protótipo; não há caso KYC do Control Plane vinculado a este investidor. Nenhuma navegação foi feita.',
+}
+
+/**
+ * `#/operation/investors/:investorId` — read-only profile from
+ * `GET /investors/:id` (Core Investor id). Only fields the Control Plane
+ * returns are shown; KYC, investments and account administration are not
+ * integrated and their destinations (prototype modules) are not linked with
+ * real ids.
+ */
+export function InvestorDetailPage({ investorId, returnTo }: { investorId: string; returnTo?: string }) {
+  const prototypeLink = isPrototypeId(investorId)
+  const detail = useInvestorDetail(prototypeLink ? null : investorId)
+  const listHref = investorListReturnHash(returnTo)
+  const error = detail.state.status === 'error' ? describeApiError(detail.state.error, 'o investidor') : null
+
+  if (prototypeLink || error?.notFound) {
+    return (
+      <OperationShell section="investors" title="Investidores" trail={['Não encontrado']}>
+        <div className={shared.notFound} data-investor-state="not-found">
+          <EmptyState
+            icon={SearchX}
+            title="Investidor não encontrado"
+            description={
+              <>
+                {prototypeLink
+                  ? `“${investorId}” é um ID de protótipo (de Financeiro, Compliance ou Auditoria, que ainda usam dados ilustrativos) e não corresponde a um investidor do Control Plane.`
+                  : `Nenhum investidor do Control Plane usa o ID “${investorId}”.`}{' '}
+                <a href={listHref} className={shared.inlineLink}>
+                  Voltar para Investidores
+                </a>
+              </>
+            }
+          />
+        </div>
+      </OperationShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <OperationShell section="investors" title="Investidores" trail={[`ID ${investorId}`]}>
+        <div>
+          <BackLink href={listHref} label="Voltar para Investidores" />
+        </div>
+        <section className={`${fin.card} ${own.feedback}`} role="alert" data-investor-state="error">
+          <EmptyState icon={CircleAlert} title={error.title} description={error.description} />
+          {error.correlationId ? (
+            <p className={own.diagnostic}>
+              Código de diagnóstico: <code className={own.code}>{error.correlationId}</code>
+            </p>
+          ) : null}
+          {error.retryable ? (
+            <OutlineButton onClick={detail.reload}>
+              <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
+              Tentar novamente
+            </OutlineButton>
+          ) : null}
+        </section>
+      </OperationShell>
+    )
+  }
+
+  if (detail.state.status !== 'success') {
+    return (
+      <OperationShell section="investors" title="Investidores" trail={[`ID ${investorId}`]}>
+        <div>
+          <BackLink href={listHref} label="Voltar para Investidores" />
+        </div>
+        <section className={`${fin.card} ${shared.hero}`} aria-busy="true" aria-label="Carregando investidor" data-investor-state="loading">
+          <span className={styles.heroAvatar} aria-hidden="true" />
+          <div className={own.heroSkeleton} aria-hidden="true">
+            <span className={own.skeleton} />
+            <span className={own.skeleton} />
+            <span className={own.skeleton} />
+          </div>
+          <p className="visually-hidden" role="status">
+            Carregando investidor…
+          </p>
+        </section>
+      </OperationShell>
+    )
+  }
+
+  const investor = detail.state.data
   return (
-    <ParticipantDetail
-      section="investors"
-      profile={profile}
-      notFoundId={investorId}
-      relation={{
-        label: 'Investimentos',
-        viewedTitle: 'Investimentos consultados',
-        render: () => (profile ? <InvestmentsTab profile={profile} /> : null),
-        // Financeiro › Investimentos now exists: navigate normally, filtered by this investor.
-        navItem: ({ log }) => ({
-          key: 'investments',
-          label: 'Ver investimentos',
-          description: 'Financeiro › Investimentos — registros deste investidor',
-          icon: ChartColumn,
-          href: investmentsHref(investorId),
-          onSelect: () => log('Navegação para Investimentos solicitada', 'Financeiro › Investimentos (filtrado por este investidor)'),
-        }),
-      }}
-      moduleNote={
-        <>
-          <strong>Investidores V1 é um módulo de supervisão operacional.</strong> Visualize o contexto e navegue para os domínios
-          responsáveis: Contas, Financeiro › Investimentos e Compliance › KYC. Nenhuma ação altera conta, investimento ou KYC.
-        </>
-      }
-    />
+    <OperationShell section="investors" title="Investidores" trail={[crumbLabel(investor.fullName ?? `ID ${investor.id}`)]}>
+      <InvestorProfile investor={investor} listHref={listHref} />
+    </OperationShell>
   )
 }
 
-function InvestmentsTab({ profile }: { profile: InvestorProfile }) {
-  const opportunities = useOpportunities()
-  const associations = associationsOf(profile.id).map((association) => ({
-    association,
-    opportunity: opportunities.find((item) => item.id === association.opportunityId),
-  }))
-  const byStatus = (status: Opportunity['status']) => associations.filter((item) => item.opportunity?.status === status).length
+function InvestorProfile({ investor, listHref }: { investor: InvestorDetail; listHref: string }) {
+  const notify = usePrototypeNotice()
+  const activity = useOperationActivity(investor.id)
+  const [tab, setTab] = useState<Tab>('overview')
+  const whitelabel = useWhitelabelRecord(investor.whitelabelId)
+  const whitelabelName = whitelabel.state.status === 'success' ? whitelabel.state.data.name : `Whitelabel #${investor.whitelabelId}`
+  const access = accessMeta(investor.accessState)
+  const validation = validationMeta(investor.businessState)
+  const name = investor.fullName ?? 'Nome não informado'
 
-  function viewInvestments() {
-    addOperationActivity(profile.id, {
-      title: 'Navegação para Investimentos solicitada',
-      detail: 'Financeiro › Investimentos (filtrado por este investidor)',
-    })
+  const log = (title: string, detail?: string) => addOperationActivity(investor.id, { title, detail })
+
+  useEffect(() => {
+    addOperationActivity(investor.id, { title: 'Perfil consultado', detail: 'Dados do Control Plane (somente leitura)' })
+  }, [investor.id])
+
+  function changeTab(next: Tab) {
+    setTab(next)
+    if (next === 'relation') log('Investimentos consultados', 'Aguardando integração')
+    if (next === 'kyc') log('Compliance / KYC consultado', 'Aguardando integração')
   }
+
+  function pending(key: keyof typeof PENDING, title: string) {
+    log(title, 'Destino ainda em protótipo — sem navegação')
+    notify(PENDING[key])
+  }
+
+  const navItems: DomainNavItem[] = [
+    {
+      key: 'account',
+      label: 'Ver conta',
+      description: 'Contas do Whitelabel — ainda em protótipo, não integrado',
+      icon: UserRound,
+      onSelect: () => pending('account', 'Navegação para Contas indisponível'),
+      pending: true,
+    },
+    {
+      key: 'investments',
+      label: 'Ver investimentos',
+      description: 'Financeiro › Investimentos — ainda em protótipo, não integrado',
+      icon: ChartColumn,
+      onSelect: () => pending('investments', 'Navegação para Investimentos indisponível'),
+      pending: true,
+    },
+    {
+      key: 'compliance',
+      label: 'Ver no Compliance',
+      description: 'Compliance › KYC — ainda em protótipo, não integrado',
+      icon: ShieldCheck,
+      onSelect: () => pending('compliance', 'Navegação para Compliance › KYC indisponível'),
+      pending: true,
+    },
+  ]
+
+  const tabs: { value: Tab; label: string }[] = [
+    { value: 'overview', label: 'Visão geral' },
+    { value: 'relation', label: 'Investimentos' },
+    { value: 'kyc', label: 'Compliance / KYC' },
+    { value: 'activity', label: 'Atividade da sessão' },
+  ]
+
+  const date = (value: string | null) => formatWhitelabelDate(value, true) ?? 'Não informado'
+  const whitelabelValue = (
+    <span className={shared.wlCell}>
+      <span className={shared.wlMark} data-tone="neutral" aria-hidden="true">
+        {whitelabelName.charAt(0).toLocaleUpperCase('pt-BR')}
+      </span>
+      <span>
+        {whitelabelName}{' '}
+        <a href={`#/whitelabels?id=${encodeURIComponent(investor.whitelabelId)}`} className={shared.inlineLink}>
+          (ID {investor.whitelabelId})
+        </a>
+      </span>
+    </span>
+  )
 
   return (
     <>
-      <div className={shared.panelGrid}>
-        <section className={fin.card} aria-labelledby="inv-summary-title">
-          <h3 id="inv-summary-title" className={fin.cardTitleSm}>
-            Resumo de investimentos
-          </h3>
-          <p className={fin.cardSubtitle}>Contagem de vínculos ilustrativos — sem valores, saldos ou rendimentos.</p>
-          <dl className={shared.statList}>
-            <div className={shared.statRow}>
-              <dt>Vínculos</dt>
-              <dd>{associations.length}</dd>
-            </div>
-            <div className={shared.statRow}>
-              <dt>Em oportunidades ativas</dt>
-              <dd>{byStatus('active')}</dd>
-            </div>
-            <div className={shared.statRow}>
-              <dt>Em oportunidades pausadas</dt>
-              <dd>{byStatus('paused')}</dd>
-            </div>
-            <div className={shared.statRow}>
-              <dt>Em oportunidades em rascunho</dt>
-              <dd>{byStatus('draft')}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className={fin.card} aria-labelledby="inv-linked-title">
-          <div className={styles.relationHead}>
-            <h3 id="inv-linked-title" className={fin.cardTitleSm}>
-              Investimentos vinculados
-            </h3>
-            <span className={shared.countTag}>{countLabel(associations.length, 'vínculo', 'vínculos', 'Nenhum vínculo')}</span>
-          </div>
-          {associations.length ? (
-            <div className={styles.relationTableWrap}>
-              <table className={`${shared.miniTable} ${styles.relationTable}`}>
-                <caption className="visually-hidden">Investimentos vinculados (ilustrativos, somente leitura)</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Oportunidade</th>
-                    <th scope="col" className={styles.relationOptional}>
-                      Modalidade
-                    </th>
-                    <th scope="col" className={styles.relationOptional}>
-                      Status
-                    </th>
-                    <th scope="col" className={styles.relationOptional}>
-                      Registro
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {associations.map(({ association, opportunity }) => (
-                    <tr key={association.id} data-association={association.id}>
-                      <td>
-                        <span className={styles.relationName}>
-                          {opportunity ? (
-                            <a href={`#/operation/opportunities/${opportunity.id}`} className={shared.rowLink}>
-                              {opportunity.name}
-                            </a>
-                          ) : (
-                            <span>Oportunidade não encontrada</span>
-                          )}
-                          <span className={shared.rowId}>
-                            {association.opportunityId}
-                            {opportunity && opportunity.whitelabelId !== profile.whitelabelId
-                              ? ` · agora em ${whitelabelName(opportunity.whitelabelId)} (protótipo)`
-                              : ''}
-                          </span>
-                          {opportunity ? (
-                            <span className={styles.relationInline}>
-                              <ModalityChip modality={opportunity.modality} />
-                              <OpportunityStatusPill status={opportunity.status} />
-                            </span>
-                          ) : null}
-                        </span>
-                      </td>
-                      <td className={styles.relationOptional}>{opportunity ? <ModalityChip modality={opportunity.modality} /> : '—'}</td>
-                      <td className={styles.relationOptional}>
-                        {opportunity ? <OpportunityStatusPill status={opportunity.status} /> : '—'}
-                      </td>
-                      <td className={`${styles.relationOptional} ${shared.dateCell}`}>{formatDateTime(association.registeredAt) ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className={fin.activityEmpty} style={{ marginTop: 12 }}>
-              <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-              Nenhum vínculo de investimento neste protótipo.
-            </p>
-          )}
-          <a
-            href={investmentsHref(profile.id)}
-            className={`${outline.button} ${shared.blockButton}`}
-            onClick={viewInvestments}
-            data-view-investments
-          >
-            <ChartColumn size={16} strokeWidth={1.8} aria-hidden="true" />
-            Ver investimentos
-            <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-          </a>
-        </section>
+      <div>
+        <BackLink href={listHref} label="Voltar para Investidores" />
       </div>
-      <p className={shared.callout}>
-        <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-        <span>
-          Vínculos ilustrativos para a experiência de Operação. Status e modalidade vêm da oportunidade (Operação › Oportunidades). Os
-          registros de investimento (valor, status, pagamento) ficam em Financeiro › Investimentos; aqui não há valores nem ações
-          financeiras.
+
+      <section className={`${fin.card} ${shared.hero}`} aria-labelledby="participant-title" data-investor-state="loaded">
+        <span className={styles.heroAvatar} aria-hidden="true">
+          {investor.fullName ? initials(investor.fullName) : '?'}
         </span>
-      </p>
+        <div className={shared.heroHeading}>
+          <div className={shared.heroTitleRow}>
+            <h2 id="participant-title" className={shared.heroTitle}>
+              {name}
+            </h2>
+            {access ? <StatusPill tone={access.tone} label={`Conta ${access.label.toLowerCase()}`} /> : null}
+          </div>
+          <p className={shared.heroId}>ID do investidor (Control Plane): {investor.id}</p>
+          <div className={shared.heroMeta}>
+            <div className={shared.heroMetaItem}>
+              <span className={shared.heroMetaLabel}>Whitelabel</span>
+              <span className={shared.heroMetaValue}>{whitelabelValue}</span>
+            </div>
+            <div className={shared.heroMetaItem}>
+              <span className={shared.heroMetaLabel}>KYC (Compliance)</span>
+              <span className={shared.heroMetaValue}>
+                <BusinessBadge tone="neutral" label="Aguardando integração" />
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className={shared.heroActions}>
+          <button type="button" className={`${outline.button} ${shared.secondaryButton}`} onClick={() => pending('account', 'Navegação para Contas indisponível')} data-view-account>
+            <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
+            Ver conta
+          </button>
+          <button type="button" className={`${outline.button} ${shared.secondaryButton}`} onClick={() => pending('compliance', 'Navegação para Compliance › KYC indisponível')} data-view-compliance>
+            <ShieldCheck size={15} strokeWidth={1.8} aria-hidden="true" />
+            Ver no Compliance
+          </button>
+        </div>
+      </section>
+
+      <div className={`${fin.card} ${shared.tabsCard}`}>
+        <Tabs idPrefix={TAB_PREFIX} label="Seções do perfil do investidor" tabs={tabs} value={tab} onChange={changeTab} />
+      </div>
+
+      <Panel tab="overview" current={tab}>
+        <div className={shared.panelGrid}>
+          <section className={fin.card} aria-labelledby="participant-info-title">
+            <h3 id="participant-info-title" className={fin.cardTitleSm}>
+              Informações principais
+            </h3>
+            <p className={fin.cardSubtitle}>Dados do Control Plane — somente leitura.</p>
+            <DetailList
+              rows={[
+                { label: 'Nome completo', value: name },
+                { label: 'ID do investidor', value: investor.id },
+                { label: 'E-mail', value: investor.email ?? 'Não informado' },
+                { label: 'Telefone', value: maskPhone(investor.phone) ?? 'Não informado' },
+                { label: 'Whitelabel', value: whitelabelValue },
+                { label: 'Status da conta', value: access ? <StatusPill tone={access.tone} label={access.label} /> : 'Não informado' },
+                {
+                  label: 'Validação do cadastro',
+                  value: validation ? <BusinessBadge tone={validation.tone} label={validation.label} /> : 'Não informado',
+                },
+                ...(investor.reasonForDeny ? [{ label: 'Motivo da negativa', value: investor.reasonForDeny, wide: true }] : []),
+                { label: 'Tipo de investidor', value: investorTypeLabel(investor.investorType) ?? 'Não informado' },
+                {
+                  label: 'Dados pessoais preenchidos',
+                  value: investor.personalInformationFilled === null ? 'Não informado' : investor.personalInformationFilled ? 'Sim' : 'Não',
+                },
+                { label: 'E-mail verificado em', value: date(investor.emailVerifiedAt) },
+                { label: 'Termos aceitos em', value: date(investor.termsAcceptedAt) },
+                { label: 'Criado em', value: date(investor.createdAt) },
+                { label: 'Atualizado em', value: date(investor.updatedAt) },
+              ]}
+            />
+          </section>
+          <DomainNavCard
+            title="Navegação para domínios responsáveis"
+            intro="Conta, investimentos e KYC pertencem a outros módulos, que ainda são protótipos e não reconhecem investidores do Control Plane."
+            items={navItems}
+          />
+        </div>
+        <InfoNote>
+          <strong>Investidores lê o Control Plane (somente leitura).</strong> “Validação do cadastro” é o estado de validação do
+          investidor no Core — não é a decisão de KYC do Compliance. KYC, investimentos e ações de conta aguardam integração; nenhum
+          valor ilustrativo é exibido.
+        </InfoNote>
+      </Panel>
+
+      <Panel tab="relation" current={tab}>
+        <PendingPanel
+          icon={ChartColumn}
+          title="Investimentos — aguardando integração"
+          description="Os investimentos deste investidor ainda não estão integrados: Financeiro › Investimentos é um protótipo. Nenhum vínculo, valor ou contagem ilustrativa é exibido."
+        />
+      </Panel>
+
+      <Panel tab="kyc" current={tab}>
+        <PendingPanel
+          icon={ShieldCheck}
+          title="Compliance / KYC — aguardando integração"
+          description="O contrato de investidores não traz status de KYC, e Compliance › KYC ainda é um protótipo. A validação do cadastro (Visão geral) não substitui a decisão de KYC."
+        />
+      </Panel>
+
+      <Panel tab="activity" current={tab}>
+        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para este perfil." />
+      </Panel>
     </>
+  )
+}
+
+function PendingPanel({ icon, title, description }: { icon: typeof Info; title: string; description: string }) {
+  return (
+    <section className={fin.card} data-pending-panel>
+      <div className={own.unavailable}>
+        <EmptyState icon={icon} title={title} description={description} />
+      </div>
+    </section>
+  )
+}
+
+function Panel({ tab, current, children }: { tab: Tab; current: Tab; children: ReactNode }) {
+  return (
+    <div
+      role="tabpanel"
+      id={tabPanelId(TAB_PREFIX, tab)}
+      aria-labelledby={tabId(TAB_PREFIX, tab)}
+      hidden={tab !== current}
+      tabIndex={0}
+      className={shared.tabPanel}
+    >
+      {tab === current ? children : null}
+    </div>
   )
 }

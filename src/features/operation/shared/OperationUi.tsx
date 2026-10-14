@@ -102,9 +102,10 @@ export function PageIntro({ back, text, actions }: { back?: ReactNode; text: Rea
   )
 }
 
-export type SummaryCard = { label: string; value: number; detail: string; icon: LucideIcon; tone: Tone }
+/** `value: null` renders the data-ready "—" (announced as "sem dados"). */
+export type SummaryCard = { label: string; value: number | string | null; detail: string; icon: LucideIcon; tone: Tone }
 
-/** Counts derived from the local prototype state — the note says so. */
+/** Shared summaries; the caller labels authoritative, prototype or pending data. */
 export function SummaryCards({ title, cards, note }: { title: string; cards: SummaryCard[]; note: string }) {
   return (
     <section className={fin.summary} aria-labelledby="op-summary-title">
@@ -116,7 +117,16 @@ export function SummaryCards({ title, cards, note }: { title: string; cards: Sum
           <IconTile icon={card.icon} tone={card.tone} size="lg" />
           <div className={fin.summaryText}>
             <h3 className={fin.summaryLabel}>{card.label}</h3>
-            <p className={fin.summaryValue}>{card.value}</p>
+            <p className={fin.summaryValue}>
+              {card.value === null ? (
+                <>
+                  <span aria-hidden="true">—</span>
+                  <span className="visually-hidden">sem dados</span>
+                </>
+              ) : (
+                card.value
+              )}
+            </p>
             <p className={fin.summaryDetail}>{card.detail}</p>
           </div>
         </article>

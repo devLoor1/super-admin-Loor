@@ -12,7 +12,8 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
 (`loor-super-admin.netlify.app`). Reviewed feature branches require separate
-promotion authorization; this read integration has not been pushed or deployed.
+promotion authorization. Whitelabel reads are deployed from `74f003f`;
+Investor reads remain a local reviewed feature pending promotion authorization.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
@@ -22,6 +23,11 @@ promotion authorization; this read integration has not been pushed or deployed.
 > Whitelabels** leem o Control Plane (`GET /api/whitelabels`,
 > `GET /api/whitelabels/:id`) — somente leitura; criar/editar/ativar/desativar
 > segue pendente. Ver [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md).
+> **Operação › Investidores** (lista global, separação por Whitelabel e detalhe)
+> lê o Control Plane (`GET /api/investors`, `GET /api/investors/:id`,
+> `GET /api/whitelabels/:id/accounts?tipo=investidores`) — somente leitura; KYC e
+> investimentos aparecem como "aguardando integração". Ver
+> [`docs/investor-read-integration-v1.md`](docs/investor-read-integration-v1.md).
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
@@ -300,7 +306,8 @@ src/
       shared/                       Operation frame (nav + Dot Matrix), list/detail pieces, participant projections over
                                     Accounts, KYC vocabulary, session activity, pending-module copy, discard dialog
       opportunities/                list, create/edit page, detail + tabs, status dialog, catalog pickers, model, seeds, store
-      investors/                    list + read-only profile, illustrative count-only investment associations
+      investors/                    Control Plane reads: global / Whitelabel-scoped list, profile (investorApi, URL state);
+                                    KYC and investments pending (unused Investor association seed removed)
       entrepreneurs/                list + read-only profile (live Opportunities relationship)
     finance-core/
       shared/                       models (Investment ≠ Payment ≠ Wallet ≠ WalletMovement), frozen seeds, explicit-reference
@@ -767,6 +774,10 @@ review record for scope, evidence and fallback checks.
   separately, as a Resource Use — never as a modality. Name 3–80 / description
   300 / Whitelabel and modality required are prototype UX constraints.
   Configuração shows no financial parameter.
+- **Investidores** now read the Control Plane — see
+  [Investor Read Integration V1](docs/investor-read-integration-v1.md); the
+  projection bullet below describes the V1 prototype (still true for
+  Empreendedores).
 - **Investidores / Empreendedores.** Read-only projections of the Accounts
   prototype records (operational id = account prototype id; tenant context on
   every record; no cross-tenant identity). KYC is a prototype summary owned by

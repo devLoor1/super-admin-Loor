@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Building, ChartNoAxesColumnIncreasing, Link, type LucideIcon } from 'lucide-react'
 import { pushRouteKeepingScroll, replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../app/routeQuery'
 import { AppShell } from '../../components/shell/AppShell'
@@ -7,6 +7,8 @@ import type { Tone } from '../../components/ui/IconTile'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { describeApiError } from '../../lib/apiErrors'
+import { WhitelabelFormDialog } from './crud/WhitelabelFormDialog'
+import { WhitelabelLifecycleDialog } from './crud/WhitelabelLifecycleDialog'
 import { WhitelabelDetailPanel, WhitelabelDetailStatus } from './WhitelabelDetailPanel'
 import { WhitelabelListPanel, type Sort } from './WhitelabelListPanel'
 import { DotMatrixBackground } from './visuals/DotMatrixBackground'
@@ -30,9 +32,12 @@ type WhitelabelsPageProps = {
 
 /**
  * Whitelabels V1 — list + detail for the Plataformas domain, reading the
- * Control Plane (`GET /whitelabels`, `GET /whitelabels/:id`). Read-only:
- * create / edit / activate / deactivate stay unavailable. The summary cards
- * are not integrated yet and keep their data-ready "—" state.
+ * Control Plane (`GET /whitelabels`, `GET /whitelabels/:id`). The summary
+ * cards are not integrated yet and keep their data-ready "—" state.
+ *
+ * Whitelabel CRUD Frontend V1: "Novo Whitelabel", "Editar" and "Desativar ou
+ * remover" open review-only dialogs (`crud/`). NO LIVE MUTATIONS ARE ENABLED:
+ * the dialogs send nothing and never change the authoritative list / detail.
  */
 export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT, routeKey = '', ...params }: WhitelabelsPageProps) {
   return (
@@ -50,6 +55,8 @@ const SUMMARY: { id: string; label: string; icon: LucideIcon; tone: Tone }[] = [
 ]
 
 const MOBILE_QUERY = '(max-width: 767px)'
+
+type CrudDialog = { kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord } | { kind: 'lifecycle'; record: WhitelabelRecord } | null
 const SEARCH_DEBOUNCE_MS = 400
 
 function sortRows(rows: WhitelabelRecord[], sort: Sort) {
@@ -152,7 +159,10 @@ function WhitelabelsContent({
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.requestAnimationFrame(() => {
       const panel = document.getElementById('whitelabel-detail')
-      panel?.focus({ preventScroll: true })
+      // The row-actions handoff may already have focused the loaded menu.
+      // Scrolling must not steal that more specific focus back to the region.
+      const actionFocused = panel?.querySelector('[data-wl-actions]') === document.activeElement
+      if (!actionFocused) panel?.focus({ preventScroll: true })
       panel?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
     })
   }
@@ -168,6 +178,28 @@ function WhitelabelsContent({
     navigate({ id, page: route.page }, 'push')
   }
 
+  /* ---------- CRUD dialogs (review only — nothing is sent) ---------- */
+  const [dialog, setDialog] = useState<CrudDialog>(null)
+  const actionsFocusFor = useRef<string | null>(null)
+  const focusDetailActions = () => document.querySelector<HTMLElement>('#whitelabel-detail [data-wl-actions]')
+
+  // Row "…": the detail of that row shows, then focus moves to its actions menu.
+  const onDetailDisplay = useCallback((id: string) => {
+    if (actionsFocusFor.current !== id) return
+    actionsFocusFor.current = null
+    window.requestAnimationFrame(() => focusDetailActions()?.focus({ preventScroll: window.matchMedia(MOBILE_QUERY).matches }))
+  }, [])
+
+  function openActions(id: string) {
+    actionsFocusFor.current = id
+    if (selectedId === id && detail.state.status === 'success') {
+      // The default/selected record can be below the list on a phone even
+      // without a route change, so reveal it for this path too.
+      if (window.matchMedia(MOBILE_QUERY).matches) revealDetail()
+      onDetailDisplay(id)
+    } else activate(id)
+  }
+
   function clearFilters() {
     if (route.search !== '') ownSearch.current = ''
     setDraft('')
@@ -178,7 +210,14 @@ function WhitelabelsContent({
   let detailPanel
   let detailAnnouncement: string
   if (detail.state.status === 'success') {
-    detailPanel = <WhitelabelDetailPanel whitelabel={detail.state.data} />
+    detailPanel = (
+      <WhitelabelDetailPanel
+        whitelabel={detail.state.data}
+        onEdit={(record) => setDialog({ kind: 'edit', record })}
+        onLifecycle={(record) => setDialog({ kind: 'lifecycle', record })}
+        onDisplay={onDetailDisplay}
+      />
+    )
     detailAnnouncement = `Detalhes de ${detail.state.data.name} em exibição.`
   } else if (detailError?.notFound && selectedId) {
     detailPanel = <WhitelabelDetailStatus kind="not-found" id={selectedId} />
@@ -244,6 +283,8 @@ function WhitelabelsContent({
           onSortChange={setSort}
           activeId={selectedId ?? undefined}
           onActivate={activate}
+          onOpenActions={openActions}
+          onCreate={() => setDialog({ kind: 'create' })}
           accentColor={accentColor}
         />
         {detailPanel}
@@ -251,6 +292,18 @@ function WhitelabelsContent({
       <p className="visually-hidden" role="status">
         {detailAnnouncement}
       </p>
+
+      {dialog?.kind === 'create' ? (
+        <WhitelabelFormDialog
+          mode="create"
+          onClose={() => setDialog(null)}
+          fallbackFocus={() => document.querySelector<HTMLElement>('[data-wl-create]')}
+        />
+      ) : dialog?.kind === 'edit' ? (
+        <WhitelabelFormDialog mode="edit" record={dialog.record} onClose={() => setDialog(null)} fallbackFocus={focusDetailActions} />
+      ) : dialog?.kind === 'lifecycle' ? (
+        <WhitelabelLifecycleDialog record={dialog.record} onClose={() => setDialog(null)} fallbackFocus={focusDetailActions} />
+      ) : null}
     </div>
   )
 }

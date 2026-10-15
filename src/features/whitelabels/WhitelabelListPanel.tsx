@@ -14,7 +14,6 @@ import {
   SearchX,
   Building,
 } from 'lucide-react'
-import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterChips } from '../../components/ui/FilterChips'
 import { OutlineButton } from '../../components/ui/OutlineButton'
@@ -60,6 +59,10 @@ type WhitelabelListPanelProps = {
   onSortChange: (value: Sort) => void
   activeId?: string
   onActivate: (id: string) => void
+  /** Row "…": shows that Whitelabel's detail and moves focus to its actions (no destructive control in rows). */
+  onOpenActions: (id: string) => void
+  /** "Novo Whitelabel": opens the review-only create flow. */
+  onCreate: () => void
   accentColor: string
 }
 
@@ -79,8 +82,6 @@ const COLUMNS: { key: SortKey | null; label: string; className: string }[] = [
 ]
 
 const SKELETON_ROWS = 5
-
-const WRITE_PENDING = 'a leitura de Whitelabels já usa o Control Plane, mas o ciclo de escrita (criar, editar, ativar/desativar) ainda está pendente.'
 
 /**
  * Main list backed by `GET /whitelabels`: server-side search and status
@@ -104,9 +105,10 @@ export function WhitelabelListPanel({
   onSortChange,
   activeId,
   onActivate,
+  onOpenActions,
+  onCreate,
   accentColor,
 }: WhitelabelListPanelProps) {
-  const notify = usePrototypeNotice()
   function toggleSort(key: SortKey) {
     if (sort?.key !== key) onSortChange({ key, direction: 'ascending' })
     else onSortChange({ key, direction: sort.direction === 'ascending' ? 'descending' : 'ascending' })
@@ -137,7 +139,8 @@ export function WhitelabelListPanel({
         </div>
         <PrimaryButton
           className={styles.newButton}
-          onClick={() => notify(`Criação de Whitelabel indisponível: ${WRITE_PENDING}`)}
+          onClick={onCreate}
+          data-wl-create
         >
           <Plus size={18} strokeWidth={1.9} aria-hidden="true" />
           Novo Whitelabel
@@ -289,8 +292,9 @@ export function WhitelabelListPanel({
                           <button
                             type="button"
                             className={styles.moreButton}
-                            onClick={() => notify(`Ações de ${row.name} indisponíveis: ${WRITE_PENDING}`)}
-                            aria-label={`Mais ações para ${row.name}`}
+                            onClick={() => onOpenActions(row.id)}
+                            aria-label={`Abrir ações de ${row.name} no painel de detalhes`}
+                            aria-controls="whitelabel-detail"
                           >
                             <MoreHorizontal size={18} strokeWidth={1.9} aria-hidden="true" />
                           </button>

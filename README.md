@@ -25,8 +25,11 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > sessão restaurada é validada com `GET /api/auth/me` e um 401 do servidor
 > encerra a sessão de forma centralizada. A **lista e o detalhe de
 > Whitelabels** leem o Control Plane (`GET /api/whitelabels`,
-> `GET /api/whitelabels/:id`) — somente leitura; criar/editar/ativar/desativar
-> segue pendente. Ver [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md).
+> `GET /api/whitelabels/:id`) — somente leitura. Ver [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md).
+> **Whitelabel CRUD Frontend V1:** "Novo Whitelabel", "Editar" e "Desativar ou
+> remover" abrem fluxos de revisão (validação, revisão, confirmação) que param
+> antes da gravação — **nenhuma mutação é enviada** enquanto o contrato do
+> Backend não for validado. Ver [`docs/whitelabel-crud-frontend-v1.md`](docs/whitelabel-crud-frontend-v1.md).
 > **Operação › Investidores** (lista global, separação por Whitelabel e detalhe)
 > lê o Control Plane (`GET /api/investors`, `GET /api/investors/:id`,
 > `GET /api/whitelabels/:id/accounts?tipo=investidores`) — somente leitura; KYC e
@@ -285,6 +288,8 @@ src/
       whitelabelApi.ts              GET /whitelabels(/:id) client + strict parsing (Backend contract)
       useWhitelabelData.ts          abortable list / detail requests with retry
       whitelabelRoute.ts            `?id=&page=&search=&status=` parsing and hrefs
+      crud/                         CRUD Frontend V1 (no live mutations): create / edit dialogs, deactivate-or-remove
+                                    confirmation, actions menu, form schema, mutation contract types + error mapping
       prototypeWhitelabels.ts       illustrative rows for the tenant modules still in prototype (not used by this page)
       visuals/                      approved Dot Matrix background, identity reveal
     whitelabel-accounts/

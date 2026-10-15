@@ -15,6 +15,8 @@ import { InvestorsPage } from '../features/operation/investors/InvestorsPage'
 import { InvestorDetailPage } from '../features/operation/investors/InvestorDetailPage'
 import { EntrepreneursPage } from '../features/operation/entrepreneurs/EntrepreneursPage'
 import { EntrepreneurDetailPage } from '../features/operation/entrepreneurs/EntrepreneurDetailPage'
+import { CompaniesPage } from '../features/operation/companies/CompaniesPage'
+import { CompanyDetailPage } from '../features/operation/companies/CompanyDetailPage'
 import { InvestmentsPage } from '../features/finance-core/investments/InvestmentsPage'
 import { InvestmentDetailPage } from '../features/finance-core/investments/InvestmentDetailPage'
 import { PaymentsPage } from '../features/finance-core/payments/PaymentsPage'
@@ -47,6 +49,8 @@ type View =
   | 'operation-investor'
   | 'operation-entrepreneurs'
   | 'operation-entrepreneur'
+  | 'operation-company-list'
+  | 'operation-company'
   | 'finance-investments'
   | 'finance-investment'
   | 'finance-payments'
@@ -75,6 +79,8 @@ type Route =
   | { view: 'operation-opportunity-edit'; opportunityId: string; focusClassification: boolean }
   | { view: 'operation-investor'; investorId: string; returnTo?: string }
   | { view: 'operation-entrepreneur'; entrepreneurId: string; returnTo?: string }
+  | { view: 'operation-company-list'; whitelabel?: string; page?: string; query?: string; previa?: string; search: string }
+  | { view: 'operation-company'; companyId: string; returnTo?: string; previa?: string }
   | { view: 'finance-investments'; investorId?: string; walletId?: string }
   | { view: 'finance-investment'; investmentId: string }
   | { view: 'finance-payments'; walletId?: string }
@@ -115,6 +121,8 @@ const TITLES: Record<View, string> = {
   'operation-investor': 'Super Admin · Operação / Investidor',
   'operation-entrepreneurs': 'Super Admin · Operação / Empreendedores',
   'operation-entrepreneur': 'Super Admin · Operação / Empreendedor',
+  'operation-company-list': 'Super Admin · Operação / Empresas',
+  'operation-company': 'Super Admin · Operação / Empresa',
   'finance-investments': 'Super Admin · Financeiro / Investimentos',
   'finance-investment': 'Super Admin · Financeiro / Investimento',
   'finance-payments': 'Super Admin · Financeiro / Pagamentos / PIX',
@@ -145,6 +153,8 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'operation-investor',
   'operation-entrepreneurs',
   'operation-entrepreneur',
+  'operation-company-list',
+  'operation-company',
   'finance-investments',
   'finance-investment',
   'finance-payments',
@@ -167,6 +177,8 @@ const OPPORTUNITY_PATH = /^operation\/opportunities\/([\w-]+)$/
 const OPPORTUNITY_EDIT_PATH = /^operation\/opportunities\/([\w-]+)\/edit$/
 const INVESTOR_PATH = /^operation\/investors\/([\w-]+)$/
 const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
+/** Companies prototype detail: any non-empty segment, so unknown / malformed ids reach the not-found state. */
+const COMPANY_PATH = /^operation\/companies\/([^/]+)$/
 /** Finance Core detail ids: any non-empty segment, so malformed ids reach the not-found state. */
 const INVESTMENT_PATH = /^finance\/investments\/([^/]+)$/
 const PAYMENT_PATH = /^finance\/payments\/([^/]+)$/
@@ -198,6 +210,9 @@ function decodeSegment(value: string) {
  * Core Whitelabel id, `?page=`, `?search=`), `#/operation/investors/:investorId` (Core id),
  * `#/operation/entrepreneurs` (optional `?whitelabel=` Core Whitelabel id, `?page=`, `?search=`),
  * `#/operation/entrepreneurs/:entrepreneurId` (Core id, optional `?returnTo=` list context),
+ * Empresas (prototype, contextual page under Empreendedores — no menu id of its own):
+ * `#/operation/companies` (optional `?whitelabel=` illustrative ref, `?page=`, `?search=`,
+ * prototype-only `?previa=`), `#/operation/companies/:companyId` (optional `?returnTo=`, `?previa=`),
  * Finance Core (global): `#/finance/investments` (optional `?investidor=` / `?wallet=`),
  * `#/finance/investments/:investmentId`, `#/finance/payments` (optional `?wallet=`),
  * `#/finance/payments/:paymentId`, `#/finance/wallets`,
@@ -285,6 +300,25 @@ function routeFromHash(): Route {
   const entrepreneur = ENTREPRENEUR_PATH.exec(path)
   if (entrepreneur) {
     return { view: 'operation-entrepreneur', entrepreneurId: entrepreneur[1], returnTo: params.get('returnTo') ?? undefined }
+  }
+  if (path === 'operation/companies') {
+    return {
+      view: 'operation-company-list',
+      whitelabel: params.get('whitelabel') || undefined,
+      page: params.get('page') || undefined,
+      query: params.get('search') || undefined,
+      previa: params.get('previa') || undefined,
+      search,
+    }
+  }
+  const company = COMPANY_PATH.exec(path)
+  if (company) {
+    return {
+      view: 'operation-company',
+      companyId: decodeSegment(company[1]),
+      returnTo: params.get('returnTo') ?? undefined,
+      previa: params.get('previa') || undefined,
+    }
   }
   if (path === 'finance/investments') {
     return {
@@ -432,6 +466,12 @@ export function App() {
   }
   if (route.view === 'operation-entrepreneur') {
     return <EntrepreneurDetailPage key={route.entrepreneurId} entrepreneurId={route.entrepreneurId} returnTo={route.returnTo} />
+  }
+  if (route.view === 'operation-company-list') {
+    return <CompaniesPage whitelabel={route.whitelabel} page={route.page} search={route.query} previa={route.previa} routeKey={route.search} />
+  }
+  if (route.view === 'operation-company') {
+    return <CompanyDetailPage key={route.companyId} companyId={route.companyId} returnTo={route.returnTo} previa={route.previa} />
   }
   if (route.view === 'finance-investments') return <InvestmentsPage investorId={route.investorId} walletId={route.walletId} />
   if (route.view === 'finance-investment') {

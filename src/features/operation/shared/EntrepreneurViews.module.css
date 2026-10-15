@@ -1,0 +1,57 @@
+/*
+ * Empreendedores | Empresas contextual switch (Operação › Empreendedores).
+ * Segmented links in the intro row; full width on phones.
+ */
+
+.switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.02);
+}
+
+.link {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--text-on-dark);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.link[aria-current='page'] {
+  border-color: #5d58e6;
+  background: rgb(96 88 240 / 0.2);
+  color: var(--text-on-dark);
+}
+
+.tag {
+  padding: 0 6px;
+  border: 1px dashed rgb(247 191 109 / 0.45);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #e8cf9c;
+}

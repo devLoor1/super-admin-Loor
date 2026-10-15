@@ -41,6 +41,12 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > empresa, KYC e oportunidades aparecem como "aguardando integração". O contrato
 > não tem entidade Empresa: **o requisito "Empresas" continua em aberto**. Ver
 > [`docs/entrepreneur-read-integration-v1.md`](docs/entrepreneur-read-integration-v1.md).
+> **Operação › Empreendedores › Empresas** (`#/operation/companies`, sem item
+> próprio no menu) é um **protótipo**: lista e detalhe usam somente dados
+> ilustrativos isolados ("Dados ilustrativos — integração de Empresas
+> pendente"), sem nenhuma requisição de Empresas, sem vínculo com
+> empreendedores ou Whitelabels reais e sem CRUD. Ver
+> [`docs/companies-frontend-v1.md`](docs/companies-frontend-v1.md).
 > **Dashboard Global:** os cards **Whitelabels** e **Investidores** leem
 > `GET /api/dashboard` (agregado global do Core, somente leitura); os demais
 > indicadores, gráficos, distribuição, status operacional e últimos eventos
@@ -349,6 +355,8 @@ src/
                                     KYC and investments pending (unused Investor association seed removed)
       entrepreneurs/                Control Plane reads: global / Whitelabel-scoped list, profile (entrepreneurApi,
                                     URL state); Company, KYC and opportunities pending (no Company in the contract)
+      companies/                    Companies Frontend V1 PROTOTYPE: candidate contract types, isolated illustrative
+                                    source, presenter, URL state, list + detail (no request, no CRUD)
     finance-core/
       shared/                       models (Investment ≠ Payment ≠ Wallet ≠ WalletMovement), frozen seeds, explicit-reference
                                     lookups, read-only references to Operation / Gateways, Finance Core frame, session activity
@@ -1136,6 +1144,7 @@ further OriginKit assets, final brand system.
 - [Operação › Investidores V1 — boundaries, local state and open questions](docs/operation-investors-v1.md)
 - [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md) (prototype record, superseded for data by the read integration)
 - [Entrepreneur Read Integration V1 — live contract, identity, Company finding (Empresas still open)](docs/entrepreneur-read-integration-v1.md)
+- [Companies Frontend V1 — prototype list / detail, candidate /companies contract, open questions](docs/companies-frontend-v1.md) (no Company contract integrated)
 - [Financeiro › Finance Core V1 — scope, safety boundaries, relationships, QA and open questions](docs/finance-core-v1.md)
 - [Financeiro › Investimentos V1](docs/finance-investments-v1.md)
 - [Financeiro › Pagamentos / PIX V1](docs/finance-payments-pix-v1.md)

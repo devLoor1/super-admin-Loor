@@ -11,6 +11,7 @@ import { AccountAvatar, BusinessBadge } from '../../whitelabel-accounts/AccountB
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import { formatWhitelabelDate, type WhitelabelRecord } from '../../whitelabels/whitelabelApi'
 import { compareText, initials, type SortState } from '../shared/operationModel'
+import { EntrepreneurViewSwitch } from '../shared/EntrepreneurViews'
 import { OperationShell, PageIntro, SortButton, SummaryCards, type SummaryCard } from '../shared/OperationUi'
 import { useWhitelabelOptions, useWhitelabelRecord } from '../shared/whitelabelContext'
 import { WindowedPagination } from '../shared/WindowedPagination'
@@ -43,12 +44,16 @@ type EntrepreneursPageProps = {
  * `GET /whitelabels/:id/accounts?tipo=empreendedores` (one Whitelabel, scoped
  * by the server). Read-only. The contract has no Company, KYC, opportunity
  * or finance data: those show as pending, never with illustrative values.
- * This module integrates Entrepreneurs; it does not implement "Empresas".
+ * This module integrates Entrepreneurs; it does not implement "Empresas"
+ * (a separate prototype page, reached through the view switch, never joined here).
  */
 export function EntrepreneursPage(props: EntrepreneursPageProps) {
   return (
     <OperationShell section="entrepreneurs" title="Empreendedores">
-      <PageIntro text="Acompanhe empreendedores de todos os Whitelabels em uma só visão operacional, com dados do Control Plane. Somente leitura: conta, empresa, oportunidades e KYC ficam nos módulos responsáveis." />
+      <PageIntro
+        text="Acompanhe empreendedores de todos os Whitelabels em uma só visão operacional, com dados do Control Plane. Somente leitura: conta, empresa, oportunidades e KYC ficam nos módulos responsáveis."
+        actions={<EntrepreneurViewSwitch current="entrepreneurs" />}
+      />
       <EntrepreneurList {...props} />
     </OperationShell>
   )

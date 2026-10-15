@@ -1,0 +1,258 @@
+/*
+ * Companies Frontend V1 (prototype) — list columns, provenance / preview
+ * notices and detail extras. Layout, table, hero and card primitives come from
+ * the shared Operation and Finance stylesheets. Columns collapse by the list
+ * card's container width; their data moves under the company name.
+ */
+
+/* ---------- Provenance / preview notices ---------- */
+
+.provenance,
+.preview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.provenance {
+  border: 1px dashed rgb(247 191 109 / 0.32);
+  background: rgb(247 191 109 / 0.05);
+  color: var(--text-on-dark-secondary);
+}
+
+.provenance svg {
+  margin-top: 1px;
+  color: #f2c983;
+}
+
+.provenance strong {
+  font-weight: 600;
+  color: #ecd8ae;
+}
+
+.preview {
+  border: 1px solid #2c3664;
+  background: rgb(80 92 200 / 0.08);
+  color: var(--text-on-dark-secondary);
+}
+
+.preview svg {
+  margin-top: 1px;
+  color: #b9b4ff;
+}
+
+.preview strong {
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+/* ---------- List columns ---------- */
+
+.colName {
+  min-width: 200px;
+}
+
+.colTrade {
+  min-width: 140px;
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+
+.colTax,
+.colStatus {
+  white-space: nowrap;
+}
+
+.colEntrepreneur {
+  min-width: 130px;
+}
+
+.colWl {
+  min-width: 150px;
+}
+
+.wlCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-on-dark-secondary);
+}
+
+.nameIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 9px;
+  background: var(--tone-indigo-bg);
+  color: var(--tone-indigo-fg);
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.pendingText {
+  color: var(--text-on-dark-muted);
+}
+
+.meta {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+@container (max-width: 1180px) {
+  .colStatus {
+    display: none;
+  }
+
+  .metaStatus {
+    display: block;
+  }
+}
+
+@container (max-width: 1020px) {
+  .colTrade {
+    display: none;
+  }
+
+  .metaTrade {
+    display: block;
+  }
+}
+
+@container (max-width: 860px) {
+  .colEntrepreneur {
+    display: none;
+  }
+
+  .metaEntrepreneur {
+    display: block;
+  }
+}
+
+@container (max-width: 720px) {
+  .colWl {
+    display: none;
+  }
+
+  .metaWl {
+    display: block;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .colTax {
+    display: none;
+  }
+
+  .metaTax {
+    display: block;
+  }
+
+  .colName {
+    min-width: 0;
+  }
+
+  .nameIcon {
+    display: none;
+  }
+}
+
+/* ---------- Detail ---------- */
+
+.heroSub {
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.valueStack {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.valueNote {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.sectionCallout {
+  margin-top: 14px;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.domains {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.domain {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.015);
+}
+
+.domainIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 9px;
+  color: var(--text-on-dark-muted);
+}
+
+.domainText {
+  display: grid;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--text-on-dark);
+}
+
+.domainNote {
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+@media (max-width: 479px) {
+  .domain {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .domain .domainTag {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

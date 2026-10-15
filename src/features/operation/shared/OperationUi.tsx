@@ -34,7 +34,8 @@ const SECTION_LABEL: Record<OperationSection, { label: string; href: string }> =
 /**
  * Operation page frame: approved App Shell (Operação active, one of the three
  * sibling entries current), shared Dot Matrix behind the main content only.
- * `trail` extends the breadcrumb after the section (e.g. a record name).
+ * `trail` extends the breadcrumb after the section (e.g. a record name, or a
+ * contextual page such as Empreendedores › Empresas, given with its `href`).
  */
 export function OperationShell({
   section,
@@ -44,14 +45,14 @@ export function OperationShell({
 }: {
   section: OperationSection
   title: string
-  trail?: string[]
+  trail?: (string | Breadcrumb)[]
   children: ReactNode
 }) {
   const current = SECTION_LABEL[section]
   const breadcrumbs: Breadcrumb[] = [
     { label: 'Operação' },
     trail.length ? { label: current.label, href: current.href } : { label: current.label },
-    ...trail.map((label) => ({ label })),
+    ...trail.map((item) => (typeof item === 'string' ? { label: item } : item)),
   ]
   return (
     <AppShell

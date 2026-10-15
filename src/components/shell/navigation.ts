@@ -106,6 +106,7 @@ export const PRIMARY_NAV: NavItem[] = [
 ]
 
 export const UTILITY_NAV: NavItem[] = [
-  { id: 'configuracoes', label: 'Configurações', icon: Cog },
+  // Configurações › Visibilidade dos módulos (non-persisting prototype; no new menu ID).
+  { id: 'configuracoes', label: 'Configurações', icon: Cog, href: '#/settings/menu-visibility' },
   { id: 'ajuda', label: 'Ajuda', icon: CircleHelp },
 ]

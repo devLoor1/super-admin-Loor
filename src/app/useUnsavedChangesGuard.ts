@@ -24,17 +24,17 @@ export function useUnsavedChangesGuard(hasUnsaved: boolean, onDiscard: () => voi
     else window.location.hash = hash
   }, [])
 
-  useEffect(
-    () =>
-      registerPrototypeNavigationGuard(({ hash, resume }) => {
-        if (!hasUnsavedRef.current) return true
-        setPending({ hash, resume, destination: 'sair desta página pelo histórico do navegador' })
-        return false
-      }),
-    [],
-  )
+  useEffect(() => {
+    if (!hasUnsaved) return
+    return registerPrototypeNavigationGuard(({ hash, resume }) => {
+      if (!hasUnsavedRef.current) return true
+      setPending({ hash, resume, destination: 'sair desta página pelo histórico do navegador' })
+      return false
+    })
+  }, [hasUnsaved])
 
   useEffect(() => {
+    if (!hasUnsaved) return
     const onClick = (event: MouseEvent) => {
       if (!hasUnsavedRef.current || event.defaultPrevented || event.button !== 0) return
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
@@ -57,7 +57,7 @@ export function useUnsavedChangesGuard(hasUnsaved: boolean, onDiscard: () => voi
       document.removeEventListener('click', onClick, true)
       window.removeEventListener('beforeunload', onBeforeUnload)
     }
-  }, [])
+  }, [hasUnsaved])
 
   const stay = useCallback(() => setPending(null), [])
 

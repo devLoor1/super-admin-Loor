@@ -27,6 +27,7 @@ import { KycListPage } from '../features/compliance-kyc/KycListPage'
 import { KycDetailPage } from '../features/compliance-kyc/KycDetailPage'
 import { AuditListPage } from '../features/governance-audit/AuditListPage'
 import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
+import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
@@ -61,6 +62,7 @@ type View =
   | 'compliance-kyc-case'
   | 'audit'
   | 'audit-event'
+  | 'settings-menu-visibility'
 
 type Route =
   | { view: 'login' | 'dashboard' }
@@ -102,6 +104,7 @@ type Route =
       search: string
     }
   | { view: 'audit-event'; auditEventId: string; returnTo?: string }
+  | { view: 'settings-menu-visibility'; previa?: string }
 
 const TITLES: Record<View, string> = {
   login: 'Super Admin · Acesso administrativo',
@@ -133,6 +136,7 @@ const TITLES: Record<View, string> = {
   'compliance-kyc-case': 'Super Admin · Compliance / Caso KYC',
   audit: 'Super Admin · Auditoria',
   'audit-event': 'Super Admin · Auditoria / Evento',
+  'settings-menu-visibility': 'Super Admin · Configurações / Visibilidade dos módulos',
 }
 
 /** Views rendered inside the dark App Shell (require Control Plane session). */
@@ -165,6 +169,7 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'compliance-kyc-case',
   'audit',
   'audit-event',
+  'settings-menu-visibility',
 ])
 
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
@@ -221,7 +226,9 @@ function decodeSegment(value: string) {
  * `?status=`), `#/compliance/kyc/:kycCaseId`,
  * Auditoria (Control Plane audit log): `#/audit` (optional `?search=`, `?order=asc`, `?page=`;
  * the prototype's `?resourceType=` / `?resourceId=` / `?whitelabel=` / `?actor=` / `?action=`
- * are reported as unsupported), `#/audit/:auditEventId` (optional `?returnTo=` list context)
+ * are reported as unsupported), `#/audit/:auditEventId` (optional `?returnTo=` list context),
+ * Configurações › Visibilidade dos módulos (non-persisting prototype, existing `configuracoes`
+ * entry): `#/settings/menu-visibility` (prototype-only `?previa=`)
  * → session-guarded shell screens; anything else → login.
  */
 function routeFromHash(): Route {
@@ -359,6 +366,7 @@ function routeFromHash(): Route {
   }
   const auditEvent = AUDIT_EVENT_PATH.exec(path)
   if (auditEvent) return { view: 'audit-event', auditEventId: decodeSegment(auditEvent[1]), returnTo: param('returnTo') }
+  if (path === 'settings/menu-visibility') return { view: 'settings-menu-visibility', previa: param('previa') }
   return { view: 'login' }
 }
 
@@ -505,5 +513,6 @@ export function App() {
   if (route.view === 'audit-event') {
     return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} returnTo={route.returnTo} />
   }
+  if (route.view === 'settings-menu-visibility') return <MenuVisibilityPage previa={route.previa} />
   return <LoginPage />
 }

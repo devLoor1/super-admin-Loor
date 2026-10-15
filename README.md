@@ -47,6 +47,12 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > pendente"), sem nenhuma requisição de Empresas, sem vínculo com
 > empreendedores ou Whitelabels reais e sem CRUD. Ver
 > [`docs/companies-frontend-v1.md`](docs/companies-frontend-v1.md).
+> **Configurações › Visibilidade dos módulos** (`#/settings/menu-visibility`,
+> aberto pelo item existente Configurações) é um **protótipo sem
+> persistência**: o rascunho de visibilidade global fica só em memória (sem
+> `GET`/`PUT /api/homolog/menu-visibility`, sem armazenamento no navegador) e o
+> menu lateral real **não** é alterado pelos controles. Visibilidade não é
+> permissão. Ver [`docs/menu-visibility-frontend-v1.md`](docs/menu-visibility-frontend-v1.md).
 > **Dashboard Global:** os cards **Whitelabels** e **Investidores** leem
 > `GET /api/dashboard` (agregado global do Core, somente leitura); os demais
 > indicadores, gráficos, distribuição, status operacional e últimos eventos
@@ -367,6 +373,9 @@ src/
                                     resolution, list, case detail (4 tabs), local-action dialogs, navigation helper for other modules
     governance-audit/               Auditoria: GET /audit reads (auditApi, URL state, sanitizer / labels), read-only list
                                     and event detail (3 tabs); prototype model / seeds / diff helpers unused by the screens
+    menu-visibility/                Menu Visibility Frontend V1 NON-PERSISTING PROTOTYPE: approved stable IDs (identity read
+                                    from navigation.ts), preference / effective model, candidate GET/PUT contract, in-memory
+                                    draft, isolated preview, review with pending save (no request, no storage)
 docs/reference/                     approved concept images
 ```
 
@@ -1145,6 +1154,7 @@ further OriginKit assets, final brand system.
 - [Operação › Empreendedores V1 — boundaries, live relationship and open questions](docs/operation-entrepreneurs-v1.md) (prototype record, superseded for data by the read integration)
 - [Entrepreneur Read Integration V1 — live contract, identity, Company finding (Empresas still open)](docs/entrepreneur-read-integration-v1.md)
 - [Companies Frontend V1 — prototype list / detail, candidate /companies contract, open questions](docs/companies-frontend-v1.md) (no Company contract integrated)
+- [Menu Visibility Frontend V1 — global show / hide prototype, preference vs effective, candidate contract](docs/menu-visibility-frontend-v1.md) (non-persisting; real navigation unchanged)
 - [Financeiro › Finance Core V1 — scope, safety boundaries, relationships, QA and open questions](docs/finance-core-v1.md)
 - [Financeiro › Investimentos V1](docs/finance-investments-v1.md)
 - [Financeiro › Pagamentos / PIX V1](docs/finance-payments-pix-v1.md)

@@ -1,8 +1,9 @@
 /*
  * Same panel/table language as the Whitelabels list. The panel is a size
- * container: columns drop out as it narrows (activity/invitation → e-mail →
+ * container: columns drop out as it narrows (creation date → e-mail →
  * states move under the name) instead of squeezing the table.
- * Container widths are the panel's content box.
+ * Container widths are the panel's content box. Read-only (Accounts Read
+ * Integration V1): search only — no filters, sorting or row actions.
  */
 .panel {
   --bleed: 20px;
@@ -23,11 +24,11 @@
     0 14px 32px -22px rgb(0 0 0 / 0.7);
 }
 
-/* ---------- Search + filters ---------- */
+/* ---------- Search ---------- */
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(176px, 192px) minmax(190px, 214px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -144,15 +145,15 @@
 
 /* Column widths (fixed layout; percentages of the table width). */
 .colName {
-  width: 22%;
+  width: 27%;
 }
 
 .colEmail {
-  width: 24%;
+  width: 26%;
 }
 
 .colAccess {
-  width: 11.5%;
+  width: 13%;
 }
 
 .colBusiness {
@@ -163,31 +164,22 @@
   width: 15%;
 }
 
-.colActions {
-  width: calc(var(--bleed) + 34px);
-  text-align: right;
-}
-
 .table td.colEmail {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Admins: longer role/invitation labels, no activity column. */
-.table[data-type='admin'] .colEmail {
-  width: 22%;
+/* Admins: the e-mail is also the display name (no name in the contract). */
+.table[data-type='admin'] .colName {
+  width: 29%;
 }
 
-.table[data-type='admin'] .colAccess {
-  width: 11%;
+.table[data-type='admin'] .colEmail {
+  width: 25%;
 }
 
 .table[data-type='admin'] .colBusiness {
-  width: 23%;
-}
-
-.table[data-type='admin'] .colExtra {
-  width: 15%;
+  width: 18%;
 }
 
 /* Long state labels wrap inside their cell instead of overlapping the next column. */
@@ -292,59 +284,6 @@
   color: var(--text-on-dark-secondary);
 }
 
-/* Sortable headers */
-.sortButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: -4px;
-  padding: 4px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-}
-
-.sortButton:hover {
-  color: var(--text-on-dark);
-}
-
-.sortButton:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring-dark);
-}
-
-.sortIcon {
-  color: var(--text-on-dark-muted);
-}
-
-.sortIcon[data-active] {
-  color: var(--color-accent-glow);
-}
-
-/* Row actions */
-.moreButton {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #d2d9ea;
-}
-
-.moreButton:hover {
-  background: rgb(255 255 255 / 0.06);
-}
-
-.moreButton:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring-dark);
-}
-
 .empty {
   display: flex;
   flex-direction: column;
@@ -378,6 +317,8 @@
 
 .pagination {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 8px;
 }
 
@@ -426,17 +367,17 @@
 
   .colName,
   .table[data-type='admin'] .colName {
-    width: 28%;
+    width: 32%;
   }
 
   .colEmail,
   .table[data-type='admin'] .colEmail {
-    width: 26%;
+    width: 28%;
   }
 
   .colAccess,
   .table[data-type='admin'] .colAccess {
-    width: 13%;
+    width: 15%;
   }
 
   .colBusiness,
@@ -454,31 +395,23 @@
     display: block;
   }
 
-  .nameText .subline {
+  .nameText .subline:not([data-keep]) {
     display: none;
   }
 
   .colName,
   .table[data-type='admin'] .colName {
-    width: 44%;
+    width: 50%;
   }
 
   .colAccess,
   .table[data-type='admin'] .colAccess {
-    width: 18%;
+    width: 20%;
   }
 
   .colBusiness,
   .table[data-type='admin'] .colBusiness {
     width: 30%;
-  }
-
-  .controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .search {
-    grid-column: 1 / -1;
   }
 }
 
@@ -500,10 +433,6 @@
   .table td {
     height: auto;
     padding-block: 9px;
-  }
-
-  .controls {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

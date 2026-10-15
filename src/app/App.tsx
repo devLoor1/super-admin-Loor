@@ -26,8 +26,6 @@ import { KycDetailPage } from '../features/compliance-kyc/KycDetailPage'
 import { AuditListPage } from '../features/governance-audit/AuditListPage'
 import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
-import { accountTypeFromParam } from '../features/whitelabel-accounts/accountModel'
-import type { AccountType } from '../features/whitelabel-accounts/accountModel'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
 
@@ -63,7 +61,7 @@ type View =
 type Route =
   | { view: 'login' | 'dashboard' }
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
-  | { view: 'accounts'; whitelabelId: string; initialType?: AccountType }
+  | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
   | { view: 'settings'; whitelabelId: string }
   | { view: 'emails'; whitelabelId: string; section?: EmailsSection }
   | { view: 'finance'; whitelabelId: string }
@@ -188,7 +186,8 @@ function decodeSegment(value: string) {
 /**
  * `#/dashboard`, `#/whitelabels` (optional `?id=` Backend Whitelabel id, `?page=`,
  * `?search=`, `?status=active|inactive`), `#/whitelabels/:whitelabelId/accounts`
- * (optional `?tipo=investidores|empreendedores|administradores`),
+ * (Core Whitelabel id; optional `?tipo=investidores|empreendedores|administradores`,
+ * `?page=`, `?search=`, `?conta=` account id within that tipo),
  * `#/whitelabels/:whitelabelId/settings`, `#/whitelabels/:whitelabelId/emails`
  * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`,
  * `#/whitelabels/:whitelabelId/finance/modalities`,
@@ -220,10 +219,16 @@ function routeFromHash(): Route {
   }
   const accounts = ACCOUNTS_PATH.exec(path)
   if (accounts) {
+    const query = new URLSearchParams(search)
+    const value = (key: string) => query.get(key) || undefined
     return {
       view: 'accounts',
       whitelabelId: accounts[1],
-      initialType: accountTypeFromParam(new URLSearchParams(search).get('tipo')),
+      tipo: value('tipo'),
+      page: value('page'),
+      query: value('search'),
+      conta: value('conta'),
+      search,
     }
   }
   const settings = SETTINGS_PATH.exec(path)
@@ -385,7 +390,16 @@ export function App() {
     )
   }
   if (route.view === 'accounts') {
-    return <WhitelabelAccountsPage whitelabelId={route.whitelabelId} initialType={route.initialType} />
+    return (
+      <WhitelabelAccountsPage
+        whitelabelId={route.whitelabelId}
+        tipo={route.tipo}
+        page={route.page}
+        search={route.query}
+        conta={route.conta}
+        routeKey={route.search}
+      />
+    )
   }
   if (route.view === 'settings') return <WhitelabelSettingsPage whitelabelId={route.whitelabelId} />
   if (route.view === 'emails') {

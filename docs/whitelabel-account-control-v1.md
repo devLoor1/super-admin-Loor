@@ -1,5 +1,13 @@
 # Whitelabel Account Control V1 — frontend review
 
+> **Superseded for the screen behaviour by
+> [Accounts Read Integration V1](accounts-read-integration-v1.md) (2026-10-15).**
+> Contas do Whitelabel now reads Control Plane accounts and is read-only:
+> illustrative accounts, filters, local pause / reactivate, Whitelabel change and
+> the new-administrator form are no longer rendered. Codex removed their proven
+> dead dialog/config files; shared models and fixtures remain for other modules.
+> This record stays as the history of the prototype review.
+
 Reviewed by Codex on 2026-10-06, preserving Claude's 2026-10-05 local implementation.
 Status: technically ready for user visual review; **not Backend-integrated**.
 

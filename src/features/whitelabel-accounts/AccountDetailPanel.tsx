@@ -1,606 +1,329 @@
-import { useState, type ReactNode } from 'react'
-import {
-  ArrowRight,
-  ArrowRightLeft,
-  CheckCircle2,
-  Clock3,
-  FileCheck2,
-  History,
-  Hourglass,
-  Info,
-  Link2,
-  Minus,
-  Pause,
-  RotateCcw,
-  Undo2,
-  type LucideIcon,
-} from 'lucide-react'
-import { IconTile } from '../../components/ui/IconTile'
+import type { ReactNode } from 'react'
+import { ArrowUpRight, CircleAlert, Clock3, Info, Lock, RotateCw, UserX, UsersRound } from 'lucide-react'
+import { DetailTransition } from '../../components/ui/DetailTransition'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { StatusPill } from '../../components/ui/StatusPill'
-import { Tabs } from '../../components/ui/Tabs'
-import { tabId, tabPanelId } from '../../components/ui/tabIds'
-import { DetailTransition } from '../../components/ui/DetailTransition'
-import type { Whitelabel } from '../whitelabels/prototypeWhitelabels'
+import type { ApiErrorView } from '../../lib/apiErrors'
+import { formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from '../whitelabels/whitelabelApi'
+import { maskPhone as maskEntrepreneurPhone } from '../operation/entrepreneurs/entrepreneurApi'
+import { entrepreneurHref } from '../operation/entrepreneurs/entrepreneurRoute'
+import { accessMeta, investorTypeLabel, maskPhone as maskInvestorPhone } from '../operation/investors/investorApi'
+import { investorHref } from '../operation/investors/investorRoute'
+import states from '../operation/shared/ReadStates.module.css'
 import { AccountAvatar, BusinessBadge } from './AccountBadges'
-import {
-  ACCESS_META,
-  ACCOUNT_TYPE_LABEL,
-  ADMIN_INVITATION_META,
-  ADMIN_ROLE_META,
-  COMPANY_VALIDATION_META,
-  CONCEPTUAL_PERMISSIONS,
-  DEPENDENCY_DEFS,
-  DEPENDENCY_TONE,
-  INVESTOR_VALIDATION_META,
-  formatDateTime,
-  initials,
-  type Account,
-  type AccountEvent,
-  type AccountType,
-  type Dependency,
-  type DependencyStatus,
-  type InvestorAccount,
-} from './accountModel'
+import { BreakableEmail } from './AccountListPanel'
+import { accountDisplayName, kindMeta, rawTokenMeta, type AccountDetail, type AccountKind } from './accountsApi'
+import { BUSINESS_HEADING, accountInitials, businessView } from './accountsPresent'
 import styles from './AccountDetailPanel.module.css'
 
-type DetailTab = 'overview' | 'data' | 'company' | 'permissions' | 'dependencies' | 'terms' | 'history'
-
-const TABS: Record<AccountType, { value: DetailTab; label: string }[]> = {
-  investor: [
-    { value: 'overview', label: 'Visão geral' },
-    { value: 'data', label: 'Dados' },
-    { value: 'dependencies', label: 'Dependências' },
-    { value: 'terms', label: 'Termos' },
-    { value: 'history', label: 'Histórico' },
-  ],
-  entrepreneur: [
-    { value: 'overview', label: 'Visão geral' },
-    { value: 'data', label: 'Dados' },
-    { value: 'company', label: 'Empresa' },
-    { value: 'dependencies', label: 'Dependências' },
-    { value: 'history', label: 'Histórico' },
-  ],
-  admin: [
-    { value: 'overview', label: 'Visão geral' },
-    { value: 'permissions', label: 'Permissões' },
-    { value: 'dependencies', label: 'Dependências' },
-    { value: 'history', label: 'Histórico' },
-  ],
-}
-
-const DEPENDENCY_ICON: Record<DependencyStatus, LucideIcon> = {
-  complete: CheckCircle2,
-  linked: Link2,
-  pending: Clock3,
-  none: Minus,
-  awaiting: Hourglass,
-}
-
-const ID_PREFIX = 'acc-detail'
-
-export type AccountDetailPanelProps = {
-  account: Account
-  whitelabel: Whitelabel
-  whitelabels: Whitelabel[]
-  events: AccountEvent[]
-  currentTermsRevision: number | null
-  onPause: () => void
-  onReactivate: () => void
-  onTransfer: () => void
-  onDiscardTransfer: () => void
-  onNotify: (message: string) => void
-  onDisplay: (id: string) => void
-}
-
-/**
- * Selected account: identity, type-specific sections and the account actions.
- * The region stays mounted (shared Whitelabels detail transition); its inner
- * contents reset tabs when another account is selected.
+/*
+ * Selected account, read from `GET /whitelabels/:id/accounts/:accountId?tipo=…`.
+ * Only fields of the real contract are shown (absent → "—"); tokens without a
+ * defined meaning (admin `businessState`, `isSuperAdmin`) are shown as sent.
+ * No KYC, Company, role or permission is inferred, and every account write
+ * (pause, reactivate, change Whitelabel, invite, edit) stays unavailable.
  */
-export function AccountDetailPanel(props: AccountDetailPanelProps) {
+
+type DisplayedAccount = { id: string; detail: AccountDetail }
+
+export function AccountDetailPanel({ detail, whitelabel }: { detail: AccountDetail; whitelabel: WhitelabelRecord }) {
+  // Ids are per domain: the identity of the displayed account is (kind, id).
+  const item: DisplayedAccount = { id: `${detail.kind}:${detail.record.id}`, detail }
   return (
-    <DetailTransition item={props.account} className={styles.panel} sectionId="account-detail" labelledBy="acc-detail-title" onDisplay={props.onDisplay}>
-      {(displayed) => <DetailContents key={displayed.id} {...props} account={displayed} />}
+    <DetailTransition item={item} className={styles.panel} sectionId="account-detail" labelledBy="acc-detail-title">
+      {(displayed) => <DetailContents detail={displayed.detail} whitelabel={whitelabel} />}
     </DetailTransition>
   )
 }
 
-function DetailContents({
-  account,
-  whitelabel,
-  whitelabels,
-  events,
-  currentTermsRevision,
-  onPause,
-  onReactivate,
-  onTransfer,
-  onDiscardTransfer,
-  onNotify,
-}: AccountDetailPanelProps) {
-  const [tab, setTab] = useState<DetailTab>('overview')
-  const tabs = TABS[account.type]
-  const access = ACCESS_META[account.accessState]
-  const typeMeta = ACCOUNT_TYPE_LABEL[account.type]
+function DetailContents({ detail, whitelabel }: { detail: AccountDetail; whitelabel: WhitelabelRecord }) {
+  const { record } = detail
+  const meta = kindMeta(detail.kind)
+  const access = accessMeta(record.accessState)
+  const business = businessView(detail)
+  const wlAvatar = whitelabelAvatar(whitelabel)
 
   return (
     <>
       <header className={styles.header} data-detail-stage="identity">
-        <AccountAvatar initials={initials(account.name)} size="lg" />
+        <AccountAvatar initials={accountInitials(record)} size="lg" />
         <div className={styles.identity}>
           <div className={styles.nameRow}>
-            <h2 id="acc-detail-title" className={styles.name} data-account-id={account.id}>
-              {account.name}
+            <h2 id="acc-detail-title" className={styles.name} data-account-id={record.id} data-account-kind={detail.kind}>
+              {record.fullName ? accountDisplayName(detail) : <BreakableEmail text={accountDisplayName(detail)} />}
             </h2>
-            <StatusPill tone={access.tone} label={access.label} />
+            {access ? <StatusPill tone={access.tone} label={access.label} /> : null}
           </div>
           <p className={styles.meta}>
-            {typeMeta.singular}
+            {meta.singular}
             <span className={styles.metaDot} aria-hidden="true">
               •
             </span>
-            ID: {account.id}
+            ID {record.id}
           </p>
         </div>
       </header>
 
-      <Tabs
-        idPrefix={ID_PREFIX}
-        label={`Seções da conta de ${account.name}`}
-        tabs={tabs}
-        value={tab}
-        onChange={setTab}
-        className={styles.tabs}
-      />
-
-      <p className={styles.tabsHint}>Mais seções: deslize ou use as setas ← →</p>
-
-      {tabs.map((item) => (
-        <div
-          key={item.value}
-          role="tabpanel"
-          id={tabPanelId(ID_PREFIX, item.value)}
-          aria-labelledby={tabId(ID_PREFIX, item.value)}
-          hidden={tab !== item.value}
-          tabIndex={0}
-          className={styles.tabPanel}
-        >
-          {tab !== item.value ? null : item.value === 'overview' ? (
-            <Overview
-              account={account}
-              whitelabel={whitelabel}
-              whitelabels={whitelabels}
-              events={events}
-              onPause={onPause}
-              onReactivate={onReactivate}
-              onTransfer={onTransfer}
-              onDiscardTransfer={onDiscardTransfer}
-              onShowDependencies={() => setTab('dependencies')}
-            />
-          ) : item.value === 'data' ? (
-            <PersonalData account={account} />
-          ) : item.value === 'company' && account.type === 'entrepreneur' ? (
-            <CompanyData account={account} />
-          ) : item.value === 'permissions' && account.type === 'admin' ? (
-            <Permissions role={account.role} name={account.name} onNotify={onNotify} />
-          ) : item.value === 'dependencies' ? (
-            <DependencyList dependencies={account.dependencies} type={account.type} />
-          ) : item.value === 'terms' && account.type === 'investor' ? (
-            <Terms account={account} currentRevision={currentTermsRevision} whitelabelName={whitelabel.name} />
-          ) : (
-            <HistoryList account={account} events={events} />
+      <div className={styles.overview}>
+        <section className={styles.card} aria-labelledby="acc-info-title" data-detail-stage="information">
+          <h3 id="acc-info-title" className={styles.cardTitle}>
+            Informações principais
+          </h3>
+          <dl className={styles.fields}>
+            <Field label="E-mail" name="email">
+              <OptionalValue value={record.email} />
+            </Field>
+            <Field label="Whitelabel" name="whitelabel">
+              <span className={styles.whitelabel}>
+                <span className={styles.whitelabelMark} data-tone={wlAvatar.tone} aria-hidden="true">
+                  {wlAvatar.initial ?? '·'}
+                </span>
+                <a href={`#/whitelabels?id=${encodeURIComponent(whitelabel.id)}`} className={styles.inlineLink} data-link="whitelabel">
+                  {whitelabel.name}
+                  <span className="visually-hidden"> (ver Whitelabel, ID {whitelabel.id})</span>
+                </a>
+              </span>
+            </Field>
+            <Field label="Acesso" name="access">
+              {access ? <StatusPill tone={access.tone} label={access.label} /> : <OptionalValue value={null} />}
+            </Field>
+            <Field label={BUSINESS_HEADING[detail.kind]} name="business">
+              {business ? <BusinessBadge tone={business.tone} label={business.label} /> : <OptionalValue value={null} />}
+            </Field>
+            <Field label="Criada em" name="createdAt">
+              <DateValue iso={record.createdAt} />
+            </Field>
+            <Field label="Atualizada em" name="updatedAt">
+              <DateValue iso={record.updatedAt} />
+            </Field>
+          </dl>
+          {detail.kind === 'admin' ? null : (
+            <p className={styles.cardFootnote}>
+              {BUSINESS_HEADING[detail.kind]} é o estado do cadastro informado pelo Control Plane — independente do acesso e
+              diferente do KYC.
+            </p>
           )}
-        </div>
-      ))}
+        </section>
+
+        {detail.kind === 'admin' ? <AdminData detail={detail} /> : <RegistrationData detail={detail} />}
+
+        <Links detail={detail} />
+
+        <section className={styles.card} aria-labelledby="acc-actions-title" data-detail-stage="actions" data-write-actions="disabled">
+          <h3 id="acc-actions-title" className={styles.cardTitle}>
+            Ações da conta
+          </h3>
+          <div className={styles.note}>
+            <Lock size={16} strokeWidth={1.8} aria-hidden="true" />
+            <p>
+              <strong>Ações de acesso desativadas (somente leitura).</strong> Pausar, reativar, alterar Whitelabel,
+              {detail.kind === 'admin' ? ' convidar, alterar função, ' : ' '}editar e redefinir senha não estão disponíveis nesta
+              integração. Nada é enviado ao Control Plane.
+            </p>
+          </div>
+        </section>
+      </div>
     </>
   )
 }
 
-/* ---------------- Overview ---------------- */
-
-function Overview({
-  account,
-  whitelabel,
-  whitelabels,
-  events,
-  onPause,
-  onReactivate,
-  onTransfer,
-  onDiscardTransfer,
-  onShowDependencies,
-}: Pick<
-  AccountDetailPanelProps,
-  'account' | 'whitelabel' | 'whitelabels' | 'events' | 'onPause' | 'onReactivate' | 'onTransfer' | 'onDiscardTransfer'
-> & { onShowDependencies: () => void }) {
-  const access = ACCESS_META[account.accessState]
-  const lastPause = events.find((event) => event.kind === 'paused')
-  const paused = account.accessState === 'paused'
-  const transferTarget = account.transferRequest
-    ? whitelabels.find((item) => item.id === account.transferRequest?.toWhitelabelId)
-    : undefined
-
+function RegistrationData({ detail }: { detail: Extract<AccountDetail, { kind: 'investor' | 'entrepreneur' }> }) {
+  const { record } = detail
+  const phone = detail.kind === 'investor' ? maskInvestorPhone(record.phone) : maskEntrepreneurPhone(record.phone)
   return (
-    <div className={styles.overview}>
-      <section className={styles.card} aria-labelledby="acc-info-title" data-detail-stage="information">
-        <h3 id="acc-info-title" className={styles.cardTitle}>
-          Informações principais
-        </h3>
-        <dl className={styles.fields}>
-          <Field label="E-mail">
-            <span className={styles.value}>{account.email}</span>
-          </Field>
-          <Field label="Whitelabel">
-            <span className={styles.whitelabel}>
-              <span className={styles.whitelabelMark} data-tone={whitelabel.avatarTone} aria-hidden="true">
-                {whitelabel.initial ?? '·'}
-              </span>
-              <span className={styles.value}>{whitelabel.name}</span>
-            </span>
-          </Field>
-          <Field label="Status de acesso">
-            <StatusPill tone={access.tone} label={access.label} />
-          </Field>
-          {account.type === 'investor' ? (
-            <Field label="Validação da conta">
-              <BusinessBadge {...INVESTOR_VALIDATION_META[account.validation]} />
+    <section className={styles.card} aria-labelledby="acc-data-title" data-detail-stage="data">
+      <h3 id="acc-data-title" className={styles.cardTitle}>
+        Dados do cadastro
+      </h3>
+      <dl className={styles.fields}>
+        <Field label="Nome completo" name="fullName">
+          <OptionalValue value={record.fullName} empty="Não informado" />
+        </Field>
+        <Field label="Telefone" name="phone">
+          <OptionalValue value={phone} />
+        </Field>
+        <Field label="E-mail verificado em" name="emailVerifiedAt">
+          <DateValue iso={record.emailVerifiedAt} />
+        </Field>
+        {detail.kind === 'investor' ? (
+          <>
+            <Field label="Tipo de investidor" name="investorType">
+              <OptionalValue value={investorTypeLabel(detail.record.investorType)} />
             </Field>
-          ) : account.type === 'entrepreneur' ? (
-            <Field label="Validação da empresa">
-              <BusinessBadge {...COMPANY_VALIDATION_META[account.company.validation]} />
+            <Field label="Dados pessoais preenchidos" name="personalInformationFilled">
+              <OptionalValue
+                value={detail.record.personalInformationFilled === null ? null : detail.record.personalInformationFilled ? 'Sim' : 'Não'}
+              />
             </Field>
-          ) : (
-            <>
-              <Field label="Função (conceitual)">
-                <span className={styles.value}>{ADMIN_ROLE_META[account.role].label}</span>
+            {detail.record.reasonForDeny ? (
+              <Field label="Motivo da negativa" name="reasonForDeny">
+                <OptionalValue value={detail.record.reasonForDeny} />
               </Field>
-              <Field label="Convite">
-                <BusinessBadge {...ADMIN_INVITATION_META[account.invitation]} />
-              </Field>
-            </>
-          )}
-          <Field label="Criada em">
-            <DateValue iso={account.createdAt} />
-          </Field>
-          <Field label="Última atividade">
-            <DateValue iso={account.lastActivityAt} />
-          </Field>
-        </dl>
-      </section>
-
-      <section className={styles.card} aria-labelledby="acc-actions-title" data-detail-stage="actions">
-        <h3 id="acc-actions-title" className={styles.cardTitle}>
-          Ações da conta
-        </h3>
-
-        {account.transferRequest ? (
-          <div className={styles.transferNotice} role="note">
-            <ArrowRightLeft size={16} strokeWidth={1.8} aria-hidden="true" />
-            <p>
-              <strong>Alteração para {transferTarget?.name ?? 'outro Whitelabel'} simulada</strong> em{' '}
-              {formatDateTime(account.transferRequest.requestedAt)}. Nenhuma migração foi executada; depende de validação
-              do Backend.
-            </p>
-            <button type="button" className={styles.linkButton} onClick={onDiscardTransfer}>
-              <Undo2 size={14} strokeWidth={1.8} aria-hidden="true" />
-              Descartar simulação
-            </button>
-          </div>
+            ) : null}
+            <Field label="Termos aceitos em" name="termsAcceptedAt">
+              <DateValue iso={detail.record.termsAcceptedAt} />
+            </Field>
+            <Field label="Revisão dos termos" name="termsRevisionId">
+              <OptionalValue value={detail.record.termsRevisionId} />
+            </Field>
+          </>
         ) : null}
-
-        <div className={styles.actionRow}>
-          {paused ? (
-            <button type="button" className={styles.reactivateButton} onClick={onReactivate} data-access-action>
-              <RotateCcw size={17} strokeWidth={1.9} aria-hidden="true" />
-              Reativar acesso
-            </button>
-          ) : (
-            <button type="button" className={styles.pauseButton} onClick={onPause} data-access-action>
-              <Pause size={17} strokeWidth={2} aria-hidden="true" />
-              Pausar acesso
-            </button>
-          )}
-          <OutlineButton className={styles.secondaryAction} onClick={onTransfer} data-transfer-action>
-            <ArrowRightLeft size={16} strokeWidth={1.8} aria-hidden="true" />
-            Alterar Whitelabel
-          </OutlineButton>
-        </div>
-
-        {paused ? (
-          <p className={styles.pausedLine}>
-            {lastPause ? (
-              <>
-                Pausada neste protótipo em {formatDateTime(lastPause.at)}. Motivo: “{lastPause.reason}”
-              </>
-            ) : (
-              'Pausada nos dados ilustrativos (sem data ou motivo registrados).'
-            )}
-          </p>
-        ) : null}
-
-        <div className={styles.note}>
-          <Info size={16} strokeWidth={1.8} aria-hidden="true" />
-          <p>
-            Pausar acesso suspende temporariamente o acesso do usuário, preservando os dados e o histórico da conta.
-            {account.type === 'investor'
-              ? ' A validação, o KYC e os vínculos financeiros não mudam.'
-              : account.type === 'entrepreneur'
-                ? ' A empresa e as oportunidades não mudam.'
-                : ' A função e o convite não mudam.'}
-          </p>
-        </div>
-        <ul className={styles.integration} aria-label="Situação da implementação">
-          <li>
-            Frontend: <strong>protótipo</strong>
-          </li>
-          <li>
-            Backend: <strong>implementação pendente</strong>
-          </li>
-          <li>
-            Integração: <strong>pendente</strong>
-          </li>
-        </ul>
-      </section>
-
-      <section className={styles.card} aria-labelledby="acc-deps-title" data-detail-stage="dependencies">
-        <div className={styles.cardHeader}>
-          <h3 id="acc-deps-title" className={styles.cardTitle}>
-            Dependências e status
-          </h3>
-          <button type="button" className={styles.linkButton} onClick={onShowDependencies}>
-            Ver detalhes
-            <ArrowRight size={14} strokeWidth={1.8} aria-hidden="true" />
-          </button>
-        </div>
-        <ul className={styles.depGrid}>
-          {account.dependencies.map((dependency) => (
-            <DependencyTile key={dependency.key} dependency={dependency} />
-          ))}
-        </ul>
-      </section>
-    </div>
+      </dl>
+      <p className={styles.cardFootnote}>Telefone parcialmente mascarado. Documentos (CPF/CNPJ) não fazem parte deste contrato.</p>
+    </section>
   )
 }
 
-function DependencyTile({ dependency }: { dependency: Dependency }) {
-  const Icon = DEPENDENCY_ICON[dependency.status]
+function AdminData({ detail }: { detail: Extract<AccountDetail, { kind: 'admin' }> }) {
+  const { record } = detail
+  const situation = rawTokenMeta(record.businessState)
   return (
-    <li className={styles.depTile}>
-      <span className={styles.depLabel}>{DEPENDENCY_DEFS[dependency.key].label}</span>
-      <span className={styles.depStatus} data-tone={DEPENDENCY_TONE[dependency.status]}>
-        <Icon size={14} strokeWidth={2} aria-hidden="true" />
-        {dependency.value}
+    <section className={styles.card} aria-labelledby="acc-data-title" data-detail-stage="data">
+      <h3 id="acc-data-title" className={styles.cardTitle}>
+        Dados do administrador
+      </h3>
+      <dl className={styles.fields}>
+        <Field label="Nome completo" name="fullName">
+          <OptionalValue value={record.fullName} empty="Não informado" />
+        </Field>
+        <Field label="Situação (valor do Core)" name="businessState">
+          {situation ? <BusinessBadge tone={situation.tone} label={situation.label} /> : <OptionalValue value={null} />}
+        </Field>
+        <Field label="Sinalizador isSuperAdmin (Core)" name="isSuperAdmin">
+          <OptionalValue value={record.isSuperAdmin === null ? null : record.isSuperAdmin ? 'Sim' : 'Não'} />
+        </Field>
+      </dl>
+      <p className={styles.cardFootnote}>
+        O contrato não define o significado de “Situação” nem do sinalizador isSuperAdmin: os valores aparecem como enviados e
+        não indicam função ou permissões no Super Admin. Funções e permissões não são expostas.
+      </p>
+    </section>
+  )
+}
+
+function Links({ detail }: { detail: AccountDetail }) {
+  const { record } = detail
+  return (
+    <section className={styles.card} aria-labelledby="acc-links-title" data-detail-stage="links">
+      <h3 id="acc-links-title" className={styles.cardTitle}>
+        Vínculos
+      </h3>
+      <ul className={styles.linkList}>
+        {detail.kind === 'investor' ? (
+          <>
+            <LinkRow label="Perfil de investidor" description="Mesmo ID no módulo Operação › Investidores.">
+              <a href={investorHref(record.id)} className={styles.linkAction} data-link="investor-profile">
+                Abrir perfil
+                <span className="visually-hidden"> do investidor {record.id} em Operação › Investidores</span>
+                <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />
+              </a>
+            </LinkRow>
+            <PendingRow label="KYC" text="Aguardando integração (Compliance › KYC)" />
+            <PendingRow label="Investimentos" text="Aguardando integração (Financeiro)" />
+          </>
+        ) : detail.kind === 'entrepreneur' ? (
+          <>
+            <LinkRow label="Perfil de empreendedor" description="Mesmo ID no módulo Operação › Empreendedores.">
+              <a href={entrepreneurHref(record.id)} className={styles.linkAction} data-link="entrepreneur-profile">
+                Abrir perfil
+                <span className="visually-hidden"> do empreendedor {record.id} em Operação › Empreendedores</span>
+                <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />
+              </a>
+            </LinkRow>
+            <PendingRow label="Empresa" text="Aguardando integração da empresa" />
+            <PendingRow label="KYC" text="Aguardando integração (Compliance › KYC)" />
+          </>
+        ) : (
+          <PendingRow label="Função e permissões" text="Não expostas pelo Control Plane" />
+        )}
+      </ul>
+    </section>
+  )
+}
+
+function LinkRow({ label, description, children }: { label: string; description: string; children: ReactNode }) {
+  return (
+    <li className={styles.linkRow}>
+      <span className={styles.linkText}>
+        <span className={styles.linkLabel}>{label}</span>
+        <span className={styles.linkDescription}>{description}</span>
+      </span>
+      {children}
+    </li>
+  )
+}
+
+function PendingRow({ label, text }: { label: string; text: string }) {
+  return (
+    <li className={styles.linkRow} data-pending-link={label}>
+      <span className={styles.linkText}>
+        <span className={styles.linkLabel}>{label}</span>
+        <span className={styles.linkDescription}>
+          <Clock3 size={13} strokeWidth={1.9} aria-hidden="true" />
+          {text}
+        </span>
       </span>
     </li>
   )
 }
 
-/* ---------------- Other sections ---------------- */
+/* ---------------- Read states ---------------- */
 
-function PersonalData({ account }: { account: Account }) {
+type StatusProps =
+  | { kind: 'loading' }
+  | { kind: 'empty'; description: string }
+  | { kind: 'unavailable' }
+  | { kind: 'not-found'; accountKind: AccountKind; id: string; whitelabelName: string; onClose: () => void }
+  | { kind: 'error'; error: ApiErrorView; onRetry: () => void }
+
+/** The same `#account-detail` region while no account can be shown. */
+export function AccountDetailStatus(props: StatusProps) {
   return (
-    <div className={styles.overview}>
-      <section className={styles.card} aria-labelledby="acc-data-title">
-        <h3 id="acc-data-title" className={styles.cardTitle}>
-          Dados da conta
-        </h3>
-        <dl className={styles.fields}>
-          <Field label="Nome completo">
-            <span className={styles.value}>{account.name}</span>
-          </Field>
-          <Field label="E-mail">
-            <span className={styles.value}>{account.email}</span>
-          </Field>
-          <Field label="Documento (CPF)">
-            <OptionalValue value={account.document} />
-          </Field>
-          <Field label="Telefone">
-            <OptionalValue value={account.phone} />
-          </Field>
-          <Field label="ID (protótipo)">
-            <span className={styles.value}>{account.id}</span>
-          </Field>
-        </dl>
-        <p className={styles.cardFootnote}>Documentos e telefones aparecem parcialmente mascarados e são ilustrativos.</p>
-      </section>
-
-      {account.type === 'investor' ? (
-        <section className={styles.card} aria-labelledby="acc-profile-title">
-          <h3 id="acc-profile-title" className={styles.cardTitle}>
-            Perfil do investidor
-          </h3>
-          <dl className={styles.fields}>
-            <Field label="Classificação">
-              <OptionalValue value={account.profile.classification} />
-            </Field>
-            <Field label="Questionário">
-              <BusinessBadge
-                tone={account.profile.questionnaire === 'completed' ? 'positive' : 'pending'}
-                label={account.profile.questionnaire === 'completed' ? 'Concluído' : 'Pendente'}
-              />
-            </Field>
-          </dl>
-          <p className={styles.cardFootnote}>
-            Questionário e regras de classificação são de configuração global. Este protótipo não indica configuração
-            por Whitelabel nem permite edição.
-          </p>
-        </section>
-      ) : null}
-    </div>
-  )
-}
-
-function CompanyData({ account }: { account: Extract<Account, { type: 'entrepreneur' }> }) {
-  return (
-    <section className={styles.card} aria-labelledby="acc-company-title">
-      <h3 id="acc-company-title" className={styles.cardTitle}>
-        Empresa
-      </h3>
-      <dl className={styles.fields}>
-        <Field label="Razão social">
-          <OptionalValue value={account.company.name} />
-        </Field>
-        <Field label="CNPJ">
-          <OptionalValue value={account.company.document} />
-        </Field>
-        <Field label="Validação da empresa">
-          <BusinessBadge {...COMPANY_VALIDATION_META[account.company.validation]} />
-        </Field>
-      </dl>
-      <p className={styles.cardFootnote}>
-        A validação da empresa é um estado de negócio próprio e não equivale ao acesso da conta. Empresas e CNPJs são
-        fictícios.
-      </p>
-    </section>
-  )
-}
-
-function Permissions({ role, name, onNotify }: { role: Extract<Account, { type: 'admin' }>['role']; name: string; onNotify: (message: string) => void }) {
-  return (
-    <section className={styles.card} aria-labelledby="acc-perm-title">
-      <div className={styles.cardHeader}>
-        <h3 id="acc-perm-title" className={styles.cardTitle}>
-          Permissões conceituais
-        </h3>
-        <OutlineButton
-          className={styles.smallButton}
-          onClick={() => onNotify(`Protótipo visual: a edição de permissões de ${name} não está disponível. Nenhuma regra de acesso existe ainda.`)}
-        >
-          Editar
-        </OutlineButton>
-      </div>
-      <p className={styles.cardSubtitle}>
-        {ADMIN_ROLE_META[role].label} — {ADMIN_ROLE_META[role].description.toLowerCase()}
-      </p>
-      <ul className={styles.permissionList}>
-        {CONCEPTUAL_PERMISSIONS.map((permission) => (
-            <li key={permission.id} className={styles.permission}>
-              <Hourglass size={16} strokeWidth={2} aria-hidden="true" />
-              <span className={styles.permissionText}>
-                <span className={styles.permissionLabel}>{permission.label}</span>
-                <span className={styles.permissionDescription}>{permission.description}</span>
-              </span>
-              <span className={styles.permissionState}>A definir</span>
-            </li>
-        ))}
-      </ul>
-      <p className={styles.cardFootnote}>
-        Áreas para discussão, não permissões concedidas. A matriz por função depende de decisão de Produto e contrato
-        do Backend. Nenhuma regra de acesso (RBAC) é aplicada neste protótipo.
-      </p>
-    </section>
-  )
-}
-
-function DependencyList({ dependencies, type }: { dependencies: Dependency[]; type: AccountType }) {
-  return (
-    <section className={styles.card} aria-labelledby="acc-deplist-title">
-      <h3 id="acc-deplist-title" className={styles.cardTitle}>
-        O que está vinculado a esta conta
-      </h3>
-      <p className={styles.cardSubtitle}>
-        Status semânticos e ilustrativos, sem valores financeiros. Estes vínculos explicam por que algumas ações
-        dependem de validação do Backend.
-      </p>
-      <ul className={styles.depList}>
-        {dependencies.map((dependency) => {
-          const def = DEPENDENCY_DEFS[dependency.key]
-          return (
-            <li key={dependency.key} className={styles.depRow}>
-              <IconTile icon={def.icon} tone={type === 'admin' ? 'violet' : 'indigo'} size="sm" />
-              <div className={styles.depRowText}>
-                <div className={styles.depRowHead}>
-                  <span className={styles.depRowLabel}>{def.label}</span>
-                  <BusinessBadge tone={DEPENDENCY_TONE[dependency.status]} label={dependency.value} />
-                </div>
-                <p className={styles.depImpact}>Ao alterar o Whitelabel: {def.impact.charAt(0).toLowerCase() + def.impact.slice(1)}</p>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-function Terms({
-  account,
-  currentRevision,
-  whitelabelName,
-}: {
-  account: InvestorAccount
-  currentRevision: number | null
-  whitelabelName: string
-}) {
-  const { terms } = account
-  const outdated = terms.accepted && currentRevision !== null && terms.acceptedRevision !== currentRevision
-  return (
-    <section className={styles.card} aria-labelledby="acc-terms-title">
-      <h3 id="acc-terms-title" className={styles.cardTitle}>
-        Termos de uso
-      </h3>
-      <dl className={styles.fields}>
-        <Field label="Aceite">
-          <BusinessBadge tone={terms.accepted ? 'positive' : 'pending'} label={terms.accepted ? 'Aceitos' : 'Não aceitos'} />
-        </Field>
-        <Field label="Revisão aceita">
-          <OptionalValue value={terms.acceptedRevision ? `rev. ${terms.acceptedRevision}` : null} />
-        </Field>
-        <Field label={`Revisão vigente (${whitelabelName})`}>
-          <OptionalValue value={currentRevision ? `rev. ${currentRevision}` : null} />
-        </Field>
-        <Field label="Aceito em">
-          <DateValue iso={terms.acceptedAt} />
-        </Field>
-      </dl>
-      {outdated ? (
-        <div className={styles.note} data-tone="warning">
-          <FileCheck2 size={16} strokeWidth={1.8} aria-hidden="true" />
-          <p>
-            A revisão aceita é anterior à vigente. A política de novo aceite ainda não foi definida; nada é exigido do
-            usuário neste protótipo.
-          </p>
+    <section
+      id="account-detail"
+      className={`${styles.panel} ${styles.statusPanel}`}
+      aria-label="Detalhes da conta"
+      aria-busy={props.kind === 'loading' || undefined}
+      tabIndex={-1}
+      data-detail-status={props.kind}
+    >
+      {props.kind === 'loading' ? (
+        <div className={styles.skeleton} aria-hidden="true">
+          <span className={styles.skeletonAvatar} />
+          <span className={`${states.skeleton} ${states.skeletonWide}`} />
+          <span className={states.skeleton} />
+          <span className={styles.skeletonCard} />
+          <span className={styles.skeletonCard} />
         </div>
-      ) : null}
-      <p className={styles.cardFootnote}>Somente leitura. Baseado em um conceito existente no Core, sem integração com o Super Admin.</p>
-    </section>
-  )
-}
-
-function HistoryList({ account, events }: { account: Account; events: AccountEvent[] }) {
-  const items: { id: string; at: string | null; title: string; reason?: string; illustrative?: boolean }[] = [
-    ...events,
-  ]
-  const hasLocalPause = events.some((event) => event.kind === 'paused' || event.kind === 'reactivated')
-  if (account.accessState === 'paused' && !hasLocalPause) {
-    items.push({ id: 'seed-paused', at: null, title: 'Acesso pausado (estado inicial ilustrativo, sem motivo registrado)', illustrative: true })
-  }
-  if (account.createdAt && !events.some((event) => event.kind === 'created')) {
-    items.push({ id: 'seed-created', at: account.createdAt, title: 'Conta criada', illustrative: true })
-  }
-  return (
-    <section className={styles.card} aria-labelledby="acc-history-title">
-      <h3 id="acc-history-title" className={styles.cardTitle}>
-        Histórico
-      </h3>
-      <p className={styles.cardSubtitle}>Registro local desta sessão do protótipo — não é uma trilha de auditoria.</p>
-      {items.length ? (
-        <ol className={styles.timeline}>
-          {items.map((item) => (
-            <li key={item.id} className={styles.timelineItem}>
-              <History size={15} strokeWidth={1.8} aria-hidden="true" />
-              <div>
-                <p className={styles.timelineTitle}>{item.title}</p>
-                <p className={styles.timelineMeta}>
-                  {item.at ? formatDateTime(item.at) : 'Sem data'}
-                  {item.illustrative ? ' · dado ilustrativo' : ' · nesta sessão'}
-                </p>
-                {item.reason ? <p className={styles.timelineReason}>Motivo: “{item.reason}”</p> : null}
-              </div>
-            </li>
-          ))}
-        </ol>
+      ) : props.kind === 'empty' ? (
+        <EmptyState icon={UsersRound} title="Nenhuma conta em exibição" description={props.description} />
+      ) : props.kind === 'unavailable' ? (
+        <EmptyState icon={Info} title="Detalhes indisponíveis" description="A lista de contas não pôde ser carregada." />
+      ) : props.kind === 'not-found' ? (
+        <div className={states.feedback}>
+          <EmptyState
+            icon={UserX}
+            title="Conta não encontrada"
+            description={`Nenhum ${kindMeta(props.accountKind).singular.toLowerCase()} com o ID “${props.id}” existe em ${props.whitelabelName}.`}
+          />
+          <OutlineButton onClick={props.onClose}>Ver a primeira conta da lista</OutlineButton>
+        </div>
       ) : (
-        <p className={styles.cardFootnote}>Nenhum evento registrado.</p>
+        <div className={states.feedback} role="alert">
+          <EmptyState icon={CircleAlert} title={props.error.title} description={props.error.description} />
+          {props.error.correlationId ? (
+            <p className={states.diagnostic}>
+              Código de diagnóstico: <code className={states.code}>{props.error.correlationId}</code>
+            </p>
+          ) : null}
+          {props.error.retryable ? (
+            <OutlineButton onClick={props.onRetry}>
+              <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
+              Tentar novamente
+            </OutlineButton>
+          ) : null}
+        </div>
       )}
     </section>
   )
@@ -608,17 +331,18 @@ function HistoryList({ account, events }: { account: Account; events: AccountEve
 
 /* ---------------- Small helpers ---------------- */
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, name, children }: { label: string; name: string; children: ReactNode }) {
   return (
-    <div className={styles.field}>
+    <div className={styles.field} data-field={name}>
       <dt>{label}</dt>
       <dd>{children}</dd>
     </div>
   )
 }
 
-function OptionalValue({ value }: { value: string | null }) {
+function OptionalValue({ value, empty }: { value: string | null; empty?: string }) {
   if (value) return <span className={styles.value}>{value}</span>
+  if (empty) return <span className={`${styles.value} ${styles.muted}`}>{empty}</span>
   return (
     <span className={styles.value}>
       <span aria-hidden="true">—</span>
@@ -628,7 +352,7 @@ function OptionalValue({ value }: { value: string | null }) {
 }
 
 function DateValue({ iso }: { iso: string | null }) {
-  const text = formatDateTime(iso)
+  const text = formatWhitelabelDate(iso, true)
   if (!text) return <OptionalValue value={null} />
-  return <span className={styles.value}>{text.replace(' ', ' às ')}</span>
+  return <span className={styles.value}>{text}</span>
 }

@@ -12,12 +12,12 @@ dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
 (`loor-super-admin.netlify.app`). Reviewed feature branches require separate
-promotion authorization. Auth/session, Whitelabel, Investor, Entrepreneur and
-Dashboard reads are included in the accepted deployed baseline `afe24bf`.
-Audit reads are independently reviewed on `feature/audit-read-integration-v1`,
-pending separate promotion and deployed UI-to-live-API E2E. The single direct
-real-CUID local case is blocked: the earlier live ID was not retained and the
-upstream API subsequently returned 502/timeouts; no ID was fabricated or retried.
+promotion authorization. Auth/session, Whitelabel, Investor, Entrepreneur,
+Dashboard and Audit reads are included in the accepted deployed baseline
+`1005a0d`. Audit homolog E2E, including real-CUID reload/direct unavailability,
+was completed on 2026-10-15. Accounts reads (Contas do Whitelabel) are reviewed
+locally on `feature/accounts-read-integration-v1`, based on that exact baseline;
+promotion and deployed Accounts UI-to-live-API E2E require separate authorization.
 
 > **Status (atual):** o **login está integrado** ao Control Plane Nest
 > (`POST /api/auth/login`). Sessão com Bearer token, guard de rotas no
@@ -49,6 +49,15 @@ upstream API subsequently returned 502/timeouts; no ID was fabricated or retried
 > sessão (recarregar mostra "detalhe indisponível"); dados sensíveis e e-mails são
 > mascarados. Auditoria não é atividade operacional do Dashboard. Ver
 > [`docs/audit-read-integration-v1.md`](docs/audit-read-integration-v1.md).
+> **Contas do Whitelabel** lê o Control Plane (`GET /api/whitelabels/:id` para
+> confirmar o Whitelabel, `GET /api/whitelabels/:id/accounts?tipo=…` e
+> `GET /api/whitelabels/:id/accounts/:accountId?tipo=…`) — somente leitura;
+> investidores, empreendedores e administradores são tipos separados (IDs por
+> domínio). Pausar, reativar, alterar Whitelabel e convidar ficam desativados;
+> KYC e Empresa aparecem como "aguardando integração". O atalho "Contas" do menu
+> ainda abre o ID ilustrativo `wl_proto_01`, que pede a escolha de um Whitelabel
+> do Control Plane. Ver
+> [`docs/accounts-read-integration-v1.md`](docs/accounts-read-integration-v1.md).
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
@@ -57,9 +66,8 @@ upstream API subsequently returned 502/timeouts; no ID was fabricated or retried
 > data-ready empty states ("—", "Sem dados", "Aguardando integração") instead
 > of metrics. The
 > Whitelabels page lists Backend records (its KPI cards stay "Aguardando
-> integração"). Contas uses illustrative accounts (example.com e-mails,
-> masked documents, no amounts); pause/reactivate, Whitelabel change and the
-> Admin form only change local state — **Backend: implementation pending**.
+> integração"). Contas reads Control Plane accounts (read-only; the former
+> local pause/reactivate, Whitelabel change and Admin form are no longer shown).
 > Configurações uses illustrative per-tenant settings; every section save and
 > the Terms publication are local to the browser session (lost on reload).
 > E-mails uses illustrative SMTP values (reserved example domains) and event
@@ -125,8 +133,9 @@ guard. Without a stored token, shell routes redirect to login; with a session,
 they are reached by the URLs below.
 In the sidebar, **Plataformas** links to `#/whitelabels` and, while that domain
 is active, lists its screens: **Whitelabels**, **Contas**, **Config. do Whitelabel**
-and **E-mails**. The accounts route is `#/whitelabels/:whitelabelId/accounts` with an
-optional `?tipo=investidores|empreendedores|administradores`; the settings route is
+and **E-mails**. The accounts route is `#/whitelabels/:whitelabelId/accounts` (Core
+Whitelabel id) with optional `?tipo=investidores|empreendedores|administradores`,
+`?page=`, `?search=` and `?conta=` (account id within that `tipo`); the settings route is
 `#/whitelabels/:whitelabelId/settings`; the e-mails route is
 `#/whitelabels/:whitelabelId/emails` with an optional `?section=smtp|envios|templates`
 that focuses that card. Within the tenant screens, the sidebar destinations
@@ -279,15 +288,17 @@ src/
       prototypeWhitelabels.ts       illustrative rows for the tenant modules still in prototype (not used by this page)
       visuals/                      approved Dot Matrix background, identity reveal
     whitelabel-accounts/
-      WhitelabelAccountsPage.tsx    page layout + local state (accounts, events, filters, dialogs)
-      WhitelabelContextSelector.tsx tenant context card + switcher
-      AccountListPanel.tsx          search, access/business filters, sortable table, pagination
-      AccountDetailPanel.tsx        type-specific detail, account actions, dependencies, terms, permissions, history
+      WhitelabelAccountsPage.tsx    Accounts Read V1: tenant confirmation, type tabs, list + detail, URL state
+      AccountsWhitelabelSelector.tsx registry-backed tenant context card + switcher
+      WhitelabelContextSelector.tsx prototype tenant card (still used by Config. / E-mails / Financeiro)
+      AccountListPanel.tsx          read-only list: server search + pagination, read states
+      AccountDetailPanel.tsx        read-only detail per kind, pending KYC / Empresa, disabled actions note
+      accountsApi.ts                GET /whitelabels/:id/accounts(/:accountId)?tipo= client + strict parsing
+      accountsRoute.ts / accountsPresent.ts / useAccountsData.ts  URL state, labels, abortable reads
       AccountBadges.tsx             BusinessBadge (business state) + initials avatar
-      accountModel.ts               types, state vocabularies, dependency definitions, helpers
-      accountListConfig.ts          filter/column configuration per account type
-      prototypeAccounts.ts          illustrative accounts per Whitelabel (not backend data)
-      dialogs/                      pause, reactivate, change Whitelabel (simulation), new Admin
+      accountModel.ts               prototype types / vocabularies (still used by Operação, Compliance)
+      prototypeAccounts.ts          illustrative accounts (still used by Operação participants)
+      accountListConfig.ts, dialogs/ unused since Accounts Read V1 (marked; removal candidates)
     whitelabel-settings/
       WhitelabelSettingsPage.tsx    page layout, section navigation, unsaved-change guard, Terms dialogs
       SettingsSection.tsx (+ .css)  independent section card: status, Editar, unsaved bar, Descartar/Salvar

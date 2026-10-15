@@ -32,7 +32,9 @@ const present = await load('src/features/governance-audit/auditPresent.ts')
 const route = await load('src/features/governance-audit/auditRoute.ts')
 const { PROTOTYPE_KYC_CASES: cases } = await load('src/features/compliance-kyc/prototypeKyc.ts')
 const { kycDestinationForParticipant: destination } = await load('src/features/compliance-kyc/kycLinks.ts')
-const { auditHrefForCase } = await load('src/features/compliance-kyc/kycRefs.ts')
+const { auditHrefForCase, participantAccountHref } = await load('src/features/compliance-kyc/kycRefs.ts')
+const accountsApi = await load('src/features/whitelabel-accounts/accountsApi.ts')
+const accountsRoute = await load('src/features/whitelabel-accounts/accountsRoute.ts')
 let checks = 0
 function check(condition) { assert.ok(condition); checks += 1 }
 function frozen(value) {
@@ -63,6 +65,12 @@ check(destination('inv_proto_002').caseCount === 2 && destination('inv_proto_002
 check(destination('inv_proto_008').caseCount === 0 && destination('inv_proto_008').href.includes('?participant='))
 check(destination('emp_proto_004').href.endsWith('/kyc_proto_e004'))
 for (const item of cases) {
+  const accountLink = participantAccountHref(item)
+  const tenant = accountLink.match(/^#\/whitelabels\/([^/]+)\/accounts/)?.[1]
+  const accountParams = new URLSearchParams(accountLink.split('?')[1])
+  check(!accountsApi.isAccountsWhitelabelId(tenant)) // legacy KYC context must ask for a real tenant, never fetch prototype accounts
+  check(accountsRoute.parseAccountsRoute(Object.fromEntries(accountParams)).state.kind === item.participantType)
+  check(!accountParams.has('conta')) // no synthetic participant id becomes a Core account identity
   const params = new URLSearchParams(auditHrefForCase(item.kycCaseId).split('?')[1])
   const parsed = route.parseAuditRoute(Object.fromEntries(params))
   check(params.get('resourceType') === 'kyc_case')

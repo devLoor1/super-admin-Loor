@@ -1,8 +1,8 @@
 /*
- * Whitelabel Account Control V1. Desktop: the context row, account-type tabs
- * and list form the left column; the selected-account panel spans the right
- * column (approved direction). Below 1360px everything stacks.
- * The Dot Matrix background is the shared Whitelabels implementation.
+ * Contas do Whitelabel (Accounts Read Integration V1). Desktop: the context
+ * row, account-type tabs and list form the left column; the selected-account
+ * panel spans the right column (approved direction). Below 1360px everything
+ * stacks. The Dot Matrix background is the shared Whitelabels implementation.
  */
 .page {
   position: relative;
@@ -82,8 +82,22 @@
   min-width: 0;
 }
 
-.newAdmin {
+.readOnly {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+}
+
+.readOnly svg {
+  color: var(--icon-on-dark);
 }
 
 /* ---------- List + detail ---------- */
@@ -110,15 +124,6 @@
   flex: 1 1 auto;
 }
 
-.noSelection {
-  display: grid;
-  place-items: center;
-  min-height: 320px;
-  padding: 32px 16px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-panel);
-  background: var(--surface);
-}
 
 .notFound {
   display: grid;
@@ -133,6 +138,74 @@
 
 .inlineLink {
   color: #b9b4ff;
+}
+
+/* ---------- Tenant not established (choose / not found / error) ---------- */
+
+.single {
+  display: grid;
+  gap: 14px;
+}
+
+.single .context {
+  grid-area: auto;
+}
+
+.single .notFound {
+  margin-top: 0;
+}
+
+.choose {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: min(100%, 560px);
+}
+
+.chooseStatus {
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.chooseList {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.chooseLink {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #171e2e;
+  text-decoration: none;
+  text-align: left;
+}
+
+.chooseLink:hover {
+  border-color: var(--surface-border-strong);
+}
+
+.chooseLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.chooseName {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--text-on-dark);
+}
+
+.chooseMeta {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1359px) {
@@ -159,10 +232,6 @@
   .subtitle {
     font-size: 13.5px;
     line-height: 20px;
-  }
-
-  .newAdmin {
-    width: 100%;
   }
 }
 

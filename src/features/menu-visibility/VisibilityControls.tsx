@@ -5,9 +5,12 @@ import { effectiveState, type VisibilityMap } from './visibilityModel'
 import styles from './MenuVisibility.module.css'
 
 /**
- * Hierarchical preference controls, in real sidebar order. Every switch edits
- * only its own stored preference: a child stays editable while its parent is
- * hidden, and the effective result ("Oculto pelo item pai") is shown next to it.
+ * Hierarchical preference controls, in real sidebar order. `base` is the
+ * persisted configuration read from the Control Plane; `draft` the local
+ * edit. Every switch edits only its own draft preference: a child stays
+ * editable while its parent is hidden, and the effective result ("Oculto pelo
+ * item pai") is shown next to it. The hierarchy is the frontend navigation's:
+ * the Control Plane stores the 23 IDs as a flat map.
  */
 export function VisibilityControls({
   base,
@@ -52,8 +55,8 @@ export function VisibilityControls({
           Utilitários
         </h2>
         <p className={styles.areaText}>
-          Na navegação atual, Configurações e Ajuda ficam em Utilitários, sem item pai. Nesta prévia, ocultar Sistema não afeta esses itens — a
-          relação Sistema › Configurações / Ajuda aguarda confirmação.
+          Na navegação atual, Configurações e Ajuda ficam em Utilitários, sem item pai, e o Control Plane guarda cada ID de forma independente.
+          Por isso, ocultar Sistema não afeta esses itens na prévia — uma relação Sistema › Configurações / Ajuda não foi definida.
         </p>
       </div>
       <section className={`${fin.card} ${styles.group}`} aria-labelledby="mv-utility-title" data-group="utility">
@@ -110,6 +113,11 @@ function Row({
           {changed ? <span className={styles.changed}>Alterado</span> : null}
         </span>
         <span className={styles.rowId}>{entry.id}</span>
+        {changed ? (
+          <span className={styles.rowNote} data-persisted-value={base[entry.id] ? 'visible' : 'hidden'}>
+            Configuração persistida: {base[entry.id] ? 'visível' : 'oculto'}.
+          </span>
+        ) : null}
         {effective.state === 'hidden-by-parent' ? (
           <span className={styles.rowNote}>Preferência própria mantida: visível.</span>
         ) : null}
@@ -123,17 +131,18 @@ function Row({
         {entry.id === 'sistema' ? <span className={styles.rowNote}>Sem telas próprias na navegação atual.</span> : null}
         {entry.id === 'configuracoes' && !draft.configuracoes ? (
           <span className={styles.rowNote} data-tone="warning">
-            Esta tela fica em Configurações: ocultá-lo também ocultaria este acesso no menu. Regra pendente de Produto e Backend.
+            Esta tela fica em Configurações: ocultá-lo também ocultaria este acesso no menu. Regra e forma de recuperação não definidas por
+            Produto e Backend.
           </span>
         ) : null}
         {entry.id === 'dashboard' && !draft.dashboard ? (
           <span className={styles.rowNote} data-tone="warning">
-            Dashboard é o destino inicial após o login; o comportamento com o módulo oculto ainda não foi definido.
+            Dashboard é o destino inicial após o login; o comportamento com o módulo oculto não foi definido por Produto e Backend.
           </span>
         ) : null}
         <span id={stateId} className="visually-hidden">
           {stateDescription}
-          {changed ? ' Alterado no rascunho.' : ''}
+          {changed ? ` Alterado no rascunho; configuração persistida: ${base[entry.id] ? 'visível' : 'oculto'}.` : ''}
         </span>
       </span>
       <span className={styles.rowControl}>

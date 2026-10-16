@@ -1,8 +1,9 @@
 /*
- * Menu Visibility Frontend V1 (prototype) — Configurações › Visibilidade dos
- * módulos. Cards, notes and intro come from the shared Finance / Operation
- * stylesheets; this module adds the hierarchy controls, the isolated preview,
- * the draft panel and the sticky draft bar.
+ * Menu Visibility (Integration V1 — Stage A: authoritative read) — Configurações ›
+ * Visibilidade dos módulos. Cards, notes and intro come from the shared Finance /
+ * Operation stylesheets; this module adds the source legend, the hierarchy
+ * controls, the persisted / draft panels, the isolated preview and the sticky
+ * draft bar.
  */
 
 /* ---------- Scope / provenance ---------- */
@@ -35,47 +36,79 @@
   color: var(--tone-blue-fg);
 }
 
-.prototype,
-.preview {
+.stage {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 9px;
   padding: 9px 12px;
+  border: 1px solid rgb(118 196 160 / 0.28);
   border-radius: 10px;
+  background: rgb(80 180 140 / 0.06);
   font-size: 12.5px;
   line-height: 18px;
-}
-
-.prototype {
-  border: 1px dashed rgb(247 191 109 / 0.32);
-  background: rgb(247 191 109 / 0.05);
   color: var(--text-on-dark-secondary);
 }
 
-.prototype svg {
+.stage svg {
   margin-top: 1px;
-  color: #f2c983;
+  color: #8fd9b6;
 }
 
-.prototype strong {
-  font-weight: 600;
-  color: #ecd8ae;
-}
-
-.preview {
-  border: 1px solid #2c3664;
-  background: rgb(80 92 200 / 0.08);
-  color: var(--text-on-dark-secondary);
-}
-
-.preview svg {
-  margin-top: 1px;
-  color: #b9b4ff;
-}
-
-.preview strong {
+.stage strong {
   font-weight: 600;
   color: var(--text-on-dark);
+}
+
+/* Source legend: persisted / draft / preview / real application (pending). */
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.legendItem {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 8px 11px;
+  border: 1px solid var(--surface-divider);
+  border-left-width: 3px;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 0.02);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.legendItem dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-on-dark);
+}
+
+.legendItem dd {
+  margin: 0;
+  color: var(--text-on-dark-muted);
+}
+
+.legendItem[data-source='persisted'] {
+  border-left-color: #8fd9b6;
+}
+
+.legendItem[data-source='draft'] {
+  border-left-color: #b9b4ff;
+}
+
+.legendItem[data-source='preview'] {
+  border-left-color: var(--tone-blue-fg);
+}
+
+.legendItem[data-source='enforcement'] {
+  border-left-color: #f2c983;
+  border-style: dashed;
+  border-left-style: solid;
 }
 
 /* ---------- Workspace ---------- */
@@ -291,7 +324,7 @@
   color: var(--text-on-dark-faint);
 }
 
-/* ---------- Side: draft panel ---------- */
+/* ---------- Side: persisted configuration and draft panels ---------- */
 
 .panelTitle {
   border-radius: 6px;
@@ -333,6 +366,37 @@
 
 .pendingValue {
   color: var(--text-on-dark-muted);
+}
+
+.operatorId {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-on-dark);
+}
+
+.factHint {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-on-dark-faint);
+}
+
+.panelNote {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-secondary);
+}
+
+.panelNote[data-tone='warning'] {
+  color: #ecd8ae;
+}
+
+.panelNote > svg {
+  margin-top: 2px;
+  color: #f2c983;
 }
 
 .pending {
@@ -625,31 +689,7 @@
   overflow-wrap: anywhere;
 }
 
-.errorNotice {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  padding: 11px 12px;
-  border: 1px solid rgb(240 120 145 / 0.32);
-  border-radius: 10px;
-  background: rgb(232 92 120 / 0.08);
-  font-size: 12.5px;
-  line-height: 18px;
-  color: #f6c9d3;
-}
-
-.errorNotice > svg {
-  margin-top: 1px;
-  color: #f4a7b6;
-}
-
-.errorNotice strong {
-  display: block;
-  font-weight: 600;
-  color: var(--text-on-dark);
-}
-
-/* Final persistence action while the Backend is pending (aria-disabled, focusable). */
+/* Final save action while saving is not enabled (Stage A): aria-disabled, focusable. */
 .pendingAction {
   display: inline-flex;
   align-items: center;

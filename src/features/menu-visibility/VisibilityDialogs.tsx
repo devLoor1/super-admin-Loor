@@ -1,51 +1,49 @@
 import { useId, useRef } from 'react'
-import { AlertTriangle, ArrowRight, CircleAlert, CircleDot, Clock3, Eye, Save } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CircleDot, Clock3, Eye, Save } from 'lucide-react'
 import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import dialogStyles from '../whitelabel-settings/dialogs/SettingsDialogs.module.css'
 import { menuEntry, menuLabelWithParent } from './menuRegistry'
-import { describeVisibilityError, putRequestPreview } from './menuVisibilityContract'
+import { putRequestPreview } from './menuVisibilityContract'
 import { effectConsequences, preferenceChanges, type VisibilityMap } from './visibilityModel'
 import styles from './MenuVisibility.module.css'
 
 const word = (visible: boolean) => (visible ? 'Visível' : 'Oculto')
 
 /**
- * Change review before the FUTURE save. Lists stored-preference changes,
- * then effective consequences (parent/child), then the candidate full map.
- * The final action is `aria-disabled`: persistence waits for the Backend and
- * nothing is sent — no PUT, no storage, no change to the real navigation.
+ * Change review against the PERSISTED configuration. Lists stored-preference
+ * changes, then effective consequences (parent/child), then the full map a
+ * future Stage B PUT would carry. The final action is `aria-disabled`: saving
+ * is not enabled in Stage A and nothing is sent — no PUT, no storage, no
+ * change to the real navigation, no local updatedAt / updatedBy, no Audit.
  */
 export function VisibilityReviewDialog({
   base,
   draft,
   onClose,
-  saveErrorPreview,
 }: {
+  /** Persisted configuration read from the Control Plane. */
   base: VisibilityMap
   draft: VisibilityMap
   onClose: () => void
-  /** Prototype preview of a failed save (`?previa=falha-ao-salvar`); never set by a real request. */
-  saveErrorPreview?: unknown
 }) {
   const backRef = useRef<HTMLButtonElement>(null)
   const pendingId = useId()
   const changes = preferenceChanges(base, draft)
   const consequences = effectConsequences(base, draft)
-  const failure = saveErrorPreview === undefined ? null : describeVisibilityError(saveErrorPreview, 'save')
   const warnings = [
     !draft.configuracoes && base.configuracoes
-      ? 'Configurações oculto: o acesso a esta tela pelo menu também ficaria oculto. A regra para este item aguarda Produto e Backend.'
+      ? 'Configurações oculto: o acesso a esta tela pelo menu também ficaria oculto. A regra para ocultar este item e recuperar o acesso não foi definida por Produto e Backend.'
       : null,
     !draft.dashboard && base.dashboard
-      ? 'Dashboard oculto: o destino inicial após o login e o redirecionamento de rotas ocultas ainda não foram definidos.'
+      ? 'Dashboard oculto: o destino inicial após o login e o comportamento de rotas ocultas não foram definidos por Produto e Backend.'
       : null,
   ].filter((item): item is string => item !== null)
 
   return (
     <Dialog
       title="Revisar alterações de visibilidade"
-      description="Configuração global do ambiente de homologação · rascunho em memória, não salvo"
+      description="Configuração global do ambiente de homologação · rascunho comparado à configuração persistida, não salvo"
       icon={Eye}
       onClose={onClose}
       initialFocusRef={backRef}
@@ -72,7 +70,7 @@ export function VisibilityReviewDialog({
       <div className={styles.review} data-visibility-review>
         <section aria-labelledby={`${pendingId}-changes`}>
           <h3 id={`${pendingId}-changes`} className={styles.reviewTitle}>
-            Preferências alteradas ({changes.length})
+            Preferências alteradas em relação à configuração persistida ({changes.length})
           </h3>
           <ul className={styles.changes}>
             {changes.map((change) => (
@@ -122,26 +120,16 @@ export function VisibilityReviewDialog({
         ) : null}
 
         <details className={styles.payload}>
-          <summary>Mapa completo do rascunho (corpo candidato do PUT, não enviado)</summary>
+          <summary>Mapa completo do rascunho (corpo previsto do PUT, não enviado)</summary>
           <pre data-put-preview>{JSON.stringify(putRequestPreview(draft), null, 2)}</pre>
         </details>
-
-        {failure ? (
-          <div className={styles.errorNotice} role="alert" data-save-error-preview>
-            <CircleAlert size={15} strokeWidth={1.8} aria-hidden="true" />
-            <span>
-              <strong>Prévia de erro ao salvar: {failure.title}</strong>
-              {failure.description}
-            </span>
-          </div>
-        ) : null}
 
         <p id={pendingId} className={styles.pending} data-persistence-pending>
           <Clock3 size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Persistência aguardando integração do Backend</strong>
-            “Salvar visibilidade” ainda não está disponível. Nenhuma requisição é enviada e o menu lateral real não muda; o rascunho continua
-            nesta tela até ser descartado ou até a página ser recarregada.
+            <strong>Salvar ainda não está habilitado</strong>
+            Leitura integrada. Aplicação e persistência aguardam validação das regras e autorização. Nenhuma requisição de alteração é enviada e o
+            menu lateral real não muda; o rascunho continua nesta tela até ser descartado ou até a página ser recarregada.
           </span>
         </p>
       </div>
@@ -171,7 +159,7 @@ export function DiscardVisibilityDialog({
   return (
     <Dialog
       title="Descartar alterações de visibilidade?"
-      description={`Ao ${destination}, o rascunho volta à prévia inicial (todos os módulos visíveis). Nada foi salvo.`}
+      description={`Ao ${destination}, o rascunho volta à configuração persistida lida do Control Plane. Nada foi salvo.`}
       icon={AlertTriangle}
       tone="warning"
       onClose={onStay}

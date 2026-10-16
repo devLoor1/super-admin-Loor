@@ -1,5 +1,18 @@
 # Menu Visibility Frontend V1
 
+> **Superseded in part by Menu Visibility Integration V1 — Stage A.** See
+> [`menu-visibility-read-integration-v1.md`](menu-visibility-read-integration-v1.md).
+> This describes the local feature code, **not a deployed frontend change**;
+> Stage A promotion remains separately authorized.
+> The screen now reads the persisted configuration from
+> `GET /api/homolog/menu-visibility`. The prototype initial state (all
+> visible), `prototypeVisibility.ts` and the `?previa=` state preview were
+> removed. Saving (PUT) and real navigation enforcement are still **not
+> enabled**. The sections below that describe the prototype source, the
+> "Prévia padrão do frontend", `?previa=` or "no GET" are historical. The
+> registry, the parent / child model, the draft, the review and the
+> unsaved-change protection described here are unchanged.
+
 Frontend-only unit, implemented by Cloud from `dev` `91cd26a` and left
 uncommitted for Codex review. It prepares the management experience for
 **global module visibility** (show / hide existing modules) while the Backend

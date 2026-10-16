@@ -227,8 +227,9 @@ function decodeSegment(value: string) {
  * Auditoria (Control Plane audit log): `#/audit` (optional `?search=`, `?order=asc`, `?page=`;
  * the prototype's `?resourceType=` / `?resourceId=` / `?whitelabel=` / `?actor=` / `?action=`
  * are reported as unsupported), `#/audit/:auditEventId` (optional `?returnTo=` list context),
- * Configurações › Visibilidade dos módulos (non-persisting prototype, existing `configuracoes`
- * entry): `#/settings/menu-visibility` (prototype-only `?previa=`)
+ * Configurações › Visibilidade dos módulos (persisted configuration read; saving and real
+ * enforcement not enabled; existing `configuracoes` entry): `#/settings/menu-visibility`
+ * (a leftover `?previa=` is only reported as ignored)
  * → session-guarded shell screens; anything else → login.
  */
 function routeFromHash(): Route {

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { CircleAlert, Clock3, Eye, FlaskConical, Globe2, Info, RotateCcw, RotateCw, ShieldOff } from 'lucide-react'
+import { CircleAlert, Clock3, DatabaseZap, Eye, Globe2, Info, RotateCcw, RotateCw, ServerOff, ShieldOff } from 'lucide-react'
 import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
 import { AppShell } from '../../components/shell/AppShell'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -11,10 +11,10 @@ import shared from '../operation/shared/Operation.module.css'
 import states from '../operation/shared/ReadStates.module.css'
 import { DotMatrixBackground } from '../whitelabels/visuals/DotMatrixBackground'
 import { menuEntry, type MenuId } from './menuRegistry'
-import { describeVisibilityError } from './menuVisibilityContract'
-import { menuVisibilityHref, parseVisibilityRoute, PREVIEW_LABEL, type VisibilityPreview } from './menuVisibilityRoute'
-import { PROTOTYPE_INITIAL_SOURCE } from './prototypeVisibility'
-import { previewSaveError, useVisibilitySource, type VisibilitySourceData } from './useVisibilitySource'
+import type { MenuVisibilityRead } from './menuVisibilityApi'
+import { describeVisibilityError, formatPersistedAt, formatReadAt, MENU_VISIBILITY_CONTRACT } from './menuVisibilityContract'
+import { parseVisibilityRoute } from './menuVisibilityRoute'
+import { useMenuVisibilityConfig } from './useVisibilitySource'
 import { VisibilityControls } from './VisibilityControls'
 import { DiscardVisibilityDialog, VisibilityReviewDialog } from './VisibilityDialogs'
 import { countEffectivelyHidden, preferenceChanges, setPreference } from './visibilityModel'
@@ -24,18 +24,20 @@ import styles from './MenuVisibility.module.css'
 /**
  * `#/settings/menu-visibility` — Configurações › Visibilidade dos módulos.
  *
- * MENU VISIBILITY FRONTEND V1 IS A NON-PERSISTING PROTOTYPE. THE REAL
- * APPLICATION NAVIGATION IS NOT MODIFIED BY PROTOTYPE TOGGLES.
+ * MENU VISIBILITY INTEGRATION V1 — STAGE A.
+ * AUTHORITATIVE CONFIGURATION READ: INTEGRATED. GLOBAL CONFIGURATION UPDATE:
+ * NOT ENABLED. REAL NAVIGATION ENFORCEMENT: NOT ENABLED.
  *
- * The draft lives only in this component's state: no request (no GET / PUT
- * menu-visibility), no browser storage, no context or module singleton, and
- * the real sidebar keeps reading `navigation.ts`. Reloading starts again from
- * the prototype default. Visibility is presentation governance, not
- * authorization.
+ * The persisted configuration comes from `GET /api/homolog/menu-visibility`
+ * (canonical authenticated client) and becomes the reference; the operator
+ * edits an independent draft that lives only in this component's state (no
+ * PUT, no browser storage, no context or singleton). The real sidebar,
+ * shortcuts, routes and post-login landing keep reading `navigation.ts` and
+ * ignore visibility. Visibility is presentation governance, not authorization.
  */
 export function MenuVisibilityPage({ previa }: { previa?: string }) {
-  const { preview, ignored } = useMemo(() => parseVisibilityRoute({ previa }), [previa])
-  const source = useVisibilitySource(preview)
+  const { ignored } = useMemo(() => parseVisibilityRoute({ previa }), [previa])
+  const source = useMenuVisibilityConfig()
 
   return (
     <SettingsShell>
@@ -48,24 +50,31 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
           </span>
           Vale para todo o ambiente de homologação — não por Whitelabel, operador, perfil, sessão ou dispositivo.
         </p>
-        <p className={styles.prototype} data-visibility-prototype>
-          <FlaskConical size={15} strokeWidth={1.8} aria-hidden="true" />
+        <p className={styles.stage} data-visibility-stage={MENU_VISIBILITY_CONTRACT.stage}>
+          <DatabaseZap size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Protótipo sem persistência — integração com o Backend pendente.</strong> As alterações ficam somente nesta tela, em
-            memória, e são descartadas ao recarregar. O menu lateral real do Super Admin não é alterado.
+            <strong>Leitura integrada ao Control Plane — salvar e aplicar ainda não estão habilitados.</strong> As alterações ficam somente
+            nesta tela, em memória, e são descartadas ao recarregar. O menu lateral real do Super Admin não é alterado.
           </span>
         </p>
-        {preview ? (
-          <p className={styles.preview} role="status" data-visibility-preview-state={preview}>
-            <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
-            <span>
-              Prévia de estado do protótipo: <strong>{PREVIEW_LABEL[preview]}</strong>. Nenhuma requisição é feita.{' '}
-              <a href={menuVisibilityHref()} className={shared.inlineLink} data-exit-preview>
-                Sair da prévia
-              </a>
-            </span>
-          </p>
-        ) : null}
+        <dl className={styles.legend} aria-label="Origem das informações nesta tela" data-visibility-legend>
+          <div className={styles.legendItem} data-source="persisted">
+            <dt>Configuração persistida</dt>
+            <dd>Valores lidos do Control Plane.</dd>
+          </div>
+          <div className={styles.legendItem} data-source="draft">
+            <dt>Rascunho</dt>
+            <dd>Alterações locais, não salvas.</dd>
+          </div>
+          <div className={styles.legendItem} data-source="preview">
+            <dt>Prévia</dt>
+            <dd>Visibilidade efetiva calculada a partir do rascunho.</dd>
+          </div>
+          <div className={styles.legendItem} data-source="enforcement">
+            <dt>Aplicação real</dt>
+            <dd>Pendente: menu lateral, atalhos e rotas ainda não usam esta configuração.</dd>
+          </div>
+        </dl>
         {ignored.length ? (
           <p className={states.ignoredNote} role="status" data-ignored-params>
             <Info size={14} strokeWidth={1.9} aria-hidden="true" />
@@ -74,7 +83,11 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
         ) : null}
       </div>
 
-      {source.state.status === 'loading' ? (
+      {source.state.status === 'success' ? (
+        <VisibilityEditor reference={source.state.data} />
+      ) : source.state.status === 'error' ? (
+        <LoadError error={source.state.error} onRetry={source.reload} />
+      ) : (
         <section className={`${fin.card} ${states.feedback}`} aria-busy="true" data-visibility-state="loading">
           <div className={states.heroSkeleton} aria-hidden="true">
             <span className={states.skeleton} />
@@ -82,13 +95,9 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
             <span className={states.skeleton} />
           </div>
           <p className="visually-hidden" role="status">
-            Carregando a visibilidade dos módulos…
+            Carregando a configuração de visibilidade do Control Plane…
           </p>
         </section>
-      ) : source.state.status === 'error' ? (
-        <LoadError error={source.state.error} onRetry={source.reload} />
-      ) : (
-        <VisibilityEditor data={source.state.data} preview={preview} />
       )}
     </SettingsShell>
   )
@@ -113,9 +122,10 @@ function SettingsShell({ children }: { children: ReactNode }) {
 
 function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const view = describeVisibilityError(error, 'load')
+  const icon = view.kind === 'forbidden' ? ShieldOff : view.kind === 'unsupported' ? ServerOff : CircleAlert
   return (
-    <section className={`${fin.card} ${states.feedback}`} role="alert" data-visibility-state={view.kind === 'forbidden' ? 'forbidden' : 'error'}>
-      <EmptyState icon={view.kind === 'forbidden' ? ShieldOff : CircleAlert} title={view.title} description={view.description} />
+    <section className={`${fin.card} ${states.feedback}`} role="alert" data-visibility-state={view.kind === 'forbidden' ? 'forbidden' : 'error'} data-error-kind={view.kind}>
+      <EmptyState icon={icon} title={view.title} description={view.description} />
       {view.correlationId ? (
         <p className={states.diagnostic}>
           Código de diagnóstico: <code className={states.code}>{view.correlationId}</code>
@@ -131,10 +141,12 @@ function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) 
   )
 }
 
-function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; preview?: VisibilityPreview }) {
-  // Both maps live only in this component: unmounting (leaving or reloading) drops the draft.
-  const [base] = useState(data.map)
-  const [draft, setDraft] = useState(data.map)
+function VisibilityEditor({ reference: loaded }: { reference: MenuVisibilityRead }) {
+  // The authoritative reference is captured once per mount: no later answer can replace it under a draft.
+  const [reference] = useState(loaded)
+  const base = reference.map
+  // The draft is an independent map: edits never touch the reference (both maps are frozen).
+  const [draft, setDraft] = useState(base)
   const [reviewing, setReviewing] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [announcement, setAnnouncement] = useState('')
@@ -142,6 +154,7 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
 
   const changes = useMemo(() => preferenceChanges(base, draft), [base, draft])
   const hiddenCount = useMemo(() => countEffectivelyHidden(draft), [draft])
+  const persistedHidden = useMemo(() => countEffectivelyHidden(base), [base])
   const dirty = changes.length > 0
   const guard = useUnsavedChangesGuard(dirty, () => setDraft(base))
 
@@ -161,10 +174,8 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
   function discard() {
     setConfirmDiscard(false)
     setDraft(base)
-    setAnnouncement('Rascunho descartado: prévia inicial restaurada.')
+    setAnnouncement('Alterações não salvas descartadas: o rascunho voltou à configuração persistida.')
   }
-
-  const provenance = data.provenance === 'prototype'
 
   return (
     <>
@@ -173,15 +184,83 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
           <VisibilityControls base={base} draft={draft} onChange={change} />
 
           <div className={styles.side}>
-            <section className={fin.card} aria-labelledby="mv-draft-title" data-visibility-draft>
-              <h2 id="mv-draft-title" ref={panelTitleRef} tabIndex={-1} className={`${fin.cardTitleSm} ${styles.panelTitle}`}>
-                Rascunho em memória
+            <section className={fin.card} aria-labelledby="mv-persisted-title" data-visibility-persisted data-saved={reference.saved}>
+              <h2 id="mv-persisted-title" className={`${fin.cardTitleSm} ${styles.panelTitle}`}>
+                Configuração persistida
               </h2>
+              <p className={fin.cardSubtitle}>Lida do Control Plane. É o ponto de partida do rascunho.</p>
               <dl className={styles.facts}>
                 <div className={styles.fact}>
-                  <dt>Estado inicial</dt>
-                  <dd>{provenance ? `${PROTOTYPE_INITIAL_SOURCE.label} — não carregado do Backend` : 'Configuração do Control Plane'}</dd>
+                  <dt>Situação</dt>
+                  <dd data-persisted-status>
+                    {reference.saved ? 'Salva no Control Plane' : 'Nunca salva — valores padrão informados pelo Control Plane'}
+                  </dd>
                 </div>
+                <div className={styles.fact}>
+                  <dt>Última atualização</dt>
+                  <dd className={reference.updatedAt ? undefined : styles.pendingValue} data-updated-at>
+                    {reference.updatedAt ? (
+                      <time dateTime={reference.updatedAt}>{formatPersistedAt(reference.updatedAt)} (Brasília)</time>
+                    ) : (
+                      'Nunca salva'
+                    )}
+                  </dd>
+                </div>
+                <div className={styles.fact}>
+                  <dt>Atualizado por</dt>
+                  <dd className={reference.updatedBy ? undefined : styles.pendingValue} data-updated-by>
+                    {reference.updatedBy ? (
+                      <>
+                        <code className={styles.operatorId}>{reference.updatedBy}</code>
+                        <span className={styles.factHint}>ID do operador no Control Plane</span>
+                      </>
+                    ) : reference.saved ? (
+                      'Não informado pelo Control Plane'
+                    ) : (
+                      '—'
+                    )}
+                  </dd>
+                </div>
+                <div className={styles.fact}>
+                  <dt>Ocultos na configuração</dt>
+                  <dd data-persisted-hidden={persistedHidden}>
+                    {persistedHidden === 0 ? 'Nenhum módulo' : `${persistedHidden} ${persistedHidden === 1 ? 'módulo' : 'módulos'}`}
+                  </dd>
+                </div>
+                <div className={styles.fact}>
+                  <dt>Lida em</dt>
+                  <dd data-read-at>
+                    <time dateTime={reference.readAt}>{formatReadAt(reference.readAt)} (Brasília)</time>
+                  </dd>
+                </div>
+              </dl>
+              {persistedHidden > 0 ? (
+                <p className={styles.panelNote} data-tone="warning" data-persisted-not-applied>
+                  <Info size={14} strokeWidth={1.9} aria-hidden="true" />
+                  <span>
+                    A configuração persistida oculta {persistedHidden} {persistedHidden === 1 ? 'módulo' : 'módulos'}, mas o menu lateral real ainda
+                    não aplica esta configuração.
+                  </span>
+                </p>
+              ) : null}
+              {reference.unknownIds.length ? (
+                <p className={styles.panelNote} data-tone="warning" data-unknown-ids={reference.unknownIds.length}>
+                  <CircleAlert size={14} strokeWidth={1.9} aria-hidden="true" />
+                  <span>
+                    O Control Plane também retornou {reference.unknownIds.length === 1 ? '1 ID' : `${reference.unknownIds.length} IDs`} fora do registro
+                    aprovado ({reference.unknownIds.join(', ')}): {reference.unknownIds.length === 1 ? 'ignorado e não exibido' : 'ignorados e não exibidos'}.
+                    Divergência de contrato a corrigir.
+                  </span>
+                </p>
+              ) : null}
+            </section>
+
+            <section className={fin.card} aria-labelledby="mv-draft-title" data-visibility-draft>
+              <h2 id="mv-draft-title" ref={panelTitleRef} tabIndex={-1} className={`${fin.cardTitleSm} ${styles.panelTitle}`}>
+                Rascunho
+              </h2>
+              <p className={fin.cardSubtitle}>Alterações locais, em memória, comparadas à configuração persistida.</p>
+              <dl className={styles.facts}>
                 <div className={styles.fact}>
                   <dt>Alterações</dt>
                   <dd data-draft-count={changes.length}>
@@ -189,27 +268,15 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
                   </dd>
                 </div>
                 <div className={styles.fact}>
-                  <dt>Ocultos no resultado</dt>
+                  <dt>Ocultos na prévia</dt>
                   <dd>{hiddenCount === 0 ? 'Nenhum módulo' : `${hiddenCount} ${hiddenCount === 1 ? 'módulo' : 'módulos'}`}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt>Última atualização</dt>
-                  <dd className={styles.pendingValue} data-updated-at>
-                    {data.updatedAt ?? 'Aguardando integração'}
-                  </dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt>Atualizado por</dt>
-                  <dd className={styles.pendingValue} data-updated-by>
-                    {data.updatedBy ?? 'Aguardando integração'}
-                  </dd>
                 </div>
               </dl>
               <p className={styles.pending} data-persistence-pending>
                 <Clock3 size={15} strokeWidth={1.8} aria-hidden="true" />
                 <span>
-                  <strong>Persistência aguardando integração do Backend</strong>
-                  A revisão das alterações está disponível; salvar ainda não. Nada é enviado.
+                  <strong>Salvar e aplicar ainda não estão habilitados</strong>
+                  Leitura integrada. Aplicação e persistência aguardam validação das regras e autorização. Nada é enviado.
                 </span>
               </p>
             </section>
@@ -221,8 +288,9 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
 
       <InfoNote>
         <strong>Visibilidade não é permissão.</strong> Ocultar um módulo apenas o retira da navegação: não altera papéis, permissões ou
-        autorização de rotas, e o Backend continua aplicando suas próprias verificações de acesso. Nesta versão, ocultar também não bloqueia
-        o acesso direto pela URL; na integração futura, sidebar, atalhos e rotas diretas deverão usar a mesma regra de visibilidade.
+        autorização de rotas, e o Backend continua aplicando suas próprias verificações de acesso. Nesta etapa, nem a configuração persistida
+        nem o rascunho são aplicados ao menu lateral, aos atalhos ou às rotas diretas; quando isso for habilitado, todos deverão usar a mesma
+        regra de visibilidade.
       </InfoNote>
 
       <p className="visually-hidden" aria-live="polite" data-visibility-announcement>
@@ -238,14 +306,14 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
             no rascunho
             <span className={styles.barDetail}>
               {' '}
-              · {hiddenCount} {hiddenCount === 1 ? 'módulo oculto' : 'módulos ocultos'} no resultado
+              · {hiddenCount} {hiddenCount === 1 ? 'módulo oculto' : 'módulos ocultos'} na prévia
             </span>{' '}
             · não salvo
           </p>
           <div className={styles.barActions}>
             <OutlineButton className={styles.barButton} onClick={() => setConfirmDiscard(true)} data-discard>
               <RotateCcw size={14} strokeWidth={1.8} aria-hidden="true" />
-              Descartar alterações
+              Descartar alterações não salvas
             </OutlineButton>
             <PrimaryButton className={styles.barButton} onClick={() => setReviewing(true)} data-review>
               <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
@@ -255,19 +323,12 @@ function VisibilityEditor({ data, preview }: { data: VisibilitySourceData; previ
         </section>
       ) : null}
 
-      {reviewing ? (
-        <VisibilityReviewDialog
-          base={base}
-          draft={draft}
-          onClose={() => setReviewing(false)}
-          saveErrorPreview={preview === 'save-failed' ? previewSaveError() : undefined}
-        />
-      ) : null}
+      {reviewing ? <VisibilityReviewDialog base={base} draft={draft} onClose={() => setReviewing(false)} /> : null}
       {confirmDiscard ? (
         <DiscardVisibilityDialog
           base={base}
           draft={draft}
-          destination="descartar o rascunho"
+          destination="descartar as alterações não salvas"
           onStay={() => setConfirmDiscard(false)}
           onDiscard={discard}
           fallbackFocus={() => panelTitleRef.current}

@@ -59,6 +59,66 @@
   color: var(--text-on-dark);
 }
 
+/* Role-dependent access (rule 7). */
+.access {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--tone-blue-border);
+  border-radius: 10px;
+  background: var(--tone-blue-bg);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.access svg {
+  margin-top: 1px;
+  color: var(--tone-blue-fg);
+}
+
+.access strong {
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+/* Server value that breaks a protected-module rule (reported, never rewritten). */
+.violation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgb(240 120 145 / 0.4);
+  border-radius: 12px;
+  background: rgb(232 92 120 / 0.09);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: #f6c9d3;
+}
+
+.violation > svg {
+  margin-top: 2px;
+  color: #f4a7b6;
+}
+
+.violation p {
+  margin: 4px 0 10px;
+}
+
+.violationTitle {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.violationFixed {
+  margin: 0 !important;
+  font-weight: 600;
+  color: #ecd8ae;
+}
+
 /* Source legend: persisted / draft / preview / real application (pending). */
 .legend {
   display: grid;
@@ -300,6 +360,34 @@
   color: var(--text-on-dark-muted);
 }
 
+.state[data-state='protected'] {
+  border-color: rgb(118 196 160 / 0.4);
+  background: rgb(80 180 140 / 0.1);
+  color: #a9e3c7;
+}
+
+.state[data-state='violation'] {
+  border-color: rgb(240 120 145 / 0.45);
+  background: rgb(232 92 120 / 0.12);
+  color: #f6c9d3;
+}
+
+/* Protected module switch: focusable, aria-disabled, visibly locked. */
+.lockedSwitch {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.noteIcon {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.rowNote[data-tone='danger'] {
+  color: #f4a7b6;
+}
+
 .changed {
   display: inline-flex;
   align-items: center;
@@ -394,6 +482,14 @@
   color: #ecd8ae;
 }
 
+.panelNote[data-tone='danger'] {
+  color: #f6c9d3;
+}
+
+.panelNote[data-tone='danger'] > svg {
+  color: #f4a7b6;
+}
+
 .panelNote > svg {
   margin-top: 2px;
   color: #f2c983;
@@ -462,6 +558,13 @@
 
 .previewItem svg {
   color: var(--icon-on-dark);
+}
+
+.previewLock {
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: -1px;
+  color: #8fd9b6;
 }
 
 .previewChildren {

@@ -1,5 +1,17 @@
 # Menu Visibility Integration V1 — Stage A
 
+> **STAGE A READ INTEGRATION: COMPLETE AND DEPLOYED.** The authorized promotion
+> published `627b1e040e48a4326a9a83439f3cbfbabc5a33b8` on 2026-10-16, Netlify deploy
+> `6ad1a11b5b36f8a8cf51a5d4`. Authenticated deployed Stage A QA passed without
+> configuration writes. Review-only/local evidence below is historical and is not
+> substituted for that deployed evidence. Stage B preparation is a separate local unit.
+>
+> **Product rules now approved (Stage B preparation).** The Product questions this document lists as
+> "not defined" — Dashboard / Configurações hiding, Sistema hierarchy, direct routes, shortcuts,
+> recovery and roles — were decided and are applied to the management screen and isolated preview in
+> [`menu-visibility-stage-b-preparation.md`](menu-visibility-stage-b-preparation.md). Live write and
+> real sidebar enforcement are still **not enabled**; the Backend findings below are unchanged.
+
 Cloud implemented this unit from `dev` `bb9bef0` and delivered an unapplied
 14-file patch for Codex review. It builds on
 [Menu Visibility Frontend V1](menu-visibility-frontend-v1.md), the reviewed

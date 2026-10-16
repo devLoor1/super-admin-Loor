@@ -38,6 +38,8 @@ export const MENU_VISIBILITY_CONTRACT = {
   updateEnabled: false,
   /** Stage B — not enabled: sidebar, shortcuts, routes and landing ignore visibility. */
   enforcementEnabled: false,
+  /** Stage B preparation: approved Product rules applied to the draft and preview (visibilityPolicy.ts). */
+  productRules: 'prepared',
   environment: 'homolog',
   /** Path for the canonical authenticated client (base URL already ends in `/api`). */
   getPath: '/homolog/menu-visibility',

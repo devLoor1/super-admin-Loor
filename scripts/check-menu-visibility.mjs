@@ -7,7 +7,8 @@ import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
-// Menu Visibility Integration V1 — Stage A checks (synthetic fixtures, no real network).
+// Menu Visibility Integration V1 — Stage A checks + Stage B PREPARATION checks (synthetic fixtures, no real network).
+// STAGE B PRODUCT RULES: PREPARED. STAGE B LIVE WRITE: NOT ENABLED. REAL SIDEBAR ENFORCEMENT: NOT ENABLED.
 // AUTHORITATIVE CONFIGURATION READ: INTEGRATED. GLOBAL CONFIGURATION UPDATE: NOT ENABLED.
 // REAL NAVIGATION ENFORCEMENT: NOT ENABLED.
 // These checks fail if the GET adapter accepts a payload it should refuse, if any
@@ -488,6 +489,10 @@ const docs = await readFile(resolve(root, 'docs/menu-visibility-read-integration
 for (const line of ['MENU VISIBILITY INTEGRATION V1 — STAGE A', 'AUTHORITATIVE CONFIGURATION READ: INTEGRATED', 'GLOBAL CONFIGURATION UPDATE: NOT ENABLED', 'REAL NAVIGATION ENFORCEMENT: NOT ENABLED']) {
   check(docs.includes(line), `Docs: "${line}"`)
 }
+const stageBDocs = await readFile(resolve(root, 'docs/menu-visibility-stage-b-preparation.md'), 'utf8')
+for (const line of ['STAGE B PRODUCT RULES: PREPARED', 'STAGE B LIVE WRITE: NOT ENABLED', 'REAL SIDEBAR ENFORCEMENT: NOT ENABLED']) {
+  check(stageBDocs.includes(line), `Stage B docs: "${line}"`)
+}
 const legacyDocs = await readFile(resolve(root, 'docs/menu-visibility-frontend-v1.md'), 'utf8')
 check(legacyDocs.includes('menu-visibility-read-integration-v1.md') && /superseded/i.test(legacyDocs), 'Prototype doc points to the Stage A doc for superseded sections')
 
@@ -530,9 +535,15 @@ const pageSource = (await readFile(resolve(featureDir, 'MenuVisibilityPage.tsx')
   .replace("from '../../components/shell/AppShell'", `from '${dataModule("import {createElement as h} from 'react';export const AppShell=({children})=>h('main',null,children)".replace("'react'", JSON.stringify(pathToFileURL(require.resolve('react')).href)))}'`)
   .replace("from '../whitelabels/visuals/DotMatrixBackground'", `from '${dataModule('export const DotMatrixBackground=()=>null')}'`)
   .replace("from '../../app/useUnsavedChangesGuard'", `from '${dataModule('export const useUnsavedChangesGuard=()=>({pending:null,stay(){},discardAndContinue(){}})')}'`)
+  // Test-only operator double (SSR has no session snapshot): mocked roles, never a production bypass.
+  .replace("from '../../lib/authSession'", `from '${dataModule('export const useSessionOperator=()=>globalThis.__menuOperator')}'`)
+check(!pageSource.includes("from '../../lib/authSession'") && (await readFile(resolve(featureDir, 'MenuVisibilityPage.tsx'), 'utf8')).includes("import { useSessionOperator } from '../../lib/authSession'"), 'Page reads the operator through the canonical session hook (stubbed only here)')
+const operatorWith = (...roles) => ({ id: 'synthetic-operator', name: 'Unit QA', email: 'qa@example.invalid', roles })
+globalThis.__menuOperator = operatorWith('SUPER_ADMIN')
 const { MenuVisibilityPage } = await load('src/features/menu-visibility/MenuVisibilityPage.tsx', pageSource)
-const renderPage = (state, previa) => {
+const renderPage = (state, previa, operator = operatorWith('SUPER_ADMIN')) => {
   globalThis.__menuPageState = { state, reload() {} }
+  globalThis.__menuOperator = operator
   return render(h(MenuVisibilityPage, { previa }))
 }
 const loadingHtml = renderPage({ status: 'loading' })
@@ -560,6 +571,321 @@ const driftHtml = renderPage({ status: 'success', data: { ...unknown, readAt: '2
 check(driftHtml.includes('data-unknown-ids="3"') && !driftHtml.includes('data-menu-id="operation-companies"'), 'Unknown IDs: drift notice, never rendered as items')
 const previaHtml = renderPage({ status: 'success', data: { ...live, readAt: '2026-10-15T18:00:00.000Z' } }, 'erro')
 check(previaHtml.includes('data-ignored-params') && previaHtml.includes('role="switch"') && !previaHtml.includes('data-error-kind'), '?previa=erro is ignored: the persisted configuration still renders')
+
+/* ==================== STAGE B PREPARATION — approved Product rules ==================== */
+const policy = await load('src/features/menu-visibility/visibilityPolicy.ts')
+const resolver = await load('src/features/menu-visibility/visibilityResolver.ts')
+const update = await load('src/features/menu-visibility/menuVisibilityUpdate.ts')
+
+/* ---------- rules 1, 2, 6: protected modules ---------- */
+check(policy.PROTECTED_MENU_IDS.join() === 'dashboard,configuracoes' && Object.isFrozen(policy.PROTECTED_MENU_IDS), 'Exactly Dashboard and Configurações are protected')
+check(policy.PROTECTED_EXPLANATION.dashboard === 'Sempre visível — módulo obrigatório.' && policy.PROTECTED_EXPLANATION.configuracoes === 'Sempre visível — acesso à gestão de módulos.', 'Protected explanations')
+check(policy.HIDEABLE_MENU_IDS.length === 21 && !policy.HIDEABLE_MENU_IDS.includes('dashboard') && !policy.HIDEABLE_MENU_IDS.includes('configuracoes'), '21 hideable IDs')
+check(ids.every((id) => policy.isProtectedMenuId(id) === (id === 'dashboard' || id === 'configuracoes')), 'isProtectedMenuId matches the rule only')
+for (const id of ['dashboard', 'configuracoes']) {
+  check(policy.setDraftPreference(live.map, id, false) === live.map, `${id}: hiding is refused in the draft (same map, nothing silently discarded)`)
+  check(policy.setDraftPreference(saved.map, id, true)[id] === true, `${id}: showing is allowed`)
+}
+check(policy.setDraftPreference(saved.map, 'dashboard', true).dashboard === true && saved.map.dashboard === false, 'Showing a protected module never mutates the reference')
+check(policy.setDraftPreference(live.map, 'contas', false).contas === false, 'Non-protected modules keep normal editing')
+check(policy.setDraftPreference(live.map, 'sistema', false).sistema === false && policy.setDraftPreference(live.map, 'ajuda', false).ajuda === false, 'Sistema and Ajuda stay hideable')
+check(policy.policyViolations(live.map).length === 0, 'Live homolog configuration has no policy violation')
+const violating = contract.parseMenuVisibilityResponse({ data: { ...livePayload.data, visibility: { ...liveVisibility, dashboard: false, configuracoes: false }, updatedAt: '2026-10-16T10:00:00.000Z', updatedBy: 'ckqaop00000000000000000001' } })
+check(violating.map.dashboard === false && violating.map.configuracoes === false, 'Adapter keeps a violating server value exactly (no silent rewrite)')
+check(policy.policyViolations(violating.map).map((v) => v.id).join() === 'dashboard,configuracoes', 'Server violations detected for both protected modules')
+const restoredDraft = policy.restoreProtectedInDraft(violating.map)
+check(restoredDraft.dashboard && restoredDraft.configuracoes && violating.map.dashboard === false, 'Explicit draft correction leaves the server reference untouched')
+check(Object.keys(restoredDraft).filter((id) => restoredDraft[id] !== violating.map[id]).join() === 'dashboard,configuracoes', 'Draft correction changes only the protected modules')
+
+/* ---------- rule 3: independent utilities ---------- */
+const sistemaHidden = resolver.resolveVisibility(policy.setDraftPreference(live.map, 'sistema', false))
+check(!sistemaHidden.byId.sistema.sidebarVisible && sistemaHidden.byId.configuracoes.sidebarVisible && sistemaHidden.byId.ajuda.sidebarVisible, 'Hiding Sistema affects neither Configurações nor Ajuda')
+check(['sistema', 'configuracoes', 'ajuda'].every((id) => sistemaHidden.byId[id].parentId === null), 'No parent / child between Sistema, Configurações and Ajuda')
+const ajudaHidden = resolver.resolveVisibility(policy.setDraftPreference(live.map, 'ajuda', false))
+check(!ajudaHidden.byId.ajuda.sidebarVisible && ajudaHidden.byId.sistema.sidebarVisible && ajudaHidden.byId.configuracoes.sidebarVisible, 'Hiding Ajuda affects nothing else')
+
+/* ---------- pure resolver: sidebar-only, rule 8 ---------- */
+const all = resolver.resolveVisibility(live.map)
+check(all.entries.length === 23 && all.entries.map((e) => e.id).join() === entryIds.join() && all.hidden.length === 0 && all.violations.length === 0, 'All visible: 23 entries in sidebar order')
+check(all.sidebar.primary.map((n) => n.id).join() === registry.MENU_TREE.primary.map((e) => e.id).join() && all.sidebar.utility.map((n) => n.id).join() === 'configuracoes,ajuda', 'Sidebar tree mirrors the real navigation')
+check(Object.isFrozen(all) && Object.isFrozen(all.entries) && all.entries.every((e) => Object.isFrozen(e)), 'Resolution is immutable')
+const opOff = resolver.resolveVisibility(policy.setDraftPreference(live.map, 'operacao', false))
+check(opOff.byId.operacao.preference === false && opOff.byId['operation-investors'].preference === true, 'Stored: operacao=false, operation-investors=true (child preserved)')
+check(!opOff.byId['operation-investors'].sidebarVisible && opOff.byId['operation-investors'].reason === 'hidden-by-parent' && opOff.byId['operation-investors'].hiddenBy === 'operacao', 'Effective: Investidores hidden through its parent')
+check(!opOff.sidebar.primary.some((n) => n.id === 'operacao') && opOff.hidden.length === 4, 'Hidden parent removes its subtree from the sidebar')
+const opBack = resolver.resolveVisibility(policy.setDraftPreference(policy.setDraftPreference(live.map, 'operacao', false), 'operacao', true))
+check(opBack.byId['operation-investors'].sidebarVisible && opBack.sidebar.primary.find((n) => n.id === 'operacao').children.length === 3, 'Restoring the parent brings Investidores back (preference never destroyed)')
+const childOff = resolver.resolveVisibility(policy.setDraftPreference(policy.setDraftPreference(live.map, 'operation-investors', false), 'operacao', false))
+check(childOff.byId['operation-investors'].reason === 'hidden-own-preference' && childOff.byId['operation-investors'].preference === false && !childOff.byId['operation-investors'].sidebarVisible, 'Own-false child under a hidden parent: reason is its own preference, value kept false')
+const childOffBack = resolver.resolveVisibility(policy.setDraftPreference(live.map, 'operation-investors', false))
+check(childOffBack.byId['operation-investors'].reason === 'hidden-own-preference' && childOffBack.byId.operacao.sidebarVisible, 'Child hidden by its own preference while the parent stays visible')
+const viol = resolver.resolveVisibility(violating.map)
+check(viol.byId.dashboard.preference === false && viol.byId.dashboard.sidebarVisible && viol.byId.dashboard.reason === 'protected-always-visible' && viol.byId.dashboard.policyViolation, 'Protected + stored false: preference reported as false, shown anyway, flagged')
+check(viol.violations.length === 2 && viol.sidebar.utility.some((n) => n.id === 'configuracoes') && viol.sidebar.primary[0].id === 'dashboard', 'Protected modules always in the sidebar; violations listed')
+check(resolver.countSidebarHidden(violating.map) === 0, 'Protected violations never count as hidden')
+const frozenMap = Object.freeze({ ...saved.map })
+resolver.resolveVisibility(frozenMap)
+check(JSON.stringify(frozenMap) === JSON.stringify(saved.map), 'Resolver never mutates its input')
+
+/* ---------- rules 4, 5: direct routes, shortcuts, internal links (pure specification) ---------- */
+check(JSON.stringify(policy.VISIBILITY_SCOPE) === JSON.stringify({ sidebar: 'affected', directRoutes: 'unaffected', dashboardShortcuts: 'unaffected', internalLinks: 'unaffected', postLoginLanding: 'unaffected', authorization: 'unaffected' }), 'Scope: sidebar only')
+check(Object.isFrozen(policy.VISIBILITY_SCOPE) && opOff.scope === policy.VISIBILITY_SCOPE, 'Every resolution carries the frozen sidebar-only scope')
+for (const resolution of [opOff, childOff, viol, resolver.resolveVisibility(saved.map)]) {
+  check(resolution.entries.every((e) => e.directRoute === 'unaffected' && e.shortcuts === 'unaffected' && e.internalLinks === 'unaffected'), 'Hidden or visible, every module keeps direct route / shortcut / internal-link access')
+}
+const resolverCode = codeOnly(await readFile(resolve(featureDir, 'visibilityResolver.ts'), 'utf8'), 'resolver.ts')
+const policyCode = codeOnly(await readFile(resolve(featureDir, 'visibilityPolicy.ts'), 'utf8'), 'policy.ts')
+for (const [name, code] of [['visibilityResolver.ts', resolverCode], ['visibilityPolicy.ts', policyCode]]) {
+  check(!/window|document|location|history|navigate|redirect|useState|useEffect|from 'react'|apiClient|authSession|Storage/.test(code), `${name}: pure (no DOM, routing, React, transport, session or storage)`)
+}
+const sidebarSource = await readFile(resolve(root, 'src/components/shell/Sidebar.tsx'), 'utf8')
+const appSource = await readFile(resolve(root, 'src/app/App.tsx'), 'utf8')
+const dashboardDir = (await readdir(resolve(root, 'src/features/dashboard'))).filter((name) => /\.(ts|tsx)$/.test(name))
+for (const [name, source] of [['Sidebar.tsx', sidebarSource], ['App.tsx', appSource], ...(await Promise.all(dashboardDir.map(async (n) => [n, await readFile(resolve(root, 'src/features/dashboard', n), 'utf8')])))]) {
+  check(!/visibilityResolver|visibilityPolicy|resolveVisibility|menuVisibilityUpdate/.test(source), `${name}: resolver / policy not wired (real sidebar, routes, landing and shortcuts untouched)`)
+}
+
+/* ---------- rule 7: roles ---------- */
+const accessCases = [
+  [['SUPER_ADMIN'], 'edit', 'edit'],
+  [['SUPPORT_ADMIN'], 'read', 'read'],
+  [['READ_ONLY'], 'read', 'read'],
+  [['FINANCIAL_ADMIN'], 'none', 'read'],
+  [['COMPLIANCE_ADMIN'], 'none', 'read'],
+  [['READ_ONLY', 'SUPER_ADMIN'], 'edit', 'edit'],
+  [['FINANCIAL_ADMIN', 'SUPPORT_ADMIN'], 'read', 'read'],
+  [['super_admin'], 'none', 'read'],
+  [['__proto__', 'toString'], 'none', 'read'],
+  [[], 'none', 'read'],
+  [null, 'none', 'read'],
+  [undefined, 'none', 'read'],
+]
+for (const [roles, access, mode] of accessCases) {
+  check(policy.expectedAccess(roles) === access && policy.presentationMode(roles) === mode, `Roles ${JSON.stringify(roles)} → access ${access}, presentation ${mode}`)
+}
+
+/* ---------- candidate payload (future PUT, never sent) ---------- */
+const cand = update.buildUpdateCandidate(live.map, policy.setDraftPreference(live.map, 'financeiro', false), 'edit')
+check(cand.valid && cand.sendable === false && cand.endpoint === 'PUT /api/homolog/menu-visibility', 'Valid candidate is still not sendable')
+check(Object.keys(cand.body).join() === 'visibility' && Object.keys(cand.body.visibility).join() === ids.join() && cand.body.visibility.financeiro === false && cand.body.visibility['finance-wallets'] === true, 'Candidate = complete 23-ID map of stored preferences')
+check(cand.body.visibility.dashboard === true && cand.body.visibility.configuracoes === true, 'Protected IDs are true in a valid candidate')
+check(update.STAGE_B_ACTIVATION_BLOCKERS.join() === 'stage-b-not-enabled,server-protected-ids-not-enforced,server-concurrency-not-implemented,server-audit-not-atomic' && cand.blockedBy === update.STAGE_B_ACTIVATION_BLOCKERS, 'Candidate lists the activation blockers')
+const invalidCand = update.buildUpdateCandidate(violating.map, violating.map, 'edit')
+check(!invalidCand.valid && invalidCand.issues.filter((i) => i.kind === 'protected-hidden').length === 2 && invalidCand.issues.some((i) => i.kind === 'no-changes'), 'A server violation makes the candidate invalid (and is not normalized)')
+check(invalidCand.body.visibility.dashboard === false, 'Invalid candidate shows the real value, never a silent true')
+check(update.buildUpdateCandidate(violating.map, restoredDraft, 'edit').valid, 'After explicit draft correction the candidate becomes valid')
+check(update.buildUpdateCandidate(live.map, live.map, 'edit').issues.map((i) => i.kind).join() === 'no-changes', 'No-op candidate flagged')
+check(update.buildUpdateCandidate(live.map, policy.setDraftPreference(live.map, 'contas', false), 'read').issues.some((i) => i.kind === 'read-only'), 'Read-only role candidate flagged')
+// Runtime callers must not bypass the typed map boundary: never label a partial,
+// non-boolean or extra-ID candidate as valid (or silently strip unknown keys).
+const candidateDraft = { ...live.map, contas: false }
+const invalidCandidateMap = (error) => error instanceof TypeError
+for (const id of ids) {
+  const partial = { ...candidateDraft }
+  delete partial[id]
+  throws(() => update.buildUpdateCandidate(live.map, partial, 'edit'), invalidCandidateMap, `Candidate rejects missing draft ID ${id}`)
+  throws(() => update.buildUpdateCandidate(partial, candidateDraft, 'edit'), invalidCandidateMap, `Candidate rejects missing reference ID ${id}`)
+}
+for (const malformedMap of [null, undefined, [], true, 42, 'map', Object.create(candidateDraft), { ...candidateDraft, unexpected: true }]) {
+  throws(() => update.buildUpdateCandidate(live.map, malformedMap, 'edit'), invalidCandidateMap, 'Candidate rejects malformed/inherited/extra-key draft')
+  throws(() => update.buildUpdateCandidate(malformedMap, candidateDraft, 'edit'), invalidCandidateMap, 'Candidate rejects malformed/inherited/extra-key reference')
+}
+for (const value of [undefined, null, 0, 1, 'false', {}]) {
+  throws(() => update.buildUpdateCandidate(live.map, { ...candidateDraft, ajuda: value }, 'edit'), invalidCandidateMap, 'Candidate rejects non-boolean value')
+}
+check(Object.isFrozen(cand.body) && Object.isFrozen(cand.body.visibility), 'Candidate body and complete map are immutable snapshots')
+const mutableDraft = { ...candidateDraft }
+const immutableCandidate = update.buildUpdateCandidate(live.map, mutableDraft, 'edit')
+mutableDraft.contas = true
+check(immutableCandidate.body.visibility.contas === false, 'Candidate never aliases the mutable input')
+for (const mode of [undefined, null, 'none', 'SUPER_ADMIN', 'EDIT']) {
+  check(!update.buildUpdateCandidate(live.map, candidateDraft, mode).valid, 'Unrecognized candidate mode never gains edit capability')
+}
+for (let attempt = 0; attempt < 50; attempt += 1) {
+  let map = live.map
+  for (const id of ids) map = policy.setDraftPreference(map, id, (attempt * 7 + id.length) % 3 !== 0)
+  const candidate = update.buildUpdateCandidate(live.map, map, 'edit')
+  check(candidate.body.visibility.dashboard === true && candidate.body.visibility.configuracoes === true, 'Any draft built through the policy setter keeps protected IDs true')
+}
+
+/* ---------- mocked PUT outcomes (TEST-ONLY injected transport; production has none) ---------- */
+const echo = (candidate, overrides = {}) => ({ data: { scope: 'global', visibility: { ...candidate.body.visibility }, updatedAt: '2026-10-16T12:00:00.000Z', updatedBy: 'ckqaop00000000000000000001', ...overrides } })
+const mockTransport = (scenario) => {
+  const sent = []
+  const send = async (request) => {
+    sent.push(request)
+    switch (scenario) {
+      case 'success': return { ok: true, body: echo(request.candidate) }
+      case 'success-normalized': return { ok: true, body: echo(request.candidate, { visibility: { ...request.candidate.body.visibility, contas: !request.candidate.body.visibility.contas } }) }
+      case 'success-malformed': return { ok: true, body: { ok: true } }
+      case '400': return { ok: false, error: new ApiError(400, { code: 'E_INVALID_MENU_VISIBILITY', message: 'Missing menu id in visibility map: ajuda' }) }
+      case '401': return { ok: false, error: new ApiError(401, { code: 'UNAUTHORIZED' }) }
+      case '403': return { ok: false, error: new ApiError(403, { code: 'FORBIDDEN' }) }
+      case '409': return { ok: false, error: new ApiError(409, { code: 'HYPOTHETICAL_CONFLICT' }) }
+      case 'timeout': return { ok: false, error: new ApiError(0, {}, { kind: 'timeout' }) }
+      case 'network': return { ok: false, error: new ApiError(0, {}, { kind: 'network' }) }
+      case '500-audit-failure': return { ok: false, error: new ApiError(500, { code: 'INTERNAL_ERROR', message: 'Internal server error' }) }
+      case '503': return { ok: false, error: new ApiError(503, {}) }
+      default: throw new Error(`unknown scenario ${scenario}`)
+    }
+  }
+  return { send, sent }
+}
+// Test-only orchestration: one send per explicit operator action; an uncertain result leads to read-back, never to another send.
+async function simulateSave(scenario, candidate, readback) {
+  const transport = mockTransport(scenario)
+  const outcome = update.interpretSaveOutcome(candidate, await transport.send({ candidate }))
+  const reconciled = outcome.state === 'uncertain' && readback ? update.reconcileReadback(candidate, live.map, readback) : null
+  return { outcome, reconciled, sends: transport.sent.length }
+}
+const toSave = update.buildUpdateCandidate(live.map, policy.setDraftPreference(live.map, 'contas', false), 'edit')
+const asConfig = (map) => contract.parseMenuVisibilityResponse({ data: { scope: 'global', visibility: { ...map }, updatedAt: '2026-10-16T12:00:00.000Z', updatedBy: 'ckqaop00000000000000000001' } })
+const expectations = [
+  ['success', 'confirmed'], ['success-normalized', 'uncertain'], ['success-malformed', 'uncertain'],
+  ['400', 'rejected', 'invalid'], ['401', 'rejected', 'session'], ['403', 'rejected', 'forbidden'], ['409', 'rejected', 'conflict'],
+  ['timeout', 'uncertain'], ['network', 'uncertain'], ['500-audit-failure', 'uncertain'], ['503', 'uncertain'],
+]
+for (const [scenario, state, reason] of expectations) {
+  const { outcome, sends } = await simulateSave(scenario, toSave)
+  check(outcome.state === state && (reason === undefined || outcome.reason === reason), `Mocked PUT ${scenario} → ${state}${reason ? ` (${reason})` : ''}`)
+  check(sends === 1, `Mocked PUT ${scenario}: exactly one send, no automatic retry`)
+  if (state === 'uncertain') check(outcome.next === 'authoritative-readback' && /pode ou não ter sido aplicada/.test(outcome.view.description), `Mocked PUT ${scenario}: uncertain → read-back, never presented as failure-for-sure`)
+  if (state === 'confirmed') check(outcome.config.saved && outcome.config.map.contas === false, 'Confirmed only with a valid echo of the candidate')
+}
+check((await simulateSave('500-audit-failure', toSave, asConfig(toSave.body.visibility))).reconciled === 'applied', 'Audit failure after save: read-back shows the change was applied')
+check((await simulateSave('timeout', toSave, asConfig(live.map))).reconciled === 'not-applied', 'Timeout: read-back shows the change was not applied')
+check((await simulateSave('503', toSave, asConfig({ ...live.map, financeiro: false }))).reconciled === 'diverged', 'Read-back with a third state (concurrent save; no version / ETag) → diverged, review again')
+check(!/retry|setTimeout|setInterval/i.test(codeOnly(await readFile(resolve(featureDir, 'menuVisibilityUpdate.ts'), 'utf8'), 'update.ts')), 'Update design has no retry or timer logic')
+check(!featureFiles.some((name) => /mock|transport/i.test(name)), 'No mock transport ships in the feature source')
+
+// Test-only FUTURE action orchestration, not an implementation shipped in src.
+// A single-send assertion alone does not prove duplicate prevention. Hold the
+// injected transport, activate twice, and verify ambiguous results stay locked
+// until readback. There is deliberately no automatic retry or real request.
+function mockSaveAction(candidate, transport) {
+  let phase = 'ready'
+  return {
+    async submit() {
+      if (!candidate.valid) return { blocked: 'invalid-candidate' }
+      if (phase !== 'ready') return { blocked: phase }
+      phase = 'in-flight'
+      const outcome = update.interpretSaveOutcome(candidate, await transport.send({ candidate }))
+      phase = outcome.state === 'uncertain' ? 'readback-required' : outcome.state === 'confirmed' ? 'confirmed' : 'rejected'
+      return outcome
+    },
+    readback(config) {
+      assert.equal(phase, 'readback-required')
+      const result = update.reconcileReadback(candidate, live.map, config)
+      phase = result === 'not-applied' ? 'ready' : result === 'applied' ? 'confirmed' : 'review-required'
+      return result
+    },
+  }
+}
+let releaseMock, heldSends = 0
+const heldAction = mockSaveAction(toSave, { send: () => { heldSends += 1; return new Promise((resolve) => { releaseMock = resolve }) } })
+const firstSubmit = heldAction.submit()
+check((await heldAction.submit()).blocked === 'in-flight' && heldSends === 1, 'Duplicate activation during pending mock action sends only once')
+releaseMock({ ok: true, body: echo(toSave) })
+check((await firstSubmit).state === 'confirmed' && (await heldAction.submit()).blocked === 'confirmed' && heldSends === 1, 'Confirmed mock action cannot be replayed')
+for (const scenario of ['timeout', 'network', '500-audit-failure', '503']) {
+  const transport = mockTransport(scenario)
+  const action = mockSaveAction(toSave, transport)
+  check((await action.submit()).state === 'uncertain', `Mock ${scenario}: outcome stays uncertain`)
+  check((await action.submit()).blocked === 'readback-required' && transport.sent.length === 1, `Mock ${scenario}: no duplicate before readback`)
+  check(action.readback(asConfig(toSave.body.visibility)) === 'applied', `Mock ${scenario}: authoritative readback can confirm application`)
+  check((await action.submit()).blocked === 'confirmed' && transport.sent.length === 1, `Mock ${scenario}: applied readback prevents duplicate save`)
+}
+const notAppliedAction = mockSaveAction(toSave, mockTransport('network'))
+await notAppliedAction.submit()
+check(notAppliedAction.readback(asConfig(live.map)) === 'not-applied', 'Mock readback proves not-applied before a later deliberate action')
+const divergedAction = mockSaveAction(toSave, mockTransport('503'))
+await divergedAction.submit()
+check(divergedAction.readback(asConfig({ ...live.map, financeiro: false })) === 'diverged' && (await divergedAction.submit()).blocked === 'review-required', 'Diverged readback requires review rather than retry')
+const refusedTransport = mockTransport('success')
+check((await mockSaveAction(invalidCand, refusedTransport).submit()).blocked === 'invalid-candidate' && refusedTransport.sent.length === 0, 'Invalid candidate causes zero simulated sends')
+
+/* ---------- rendered Stage B controls ---------- */
+const lockedHtml = render(h(VisibilityControls, { base: live.map, draft: live.map, onChange() {} }))
+for (const id of ['dashboard', 'configuracoes']) {
+  const tag = switchTag(lockedHtml, id)
+  check(tag.includes('aria-disabled="true"') && tag.includes('data-locked=""') && tag.includes('(bloqueado)') && !/\sdisabled=""/.test(tag), `${id}: locked switch stays focusable, aria-disabled and named as locked`)
+  check(lockedHtml.includes(`data-menu-id="${id}"`) && lockedHtml.includes(policy.PROTECTED_EXPLANATION[id]), `${id}: protected explanation rendered`)
+}
+check((lockedHtml.match(/data-locked=""/g) ?? []).length === 2 && (lockedHtml.match(/role="switch"/g) ?? []).length === 23, 'Exactly two locked switches among 23')
+check(!switchTag(lockedHtml, 'sistema').includes('aria-disabled') && !switchTag(lockedHtml, 'ajuda').includes('aria-disabled'), 'Sistema and Ajuda stay editable')
+let lockedCalls = 0, changeCalls = 0
+const lockedEl = h(VisibilityControls, { base: live.map, draft: live.map, onChange() { changeCalls += 1 }, onLockedAttempt() { lockedCalls += 1 } })
+check(render(lockedEl).includes('data-independence-note'), 'Utility independence note rendered')
+const violatingControls = render(h(VisibilityControls, { base: violating.map, draft: violating.map, onChange() {} }))
+check(switchTag(violatingControls, 'dashboard').includes('aria-checked="false"') && violatingControls.includes('data-violation-note') && violatingControls.includes('correção no servidor'), 'Server violation: locked switch shows the real false + conflict note')
+const readOnlyControls = render(h(VisibilityControls, { base: saved.map, draft: saved.map, onChange() {}, readOnly: true }))
+check(!readOnlyControls.includes('role="switch"') && (readOnlyControls.match(/data-read-only-state=/g) ?? []).length === 23 && readOnlyControls.includes('data-read-only="true"'), 'Read-only: no switches, 23 described states')
+check(lockedCalls === 0 && changeCalls === 0, 'Rendering never invokes change handlers')
+
+/* ---------- rendered page per role ---------- */
+const editHtml = renderPage({ status: 'success', data: { ...live, readAt: '2026-10-16T10:00:00.000Z' } })
+check(editHtml.includes('data-expected-access="edit"'), 'SUPER_ADMIN notice: edit')
+check(editHtml.includes('data-access-mode="edit"') && editHtml.includes('data-visibility-draft') && (editHtml.match(/role="switch"/g) ?? []).length === 23, 'SUPER_ADMIN: editable draft with 23 switches (2 locked)')
+for (const role of ['SUPPORT_ADMIN', 'READ_ONLY']) {
+  const html = renderPage({ status: 'success', data: { ...saved, readAt: '2026-10-16T10:00:00.000Z' } }, undefined, operatorWith(role))
+  check(html.includes('data-access-mode="read"') && html.includes('data-visibility-read-only') && !html.includes('data-visibility-draft'), `${role}: read-only presentation`)
+  check(!html.includes('role="switch"') && !html.includes('data-draft-bar') && !html.includes('data-review') && !html.includes('data-discard') && !html.includes('data-restore-protected'), `${role}: no editing controls, no review, no Save path`)
+  check(html.includes('data-preview-subject="configuração persistida"') && html.includes('data-persisted-hidden="8"'), `${role}: preview of the persisted configuration (protected Dashboard never counted as hidden)`)
+}
+for (const role of ['FINANCIAL_ADMIN', 'COMPLIANCE_ADMIN']) {
+  const forbiddenHtml = renderPage({ status: 'error', error: new ApiError(403, { code: 'FORBIDDEN' }) }, undefined, operatorWith(role))
+  check(forbiddenHtml.includes('data-error-kind="forbidden"') && !forbiddenHtml.includes('data-retry') && !forbiddenHtml.includes('role="switch"'), `${role}: canonical Backend 403 → no access, no retry`)
+  check(forbiddenHtml.includes('data-expected-access="none"') && forbiddenHtml.includes('Sem acesso previsto para o seu perfil') && !forbiddenHtml.includes('Seu perfil pode consultar'), `${role}: notice never claims read access`)
+  const driftHtml2 = renderPage({ status: 'success', data: { ...live, readAt: '2026-10-16T10:00:00.000Z' } }, undefined, operatorWith(role))
+  check(driftHtml2.includes('data-access-mode="read"') && !driftHtml2.includes('role="switch"'), `${role}: if the Backend ever answered, still never editable`)
+}
+check(renderPage({ status: 'success', data: { ...live, readAt: '2026-10-16T10:00:00.000Z' } }, undefined, null).includes('data-access-mode="read"'), 'No operator in session: read-only, never editable')
+const violationEdit = renderPage({ status: 'success', data: { ...violating, readAt: '2026-10-16T10:00:00.000Z' } })
+check(violationEdit.includes('data-policy-violation="dashboard configuracoes"') && violationEdit.includes('Inconsistência na configuração persistida') && violationEdit.includes('data-restore-protected'), 'SUPER_ADMIN: server violation surfaced with explicit draft correction')
+check(switchTag(violationEdit, 'dashboard').includes('aria-checked="false"') && !violationEdit.includes('data-draft-bar'), 'Server violation is shown as stored; nothing auto-corrected (no draft change)')
+const violationRead = renderPage({ status: 'success', data: { ...violating, readAt: '2026-10-16T10:00:00.000Z' } }, undefined, operatorWith('READ_ONLY'))
+check(violationRead.includes('data-policy-violation') && !violationRead.includes('data-restore-protected'), 'Read-only: violation surfaced without any correction control')
+check(editHtml.includes('rotas diretas') || editHtml.includes('URL direta'), 'Page states the sidebar-only scope')
+
+/* ---------- review with protected modules ---------- */
+const reviewInvalid = render(h(VisibilityReviewDialog, { base: violating.map, draft: violating.map, onClose() {} }))
+check(reviewInvalid.includes('data-review-invalid') && !reviewInvalid.includes('data-candidate-valid'), 'Review flags an invalid candidate inherited from the server')
+const reviewFixed = render(h(VisibilityReviewDialog, { base: violating.map, draft: restoredDraft, onClose() {} }))
+check(!reviewFixed.includes('data-review-invalid') && reviewFixed.includes('data-candidate-valid="true"') && (reviewFixed.match(/data-review-change=/g) ?? []).length === 2, 'Review after explicit correction: valid, two protected changes listed')
+const reviewNormal = render(h(VisibilityReviewDialog, { base: live.map, draft: policy.setDraftPreference(live.map, 'financeiro', false), onClose() {} }))
+check(reviewNormal.includes('data-review-protected-id="dashboard"') && reviewNormal.includes('data-review-protected-id="configuracoes"') && reviewNormal.includes('data-review-sidebar-count="16"'), 'Review lists protected modules and the resulting sidebar (16 of 23)')
+check(reviewNormal.includes('aria-disabled="true"') && reviewNormal.includes('não enviado') && reviewNormal.includes('Aplicação e persistência aguardam validação das regras e autorização.'), 'Save stays disabled with the approved explanation')
+check(reviewNormal.includes('rotas diretas'), 'Review states sidebar-only effect')
+check(render(h(Sidebar, sidebarProps)) === sidebarBefore, 'After every Stage B render, the real Sidebar is identical')
+
+/* ---------- mutation controls: reproduce the eight reported fault classes ---------- */
+// Mutants exist only in data: module URLs. Nothing is patched on disk and no
+// request is made. The source replacements introduce faults; assertions inspect
+// actual model/render behavior, not the replacement text.
+async function mutant(name, before, after) {
+  const path = `src/features/menu-visibility/${name}`
+  const source = await readFile(resolve(root, path), 'utf8')
+  assert.ok(source.includes(before), `Mutation control still targets ${name}`)
+  return load(path, source.replace(before, after))
+}
+const hideableProtected = await mutant('visibilityPolicy.ts', 'if (!visible && isProtectedMenuId(id)) return map', 'if (false) return map')
+check(hideableProtected.setDraftPreference(live.map, 'dashboard', false).dashboard !== true, 'Mutation detected: protected module made hideable')
+const hiddenProtected = await mutant('visibilityResolver.ts', 'sidebarVisible: true, reason: preference', 'sidebarVisible: false, reason: preference')
+check(!hiddenProtected.resolveVisibility(violating.map).byId.dashboard.sidebarVisible, 'Mutation detected: protected item omitted from preview')
+const editableSupport = await mutant('visibilityPolicy.ts', "SUPPORT_ADMIN: 'read'", "SUPPORT_ADMIN: 'edit'")
+check(editableSupport.presentationMode(['SUPPORT_ADMIN']) !== 'read', 'Mutation detected: Support granted edit presentation')
+const rejectedUncertain = await mutant('menuVisibilityUpdate.ts', 'result.error.status < 500', 'result.error.status >= 500')
+check(rejectedUncertain.interpretSaveOutcome(toSave, { ok: false, error: new ApiError(500, {}) }).state !== 'uncertain', 'Mutation detected: Audit-style 5xx incorrectly treated as certain rejection')
+const editableReadOnly = await mutant('VisibilityControls.tsx', '{readOnly ? (', '{false ? (')
+check(render(h(editableReadOnly.VisibilityControls, { base: live.map, draft: live.map, readOnly: true, onChange() {} })).includes('role="switch"'), 'Mutation detected: read-only controls made editable')
+const sendableCandidate = await mutant('menuVisibilityUpdate.ts', 'sendable: false,', 'sendable: true,')
+check(sendableCandidate.buildUpdateCandidate(live.map, candidateDraft, 'edit').sendable !== false, 'Mutation detected: preparation candidate made sendable')
+const plantedSidebarImport = `import {resolveVisibility as resolveMenu} from '../../features/menu-visibility/visibilityResolver';\n${sidebarSource}\nexport const plantedResolver = resolveMenu;`
+check(/from\s+['"][^'"]*menu-visibility\//.test(codeOnly(plantedSidebarImport, 'Sidebar.tsx')), 'Mutation detected: resolver imported outside its isolated feature')
+const unfocusableLocked = await mutant('VisibilityControls.tsx', 'aria-disabled="true"', 'disabled')
+const unfocusableHtml = render(h(unfocusableLocked.VisibilityControls, { base: live.map, draft: live.map, onChange() {} }))
+check(/\sdisabled=""/.test(switchTag(unfocusableHtml, 'dashboard')), 'Mutation detected: locked explanation removed from keyboard focus order')
+
 delete globalThis.__menuPageState
 
 /* ---------- actual shared read hook: deterministic overlapping/abandoned requests ---------- */
@@ -705,4 +1031,4 @@ delete globalThis.__menuGuardTest
 check(allRequests.length > 0 && allRequests.every((request) => request.method === 'GET'), 'Every request made during the checks was a GET (zero PUT / PATCH / POST / DELETE)')
 check(allRequests.every((request) => request.url.endsWith('/homolog/menu-visibility')), 'Only the menu-visibility read was requested')
 
-console.log(`Menu Visibility Integration V1 — Stage A: ${checks} passed (synthetic fixtures; GET only; no storage; save and enforcement not enabled)`)
+console.log(`Menu Visibility — Stage A + Stage B preparation: ${checks} passed (synthetic fixtures; GET only; mocked PUT outcomes; no storage; save and enforcement not enabled)`)

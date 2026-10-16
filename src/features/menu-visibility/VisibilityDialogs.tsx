@@ -1,21 +1,25 @@
 import { useId, useRef } from 'react'
-import { AlertTriangle, ArrowRight, CircleDot, Clock3, Eye, Save } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CircleDot, Clock3, Eye, Lock, Save } from 'lucide-react'
 import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import dialogStyles from '../whitelabel-settings/dialogs/SettingsDialogs.module.css'
 import { menuEntry, menuLabelWithParent } from './menuRegistry'
-import { putRequestPreview } from './menuVisibilityContract'
+import { buildUpdateCandidate } from './menuVisibilityUpdate'
 import { effectConsequences, preferenceChanges, type VisibilityMap } from './visibilityModel'
+import { PROTECTED_EXPLANATION, PROTECTED_MENU_IDS } from './visibilityPolicy'
+import { resolveVisibility } from './visibilityResolver'
 import styles from './MenuVisibility.module.css'
 
 const word = (visible: boolean) => (visible ? 'Visível' : 'Oculto')
 
 /**
  * Change review against the PERSISTED configuration. Lists stored-preference
- * changes, then effective consequences (parent/child), then the full map a
- * future Stage B PUT would carry. The final action is `aria-disabled`: saving
- * is not enabled in Stage A and nothing is sent — no PUT, no storage, no
- * change to the real navigation, no local updatedAt / updatedBy, no Audit.
+ * changes, the effective sidebar consequences (parent / child), the protected
+ * modules (rules 1, 2), the resulting sidebar and the complete candidate map a
+ * future Stage B PUT would carry (`buildUpdateCandidate`). The final action is
+ * `aria-disabled`: saving is not enabled and nothing is sent — no PUT, no
+ * storage, no change to the real navigation, no local updatedAt / updatedBy,
+ * no Audit. A candidate that hides a protected module is reported invalid.
  */
 export function VisibilityReviewDialog({
   base,
@@ -29,16 +33,12 @@ export function VisibilityReviewDialog({
 }) {
   const backRef = useRef<HTMLButtonElement>(null)
   const pendingId = useId()
-  const changes = preferenceChanges(base, draft)
+  const candidate = buildUpdateCandidate(base, draft, 'edit')
+  const changes = candidate.changes
   const consequences = effectConsequences(base, draft)
-  const warnings = [
-    !draft.configuracoes && base.configuracoes
-      ? 'Configurações oculto: o acesso a esta tela pelo menu também ficaria oculto. A regra para ocultar este item e recuperar o acesso não foi definida por Produto e Backend.'
-      : null,
-    !draft.dashboard && base.dashboard
-      ? 'Dashboard oculto: o destino inicial após o login e o comportamento de rotas ocultas não foram definidos por Produto e Backend.'
-      : null,
-  ].filter((item): item is string => item !== null)
+  const resolution = resolveVisibility(draft)
+  const protectedIssues = candidate.issues.filter((issue) => issue.kind === 'protected-hidden')
+  const visibleCount = resolution.entries.length - resolution.hidden.length
 
   return (
     <Dialog
@@ -67,30 +67,34 @@ export function VisibilityReviewDialog({
         </>
       }
     >
-      <div className={styles.review} data-visibility-review>
+      <div className={styles.review} data-visibility-review data-candidate-valid={candidate.valid || undefined}>
         <section aria-labelledby={`${pendingId}-changes`}>
           <h3 id={`${pendingId}-changes`} className={styles.reviewTitle}>
             Preferências alteradas em relação à configuração persistida ({changes.length})
           </h3>
-          <ul className={styles.changes}>
-            {changes.map((change) => (
-              <li key={change.id} className={styles.change} data-review-change={change.id}>
-                <span className={styles.changeLabel}>{menuLabelWithParent(change.id)}</span>
-                <span className={styles.changeValues}>
-                  <span className={styles.before}>{word(change.from)}</span>
-                  <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
-                  <span className="visually-hidden">para</span>
-                  <span className={styles.after}>{word(change.to)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          {changes.length ? (
+            <ul className={styles.changes}>
+              {changes.map((change) => (
+                <li key={change.id} className={styles.change} data-review-change={change.id}>
+                  <span className={styles.changeLabel}>{menuLabelWithParent(change.id)}</span>
+                  <span className={styles.changeValues}>
+                    <span className={styles.before}>{word(change.from)}</span>
+                    <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+                    <span className="visually-hidden">para</span>
+                    <span className={styles.after}>{word(change.to)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.previewEmpty}>Nenhuma preferência difere da configuração persistida.</p>
+          )}
         </section>
 
         {consequences.length ? (
           <section aria-labelledby={`${pendingId}-effects`}>
             <h3 id={`${pendingId}-effects`} className={styles.reviewTitle}>
-              Efeito no menu sem mudar a preferência ({consequences.length})
+              Efeito no menu lateral sem mudar a preferência ({consequences.length})
             </h3>
             <ul className={styles.changes}>
               {consequences.map((item) => (
@@ -108,20 +112,54 @@ export function VisibilityReviewDialog({
           </section>
         ) : null}
 
-        {warnings.length ? (
-          <div className={styles.warnings}>
-            {warnings.map((warning) => (
-              <p key={warning} className={styles.warning} data-review-warning>
-                <AlertTriangle size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>{warning}</span>
-              </p>
+        <section aria-labelledby={`${pendingId}-protected`} data-review-protected>
+          <h3 id={`${pendingId}-protected`} className={styles.reviewTitle}>
+            Módulos protegidos
+          </h3>
+          <ul className={styles.changes}>
+            {PROTECTED_MENU_IDS.map((id) => (
+              <li key={id} className={styles.change} data-review-protected-id={id} data-ok={draft[id] || undefined}>
+                <span className={styles.changeLabel}>
+                  <Lock size={12} strokeWidth={2} aria-hidden="true" className={styles.noteIcon} />
+                  {menuEntry(id).label}
+                </span>
+                <span className={styles.consequence}>
+                  {PROTECTED_EXPLANATION[id]} No mapa candidato: {draft[id] ? 'visível' : 'oculto — viola a regra'}.
+                </span>
+              </li>
             ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby={`${pendingId}-sidebar`} data-review-sidebar>
+          <h3 id={`${pendingId}-sidebar`} className={styles.reviewTitle}>
+            Resultado no menu lateral
+          </h3>
+          <p className={styles.consequence} data-review-sidebar-count={visibleCount}>
+            {visibleCount} de {resolution.entries.length} módulos apareceriam no menu lateral
+            {resolution.hidden.length
+              ? `; fora dele: ${resolution.hidden.map((entry) => menuLabelWithParent(entry.id)).join(', ')}.`
+              : '.'}{' '}
+            Somente o menu lateral seria afetado: rotas diretas, atalhos do Dashboard e links internos continuam disponíveis.
+          </p>
+        </section>
+
+        {protectedIssues.length ? (
+          <div className={styles.warnings}>
+            <p className={styles.warning} data-review-invalid>
+              <AlertTriangle size={15} strokeWidth={1.8} aria-hidden="true" />
+              <span>
+                Mapa candidato inválido: {protectedIssues.map((issue) => (issue.kind === 'protected-hidden' ? menuEntry(issue.violation.id).label : '')).join(' e ')}{' '}
+                {protectedIssues.length === 1 ? 'precisa' : 'precisam'} permanecer visível. O valor vem da configuração persistida e não foi
+                alterado automaticamente; use “Corrigir no rascunho” e solicite a correção no servidor.
+              </span>
+            </p>
           </div>
         ) : null}
 
         <details className={styles.payload}>
           <summary>Mapa completo do rascunho (corpo previsto do PUT, não enviado)</summary>
-          <pre data-put-preview>{JSON.stringify(putRequestPreview(draft), null, 2)}</pre>
+          <pre data-put-preview>{JSON.stringify(candidate.body, null, 2)}</pre>
         </details>
 
         <p id={pendingId} className={styles.pending} data-persistence-pending>
@@ -130,6 +168,7 @@ export function VisibilityReviewDialog({
             <strong>Salvar ainda não está habilitado</strong>
             Leitura integrada. Aplicação e persistência aguardam validação das regras e autorização. Nenhuma requisição de alteração é enviada e o
             menu lateral real não muda; o rascunho continua nesta tela até ser descartado ou até a página ser recarregada.
+            {protectedIssues.length ? ' Além disso, este mapa candidato não poderia ser salvo enquanto houver módulo protegido oculto.' : ''}
           </span>
         </p>
       </div>

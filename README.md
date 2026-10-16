@@ -56,8 +56,12 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > configuração. Sem armazenamento no navegador. Visibilidade não é permissão.
 > Ver [`docs/menu-visibility-read-integration-v1.md`](docs/menu-visibility-read-integration-v1.md)
 > (protótipo original: [`docs/menu-visibility-frontend-v1.md`](docs/menu-visibility-frontend-v1.md)).
-> **Estado de publicação:** Etapa A implementada na branch local, ainda não
-> publicada no frontend de homologação. Push/promoção/deploy exigem autorização separada.
+> **Etapa B — preparação:** as regras de Produto aprovadas (Dashboard e Configurações sempre visíveis,
+> Sistema / Configurações / Ajuda independentes, só o menu lateral é afetado, papéis SUPER_ADMIN edita /
+> SUPPORT_ADMIN e READ_ONLY só leem) valem na tela e na prévia isolada; gravação e aplicação ao menu real
+> seguem **desabilitadas**. Ver [`docs/menu-visibility-stage-b-preparation.md`](docs/menu-visibility-stage-b-preparation.md).
+> **Estado de publicação:** Etapa A completa e publicada em homologação no commit
+> `627b1e0`. A preparação da Etapa B permanece local: push/promoção/deploy exigem autorização separada.
 > **Dashboard Global:** os cards **Whitelabels** e **Investidores** leem
 > `GET /api/dashboard` (agregado global do Core, somente leitura); os demais
 > indicadores, gráficos, distribuição, status operacional e últimos eventos
@@ -1161,6 +1165,7 @@ further OriginKit assets, final brand system.
 - [Entrepreneur Read Integration V1 — live contract, identity, Company finding (Empresas still open)](docs/entrepreneur-read-integration-v1.md)
 - [Companies Frontend V1 — prototype list / detail, candidate /companies contract, open questions](docs/companies-frontend-v1.md) (no Company contract integrated)
 - [Menu Visibility Integration V1 — Stage A: live GET contract, persistence rules, gates, authoritative read](docs/menu-visibility-read-integration-v1.md) (save and real enforcement not enabled)
+- [Menu Visibility — Stage B preparation: approved Product rules, protected modules, roles, pure sidebar resolver, mocked save design](docs/menu-visibility-stage-b-preparation.md) (live write and real sidebar enforcement not enabled)
 - [Menu Visibility Frontend V1 — global show / hide prototype, preference vs effective](docs/menu-visibility-frontend-v1.md) (partly superseded by Stage A)
 - [Financeiro › Finance Core V1 — scope, safety boundaries, relationships, QA and open questions](docs/finance-core-v1.md)
 - [Financeiro › Investimentos V1](docs/finance-investments-v1.md)

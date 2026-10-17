@@ -7,6 +7,7 @@ import {
   Copy,
   LayoutGrid,
   Link,
+  Lock,
   Pencil,
   RotateCw,
   SearchX,
@@ -26,6 +27,7 @@ import { EntityAvatar } from '../../components/ui/EntityAvatar'
 import { DetailTransition } from '../../components/ui/DetailTransition'
 import type { ApiErrorView } from '../../lib/apiErrors'
 import { WhitelabelActionsMenu } from './crud/WhitelabelActionsMenu'
+import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess } from './crud/whitelabelMutationContract'
 import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from './whitelabelApi'
 import styles from './WhitelabelDetailPanel.module.css'
 
@@ -69,24 +71,26 @@ const ID_PREFIX = 'wl-detail'
  * Aplicações / Integrações cards (the Control Plane returns no value → "—").
  * The accessible region stays mounted during selection transitions.
  *
- * Whitelabel CRUD Frontend V1: "Editar" and the actions menu open review-only
- * flows (`crud/`); the record shown here is never changed by them.
+ * Whitelabel CRUD Safe Preparation V1: "Editar nome" (SUPER_ADMIN) opens the
+ * name-only review (`crud/`); activation / deactivation are shown disabled.
+ * The record shown here is never changed by those flows.
  */
 export function WhitelabelDetailPanel({
   whitelabel,
-  onEdit,
-  onLifecycle,
+  access,
+  onEditName,
   onDisplay,
 }: {
   whitelabel: WhitelabelRecord
-  onEdit: (record: WhitelabelRecord) => void
-  onLifecycle: (record: WhitelabelRecord) => void
+  /** Role-aware presentation only; the Backend guard is the authority. */
+  access: WhitelabelWriteAccess
+  onEditName: (record: WhitelabelRecord) => void
   /** Called once a selected identity is displayed (focus handoff to its actions). */
   onDisplay?: (id: string) => void
 }) {
   return (
     <DetailTransition item={whitelabel} className={styles.panel} onDisplay={onDisplay}>
-      {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} onEdit={onEdit} onLifecycle={onLifecycle} />}
+      {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} access={access} onEditName={onEditName} />}
     </DetailTransition>
   )
 }
@@ -178,12 +182,12 @@ export function WhitelabelDetailStatus(props: DetailStatusProps) {
 
 function DetailContents({
   whitelabel,
-  onEdit,
-  onLifecycle,
+  access,
+  onEditName,
 }: {
   whitelabel: WhitelabelRecord
-  onEdit: (record: WhitelabelRecord) => void
-  onLifecycle: (record: WhitelabelRecord) => void
+  access: WhitelabelWriteAccess
+  onEditName: (record: WhitelabelRecord) => void
 }) {
   const notify = usePrototypeNotice()
   const [tab, setTab] = useState<DetailTab>('overview')
@@ -218,9 +222,10 @@ function DetailContents({
         </div>
         <WhitelabelActionsMenu
           name={whitelabel.name}
+          status={whitelabel.status}
+          access={access}
           triggerClassName={styles.kebab}
-          onEdit={() => onEdit(whitelabel)}
-          onLifecycle={() => onLifecycle(whitelabel)}
+          onEditName={() => onEditName(whitelabel)}
         />
       </header>
 
@@ -246,7 +251,7 @@ function DetailContents({
           className={styles.tabPanel}
         >
           {tab !== item.value ? null : item.value === 'overview' ? (
-            <Overview whitelabel={whitelabel} onCopy={copy} onNotify={notify} onEdit={() => onEdit(whitelabel)} />
+            <Overview whitelabel={whitelabel} onCopy={copy} onNotify={notify} access={access} onEditName={() => onEditName(whitelabel)} />
           ) : (
             <div className={styles.placeholder}>
               <EmptyState icon={item.icon} title={item.label} description={TAB_PLACEHOLDERS[item.value]} />
@@ -262,12 +267,14 @@ function Overview({
   whitelabel,
   onCopy,
   onNotify,
-  onEdit,
+  access,
+  onEditName,
 }: {
   whitelabel: WhitelabelRecord
   onCopy: (value: string, label: string) => void
   onNotify: (message: string) => void
-  onEdit: () => void
+  access: WhitelabelWriteAccess
+  onEditName: () => void
 }) {
   const status = WHITELABEL_STATUS_META[whitelabel.status]
   const summary: { label: string; icon: LucideIcon; tone: Tone; value: number | null; note: string }[] = [
@@ -295,10 +302,29 @@ function Overview({
           <h3 id="wl-info-title" className={styles.cardTitle}>
             Informações principais
           </h3>
-          <OutlineButton className={styles.editButton} onClick={onEdit} data-wl-edit>
-            <Pencil size={14} strokeWidth={1.8} aria-hidden="true" />
-            Editar
-          </OutlineButton>
+          {access === 'super-admin' ? (
+            <OutlineButton className={styles.editButton} onClick={onEditName} data-wl-edit>
+              <Pencil size={14} strokeWidth={1.8} aria-hidden="true" />
+              Editar nome
+            </OutlineButton>
+          ) : (
+            <>
+              <OutlineButton
+                className={styles.editButton}
+                aria-disabled="true"
+                aria-describedby="wl-edit-access-note"
+                data-wl-edit
+                data-restricted={access}
+                onClick={() => onNotify(WRITE_ACCESS_NOTE[access])}
+              >
+                <Lock size={14} strokeWidth={1.8} aria-hidden="true" />
+                Editar nome
+              </OutlineButton>
+              <span id="wl-edit-access-note" className="visually-hidden">
+                {WRITE_ACCESS_NOTE[access]}
+              </span>
+            </>
+          )}
         </div>
         <dl className={styles.fields}>
           <div className={styles.field}>

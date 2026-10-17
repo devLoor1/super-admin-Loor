@@ -1,5 +1,19 @@
 # Whitelabel CRUD Frontend V1
 
+> **Superseded in part (2026-10-16)** by
+> [`whitelabel-crud-safe-preparation-v1.md`](whitelabel-crud-safe-preparation-v1.md). The sections
+> **Create**, **Edit**, **Deactivate / remove** and **Future mutation error mapping** below describe the
+> earlier prototype (draft Backend `0177437`) and no longer match the code:
+>
+> - URL base is now required;
+> - the edit changes the name only;
+> - the deactivate / remove dialog was removed;
+> - error mapping now follows the Nest source rechecked at `aea5392` (current 409 for
+>   `E_SLUG_TAKEN`, with historical 422 compatibility; no live write verification);
+> - independent browser review was completed on 2026-10-17; live CRUD remains disabled.
+>
+> The rest is kept as history.
+
 Frontend-only unit, implemented by Cloud from `dev` `38a9a02` and preserved
 for Codex review on `feature/whitelabel-crud-frontend-v1`. It prepares the UX for **creating, editing and
 deactivating / removing** a Whitelabel while the Backend team validates the
@@ -54,7 +68,7 @@ and their responses and error codes, is **unknown**.
 
 The four Whitelabel KPI cards and the detail quick actions are unchanged.
 
-## Create
+## Create — superseded
 
 **Fields:**
 
@@ -87,7 +101,7 @@ The four Whitelabel KPI cards and the detail quick actions are unchanged.
   `beforeunload` confirmation. A pristine form closes immediately.
 - No record is appended to the list. The list, detail and URL are unchanged.
 
-## Edit
+## Edit — superseded
 
 - Opened from a **real, loaded** Whitelabel (`GET /whitelabels/:id`). Nome and
   URL base start from the authoritative values.
@@ -115,7 +129,7 @@ The four Whitelabel KPI cards and the detail quick actions are unchanged.
 - **Salvar alterações (pendente)** is `aria-disabled`. The detail and list keep the
   server values.
 
-## Deactivate / remove
+## Deactivate / remove — superseded
 
 **"Desativar ou remover Whitelabel"** (from the ⋮ menu) does **not** assume the
 final rule:
@@ -140,7 +154,7 @@ final rule:
   quais vínculos bloqueiam a operação", with no counts. The dialog has a
   `failure` slot for it; nothing sets it in this version.
 
-## Future mutation error mapping (prepared, not bound to any request)
+## Future mutation error mapping (prepared, not bound to any request) — superseded
 
 `describeMutationError(error, action)` in `crud/whitelabelMutationContract.ts`:
 

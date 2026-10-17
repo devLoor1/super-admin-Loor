@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
-import { CircleAlert, Clock3, Link2Off, Lock, RotateCw } from 'lucide-react'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
-import { WHITELABEL_MUTATIONS, type MutationErrorView, type WhitelabelMutationAction } from './whitelabelMutationContract'
+import { CheckCircle2, CircleAlert, Clock3, Lock, TriangleAlert } from 'lucide-react'
+import { WHITELABEL_MUTATIONS, type WhitelabelAction } from './whitelabelMutationContract'
+import type { MutationOutcomeView } from './whitelabelMutationOutcome'
 import styles from './WhitelabelCrud.module.css'
 
 /**
- * "UI pronta, ação do Backend indisponível": shown wherever a flow stops
- * before persistence. States plainly that nothing was sent or saved.
+ * Shown wherever a prepared flow stops before persistence: the integration is
+ * not released, nothing was sent and nothing was saved.
  */
-export function PendingBackendNotice({ action, id, children }: { action: WhitelabelMutationAction; id: string; children?: ReactNode }) {
+export function PendingBackendNotice({ action, id, children }: { action: WhitelabelAction; id: string; children?: ReactNode }) {
   const meta = WHITELABEL_MUTATIONS[action]
   return (
     <div className={styles.pending} id={id} data-backend-pending={action}>
@@ -25,9 +25,9 @@ export function PendingBackendNotice({ action, id, children }: { action: Whitela
 }
 
 /**
- * Final commit button of a flow while its Backend action is unavailable:
- * focusable (`aria-disabled`) so its pending description is announced, but
- * it never submits anything.
+ * Final commit button while the integration is not released: focusable
+ * (`aria-disabled`) so its pending description is announced, but it never
+ * submits anything — for every role, SUPER_ADMIN included.
  */
 export function PendingActionButton({
   label,
@@ -54,31 +54,28 @@ export function PendingActionButton({
   )
 }
 
+const OUTCOME_ICON = { success: CheckCircle2, danger: CircleAlert, warning: TriangleAlert } as const
+
 /**
- * Prepared presentation of a future mutation failure (400 / 403 / 404 / 409 /
- * 5xx / network / timeout). Not bound to any request in this version.
+ * Prepared presentation of a future write outcome (confirmed / rejected /
+ * uncertain / stale). Display only: no screen renders it in this version —
+ * it is reviewed through the mock-only harness.
  */
-export function MutationErrorNotice({ error, onRetry }: { error: MutationErrorView; onRetry?: () => void }) {
-  const Icon = error.kind === 'dependencies' ? Link2Off : CircleAlert
+export function MutationOutcomeNotice({ view }: { view: MutationOutcomeView }) {
+  const Icon = OUTCOME_ICON[view.tone]
   return (
-    <div className={styles.errorNotice} role="alert" data-mutation-error={error.kind}>
+    <div className={styles.outcome} data-tone={view.tone} data-outcome={view.state} role={view.tone === 'success' ? 'status' : 'alert'}>
       <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
       <div>
-        <p className={styles.errorTitle}>{error.title}</p>
-        <p className={styles.errorText}>{error.description}</p>
-        {error.kind === 'dependencies' ? (
-          <p className={styles.errorText}>Os vínculos são verificados pelo Backend; nenhuma contagem é calculada nesta tela.</p>
-        ) : null}
-        {error.correlationId ? (
-          <p className={styles.errorMeta}>
-            Código de diagnóstico: <code>{error.correlationId}</code>
+        <p className={styles.outcomeTitle}>{view.title}</p>
+        <p className={styles.outcomeText}>{view.description}</p>
+        <p className={styles.outcomeNext}>
+          <strong>Próximo passo:</strong> {view.next}
+        </p>
+        {view.correlationId ? (
+          <p className={styles.outcomeMeta}>
+            Código de diagnóstico: <code>{view.correlationId}</code>
           </p>
-        ) : null}
-        {error.retryable && onRetry ? (
-          <OutlineButton className={styles.errorRetry} onClick={onRetry}>
-            <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
-            Tentar novamente
-          </OutlineButton>
         ) : null}
       </div>
     </div>

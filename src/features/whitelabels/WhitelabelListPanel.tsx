@@ -8,6 +8,7 @@ import {
   CircleAlert,
   Filter,
   Info,
+  Lock,
   MoreHorizontal,
   Plus,
   RotateCw,
@@ -23,6 +24,7 @@ import { SelectField } from '../../components/ui/SelectField'
 import { StatusPill } from '../../components/ui/StatusPill'
 import { describeApiError } from '../../lib/apiErrors'
 import { WhitelabelIdentity } from './visuals/WhitelabelIdentity'
+import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess } from './crud/whitelabelMutationContract'
 import type { RemoteState } from './useWhitelabelData'
 import {
   WHITELABEL_STATUS_META,
@@ -61,8 +63,10 @@ type WhitelabelListPanelProps = {
   onActivate: (id: string) => void
   /** Row "…": shows that Whitelabel's detail and moves focus to its actions (no destructive control in rows). */
   onOpenActions: (id: string) => void
-  /** "Novo Whitelabel": opens the review-only create flow. */
+  /** "Novo Whitelabel": the page opens the create review (SUPER_ADMIN) or explains the restriction. */
   onCreate: () => void
+  /** Role-aware presentation only; the Backend guard is the authority. */
+  createAccess: WhitelabelWriteAccess
   accentColor: string
 }
 
@@ -107,6 +111,7 @@ export function WhitelabelListPanel({
   onActivate,
   onOpenActions,
   onCreate,
+  createAccess,
   accentColor,
 }: WhitelabelListPanelProps) {
   function toggleSort(key: SortKey) {
@@ -137,14 +142,29 @@ export function WhitelabelListPanel({
           </h2>
           <p className={styles.subtitle}>Gerencie plataformas, domínios, administradores e integrações.</p>
         </div>
-        <PrimaryButton
-          className={styles.newButton}
-          onClick={onCreate}
-          data-wl-create
-        >
-          <Plus size={18} strokeWidth={1.9} aria-hidden="true" />
-          Novo Whitelabel
-        </PrimaryButton>
+        {createAccess === 'super-admin' ? (
+          <PrimaryButton className={styles.newButton} onClick={onCreate} data-wl-create>
+            <Plus size={18} strokeWidth={1.9} aria-hidden="true" />
+            Novo Whitelabel
+          </PrimaryButton>
+        ) : (
+          <>
+            <PrimaryButton
+              className={styles.newButton}
+              onClick={onCreate}
+              aria-disabled="true"
+              aria-describedby="wl-create-access-note"
+              data-wl-create
+              data-restricted={createAccess}
+            >
+              <Lock size={18} strokeWidth={1.9} aria-hidden="true" />
+              Novo Whitelabel
+            </PrimaryButton>
+            <span id="wl-create-access-note" className="visually-hidden">
+              {WRITE_ACCESS_NOTE[createAccess]}
+            </span>
+          </>
+        )}
       </div>
 
       <div className={styles.controls}>

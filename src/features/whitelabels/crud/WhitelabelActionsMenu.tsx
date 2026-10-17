@@ -1,28 +1,40 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { EllipsisVertical, Pencil, ShieldAlert } from 'lucide-react'
+import { Ban, EllipsisVertical, Lock, Pencil, Power } from 'lucide-react'
+import type { WhitelabelStatus } from '../whitelabelApi'
+import { WHITELABEL_MUTATIONS, WRITE_ACCESS_NOTE, type WhitelabelWriteAccess } from './whitelabelMutationContract'
 import styles from './WhitelabelCrud.module.css'
 
 /**
- * Detail header actions (WAI-ARIA menu button): "Editar dados" and the
- * destructive "Desativar ou remover…". Both open review-only flows — the
- * Backend actions are pending. Escape / Tab / outside press close the menu.
+ * Detail header actions (WAI-ARIA menu button).
+ *
+ * - "Editar nome": opens the name-only review for SUPER_ADMIN; for any other
+ *   role it is an `aria-disabled` item with the reason, and does nothing.
+ * - "Desativar" / "Ativar": always `aria-disabled`, with no handler at all —
+ *   activation, deactivation and DELETE (a deactivation alias) are not offered.
+ *
+ * Escape / Tab / outside press close the menu; disabled items stay focusable
+ * so their reason is announced.
  */
 export function WhitelabelActionsMenu({
   name,
+  status,
+  access,
   triggerClassName,
-  onEdit,
-  onLifecycle,
+  onEditName,
 }: {
   name: string
+  status: WhitelabelStatus
+  access: WhitelabelWriteAccess
   triggerClassName: string
-  onEdit: () => void
-  onLifecycle: () => void
+  onEditName: () => void
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
   const menuId = useId()
+  const editNoteId = `${menuId}-edit-note`
+  const lifecycleNoteId = `${menuId}-lifecycle-note`
 
   useEffect(() => {
     if (!open) return
@@ -37,11 +49,6 @@ export function WhitelabelActionsMenu({
   function close(returnFocus: boolean) {
     setOpen(false)
     if (returnFocus) triggerRef.current?.focus()
-  }
-
-  function choose(action: () => void) {
-    setOpen(false)
-    action()
   }
 
   function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -68,6 +75,8 @@ export function WhitelabelActionsMenu({
     items[next]?.focus()
   }
 
+  const lifecycleLabel = status === 'active' ? 'Desativar Whitelabel' : 'Ativar Whitelabel'
+
   return (
     <div ref={rootRef} className={styles.menuRoot}>
       <button
@@ -90,23 +99,50 @@ export function WhitelabelActionsMenu({
         <EllipsisVertical size={18} strokeWidth={1.9} aria-hidden="true" />
       </button>
       <div id={menuId} role="menu" aria-label={`Ações de ${name}`} className={styles.menu} hidden={!open} onKeyDown={onMenuKeyDown}>
-        <button
-          ref={(element) => {
-            itemRefs.current[0] = element
-          }}
-          type="button"
-          role="menuitem"
-          tabIndex={-1}
-          className={styles.menuItem}
-          data-menu-edit
-          onClick={() => choose(onEdit)}
-        >
-          <Pencil size={15} strokeWidth={1.8} aria-hidden="true" />
-          <span>
-            Editar dados
-            <span className={styles.menuItemNote}>Revisão — gravação pendente no Backend</span>
-          </span>
-        </button>
+        {access === 'super-admin' ? (
+          <button
+            ref={(element) => {
+              itemRefs.current[0] = element
+            }}
+            type="button"
+            role="menuitem"
+            tabIndex={-1}
+            className={styles.menuItem}
+            data-menu-edit
+            onClick={() => {
+              setOpen(false)
+              onEditName()
+            }}
+          >
+            <Pencil size={15} strokeWidth={1.8} aria-hidden="true" />
+            <span>
+              Editar nome
+              <span className={styles.menuItemNote}>Revisão; o envio aguarda liberação</span>
+            </span>
+          </button>
+        ) : (
+          <button
+            ref={(element) => {
+              itemRefs.current[0] = element
+            }}
+            type="button"
+            role="menuitem"
+            tabIndex={-1}
+            className={styles.menuItem}
+            aria-disabled="true"
+            aria-describedby={editNoteId}
+            data-menu-edit
+            data-restricted={access}
+          >
+            <Lock size={15} strokeWidth={1.8} aria-hidden="true" />
+            <span>
+              Editar nome
+              <span id={editNoteId} className={styles.menuItemNote} aria-hidden="true">
+                {WRITE_ACCESS_NOTE[access]}
+              </span>
+            </span>
+          </button>
+        )}
         <button
           ref={(element) => {
             itemRefs.current[1] = element
@@ -115,14 +151,16 @@ export function WhitelabelActionsMenu({
           role="menuitem"
           tabIndex={-1}
           className={styles.menuItem}
-          data-tone="danger"
-          data-menu-lifecycle
-          onClick={() => choose(onLifecycle)}
+          aria-disabled="true"
+          aria-describedby={lifecycleNoteId}
+          data-menu-lifecycle={status === 'active' ? 'deactivate' : 'activate'}
         >
-          <ShieldAlert size={15} strokeWidth={1.8} aria-hidden="true" />
+          {status === 'active' ? <Ban size={15} strokeWidth={1.8} aria-hidden="true" /> : <Power size={15} strokeWidth={1.8} aria-hidden="true" />}
           <span>
-            Desativar ou remover…
-            <span className={styles.menuItemNote}>Regra definitiva pendente no Backend</span>
+            {lifecycleLabel}
+            <span id={lifecycleNoteId} className={styles.menuItemNote} aria-hidden="true">
+              {WHITELABEL_MUTATIONS.lifecycle.pendingLabel} Efeitos no tenant ainda não confirmados.
+            </span>
           </span>
         </button>
       </div>

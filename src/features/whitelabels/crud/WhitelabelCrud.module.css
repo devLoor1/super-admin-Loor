@@ -198,22 +198,18 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- Pending Backend / errors ---------- */
+/* ---------- Pending integration ---------- */
 
-.pending,
-.errorNotice {
+.pending {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
   padding: 11px 12px;
+  border: 1px solid rgb(247 191 109 / 0.3);
   border-radius: 10px;
+  background: rgb(247 191 109 / 0.07);
   font-size: 12.5px;
   line-height: 18px;
-}
-
-.pending {
-  border: 1px solid rgb(247 191 109 / 0.3);
-  background: rgb(247 191 109 / 0.07);
   color: #ecd8ae;
 }
 
@@ -222,46 +218,16 @@
   color: #f2c983;
 }
 
-.pendingTitle,
-.errorTitle {
+.pendingTitle {
   font-weight: 600;
   color: var(--text-on-dark);
 }
 
-.pendingText,
-.errorText {
+.pendingText {
   margin-top: 2px;
 }
 
-.errorNotice {
-  border: 1px solid rgb(240 120 145 / 0.32);
-  background: rgb(232 92 120 / 0.08);
-  color: #f6c9d3;
-}
-
-.errorNotice > svg {
-  margin-top: 1px;
-  color: #f4a7b6;
-}
-
-.errorMeta {
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: var(--text-on-dark-muted);
-  overflow-wrap: anywhere;
-}
-
-.errorMeta code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.errorRetry {
-  margin-top: 8px;
-  height: 34px;
-  font-size: 12.5px;
-}
-
-/* Final commit button while its Backend action is unavailable (aria-disabled, focusable). */
+/* Final commit button while the integration is not released (aria-disabled, focusable). */
 .pendingAction {
   display: inline-flex;
   align-items: center;
@@ -290,84 +256,126 @@
   box-shadow: var(--focus-ring-dark);
 }
 
-/* ---------- Lifecycle (deactivate / remove) ---------- */
+/* ---------- Tenant identity (slug / URL base) ---------- */
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
 }
 
-.chip {
-  padding: 3px 9px;
-  border: 1px solid var(--surface-border);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.02);
-  font-size: 11.5px;
-  line-height: 16px;
-  color: var(--text-on-dark-secondary);
-}
-
-.options {
-  display: grid;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.options li {
+.identityNotice {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgb(247 191 109 / 0.32);
+  border-radius: 10px;
+  background: rgb(247 191 109 / 0.06);
   font-size: 12.5px;
   line-height: 18px;
+  color: #ecd8ae;
 }
 
-.options svg {
+.identityNotice > svg {
   margin-top: 2px;
   color: #f2c983;
 }
 
-.confirmToken {
-  padding: 1px 6px;
-  border: 1px solid var(--surface-border-strong);
-  border-radius: 6px;
-  background: #121826;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.95em;
+.identityNotice strong {
+  font-weight: 600;
   color: var(--text-on-dark);
-  overflow-wrap: anywhere;
 }
 
-.confirmStatus {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  min-height: 17px;
+.identityNote,
+.staleNotice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
   font-size: 12px;
   line-height: 17px;
-  color: var(--text-on-dark-muted);
 }
 
-.confirmStatus[data-match] {
-  color: #b6f3df;
+.identityNote {
+  margin: 6px 0 8px;
+  color: var(--text-on-dark-secondary);
 }
 
-.confirmStatus svg {
-  flex: none;
-  margin-top: 1px;
+.identityNote svg,
+.staleNotice svg {
+  margin-top: 2px;
 }
 
-.identity {
-  font-size: 12.5px;
-  line-height: 18px;
+.staleNotice {
+  padding: 9px 11px;
+  border: 1px solid rgb(247 191 109 / 0.32);
+  border-radius: 9px;
+  background: rgb(247 191 109 / 0.07);
+  color: #ecd8ae;
+}
+
+.payloadRoute {
+  margin: 0;
+  padding: 0 12px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
   color: var(--text-on-dark-secondary);
   overflow-wrap: anywhere;
 }
 
-.identity strong {
+/* ---------- Prepared outcome presentation (display only; mock-only harness) ---------- */
+
+.outcome {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgb(240 120 145 / 0.32);
+  border-radius: 10px;
+  background: rgb(232 92 120 / 0.08);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: #f6c9d3;
+}
+
+.outcome[data-tone='warning'] {
+  border-color: rgb(247 191 109 / 0.34);
+  background: rgb(247 191 109 / 0.07);
+  color: #ecd8ae;
+}
+
+.outcome[data-tone='success'] {
+  border-color: rgb(94 214 176 / 0.32);
+  background: rgb(94 214 176 / 0.07);
+  color: #c4f1e2;
+}
+
+.outcome > svg {
+  margin-top: 1px;
+}
+
+.outcomeTitle {
   font-weight: 600;
   color: var(--text-on-dark);
+}
+
+.outcomeText,
+.outcomeNext {
+  margin-top: 2px;
+}
+
+.outcomeNext strong {
+  font-weight: 600;
+}
+
+.outcomeMeta {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.outcomeMeta code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* ---------- Detail actions menu ---------- */
@@ -386,7 +394,7 @@
   gap: 2px;
   width: max-content;
   min-width: 232px;
-  max-width: calc(100vw - 32px);
+  max-width: min(320px, calc(100vw - 48px));
   padding: 6px;
   border: 1px solid var(--surface-border-strong);
   border-radius: 11px;
@@ -425,8 +433,9 @@
   box-shadow: var(--focus-ring-dark);
 }
 
-.menuItem[data-tone='danger'] {
-  color: #f4b6c2;
+.menuItem[aria-disabled='true'] {
+  color: var(--text-on-dark-muted);
+  cursor: not-allowed;
 }
 
 .menuItemNote {

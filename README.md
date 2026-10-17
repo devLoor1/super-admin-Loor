@@ -26,10 +26,13 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > encerra a sessão de forma centralizada. A **lista e o detalhe de
 > Whitelabels** leem o Control Plane (`GET /api/whitelabels`,
 > `GET /api/whitelabels/:id`) — somente leitura. Ver [`docs/whitelabel-read-integration-v1.md`](docs/whitelabel-read-integration-v1.md).
-> **Whitelabel CRUD Frontend V1:** "Novo Whitelabel", "Editar" e "Desativar ou
-> remover" abrem fluxos de revisão (validação, revisão, confirmação) que param
-> antes da gravação — **nenhuma mutação é enviada** enquanto o contrato do
-> Backend não for validado. Ver [`docs/whitelabel-crud-frontend-v1.md`](docs/whitelabel-crud-frontend-v1.md).
+> **Whitelabel CRUD Safe Preparation V1:** "Novo Whitelabel" (nome, slug e URL
+> base obrigatórios) e "Editar nome" (somente o nome; slug e URL base em
+> leitura) seguem o contrato do Control Plane e param na revisão. O botão
+> final fica desabilitado para todos os perfis: **nenhuma mutação é enviada**,
+> e não existe transporte de escrita em produção. Ativar, desativar e excluir
+> não são oferecidos. Os fluxos de envio foram testados apenas com mocks. Ver
+> [`docs/whitelabel-crud-safe-preparation-v1.md`](docs/whitelabel-crud-safe-preparation-v1.md).
 > **Operação › Investidores** (lista global, separação por Whitelabel e detalhe)
 > lê o Control Plane (`GET /api/investors`, `GET /api/investors/:id`,
 > `GET /api/whitelabels/:id/accounts?tipo=investidores`) — somente leitura; KYC e
@@ -309,8 +312,9 @@ src/
       whitelabelApi.ts              GET /whitelabels(/:id) client + strict parsing (Backend contract)
       useWhitelabelData.ts          abortable list / detail requests with retry
       whitelabelRoute.ts            `?id=&page=&search=&status=` parsing and hrefs
-      crud/                         CRUD Frontend V1 (no live mutations): create / edit dialogs, deactivate-or-remove
-                                    confirmation, actions menu, form schema, mutation contract types + error mapping
+      crud/                         CRUD Safe Preparation V1 (no live mutations): create + name-only edit dialogs, actions
+                                    menu (lifecycle disabled), DTO-aligned rules, pure command builders, outcome rules,
+                                    attempt runner with injected ports (used only by mock-only checks in scripts/)
       prototypeWhitelabels.ts       illustrative rows for the tenant modules still in prototype (not used by this page)
       visuals/                      approved Dot Matrix background, identity reveal
     whitelabel-accounts/

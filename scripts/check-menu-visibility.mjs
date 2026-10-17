@@ -467,9 +467,34 @@ for (const path of ['src/components', 'src/lib', 'src/features/dashboard', 'src/
 const appNow = codeOnly(await readFile(resolve(root, 'src/app/App.tsx'), 'utf8'), 'App.tsx')
 const appBefore = codeOnly(git('show', `${BASELINE}:src/app/App.tsx`), 'App.tsx')
 check(appNow === appBefore, 'App.tsx code identical to the baseline (route resolver, session guard and post-login landing unchanged; comments only)')
-const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => !path.startsWith('src/features/menu-visibility/') && path !== 'src/app/App.tsx')
-const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter((path) => !path.startsWith('src/features/menu-visibility/'))
-check(changedOutside.length === 0 && untrackedOutside.length === 0, 'No other source file changed (Opportunities, Companies, Finance and every other module untouched)')
+// Later units must explicitly declare their reviewed files, NOT exempt an entire
+// domain directory. New files, read adapters, routes, auth and shared code remain
+// protected. The exception does not exempt these files from the scans above/below.
+const REVIEWED_WHITELABEL_FILES = new Set([
+  'WhitelabelDetailPanel.module.css', 'WhitelabelDetailPanel.tsx',
+  'WhitelabelListPanel.module.css', 'WhitelabelListPanel.tsx', 'WhitelabelsPage.tsx',
+  'crud/MutationStates.tsx', 'crud/WhitelabelActionsMenu.tsx', 'crud/WhitelabelCrud.module.css',
+  'crud/WhitelabelFormDialog.tsx', 'crud/WhitelabelLifecycleDialog.tsx', // reviewed removals
+  'crud/WhitelabelCreateDialog.tsx', 'crud/WhitelabelNameEditDialog.tsx',
+  'crud/whitelabelCommands.ts', 'crud/whitelabelForm.ts', 'crud/whitelabelMutationContract.ts',
+  'crud/whitelabelMutationOutcome.ts', 'crud/whitelabelMutationRunner.ts',
+].map((path) => `src/features/whitelabels/${path}`))
+const outsideMenuVisibility = (path) => !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path)
+const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
+const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
+check(changedOutside.length === 0 && untrackedOutside.length === 0, 'Only explicitly reviewed Whitelabel source files may change outside Menu Visibility; other domains and read adapters remain protected')
+for (const path of ['src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelApi.ts', 'src/features/whitelabels/useWhitelabelData.ts', 'src/components/shell/navigation.ts', 'src/lib/authSession.ts']) {
+  check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
+}
+for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
+  const rel = relative(root, file).replaceAll('\\', '/')
+  const source = await readFile(file, 'utf8')
+  check(!unsafeCapability(source, false, rel === 'src/features/whitelabels/whitelabelApi.ts'), `${rel}: Whitelabel exception grants no transport capability; only its canonical GET adapter is allowed`)
+  check(!unsafeCapability(source, true), `${rel}: Whitelabel exception grants no browser persistence capability`)
+}
+for (const source of ['window["fetch"]("/api/whitelabels", {method:"POST"})', 'const send = fetch; send("/api/whitelabels")', 'import {authenticatedPatch as save} from "../../../lib/apiClient"']) {
+  check(unsafeCapability(source), 'Planted Whitelabel write capability rejected inside reviewed files')
+}
 
 const page = await readFile(resolve(featureDir, 'MenuVisibilityPage.tsx'), 'utf8')
 check(page.includes('activeNav="configuracoes"') && !/activeNav="(?!configuracoes)/.test(page), 'Page uses the existing configuracoes identity')

@@ -68,6 +68,13 @@
   margin-top: 10px;
 }
 
+/* Role-restricted (not SUPER_ADMIN): focusable, explains itself, never opens the create review. */
+.newButton[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: saturate(0.4);
+}
+
 /* ---------- Search + filters ---------- */
 
 .controls {

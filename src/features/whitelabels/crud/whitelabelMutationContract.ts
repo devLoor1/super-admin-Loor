@@ -1,177 +1,79 @@
-import { ApiError } from '../../../lib/api'
-import type { WhitelabelRecord } from '../whitelabelApi'
-import { normalizeDraft, tidyName, type WhitelabelDraft } from './whitelabelForm'
-
 /*
- * Whitelabel mutation contract — TYPES AND PRESENTATION ONLY.
+ * Whitelabel mutation contract — TYPES, AVAILABILITY AND PRESENTATION ONLY.
  *
- * NO LIVE MUTATIONS ARE ENABLED. This module has no request code: it never
- * calls `fetch`, `apiRequest` or the authenticated client. The shapes below
- * mirror the DRAFT Control Plane source (`backend-super-admin-Loor`
- * `0177437`) that the Backend team is still validating:
+ * NO LIVE MUTATIONS ARE ENABLED. Nothing in `crud/` sends a request: there is
+ * no `fetch`, no `apiRequest`, no authenticated mutation client and no
+ * production transport. The Control Plane contract this prepares (Nest
+ * `backend-super-admin-Loor` `aea5392`, controller/DTOs unchanged since
+ * `46bf79d`, source-confirmed, never live-write-verified):
  *
- *   POST  /whitelabels                { name, slug, baseUrl? }   (CreateWhitelabelDto)
- *   PATCH /whitelabels/:id            { name?, baseUrl? }        (UpdateWhitelabelDto)
- *   PATCH /whitelabels/:id/deactivate (and /activate)            no body
- *   DELETE /whitelabels/:id           — does not exist in the draft
+ *   POST   /api/whitelabels                  { name, slug, baseUrl }   SUPER_ADMIN   → prepared (create review)
+ *   PATCH  /api/whitelabels/:id              { name }                  SUPER_ADMIN   → prepared (name-only edit review)
+ *   PATCH  /api/whitelabels/:id/activate     —                         SUPER_ADMIN   → NOT offered
+ *   PATCH  /api/whitelabels/:id/deactivate   —                         SUPER_ADMIN   → NOT offered
+ *   DELETE /api/whitelabels/:id              alias of deactivate       SUPER_ADMIN   → NOT offered
  *
- * Enabling an action later means: confirm the contract, add the request in
- * the shared API layer, and flip that action's availability below.
+ * Enabling a write later requires an explicit authorization, a reviewed
+ * transport in the shared API layer, and flipping that action below.
  */
 
-export type WhitelabelMutationAction = 'create' | 'update' | 'lifecycle'
+export type WhitelabelMutationOperation = 'create' | 'update-name'
+export type WhitelabelAction = WhitelabelMutationOperation | 'lifecycle'
 
-/** Draft request body of `POST /whitelabels` (not sent). */
-export type CreateWhitelabelRequest = { name: string; slug: string; baseUrl?: string }
+export type MutationAvailability = Readonly<{ available: false; pendingLabel: string; reason: string }>
 
-/** Draft request body of `PATCH /whitelabels/:id` (not sent): only changed candidates. */
-export type UpdateWhitelabelRequest = { name?: string; baseUrl?: string }
+/** Every Whitelabel write is disabled — for every role, SUPER_ADMIN included. */
+export const WHITELABEL_MUTATIONS: Readonly<Record<WhitelabelAction, MutationAvailability>> = Object.freeze({
+  create: Object.freeze({
+    available: false,
+    pendingLabel: 'Criação aguardando liberação da integração.',
+    reason: 'O envio da criação ainda não foi autorizado para o Control Plane.',
+  }),
+  'update-name': Object.freeze({
+    available: false,
+    pendingLabel: 'Edição aguardando liberação da integração.',
+    reason: 'O envio da alteração de nome ainda não foi autorizado para o Control Plane.',
+  }),
+  lifecycle: Object.freeze({
+    available: false,
+    pendingLabel: 'Ativação e desativação indisponíveis.',
+    reason:
+      'Os efeitos da desativação no tenant (cadastro, recuperação de senha e Whitelabel padrão) ainda exigem validação do ambiente e decisões de Produto.',
+  }),
+})
+
+/* ---------- role-aware presentation (no new RBAC: the Backend guard decides) ---------- */
 
 /**
- * Deactivation vs soft delete vs hard delete is not decided: the lifecycle
- * action has no request shape until the Backend defines it.
+ * - `super-admin`: the operator may open the create / name-edit review flows
+ *   (the final submit stays disabled while the integration is not released);
+ * - `read-only`: any other known session — writes are SUPER_ADMIN only;
+ * - `unknown`: no operator data in this session yet.
  */
-export type WhitelabelLifecycleRequest = never
+export type WhitelabelWriteAccess = 'super-admin' | 'read-only' | 'unknown'
 
-export type MutationAvailability = { available: false; pendingLabel: string; reason: string }
+/** Control Plane `RoleSlug` that passes the write guard (`@Roles('SUPER_ADMIN')`). */
+export const WHITELABEL_WRITE_ROLE = 'SUPER_ADMIN'
 
-/** Every Whitelabel mutation is disabled until its Backend contract is validated. */
-export const WHITELABEL_MUTATIONS: Record<WhitelabelMutationAction, MutationAvailability> = {
-  create: {
-    available: false,
-    pendingLabel: 'Criação aguardando integração do Backend',
-    reason: 'O contrato de criação de Whitelabel ainda está em validação pelo Backend.',
-  },
-  update: {
-    available: false,
-    pendingLabel: 'Edição aguardando integração do Backend',
-    reason: 'O contrato de edição de Whitelabel ainda está em validação pelo Backend.',
-  },
-  lifecycle: {
-    available: false,
-    pendingLabel: 'Desativação ou remoção aguardando integração do Backend',
-    reason: 'O Backend ainda não definiu se a ação será desativação, exclusão lógica ou exclusão definitiva.',
-  },
+export function whitelabelWriteAccess(roles: readonly string[] | null | undefined): WhitelabelWriteAccess {
+  if (!Array.isArray(roles)) return 'unknown'
+  return roles.includes(WHITELABEL_WRITE_ROLE) ? 'super-admin' : 'read-only'
 }
 
-/** What a future `POST /whitelabels` would carry — shown for review, never sent. */
-export function createRequestPreview(draft: WhitelabelDraft): CreateWhitelabelRequest {
-  const value = normalizeDraft(draft)
-  return value.baseUrl ? { name: value.name, slug: value.slug, baseUrl: value.baseUrl } : { name: value.name, slug: value.slug }
-}
+export const WRITE_ACCESS_NOTE: Readonly<Record<Exclude<WhitelabelWriteAccess, 'super-admin'>, string>> = Object.freeze({
+  'read-only': 'Criar ou editar Whitelabels é permitido somente ao perfil Super Admin.',
+  unknown: 'Perfil do operador não confirmado nesta sessão: criar ou editar Whitelabels exige o perfil Super Admin.',
+})
 
-/** What a future `PATCH /whitelabels/:id` would carry: changed candidates only — shown for review, never sent. */
-export function updateRequestPreview(record: WhitelabelRecord, draft: WhitelabelDraft): UpdateWhitelabelRequest {
-  const value = normalizeDraft(draft)
-  const request: UpdateWhitelabelRequest = {}
-  if (value.name !== tidyName(record.name)) request.name = value.name
-  if (value.baseUrl && value.baseUrl !== (record.baseUrl ?? '')) request.baseUrl = value.baseUrl
-  return request
-}
+/* ---------- open blockers (kept from the contract gate; none is resolved here) ---------- */
 
-/**
- * Domains the Backend may check before removing or deactivating a Whitelabel.
- * Listed for orientation only: the frontend never counts or evaluates them.
- */
-export const DEPENDENCY_DOMAINS = ['Contas', 'Investidores', 'Empreendedores', 'Empresas', 'Oportunidades', 'Investimentos', 'Pagamentos', 'Wallets']
-
-/* ---------- future error presentation (not bound to any request yet) ---------- */
-
-export type MutationErrorKind = 'invalid' | 'session' | 'forbidden' | 'not-found' | 'conflict' | 'dependencies' | 'unavailable'
-
-export type MutationErrorView = {
-  kind: MutationErrorKind
-  title: string
-  description: string
-  /** Whether trying again can plausibly succeed. */
-  retryable: boolean
-  correlationId?: string
-}
-
-const VERB: Record<WhitelabelMutationAction, string> = {
-  create: 'criar o Whitelabel',
-  update: 'salvar as alterações',
-  lifecycle: 'desativar ou remover o Whitelabel',
-}
-
-/** No response (or 5xx) does not prove the operation did not happen: check before retrying. */
-const UNCERTAIN: Record<WhitelabelMutationAction, string> = {
-  create: 'O Whitelabel pode ou não ter sido criado: confira a lista antes de tentar novamente.',
-  update: 'As alterações podem ou não ter sido aplicadas: confira o detalhe antes de tentar novamente.',
-  lifecycle: 'O Whitelabel pode ou não ter sido alterado: confira a lista antes de tentar novamente.',
-}
-
-/**
- * Maps a future mutation failure to safe copy (never a raw Backend message).
- * 401 is handled centrally by the session layer; the view only names it.
- */
-export function describeMutationError(error: unknown, action: WhitelabelMutationAction): MutationErrorView {
-  const verb = VERB[action]
-  const unavailable: MutationErrorView = {
-    kind: 'unavailable',
-    title: 'Não foi possível concluir a operação',
-    description: `A tentativa de ${verb} não foi confirmada pelo Control Plane. ${UNCERTAIN[action]}`,
-    retryable: true,
-  }
-  if (!(error instanceof ApiError)) return unavailable
-  const correlationId = error.correlationId
-  if (error.kind !== 'http' || error.status >= 500) return { ...unavailable, correlationId }
-  if (error.status === 400 || error.status === 422) {
-    return {
-      kind: 'invalid',
-      title: 'Dados recusados pelo Control Plane',
-      description: 'Os dados informados não foram aceitos. Revise os campos e tente novamente.',
-      retryable: false,
-      correlationId,
-    }
-  }
-  if (error.status === 401) {
-    return { kind: 'session', title: 'Sessão encerrada', description: 'Sua sessão expirou. Entre novamente.', retryable: false, correlationId }
-  }
-  if (error.status === 403) {
-    return {
-      kind: 'forbidden',
-      title: 'Ação não permitida',
-      description: `Seu perfil de operador não tem permissão para ${verb}.`,
-      retryable: false,
-      correlationId,
-    }
-  }
-  if (error.status === 404) {
-    return {
-      kind: 'not-found',
-      title: 'Whitelabel não encontrado',
-      description: 'Este Whitelabel não existe mais no Control Plane. Atualize a lista.',
-      retryable: false,
-      correlationId,
-    }
-  }
-  if (error.status === 409) {
-    return action === 'lifecycle'
-      ? {
-          kind: 'dependencies',
-          title: 'Operação bloqueada pelo Backend',
-          description:
-            'Este Whitelabel possui dependências e não pode ser removido ou desativado agora. O Backend decide quais vínculos bloqueiam a operação.',
-          retryable: false,
-          correlationId,
-        }
-      : {
-          kind: 'conflict',
-          title: 'Conflito com um registro existente',
-          description:
-            action === 'create'
-              ? 'O Control Plane recusou a criação por conflito, por exemplo um identificador (slug) já utilizado.'
-              : 'O Control Plane recusou as alterações por conflito com outro registro.',
-          retryable: false,
-          correlationId,
-        }
-  }
-  return {
-    kind: 'invalid',
-    title: 'Operação não aceita',
-    description: `O Control Plane recusou a solicitação (HTTP ${error.status}).`,
-    retryable: false,
-    correlationId,
-  }
-}
+export const WHITELABEL_OPEN_BLOCKERS = Object.freeze([
+  Object.freeze({ id: 'A', label: 'Efeitos da desativação no tenant (cadastro, configurações públicas)' }),
+  Object.freeze({ id: 'B', label: 'Isolamento da recuperação de senha com tenant inativo: entrega Backend ainda não validada no ambiente' }),
+  Object.freeze({ id: 'C', label: 'Política e efeitos de desativar o Whitelabel padrão' }),
+  Object.freeze({ id: 'D', label: 'Edição de slug / URL base muda a resolução do tenant' }),
+  Object.freeze({ id: 'E', label: 'Comportamento de escrita do Core não confirmado (validação, envelope, status repetido, null)' }),
+  Object.freeze({ id: 'F', label: 'Audit best-effort após o Core na nova fonte Nest: consistência e versão implantada ainda não validadas' }),
+  Object.freeze({ id: 'G', label: 'Política de concorrência / versão / ETag de Whitelabels ainda não confirmada' }),
+  Object.freeze({ id: 'H', label: 'Código de slug duplicado (E_SLUG_TAKEN) depende do Core: não confirmado' }),
+])

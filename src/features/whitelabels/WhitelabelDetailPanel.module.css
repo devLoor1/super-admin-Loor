@@ -252,6 +252,13 @@
   font-size: 12px;
 }
 
+/* Role-restricted (not SUPER_ADMIN): focusable, explains itself, never opens the edit. */
+.editButton[aria-disabled='true'] {
+  border-style: dashed;
+  color: var(--text-on-dark-muted);
+  cursor: not-allowed;
+}
+
 /* Key/value list */
 .fields {
   margin: 0;

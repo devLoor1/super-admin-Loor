@@ -1,5 +1,12 @@
 # Financeiro › Investimentos V1 — local implementation record
 
+> **Superseded for data by [Finance Read Integration V1](finance-read-integration-v1.md):**
+> Investimentos, Pagamentos / PIX and Wallet now read the Control Plane
+> (`GET /api/investments`, `/payments`, `/wallets`, `/wallets/:id/movements`,
+> `/wallets/:id/investments`) — read-only, BRL integer centavos, authoritative
+> balances. The illustrative records described here were removed from the
+> application. This record describes the V1 prototype.
+
 Part of Finance Core V1, implemented by Claude and independently reviewed by
 Codex on 2026-10-08 on `feature/super-admin-finance-core-v1`, from baseline
 `400c1dce…`. Consolidated locally only. Shared architecture, safety

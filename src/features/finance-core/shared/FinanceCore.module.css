@@ -7,6 +7,14 @@
 
 /* ---------- Values ---------- */
 
+/* An amount the Control Plane did not provide: an explicit state, never "R$ 0,00". */
+.moneyUnavailable {
+  font-size: 12px;
+  font-style: italic;
+  white-space: nowrap;
+  color: var(--text-on-dark-muted);
+}
+
 .money {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
@@ -44,7 +52,8 @@
   color: var(--tone-teal-fg);
 }
 
-.directionTag[data-direction='debit'] {
+.directionTag[data-direction='debit'],
+.directionTag[data-kind='out'] {
   border-color: rgb(240 120 145 / 0.4);
   background: rgb(232 92 120 / 0.1);
   color: #f6b3c0;
@@ -348,4 +357,155 @@
 
 .sortField select {
   font-size: 12.5px;
+}
+
+/* ---------- Finance Read V1: read states ---------- */
+
+.ignoredNote,
+.scopeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.ignoredNote {
+  color: #e8cf9c;
+}
+
+.scopeNote {
+  color: var(--text-on-dark-secondary);
+}
+
+.ignoredNote svg,
+.scopeNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.skeletonRow td {
+  cursor: default;
+}
+
+.skeleton {
+  display: block;
+  width: min(100%, 110px);
+  height: 10px;
+  border-radius: 6px;
+  background: var(--surface-track);
+  opacity: 0.55;
+  animation: fc-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeletonRow:nth-child(even) .skeleton {
+  width: min(100%, 80px);
+}
+
+.skeletonWide {
+  width: min(100%, 170px);
+  height: 12px;
+}
+
+@keyframes fc-skeleton {
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.feedback,
+.feedbackCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.feedback {
+  padding: 34px 16px 26px;
+}
+
+.feedbackCompact {
+  padding: 18px 8px 10px;
+}
+
+.diagnostic {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.pageGap {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 34px;
+  font-size: 12.5px;
+  color: var(--text-on-dark-muted);
+}
+
+.detailLoading {
+  display: grid;
+  gap: 14px;
+  min-height: 180px;
+  align-content: start;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.partialTag {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-on-dark-muted);
+}
+
+.dataNote {
+  color: var(--text-on-dark-muted);
+}
+
+.filterInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text-on-dark-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.filterInline:hover {
+  color: var(--text-on-dark);
+}
+
+.filterInline:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--focus-ring-dark);
 }

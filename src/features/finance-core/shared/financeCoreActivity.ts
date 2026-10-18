@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { OperationActivity } from '../../operation/shared/operationActivity'
 
 /*
- * "Atividade da sessão" for Finance Core records (INV-…, PG-…, WAL-… ids).
+ * "Atividade da sessão" for Finance Read records (Backend investment, payment and wallet ids).
  * In-memory only: survives in-app navigation, lost on reload. Local feedback
  * for this browser session — NOT an audit trail, never sent anywhere and
  * unrelated to the future Auditoria domain. Only reads and navigation

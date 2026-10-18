@@ -1,341 +1,265 @@
-import { useMemo, useState, type CSSProperties } from 'react'
-import { ArrowLeftRight, Building2, Eye, FilterX, Lock, Play, Search, Wallet as WalletIcon } from 'lucide-react'
+import { useEffect, useMemo, type CSSProperties } from 'react'
+import { Coins, Eye, FilterX, Landmark, Search, SearchX, Sigma, Wallet as WalletIcon } from 'lucide-react'
+import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
+import { useUrlSearchDraft } from '../../../app/useUrlSearchDraft'
+import { EmptyState } from '../../../components/ui/EmptyState'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { AccountAvatar } from '../../whitelabel-accounts/AccountBadges'
-import { NoResults, PageIntro, Pagination, SortButton, SummaryCards, WhitelabelTag } from '../../operation/shared/OperationUi'
-import {
-  PAGE_SIZE,
-  compareDate,
-  compareText,
-  countLabel,
-  initials,
-  normalize,
-  whitelabelName,
-  type SortState,
-} from '../../operation/shared/operationModel'
+import { PageIntro, SortButton, SummaryCards, type SummaryCard } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
 import core from '../shared/FinanceCore.module.css'
-import { PROTOTYPE_WHITELABELS } from '../../whitelabels/prototypeWhitelabels'
-import {
-  CURRENCY_LABEL,
-  WALLET_STATUSES,
-  WALLET_STATUS_META,
-  formatMoney,
-  walletHref,
-  type Currency,
-  type WalletStatus,
-} from '../shared/financeCoreModel'
-import { WALLETS, movementsOfWallet } from '../shared/financeCoreRecords'
-import { dateText, ownerLabel } from '../shared/financeCoreRefs'
-import { DateStack, FinanceCoreShell, Money, SortSelect, WalletStatusPill, type SortOption } from '../shared/FinanceCoreUi'
+import { FINANCE_SEARCH_MAX_LENGTH, WALLET_SORT_KEYS, type SortOrder, type WalletRecord, type WalletSortKey } from '../shared/financeApi'
+import { BALANCE_UNAVAILABLE, dateText, financeErrorView, formatCount, rangeText } from '../shared/financePresentation'
+import { parseWalletListRoute, walletHref, walletsHref, whitelabelRecordHref, type WalletListProps, type WalletListRoute } from '../shared/financeRoute'
+import { DateStack, FinanceCoreShell, IgnoredParams, Money, ReadError, ServerPagination, SkeletonRows } from '../shared/FinanceCoreUi'
+import { useWalletList } from '../shared/useFinanceData'
 import styles from './Wallets.module.css'
 
-type SortKey = 'wallet' | 'owner' | 'balance' | 'status' | 'updatedAt'
-type MovementFilter = 'all' | 'with' | 'without'
+const SORT_LABEL: Record<WalletSortKey, string> = { name: 'Whitelabel', createdAt: 'Criada em' }
+const ORDER_LABEL: Record<WalletSortKey, Record<SortOrder, string>> = {
+  name: { asc: 'A–Z', desc: 'Z–A' },
+  createdAt: { desc: 'mais recente', asc: 'mais antiga' },
+}
 
-const STATUS_ORDER = Object.fromEntries(WALLET_STATUSES.map((status, index) => [status, index])) as Record<WalletStatus, number>
-const CURRENCIES = [...new Set(WALLETS.map((item) => item.currency))] as Currency[]
-
-
-const SORT_OPTIONS: SortOption<SortKey>[] = [
-  { key: 'wallet', label: 'Wallet', ascending: 'crescente', descending: 'decrescente' },
-  { key: 'owner', label: 'Titular / contexto', ascending: 'A–Z', descending: 'Z–A' },
-  { key: 'balance', label: 'Saldo representado', ascending: 'menor primeiro', descending: 'maior primeiro' },
-  { key: 'status', label: 'Status', ascending: 'Ativa → Bloqueada', descending: 'Bloqueada → Ativa' },
-  { key: 'updatedAt', label: 'Atualizada em', ascending: 'mais antiga', descending: 'mais recente' },
-]
+type WalletsPageProps = WalletListProps
 
 /**
- * `#/finance/wallets` — Wallet V1: global, READ-ONLY supervision of wallets
- * and their "Saldo representado" (a prototype representation, never a
- * withdrawable or settled value). No create, balance adjustment, credit /
- * debit, transfer, cashout, deposit, block / unblock or delete.
+ * `#/finance/wallets` — Wallet (Finance Read V1): one ledger wallet per
+ * Whitelabel from `GET /wallets`, with the Backend's authoritative balance.
+ * Nothing is computed here; no credit, debit, transfer, withdrawal or balance
+ * adjustment exists.
  */
-export function WalletsPage() {
-  const [query, setQuery] = useState('')
-  const [whitelabel, setWhitelabel] = useState('all')
-  const [status, setStatus] = useState<'all' | WalletStatus>('all')
-  const [currency, setCurrency] = useState<'all' | Currency>('all')
-  const [movements, setMovements] = useState<MovementFilter>('all')
-  const [sort, setSort] = useState<SortState<SortKey>>({ key: 'updatedAt', direction: 'descending' })
-  const [page, setPage] = useState(1)
-
-  const filtered = useMemo(() => {
-    const needle = normalize(query)
-    const rows = WALLETS.filter((item) => {
-      const own = movementsOfWallet(item.walletId)
-      if (whitelabel !== 'all' && item.whitelabelId !== whitelabel) return false
-      if (status !== 'all' && item.status !== status) return false
-      if (currency !== 'all' && item.currency !== currency) return false
-      if (movements !== 'all' && own.length > 0 !== (movements === 'with')) return false
-      const owner = ownerLabel(item.ownerReference)
-      const references = own.flatMap((movement) => [movement.movementId, movement.sourceId ?? ''])
-      return !needle || normalize([item.walletId, owner.name, owner.reference, ...references].join(' ')).includes(needle)
-    })
-    const direction = sort.direction === 'ascending' ? 1 : -1
-    return [...rows].sort((a, b) => {
-      if (sort.key === 'updatedAt') {
-        if (!a.updatedAt || !b.updatedAt) return compareDate(a.updatedAt ?? null, b.updatedAt ?? null)
-        return direction * compareDate(a.updatedAt, b.updatedAt)
-      }
-      const value =
-        sort.key === 'wallet'
-          ? compareText(a.walletId, b.walletId)
-          : sort.key === 'owner'
-            ? compareText(ownerLabel(a.ownerReference).name, ownerLabel(b.ownerReference).name)
-            : sort.key === 'balance'
-              ? a.representedBalance - b.representedBalance
-              : STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-      return direction * (value || compareText(a.walletId, b.walletId))
-    })
-  }, [query, whitelabel, status, currency, movements, sort])
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const current = Math.min(page, pageCount)
-  const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE)
-  const filtersActive = Boolean(query.trim()) || [whitelabel, status, currency, movements].some((value) => value !== 'all')
-
-  const count = (key: WalletStatus) => WALLETS.filter((item) => item.status === key).length
-  const withMovements = WALLETS.filter((item) => movementsOfWallet(item.walletId).length > 0).length
-
-  function update<T>(setter: (value: T) => void) {
-    return (value: T) => {
-      setter(value)
-      setPage(1)
-    }
-  }
-
-  function clearFilters() {
-    setQuery('')
-    setWhitelabel('all')
-    setStatus('all')
-    setCurrency('all')
-    setMovements('all')
-    setPage(1)
-  }
-
-  function toggleSort(key: SortKey) {
-    setPage(1)
-    setSort((currentSort) =>
-      currentSort.key !== key
-        ? { key, direction: key === 'updatedAt' || key === 'balance' ? 'descending' : 'ascending' }
-        : { key, direction: currentSort.direction === 'ascending' ? 'descending' : 'ascending' },
-    )
-  }
-
-  const sortHeader = (key: SortKey, label: string) => (
-    <SortButton label={label} sorted={sort.key === key} direction={sort.direction} onClick={() => toggleSort(key)} />
-  )
-  const ariaSort = (key: SortKey) => (sort.key === key ? sort.direction : undefined)
-
+export function WalletsPage(props: WalletsPageProps) {
   return (
     <FinanceCoreShell section="wallets" title="Wallet">
-      <PageIntro text="Acompanhe wallets de todos os Whitelabels em uma só visão financeira. O saldo exibido é uma representação do protótipo — não é valor sacável, transferível ou liquidado." />
+      <PageIntro text="Wallets do ledger da plataforma — uma por Whitelabel — com o saldo autoritativo informado pelo Control Plane. Somente leitura: nenhuma ação credita, debita, transfere ou ajusta saldo." />
+      <WalletList {...props} />
+    </FinanceCoreShell>
+  )
+}
 
+function WalletList({ search: searchParam, page, sort, order, routeKey = '' }: WalletsPageProps) {
+  useRestoreReplacedScroll(routeKey)
+  const { state: route, ignored } = useMemo(() => parseWalletListRoute({ search: searchParam, page, sort, order }), [searchParam, page, sort, order])
+  const list = useWalletList({ page: route.page, search: route.search, sort: route.sort, order: route.order })
+  const data = list.state.status === 'success' ? list.state.data : null
+  const pageOutOfRange = data !== null && data.rows.length === 0 && data.total > 0
+  const loading = list.state.status === 'loading' || list.state.status === 'idle' || pageOutOfRange
+  const listError = list.state.status === 'error' ? financeErrorView(list.state.error, 'as wallets') : null
+
+  const search = useUrlSearchDraft({
+    urlSearch: route.search,
+    urlKey: routeKey,
+    maxLength: FINANCE_SEARCH_MAX_LENGTH,
+    commit: (next) => replaceRouteKeepingScroll(walletsHref({ ...route, search: next, page: 1 })),
+  })
+
+  function navigate(next: Partial<WalletListRoute>) {
+    const pendingSearch = search.pendingSearch()
+    const resetPage = !('page' in next) || pendingSearch !== route.search
+    replaceRouteKeepingScroll(walletsHref({ ...route, search: pendingSearch, ...next, page: resetPage ? 1 : next.page }))
+  }
+
+  useEffect(() => {
+    if (!data) return
+    const target = data.total === 0 ? 1 : Math.min(route.page, data.lastPage)
+    if (target !== route.page) replaceRouteKeepingScroll(walletsHref({ ...route, page: target }))
+  }, [data, route])
+
+  const filtersActive = route.search !== '' || search.draft.trim() !== ''
+  function clearFilters() {
+    search.clear()
+    replaceRouteKeepingScroll(walletsHref({ sort: route.sort, order: route.order }))
+  }
+
+  function toggleSort(key: WalletSortKey) {
+    navigate(route.sort !== key ? { sort: key, order: key === 'name' ? 'asc' : 'desc' } : { sort: key, order: route.order === 'asc' ? 'desc' : 'asc' })
+  }
+  const ariaSort = (key: WalletSortKey) => (route.sort === key ? (route.order === 'asc' ? 'ascending' : 'descending') : undefined)
+  const sortHeader = (key: WalletSortKey) => (
+    <SortButton label={SORT_LABEL[key]} sorted={route.sort === key} direction={route.order === 'asc' ? 'ascending' : 'descending'} onClick={() => toggleSort(key)} />
+  )
+
+  const cards: SummaryCard[] = [
+    { label: 'Wallets', value: data ? formatCount(data.total) : null, detail: route.search ? 'Resultado da busca' : 'Uma por Whitelabel', icon: WalletIcon, tone: 'blue' },
+    { label: 'Moeda e unidade', value: 'BRL', detail: 'Centavos inteiros (contrato do Control Plane)', icon: Coins, tone: 'teal' },
+    { label: 'Saldo', value: 'Por wallet', detail: 'Saldo autoritativo do Control Plane', icon: Landmark, tone: 'amber' },
+    { label: 'Saldo somado', value: null, detail: 'Não somado entre Whitelabels', icon: Sigma, tone: 'violet' },
+  ]
+
+  const listContext = walletsHref(route)
+  const columns = [styles.colId, styles.colWl, styles.colCurrency, styles.colBalance, styles.colBalanceAt, styles.colCreated, shared.colActions]
+
+  return (
+    <>
       <SummaryCards
         title="Resumo das wallets"
-        note="Contagens de registros do protótipo (todos os Whitelabels). Não há saldo global: cada saldo representado é um valor ilustrativo por wallet."
-        cards={[
-          { label: 'Total de Wallets', value: WALLETS.length, detail: 'Todos os Whitelabels', icon: WalletIcon, tone: 'blue' },
-          { label: 'Ativas', value: count('active'), detail: 'Estado do protótipo', icon: Play, tone: 'teal' },
-          { label: 'Bloqueadas', value: count('blocked'), detail: 'Estado do protótipo', icon: Lock, tone: 'plum' },
-          { label: 'Com movimentações', value: withMovements, detail: `de ${WALLETS.length} wallets`, icon: ArrowLeftRight, tone: 'violet' },
-        ]}
+        cards={cards}
+        note="O saldo de cada wallet é o valor autoritativo informado pelo Control Plane. Nada é calculado a partir de movimentações nem somado entre Whitelabels."
       />
 
-      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="wal-list-title">
+      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="wal-list-title" data-wallet-list>
         <h2 id="wal-list-title" className="visually-hidden">
           Lista de wallets
         </h2>
-        <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 4, '--search-fr': '1.2fr' } as CSSProperties}>
+        <div className={shared.filters} style={{ '--filter-count': 1 } as CSSProperties}>
           <label className={fin.search}>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-            <span className="visually-hidden">Buscar por ID da wallet, titular ou referência relacionada</span>
+            <span className="visually-hidden">Buscar por nome ou slug do Whitelabel (busca feita pelo Control Plane)</span>
             <input
+              id="wallet-search"
               type="search"
-              value={query}
-              placeholder="Buscar wallet, titular ou referência…"
-              onChange={(event) => update(setQuery)(event.target.value)}
+              value={search.draft}
+              maxLength={FINANCE_SEARCH_MAX_LENGTH}
+              placeholder="Buscar por Whitelabel…"
+              onChange={(event) => search.setDraft(event.target.value)}
             />
           </label>
           <div className={shared.filterSelects}>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por Whitelabel</span>
-              <select value={whitelabel} onChange={(event) => update(setWhitelabel)(event.target.value)}>
-                <option value="all">Todos os Whitelabels</option>
-                {PROTOTYPE_WHITELABELS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por status da wallet</span>
-              <select value={status} onChange={(event) => update(setStatus)(event.target.value as 'all' | WalletStatus)}>
-                <option value="all">Todos os status</option>
-                {WALLET_STATUSES.map((key) => (
-                  <option key={key} value={key}>
-                    {WALLET_STATUS_META[key].label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por moeda</span>
-              <select value={currency} onChange={(event) => update(setCurrency)(event.target.value as 'all' | Currency)}>
-                <option value="all">Todas as moedas</option>
-                {CURRENCIES.map((key) => (
-                  <option key={key} value={key}>
-                    {CURRENCY_LABEL[key]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por movimentações</span>
-              <select value={movements} onChange={(event) => update(setMovements)(event.target.value as MovementFilter)}>
-                <option value="all">Com e sem movimentações</option>
-                <option value="with">Com movimentações</option>
-                <option value="without">Sem movimentações</option>
+              <span className="visually-hidden">Ordenar wallets</span>
+              <select
+                id="wallet-sort"
+                value={`${route.sort}:${route.order}`}
+                onChange={(event) => {
+                  const [nextSort, nextOrder] = event.target.value.split(':') as [WalletSortKey, SortOrder]
+                  navigate({ sort: nextSort, order: nextOrder })
+                }}
+              >
+                {WALLET_SORT_KEYS.flatMap((key) =>
+                  (['asc', 'desc'] as const).map((value) => (
+                    <option key={`${key}:${value}`} value={`${key}:${value}`}>
+                      {SORT_LABEL[key]} ({ORDER_LABEL[key][value]})
+                    </option>
+                  )),
+                )}
               </select>
             </label>
           </div>
           <OutlineButton className={shared.clearButton} onClick={clearFilters} disabled={!filtersActive}>
             <FilterX size={15} strokeWidth={1.8} aria-hidden="true" />
-            Limpar filtros
+            Limpar busca
           </OutlineButton>
         </div>
-
-        <SortSelect className={styles.sortVisible} options={SORT_OPTIONS} sort={sort} onChange={(next) => {
-          setSort(next)
-          setPage(1)
-        }} />
+        <IgnoredParams ignored={ignored} />
 
         <div className={fin.tableArea}>
-          <table className={`${fin.table} ${shared.table} ${styles.table}`}>
-            <caption className="visually-hidden">Wallets de todos os Whitelabels (protótipo, somente leitura)</caption>
-            <thead>
-              <tr>
-                <th scope="col" className={styles.colId} aria-sort={ariaSort('wallet')}>
-                  {sortHeader('wallet', 'Wallet')}
-                </th>
-                <th scope="col" className={styles.colOwner} aria-sort={ariaSort('owner')}>
-                  {sortHeader('owner', 'Titular / contexto')}
-                </th>
-                <th scope="col" className={styles.colWl}>
-                  Whitelabel
-                </th>
-                <th scope="col" className={styles.colCurrency}>
-                  Moeda
-                </th>
-                <th scope="col" className={styles.colBalance} aria-sort={ariaSort('balance')}>
-                  {sortHeader('balance', 'Saldo representado')}
-                </th>
-                <th scope="col" className={styles.colMovements}>
-                  Movimentações
-                </th>
-                <th scope="col" className={styles.colStatus} aria-sort={ariaSort('status')}>
-                  {sortHeader('status', 'Status')}
-                </th>
-                <th scope="col" className={styles.colUpdated} aria-sort={ariaSort('updatedAt')}>
-                  {sortHeader('updatedAt', 'Atualizada em')}
-                </th>
-                <th scope="col" className={shared.colActions}>
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((item) => {
-                const href = walletHref(item.walletId)
-                const owner = ownerLabel(item.ownerReference)
-                const total = movementsOfWallet(item.walletId).length
-                const movementText = countLabel(total, 'mov.', 'mov.', '0 mov.')
-                return (
-                  <tr key={item.walletId} className={fin.row} data-wallet={item.walletId}>
-                    <td className={styles.colId}>
-                      <span className={shared.cellText}>
-                        <a href={href} className={shared.rowLink}>
-                          {item.walletId}
-                        </a>
-                        <span className={styles.metaOwner}>
-                          {owner.name} · {movementText}
-                        </span>
-                        <span className={styles.metaContext}>
-                          {whitelabelName(item.whitelabelId)} · {item.currency}
-                        </span>
-                        <span className={styles.metaUpdated}>Atualizada em {dateText(item.updatedAt)}</span>
-                        <span className={styles.metaStates}>
-                          <span className={styles.metaAmount}>Saldo representado: {formatMoney(item.representedBalance, item.currency)}</span>
-                          <WalletStatusPill status={item.status} />
-                        </span>
-                      </span>
-                    </td>
-                    <td className={styles.colOwner}>
-                      <span className={shared.cellMain}>
-                        {item.ownerReference?.kind === 'investor' ? (
-                          <AccountAvatar initials={initials(owner.name)} />
-                        ) : (
-                          <span className={styles.contextMark} aria-hidden="true">
-                            <Building2 size={16} strokeWidth={1.7} />
-                          </span>
-                        )}
-                        <span className={shared.cellText}>
-                          <span className={styles.ownerName}>{owner.name}</span>
-                          <span className={shared.rowId}>{owner.reference}</span>
-                        </span>
-                      </span>
-                    </td>
-                    <td className={styles.colWl}>
-                      <WhitelabelTag whitelabelId={item.whitelabelId} />
-                    </td>
-                    <td className={styles.colCurrency}>{item.currency}</td>
-                    <td className={styles.colBalance}>
-                      <Money amount={item.representedBalance} currency={item.currency} />
-                    </td>
-                    <td className={styles.colMovements}>
-                      <span className={shared.countTag} data-empty={total === 0 || undefined}>
-                        {movementText}
-                      </span>
-                    </td>
-                    <td className={styles.colStatus}>
-                      <WalletStatusPill status={item.status} />
-                    </td>
-                    <td className={styles.colUpdated}>
-                      <DateStack iso={item.updatedAt} />
-                    </td>
-                    <td className={shared.colActions}>
-                      <a
-                        href={href}
-                        className={`${fin.iconButton} ${shared.actionLink}`}
-                        aria-label={`Abrir wallet ${item.walletId}`}
-                        data-open-record={item.walletId}
-                      >
-                        <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
-                      </a>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          {rows.length === 0 ? <NoResults title="Nenhuma wallet encontrada" description="Ajuste a busca ou os filtros." /> : null}
+          {listError ? (
+            <ReadError error={listError} onRetry={list.reload} />
+          ) : (
+            <table className={`${fin.table} ${shared.table} ${styles.table}`} aria-busy={loading || undefined}>
+              <caption className="visually-hidden">
+                Wallets do ledger (uma por Whitelabel), dados do Control Plane{data ? `, página ${data.page} de ${data.lastPage}` : ''}. Saldo autoritativo em
+                reais, a partir de centavos.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className={styles.colId} aria-sort={ariaSort('name')}>
+                    {sortHeader('name')}
+                  </th>
+                  <th scope="col" className={styles.colWl}>
+                    Registro do Whitelabel
+                  </th>
+                  <th scope="col" className={styles.colCurrency}>
+                    Moeda
+                  </th>
+                  <th scope="col" className={styles.colBalance}>
+                    Saldo autoritativo
+                  </th>
+                  <th scope="col" className={styles.colBalanceAt}>
+                    Saldo consultado em
+                  </th>
+                  <th scope="col" className={styles.colCreated} aria-sort={ariaSort('createdAt')}>
+                    {sortHeader('createdAt')}
+                  </th>
+                  <th scope="col" className={shared.colActions}>
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? <SkeletonRows columns={columns} /> : data?.rows.map((row) => <WalletRow key={row.id} row={row} href={walletHref(row.id, { returnTo: listContext })} />)}
+              </tbody>
+            </table>
+          )}
+
+          {!listError && data && !loading && data.rows.length === 0 ? (
+            <div className={core.feedback} data-list-empty>
+              {filtersActive ? (
+                <>
+                  <EmptyState icon={SearchX} title="Nenhuma wallet encontrada" description="O Control Plane não encontrou wallets para esta busca." />
+                  <OutlineButton onClick={clearFilters}>Limpar busca</OutlineButton>
+                </>
+              ) : (
+                <EmptyState icon={WalletIcon} title="Nenhuma wallet registrada" description="O Control Plane não retornou wallets." />
+              )}
+            </div>
+          ) : null}
         </div>
 
-        <div className={shared.footer}>
-          <p className={shared.range} aria-live="polite">
-            {filtered.length
-              ? `Mostrando ${(current - 1) * PAGE_SIZE + 1}–${Math.min(current * PAGE_SIZE, filtered.length)} de ${filtered.length} ${
-                  filtered.length === 1 ? 'wallet' : 'wallets'
-                }`
-              : 'Nenhuma wallet'}
-            {filtersActive ? ` (filtradas de ${WALLETS.length})` : ''}
-          </p>
-          <Pagination label="Paginação de wallets" page={current} pageCount={pageCount} onPage={setPage} />
-        </div>
+        {listError ? null : (
+          <div className={shared.footer}>
+            <p className={shared.range} aria-live="polite">
+              {data && !loading ? rangeText(data, 'wallet', 'wallets', 'Nenhuma wallet') : 'Carregando wallets…'}
+              <span className={core.dataNote}> · Dados do Control Plane</span>
+            </p>
+            <ServerPagination label="Paginação de wallets" current={route.page} last={(data ?? list.lastData)?.lastPage ?? 1} disabled={loading} onChange={(next) => navigate({ page: next })} />
+          </div>
+        )}
       </section>
-    </FinanceCoreShell>
+    </>
+  )
+}
+
+function WalletRow({ row, href }: { row: WalletRecord; href: string }) {
+  const name = row.name ?? `Whitelabel #${row.whitelabelId}`
+  return (
+    <tr className={fin.row} data-wallet={row.id}>
+      <td className={styles.colId}>
+        <span className={shared.cellMain}>
+          <span className={styles.contextMark} aria-hidden="true">
+            <WalletIcon size={15} strokeWidth={1.8} />
+          </span>
+          <span className={shared.cellText}>
+            <a href={href} className={shared.rowLink}>
+              {name}
+            </a>
+            <span className={shared.rowId}>
+              Wallet {row.id}
+              {row.slug ? ` · ${row.slug}` : ''}
+            </span>
+            <span className={styles.metaContext}>BRL · Whitelabel #{row.whitelabelId}</span>
+            <span className={styles.metaUpdated}>
+              Saldo consultado em {dateText(row.balanceTimestamp)} · Criada em {dateText(row.createdAt)}
+            </span>
+            <span className={styles.metaStates}>
+              <span className={styles.metaAmount}>
+                <Money cents={row.authoritativeBalanceCents} unavailable={BALANCE_UNAVAILABLE} />
+              </span>
+            </span>
+          </span>
+        </span>
+      </td>
+      <td className={styles.colWl}>
+        <a href={whitelabelRecordHref(row.whitelabelId)} className={shared.inlineLink}>
+          Whitelabel #{row.whitelabelId}
+        </a>
+      </td>
+      <td className={styles.colCurrency}>{row.currency}</td>
+      <td className={styles.colBalance}>
+        <Money cents={row.authoritativeBalanceCents} unavailable={BALANCE_UNAVAILABLE} />
+      </td>
+      <td className={styles.colBalanceAt}>
+        <DateStack iso={row.balanceTimestamp} />
+      </td>
+      <td className={styles.colCreated}>
+        <DateStack iso={row.createdAt} />
+      </td>
+      <td className={shared.colActions}>
+        <a href={href} className={`${fin.iconButton} ${shared.actionLink}`} aria-label={`Abrir wallet de ${name}`} data-open-record={row.id}>
+          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+        </a>
+      </td>
+    </tr>
   )
 }

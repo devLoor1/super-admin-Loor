@@ -1,164 +1,120 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
+import { ArrowLeftRight, ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
 import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import primary from '../../../components/ui/PrimaryButton.module.css'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { modalityMeta } from '../../finance-modalities/modalitiesModel'
-import { useOpportunities } from '../../operation/opportunities/opportunityStore'
-import { ModalityChip } from '../../operation/opportunities/OpportunityParts'
-import { whitelabelName } from '../../operation/shared/operationModel'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, WhitelabelTag, type DomainNavItem } from '../../operation/shared/OperationUi'
+import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
 import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
+import type { InvestmentDetail } from '../shared/financeApi'
+import { STATUS_INDEPENDENCE_NOTE, dateText, financeErrorView, providerLabel, tenantNames } from '../shared/financePresentation'
 import {
-  investorHref,
-  opportunityHref,
+  investmentListReturnHash,
+  investmentsHref,
+  investorProfileHref,
   paymentHref,
   walletHref,
-  type Investment,
-} from '../shared/financeCoreModel'
-import { investmentById, movementsForInvestment, paymentById, walletIdsOf } from '../shared/financeCoreRecords'
-import { dateText, investorName } from '../shared/financeCoreRefs'
+} from '../shared/financeRoute'
 import {
-  DateStack,
   DetailHero,
-  DirectionTag,
+  DetailStatus,
   FinanceCoreShell,
   InvestmentStatusPill,
   KeyValueList,
-  MethodTag,
   Money,
-  MovementStatusPill,
   PaymentStatusPill,
   RecordNotFound,
   TabPanel,
+  TenantTag,
 } from '../shared/FinanceCoreUi'
+import { useFinanceTenants, useInvestmentDetail } from '../shared/useFinanceData'
 import styles from '../shared/FinanceCore.module.css'
 
 type Tab = 'overview' | 'payment' | 'wallet' | 'activity'
 const TAB_PREFIX = 'investment-detail'
 
-/** `#/finance/investments/:investmentId` — read-only investment record. */
-export function InvestmentDetailPage({ investmentId }: { investmentId: string }) {
-  const investment = investmentById(investmentId)
-  if (!investment) return <RecordNotFound section="investments" title="Investimento não encontrado" id={investmentId} />
+/** `#/finance/investments/:investmentId` — read-only investment from `GET /investments/:id`. */
+export function InvestmentDetailPage({ investmentId, returnTo }: { investmentId: string; returnTo?: string }) {
+  const detail = useInvestmentDetail(investmentId)
+  const back = investmentListReturnHash(returnTo)
+  if (detail.state.status === 'error') {
+    const view = financeErrorView(detail.state.error, 'o investimento')
+    if (view.notFound) return <RecordNotFound section="investments" title="Investimento não encontrado" id={investmentId} backHref={back} />
+    return <DetailStatus section="investments" id={investmentId} error={view} onRetry={detail.reload} />
+  }
+  if (detail.state.status !== 'success') return <DetailStatus section="investments" id={investmentId} />
   return (
-    <FinanceCoreShell section="investments" title="Investimentos" trail={[investment.investmentId]}>
-      <InvestmentContent investment={investment} />
+    <FinanceCoreShell section="investments" title="Investimentos" trail={[`Investimento ${investmentId}`]}>
+      <InvestmentContent investment={detail.state.data} back={back} />
     </FinanceCoreShell>
   )
 }
 
-function InvestmentContent({ investment }: { investment: Readonly<Investment> }) {
+function InvestmentContent({ investment, back }: { investment: InvestmentDetail; back: string }) {
   const notify = usePrototypeNotice()
-  const activity = useFinanceCoreActivity(investment.investmentId)
-  const opportunities = useOpportunities()
+  const tenants = useFinanceTenants()
+  const tenant = tenantNames(tenants.state.status === 'success' ? tenants.state.data : null)(investment.whitelabelId)
+  const id = investment.id
+  const activity = useFinanceCoreActivity(`investment:${id}`)
   const [tab, setTab] = useState<Tab>('overview')
-  const id = investment.investmentId
-  const opportunity = opportunities.find((item) => item.id === investment.opportunityId)
-  const payment = paymentById(investment.paymentId)
-  const related = movementsForInvestment(investment)
-  const viaPayment = related.filter((item) => item.via === 'payment')
-  const walletIds = walletIdsOf(related.map((item) => item.movement))
-  const investor = investorName(investment.investorId)
-
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(id, { title, detail })
+  const investorLabel = investment.investor?.fullName ?? `Investidor #${investment.investorId}`
+  const opportunityLabel = investment.opportunity?.name ?? `Oportunidade #${investment.opportunityId}`
+  const payment = investment.payment
+  const log = (title: string, detail?: string) => addFinanceCoreActivity(`investment:${id}`, { title, detail })
 
   useEffect(() => {
-    addFinanceCoreActivity(id, { title: 'Investimento consultado', detail: 'Visão financeira (somente leitura)' })
+    addFinanceCoreActivity(`investment:${id}`, { title: 'Investimento consultado', detail: 'Leitura do Control Plane (somente leitura)' })
   }, [id])
 
   function changeTab(next: Tab) {
     setTab(next)
-    if (next === 'payment') log('Pagamento / PIX consultado', payment ? payment.paymentId : 'Sem pagamento vinculado')
-    if (next === 'wallet') log('Wallet / movimentações consultadas', `${related.length} referência(s) explícita(s)`)
+    if (next === 'payment') log('Pagamento consultado', payment ? `Pagamento ${payment.id}` : 'Nenhum pagamento registrado')
+    if (next === 'wallet') log('Wallet do Whitelabel consultada', `Whitelabel ${investment.whitelabelId}`)
   }
 
-  const onInvestor = () => log('Navegação para Operação › Investidores solicitada', investment.investorId)
-  const onOpportunity = () => log('Navegação para Operação › Oportunidades solicitada', investment.opportunityId)
-  const onPayment = () => log('Navegação para Pagamentos / PIX solicitada', investment.paymentId)
-  const onWallet = (walletId: string) => log('Navegação para Wallet solicitada', walletId)
   const noPayment = () => {
-    log('Pagamento / PIX sem destino', 'Nenhum pagamento referenciado — nenhuma navegação feita')
-    notify('Este investimento não referencia nenhum pagamento no protótipo. Nenhuma navegação foi feita.')
+    log('Pagamento sem destino', 'Nenhum pagamento registrado — nenhuma navegação feita')
+    notify('O Control Plane não registra pagamento para este investimento. Nenhuma navegação foi feita.')
   }
-  const noWallet = () => {
-    log('Wallet sem destino', 'Nenhuma movimentação referencia este investimento — nenhuma navegação feita')
-    notify('Nenhuma movimentação de wallet referencia este investimento ou o pagamento dele. Nenhuma navegação foi feita.')
-  }
+
+  const walletOverview = walletHref(investment.whitelabelId)
+  const walletMovements = walletHref(investment.whitelabelId, { tab: 'movimentacoes', opportunityId: investment.opportunityId })
 
   const navItems: DomainNavItem[] = [
+    { key: 'investor', label: 'Ver investidor', description: 'Operação › Investidores — perfil do investidor', icon: UserRound, href: investorProfileHref(investment.investorId) },
     {
-      key: 'investor',
-      label: 'Ver investidor',
-      description: 'Operação › Investidores — perfil do investidor',
-      icon: UserRound,
-      href: investorHref(investment.investorId),
-      onSelect: onInvestor,
+      key: 'investor-investments',
+      label: 'Investimentos deste investidor',
+      description: `Lista filtrada pelo Control Plane — investidor #${investment.investorId}`,
+      icon: ChartColumn,
+      href: investmentsHref({ investorId: investment.investorId }),
     },
     {
-      key: 'opportunity',
-      label: 'Ver oportunidade',
-      description: 'Operação › Oportunidades — detalhes da oportunidade',
+      key: 'opportunity-investments',
+      label: 'Investimentos desta oportunidade',
+      description: `Lista filtrada pelo Control Plane — oportunidade #${investment.opportunityId}`,
       icon: Target,
-      href: opportunityHref(investment.opportunityId),
-      onSelect: onOpportunity,
+      href: investmentsHref({ opportunityId: investment.opportunityId }),
     },
     payment
-      ? {
-          key: 'payment',
-          label: 'Ver pagamento / PIX',
-          description: `Pagamentos / PIX — ${payment.paymentId}`,
-          icon: QrCode,
-          href: paymentHref(payment.paymentId),
-          onSelect: onPayment,
-        }
-      : {
-          key: 'payment',
-          label: 'Ver pagamento / PIX',
-          description: 'Nenhum pagamento referenciado por este investimento',
-          icon: QrCode,
-          onSelect: noPayment,
-        },
-    walletIds.length
-      ? {
-          key: 'wallet',
-          label: 'Ver Wallet',
-          description: `Wallet — ${walletIds.join(', ')}`,
-          icon: WalletIcon,
-          href: walletHref(walletIds[0]),
-          onSelect: () => onWallet(walletIds[0]),
-        }
-      : {
-          key: 'wallet',
-          label: 'Ver Wallet',
-          description: 'Nenhuma movimentação referencia este investimento',
-          icon: WalletIcon,
-          onSelect: noWallet,
-        },
+      ? { key: 'payment', label: 'Ver pagamento / PIX', description: `Pagamentos / PIX — pagamento ${payment.id}`, icon: QrCode, href: paymentHref(payment.id) }
+      : { key: 'payment', label: 'Ver pagamento / PIX', description: 'Nenhum pagamento registrado para este investimento', icon: QrCode, onSelect: noPayment },
+    { key: 'wallet', label: 'Wallet do Whitelabel', description: `Wallet — ${tenant} (uma wallet por Whitelabel)`, icon: WalletIcon, href: walletOverview },
   ]
 
   const tabs: { value: Tab; label: string }[] = [
     { value: 'overview', label: 'Visão geral' },
     { value: 'payment', label: 'Pagamento / PIX' },
-    { value: 'wallet', label: 'Wallet / Movimentações' },
+    { value: 'wallet', label: 'Wallet do Whitelabel' },
     { value: 'activity', label: 'Atividade da sessão' },
   ]
-
-  const opportunityMismatch: string[] = []
-  if (opportunity && opportunity.whitelabelId !== investment.whitelabelId) {
-    opportunityMismatch.push(`a oportunidade está hoje em ${whitelabelName(opportunity.whitelabelId)}`)
-  }
-  if (opportunity && opportunity.modality !== investment.modality) {
-    opportunityMismatch.push(`a oportunidade está hoje como ${modalityMeta(opportunity.modality).name}`)
-  }
 
   return (
     <>
       <div>
-        <BackLink href="#/finance/investments" label="Voltar para Investimentos" />
+        <BackLink href={back} label="Voltar para Investimentos" />
       </div>
 
       <DetailHero
@@ -171,7 +127,7 @@ function InvestmentContent({ investment }: { investment: Readonly<Investment> })
             value: (
               <>
                 <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
-                {investor ?? 'Investidor não encontrado'} <span className={shared.heroId}>{investment.investorId}</span>
+                {investorLabel} <span className={shared.heroId}>#{investment.investorId}</span>
               </>
             ),
           },
@@ -180,27 +136,24 @@ function InvestmentContent({ investment }: { investment: Readonly<Investment> })
             value: (
               <>
                 <Target size={15} strokeWidth={1.8} aria-hidden="true" />
-                {opportunity?.name ?? 'Oportunidade não encontrada'} <span className={shared.heroId}>{investment.opportunityId}</span>
+                {opportunityLabel} <span className={shared.heroId}>#{investment.opportunityId}</span>
               </>
             ),
           },
-          { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={investment.whitelabelId} /> },
+          { label: 'Whitelabel', value: <TenantTag whitelabelId={investment.whitelabelId} name={tenant} /> },
         ]}
         actions={
           <>
-            <a href={investorHref(investment.investorId)} className={`${outline.button} ${shared.secondaryButton}`} onClick={onInvestor} data-hero="investor">
+            <a href={investorProfileHref(investment.investorId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="investor">
               Ver investidor
               <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
             </a>
-            <a
-              href={opportunityHref(investment.opportunityId)}
-              className={`${outline.button} ${shared.secondaryButton}`}
-              onClick={onOpportunity}
-              data-hero="opportunity"
-            >
-              Ver oportunidade
-              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-            </a>
+            {payment ? (
+              <a href={paymentHref(payment.id)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="payment">
+                Ver pagamento
+                <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+              </a>
+            ) : null}
           </>
         }
       />
@@ -218,260 +171,101 @@ function InvestmentContent({ investment }: { investment: Readonly<Investment> })
             <KeyValueList
               rows={[
                 { label: 'ID do investimento', value: id },
-                { label: 'Investidor', value: investor ?? `${investment.investorId} (não encontrado)` },
-                { label: 'Oportunidade', value: opportunity?.name ?? `${investment.opportunityId} (não encontrada)` },
-                { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={investment.whitelabelId} /> },
-                { label: 'Modalidade', value: <ModalityChip modality={investment.modality} /> },
-                { label: 'Valor do investimento', value: <Money amount={investment.amount} currency={investment.currency} /> },
+                { label: 'Investidor', value: investment.investor ? `${investorLabel} (#${investment.investorId})` : `#${investment.investorId} (dados não retornados)` },
+                { label: 'E-mail do investidor', value: investment.investor?.email ?? 'Não informado' },
+                { label: 'Oportunidade', value: `${opportunityLabel}${investment.opportunity?.name ? ` (#${investment.opportunityId})` : ''}` },
+                { label: 'Whitelabel', value: <TenantTag whitelabelId={investment.whitelabelId} name={tenant} /> },
+                { label: 'Valor do investimento', value: <Money cents={investment.amountCents} /> },
+                { label: 'Cotas', value: investment.quoteQuantity ?? 'Não informado' },
                 { label: 'Status do investimento', value: <InvestmentStatusPill status={investment.status} /> },
-                {
-                  label: 'Pagamento',
-                  value: payment ? (
-                    <>
-                      {payment.paymentId}
-                      <PaymentStatusPill status={payment.status} />
-                    </>
-                  ) : (
-                    'Sem pagamento vinculado'
-                  ),
-                },
+                { label: 'Investimento anônimo', value: investment.anonymous === null ? 'Não informado' : investment.anonymous ? 'Sim' : 'Não' },
+                { label: 'Aceite de risco', value: investment.riskAcceptanceAt ? dateText(investment.riskAcceptanceAt) : 'Não registrado' },
                 { label: 'Criado em', value: dateText(investment.createdAt) },
                 { label: 'Atualizado em', value: dateText(investment.updatedAt) },
               ]}
             />
-            {opportunityMismatch.length ? (
-              <p className={shared.callout} style={{ marginTop: 12 }} data-mismatch>
+            {investment.amountCents === null ? (
+              <p className={shared.callout} style={{ marginTop: 12 }} data-amount-unavailable>
                 <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>
-                  Em Operação, {opportunityMismatch.join(' e ')}. O investimento mantém o próprio registro — nada é sincronizado
-                  automaticamente.
-                </span>
+                <span>O Control Plane não informa valor para este investimento (comum em investimentos com falha). Isso não é um valor de R$ 0,00.</span>
               </p>
             ) : null}
           </section>
           <DomainNavCard
             title="Navegação para domínios responsáveis"
-            intro="Investidor, oportunidade, pagamento e wallet pertencem a outros módulos. Daqui você só navega até eles."
+            intro="Investidor, pagamento e wallet pertencem a outros domínios. Daqui você só navega até eles."
             items={navItems}
           />
         </div>
         <InfoNote>
-          <strong>Investimentos V1 é um módulo de supervisão financeira.</strong> Pagamentos / PIX e Wallet permanecem nos módulos
-          responsáveis de Financeiro. Nenhuma ação cria, edita, confirma, liquida, cancela ou estorna investimentos.
+          <strong>Somente leitura.</strong> Dados de <code>GET /investments/{id}</code>. A existência de um investimento não indica que ele foi pago:
+          o pagamento tem domínio e status próprios. Nenhuma ação cria, edita, confirma, liquida, cancela ou estorna investimentos.
         </InfoNote>
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="payment" current={tab}>
-        <div className={shared.panelGrid}>
-          <section className={fin.card} aria-labelledby="inv-payment-title">
-            <h3 id="inv-payment-title" className={fin.cardTitleSm}>
-              Resumo do pagamento
-            </h3>
-            <p className={fin.cardSubtitle}>Registro de Pagamentos / PIX referenciado por este investimento — somente leitura.</p>
-            {payment ? (
-              <>
-                <KeyValueList
-                  rows={[
-                    { label: 'Pagamento', value: payment.paymentId },
-                    { label: 'Método', value: <MethodTag method={payment.method} /> },
-                    { label: 'Status do pagamento', value: <PaymentStatusPill status={payment.status} /> },
-                    { label: 'Valor relacionado', value: <Money amount={payment.amount} currency={payment.currency} /> },
-                    { label: 'Criado em', value: dateText(payment.createdAt) },
-                    { label: 'Atualizado em', value: dateText(payment.updatedAt) },
-                  ]}
-                />
-                <div className={styles.cardActions}>
-                  <a href={paymentHref(payment.paymentId)} className={`${primary.button} ${styles.primaryLink}`} onClick={onPayment} data-view-payment>
-                    Ver em Pagamentos / PIX
-                    <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-                  </a>
-                </div>
-              </>
-            ) : (
-              <p className={styles.emptyLine} data-empty="payment">
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                {investment.paymentId
-                  ? `O pagamento ${investment.paymentId} referenciado não foi encontrado em Pagamentos / PIX.`
-                  : 'Este investimento não referencia nenhum pagamento no protótipo.'}
-              </p>
-            )}
-          </section>
-
-          <section className={fin.card} aria-labelledby="inv-payment-mov-title">
-            <h3 id="inv-payment-mov-title" className={fin.cardTitleSm}>
-              Movimentações de wallet
-            </h3>
-            <p className={fin.cardSubtitle}>Movimentações que referenciam o pagamento deste investimento.</p>
-            {viaPayment.length ? (
-              <div className={styles.tableWrap}>
-                <table className={`${shared.miniTable} ${styles.miniTable}`}>
-                  <caption className="visually-hidden">Movimentações de wallet que referenciam o pagamento {investment.paymentId}</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Movimento</th>
-                      <th scope="col" className={styles.optional}>
-                        Descrição
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Status
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Data
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {viaPayment.map(({ movement }) => (
-                      <tr key={movement.movementId}>
-                        <td>
-                          <span className={shared.cellText}>
-                            <a href={walletHref(movement.walletId, movement.movementId)} className={shared.rowLink} onClick={() => onWallet(movement.walletId)}>
-                              {movement.movementId}
-                            </a>
-                            <span className={shared.rowId}>{movement.walletId}</span>
-                            <span className={styles.inline}>
-                              {movement.description}
-                              <MovementStatusPill status={movement.status} />
-                              {dateText(movement.createdAt)}
-                            </span>
-                          </span>
-                        </td>
-                        <td className={styles.optional}>{movement.description}</td>
-                        <td className={styles.optional}>
-                          <MovementStatusPill status={movement.status} />
-                        </td>
-                        <td className={styles.optional}>
-                          <DateStack iso={movement.createdAt} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className={styles.emptyLine}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Nenhuma movimentação referencia o pagamento deste investimento.
-              </p>
-            )}
-            <div className={styles.cardActions}>
-              {walletIds.length ? (
-                <a href={walletHref(walletIds[0])} className={`${outline.button} ${styles.primaryLink}`} onClick={() => onWallet(walletIds[0])} data-view-wallet>
-                  Ver na Wallet
+        <section className={fin.card} aria-labelledby="inv-payment-title">
+          <h3 id="inv-payment-title" className={fin.cardTitleSm}>
+            Pagamento registrado
+          </h3>
+          <p className={fin.cardSubtitle}>Resumo do pagamento retornado com o investimento — somente leitura.</p>
+          {payment ? (
+            <>
+              <KeyValueList
+                rows={[
+                  { label: 'Pagamento', value: payment.id },
+                  { label: 'Status do pagamento', value: <PaymentStatusPill status={payment.status} /> },
+                  { label: 'Provedor', value: providerLabel(payment.provider) },
+                  { label: 'Valor do pagamento', value: <Money cents={payment.amountCents} /> },
+                  { label: 'Pago em', value: payment.paymentAt ? dateText(payment.paymentAt) : 'Sem data de pagamento' },
+                ]}
+              />
+              <div className={styles.cardActions}>
+                <a href={paymentHref(payment.id)} className={`${primary.button} ${styles.primaryLink}`} data-view-payment>
+                  Ver em Pagamentos / PIX
                   <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
                 </a>
-              ) : null}
-            </div>
-          </section>
-        </div>
-        <InfoNote>
-          Status do investimento e status do pagamento são independentes neste protótipo: o investimento pode estar ativo com o pagamento
-          em processamento, entre outros cenários. Nenhum status é sincronizado automaticamente.
-        </InfoNote>
+              </div>
+            </>
+          ) : (
+            <p className={styles.emptyLine} data-empty="payment">
+              <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+              Nenhum pagamento registrado para este investimento no Control Plane.
+            </p>
+          )}
+        </section>
+        <InfoNote>{STATUS_INDEPENDENCE_NOTE}</InfoNote>
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="wallet" current={tab}>
         <section className={fin.card} aria-labelledby="inv-wallet-title">
           <h3 id="inv-wallet-title" className={fin.cardTitleSm}>
-            Movimentações relacionadas
+            Wallet do Whitelabel
           </h3>
           <p className={fin.cardSubtitle}>
-            Somente referências explícitas: movimentações cuja origem é este investimento ou o pagamento que ele referencia. Nenhum saldo
-            é calculado aqui.
+            O contrato define uma wallet por Whitelabel (o ID da wallet é o ID do Whitelabel). O saldo e o histórico do ledger ficam nela; nada é
+            calculado a partir deste investimento.
           </p>
-          {related.length ? (
-            <div className={styles.tableWrap}>
-              <table className={`${shared.miniTable} ${styles.miniTable}`}>
-                <caption className="visually-hidden">Movimentações de wallet relacionadas ao investimento {id}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Movimento</th>
-                    <th scope="col" className={styles.optional}>
-                      Natureza
-                    </th>
-                    <th scope="col" className={styles.optional}>
-                      Descrição
-                    </th>
-                    <th scope="col" className={styles.optional}>
-                      Relação
-                    </th>
-                    <th scope="col" className={styles.optional}>
-                      Valor
-                    </th>
-                    <th scope="col" className={styles.optional}>
-                      Status
-                    </th>
-                    <th scope="col" className={styles.optional}>
-                      Data
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {related.map(({ movement, via }) => {
-                    const viaLabel = via === 'payment' ? `Via pagamento ${investment.paymentId}` : 'Referência direta'
-                    return (
-                      <tr key={movement.movementId} data-movement={movement.movementId}>
-                        <td>
-                          <span className={shared.cellText}>
-                            <a href={walletHref(movement.walletId, movement.movementId)} className={shared.rowLink} onClick={() => onWallet(movement.walletId)}>
-                              {movement.movementId}
-                            </a>
-                            <span className={shared.rowId}>Wallet {movement.walletId}</span>
-                            <span className={styles.inline}>
-                              <DirectionTag direction={movement.direction} />
-                              <Money amount={movement.amount} currency={movement.currency} />
-                              <MovementStatusPill status={movement.status} />
-                              <span className={styles.viaTag}>{viaLabel}</span>
-                              <span>{movement.description}</span>
-                              <span>{dateText(movement.createdAt)}</span>
-                            </span>
-                          </span>
-                        </td>
-                        <td className={styles.optional}>
-                          <DirectionTag direction={movement.direction} />
-                        </td>
-                        <td className={styles.optional}>{movement.description}</td>
-                        <td className={styles.optional}>
-                          <span className={styles.viaTag}>{viaLabel}</span>
-                        </td>
-                        <td className={styles.optional}>
-                          <Money amount={movement.amount} currency={movement.currency} />
-                        </td>
-                        <td className={styles.optional}>
-                          <MovementStatusPill status={movement.status} />
-                        </td>
-                        <td className={styles.optional}>
-                          <DateStack iso={movement.createdAt} />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className={styles.emptyLine} data-empty="movements">
-              <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-              Nenhuma movimentação de wallet referencia este investimento ou o pagamento dele.
-            </p>
-          )}
-          {walletIds.length ? (
-            <p className={fin.cardSubtitle} style={{ marginTop: 12 }}>
-              Wallets referenciadas:{' '}
-              {walletIds.map((walletId, index) => (
-                <span key={walletId}>
-                  {index ? ', ' : ''}
-                  <a href={walletHref(walletId)} className={shared.inlineLink} onClick={() => onWallet(walletId)}>
-                    {walletId}
-                  </a>
-                </span>
-              ))}
-            </p>
-          ) : null}
+          <KeyValueList
+            rows={[
+              { label: 'Whitelabel', value: <TenantTag whitelabelId={investment.whitelabelId} name={tenant} /> },
+              { label: 'Wallet', value: `Wallet ${investment.whitelabelId}` },
+            ]}
+          />
+          <div className={styles.cardActions}>
+            <a href={walletOverview} className={`${primary.button} ${styles.primaryLink}`} data-view-wallet>
+              Ver wallet
+              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+            </a>
+            <a href={walletMovements} className={`${outline.button} ${styles.primaryLink}`} data-view-wallet-movements>
+              <ArrowLeftRight size={15} strokeWidth={1.8} aria-hidden="true" />
+              Movimentações desta oportunidade
+            </a>
+          </div>
         </section>
         <InfoNote>
-          Movimentação de wallet ≠ saldo de wallet ≠ investimento. A relação existe apenas porque os registros do protótipo se
-          referenciam explicitamente; nenhum crédito ou débito pode ser feito aqui.
+          As movimentações referenciam investimentos no campo de referência, mas o contrato não oferece filtro por investimento: a wallet filtra
+          apenas por tipo, categoria e oportunidade.
         </InfoNote>
       </TabPanel>
 

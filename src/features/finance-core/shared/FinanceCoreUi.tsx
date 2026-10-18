@@ -1,32 +1,26 @@
 import { useId, type ReactNode } from 'react'
-import { SearchX, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, CircleAlert, Info, RotateCw, SearchX, X } from 'lucide-react'
 import { AppShell } from '../../../components/shell/AppShell'
 import type { Breadcrumb } from '../../../components/shell/TopHeader'
 import { EmptyState } from '../../../components/ui/EmptyState'
+import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { StatusPill } from '../../../components/ui/StatusPill'
 import { tabId, tabPanelId } from '../../../components/ui/tabIds'
-import { AccountAvatar } from '../../whitelabel-accounts/AccountBadges'
+import type { ApiErrorView } from '../../../lib/apiErrors'
 import { DotMatrixBackground } from '../../whitelabels/visuals/DotMatrixBackground'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import shared from '../../operation/shared/Operation.module.css'
-import { formatDateTime, initials, type SortDirection, type SortState } from '../../operation/shared/operationModel'
-import { investorName, type ResolvedGateway } from './financeCoreRefs'
+import { formatDateTime, type SortDirection, type SortState } from '../../operation/shared/operationModel'
+import type { MovementKind } from './financeApi'
 import {
-  INVESTMENT_STATUS_META,
-  MOVEMENT_DIRECTION_META,
-  MOVEMENT_STATUS_META,
-  PAYMENT_METHOD_META,
-  PAYMENT_STATUS_META,
-  WALLET_STATUS_META,
-  formatMoney,
-  type Currency,
-  type InvestmentStatus,
-  type MovementDirection,
-  type MovementStatus,
-  type PaymentMethod,
-  type PaymentStatus,
-  type WalletStatus,
-} from './financeCoreModel'
+  AMOUNT_UNAVAILABLE,
+  MOVEMENT_KIND_LABEL,
+  formatCents,
+  formatCount,
+  investmentStatusMeta,
+  pageItems,
+  paymentStatusMeta,
+} from './financePresentation'
 import styles from './FinanceCore.module.css'
 
 export type FinanceCoreSection = 'investments' | 'payments' | 'wallets'
@@ -69,77 +63,51 @@ export function FinanceCoreShell({
   )
 }
 
-/** Unknown or malformed id in a detail route. */
-export function RecordNotFound({ section, title, id }: { section: FinanceCoreSection; title: string; id: string }) {
-  const current = SECTION[section]
-  return (
-    <FinanceCoreShell section={section} title={current.label} trail={['Não encontrado']}>
-      <div className={shared.notFound}>
-        <EmptyState
-          icon={SearchX}
-          title={title}
-          description={
-            <>
-              Nenhum registro do protótipo usa o ID “{id}”.{' '}
-              <a href={current.href} className={shared.inlineLink}>
-                Voltar para {current.label}
-              </a>
-            </>
-          }
-        />
-      </div>
-    </FinanceCoreShell>
-  )
-}
-
 /* ---------- Values ---------- */
 
-export function Money({ amount, currency }: { amount: number; currency: Currency }) {
-  return <span className={styles.money}>{formatMoney(amount, currency)}</span>
-}
-
-export const InvestmentStatusPill = ({ status }: { status: InvestmentStatus }) => (
-  <StatusPill tone={INVESTMENT_STATUS_META[status].tone} label={INVESTMENT_STATUS_META[status].label} />
-)
-
-export const PaymentStatusPill = ({ status, prefix = '' }: { status: PaymentStatus; prefix?: string }) => (
-  <StatusPill tone={PAYMENT_STATUS_META[status].tone} label={`${prefix}${PAYMENT_STATUS_META[status].label}`} />
-)
-
-export const WalletStatusPill = ({ status }: { status: WalletStatus }) => (
-  <StatusPill tone={WALLET_STATUS_META[status].tone} label={WALLET_STATUS_META[status].label} />
-)
-
-export const MovementStatusPill = ({ status }: { status: MovementStatus }) => (
-  <StatusPill tone={MOVEMENT_STATUS_META[status].tone} label={MOVEMENT_STATUS_META[status].label} />
-)
-
-/** Method label with a generic icon (no third-party logo). */
-export function MethodTag({ method }: { method: PaymentMethod }) {
-  const meta = PAYMENT_METHOD_META[method]
-  const Icon = meta.icon
+/**
+ * Integer centavos at the display boundary. `null` is shown as an explicit
+ * unavailable value — never as R$ 0,00.
+ */
+export function Money({ cents, unavailable = AMOUNT_UNAVAILABLE }: { cents: number | null; unavailable?: string }) {
+  const text = formatCents(cents)
+  if (text === null) {
+    return (
+      <span className={styles.moneyUnavailable} data-money="unavailable">
+        {unavailable}
+      </span>
+    )
+  }
   return (
-    <span className={styles.methodTag} data-method={method}>
-      <Icon size={14} strokeWidth={1.9} aria-hidden="true" />
-      {meta.label}
+    <span className={styles.money} data-money={cents}>
+      {text}
     </span>
   )
 }
 
-/** Crédito / Débito: icon + text, never colour alone. */
-export function DirectionTag({ direction }: { direction: MovementDirection }) {
-  const meta = MOVEMENT_DIRECTION_META[direction]
-  const Icon = meta.icon
+export const InvestmentStatusPill = ({ status, prefix = '' }: { status: string; prefix?: string }) => {
+  const meta = investmentStatusMeta(status)
+  return <StatusPill tone={meta.tone} label={`${prefix}${meta.label}`} />
+}
+
+export const PaymentStatusPill = ({ status, prefix = '' }: { status: string; prefix?: string }) => {
+  const meta = paymentStatusMeta(status)
+  return <StatusPill tone={meta.tone} label={`${prefix}${meta.label}`} />
+}
+
+/** Entrada / Saída from the Backend `kind`: icon + text, never colour alone. The amount stays unsigned. */
+export function KindTag({ kind }: { kind: MovementKind }) {
+  const Icon = kind === 'in' ? ArrowDownLeft : ArrowUpRight
   return (
-    <span className={styles.directionTag} data-direction={direction}>
+    <span className={styles.directionTag} data-kind={kind}>
       <Icon size={13} strokeWidth={2} aria-hidden="true" />
-      {meta.label}
+      {MOVEMENT_KIND_LABEL[kind]}
     </span>
   )
 }
 
 /** "12/04/2026" over "14:32" in tables. */
-export function DateStack({ iso }: { iso: string | undefined }) {
+export function DateStack({ iso }: { iso: string | null | undefined }) {
   const text = formatDateTime(iso ?? null)
   if (!text) return <span className={shared.muted}>—</span>
   const [date, time] = text.split(' ')
@@ -151,75 +119,176 @@ export function DateStack({ iso }: { iso: string | undefined }) {
   )
 }
 
+/* ---------- Tenants (names from the wallet projection) ---------- */
 
-/* ---------- References to other domains ---------- */
-
-/** Avatar + name + id for an Operation investor reference (read live, never copied). */
-export function InvestorRef({ investorId, href }: { investorId: string | undefined; href?: string }) {
-  if (!investorId) return <span className={shared.muted}>Não informado</span>
-  const name = investorName(investorId)
+export function TenantTag({ whitelabelId, name }: { whitelabelId: string; name: string }) {
   return (
-    <span className={shared.cellMain}>
-      <span className={styles.refAvatar}>
-        <AccountAvatar initials={name ? initials(name) : '?'} />
+    <span className={shared.wlCell} data-tenant={whitelabelId}>
+      <span className={shared.wlMark} data-tone="neutral" aria-hidden="true">
+        {name.startsWith('Whitelabel #') ? '#' : name.charAt(0).toLocaleUpperCase('pt-BR')}
       </span>
-      <span className={shared.cellText}>
-        {name && href ? (
-          <a href={href} className={styles.refLink}>
-            {name}
-          </a>
-        ) : (
-          <span className={styles.refName}>{name ?? 'Investidor não encontrado'}</span>
-        )}
-        <span className={shared.rowId}>{investorId}</span>
-      </span>
+      {name}
     </span>
   )
 }
 
-/** Name + id for an Operation opportunity reference (name read live from the Opportunities store). */
-export function OpportunityRef({
-  opportunityId,
-  name,
-  href,
+/* ---------- Read states ---------- */
+
+/** List / panel error with the diagnostic code and, when it can help, a retry. */
+export function ReadError({ error, onRetry, compact = false }: { error: ApiErrorView; onRetry?: () => void; compact?: boolean }) {
+  return (
+    <div className={compact ? styles.feedbackCompact : styles.feedback} role="alert" data-read-error>
+      <EmptyState icon={CircleAlert} title={error.title} description={error.description} />
+      {error.correlationId ? (
+        <p className={styles.diagnostic}>
+          Código de diagnóstico: <code className={styles.code}>{error.correlationId}</code>
+        </p>
+      ) : null}
+      {error.retryable && onRetry ? (
+        <OutlineButton onClick={onRetry} data-retry>
+          <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
+          Tentar novamente
+        </OutlineButton>
+      ) : null}
+    </div>
+  )
+}
+
+export function SkeletonRows({ columns, rows = 6 }: { columns: string[]; rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }, (_, index) => (
+        <tr key={index} className={styles.skeletonRow} aria-hidden="true" data-skeleton-row>
+          {columns.map((className, cell) => (
+            <td key={`${className}-${cell}`} className={className}>
+              <span className={`${styles.skeleton} ${cell === 0 ? styles.skeletonWide : ''}`} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  )
+}
+
+/** URL filters that were not recognized (and are not sent). */
+export function IgnoredParams({ ignored }: { ignored: string[] }) {
+  if (!ignored.length) return null
+  return (
+    <p className={styles.ignoredNote} role="status" data-ignored-params>
+      <Info size={14} strokeWidth={1.9} aria-hidden="true" />
+      Filtro da URL não reconhecido e ignorado: {ignored.join(', ')}.
+    </p>
+  )
+}
+
+/** Unknown or invalid id in a detail route (404, or an id the API would reject: no request is sent). */
+export function RecordNotFound({ section, title, id, backHref }: { section: FinanceCoreSection; title: string; id: string; backHref?: string }) {
+  const current = SECTION[section]
+  return (
+    <FinanceCoreShell section={section} title={current.label} trail={['Não encontrado']}>
+      <div className={shared.notFound} data-record-not-found>
+        <EmptyState
+          icon={SearchX}
+          title={title}
+          description={
+            <>
+              Nenhum registro com o ID “{id}” existe no Control Plane.{' '}
+              <a href={backHref ?? current.href} className={shared.inlineLink}>
+                Voltar para {current.label}
+              </a>
+            </>
+          }
+        />
+      </div>
+    </FinanceCoreShell>
+  )
+}
+
+/** Detail route while loading / after a failure: same frame, never illustrative content. */
+export function DetailStatus({
+  section,
+  id,
+  error,
+  onRetry,
 }: {
-  opportunityId: string | undefined
-  name: string | undefined
-  href?: string
+  section: FinanceCoreSection
+  id: string
+  error?: ApiErrorView
+  onRetry?: () => void
 }) {
-  if (!opportunityId) return <span className={shared.muted}>Não informada</span>
+  const current = SECTION[section]
   return (
-    <span className={shared.cellText}>
-      {name && href ? (
-        <a href={href} className={styles.refLink}>
-          {name}
-        </a>
+    <FinanceCoreShell section={section} title={current.label} trail={[id]}>
+      {error ? (
+        <section className={fin.card} aria-labelledby="fc-record-title">
+          <h2 id="fc-record-title" className="visually-hidden">
+            {error.title}
+          </h2>
+          <ReadError error={error} onRetry={onRetry} />
+        </section>
       ) : (
-        <span className={styles.refName}>{name ?? 'Oportunidade não encontrada'}</span>
+        <section className={`${fin.card} ${styles.detailLoading}`} aria-busy="true" aria-labelledby="fc-record-title" data-detail-loading>
+          <h2 id="fc-record-title" className="visually-hidden">
+            Carregando registro {id}
+          </h2>
+          <span className={`${styles.skeleton} ${styles.skeletonWide}`} />
+          <span className={styles.skeleton} />
+          <span className={styles.skeleton} />
+        </section>
       )}
-      <span className={shared.rowId}>{opportunityId}</span>
-    </span>
+    </FinanceCoreShell>
   )
 }
 
-/* ---------- Gateways (Financeiro › Gateways e contas) ---------- */
+/* ---------- Pagination (server pages) ---------- */
 
-export function GatewayTag({ gateway, gatewayId }: { gateway: ResolvedGateway | undefined; gatewayId: string }) {
+export function ServerPagination({
+  label,
+  current,
+  last,
+  disabled,
+  onChange,
+}: {
+  label: string
+  current: number
+  last: number
+  disabled: boolean
+  onChange: (page: number) => void
+}) {
+  if (last <= 1) return null
+  const page = Math.min(current, last)
   return (
-    <span className={styles.gatewayTag}>
-      <span className={styles.gatewayMark} aria-hidden="true">
-        {gateway?.name.replace('Provedor ', '').charAt(0) ?? '?'}
-      </span>
-      <span className={shared.cellText}>
-        <span>{gateway?.name ?? 'Gateway não encontrado'}</span>
-        <span className={shared.rowId}>{gatewayId}</span>
-      </span>
-    </span>
+    <nav className={shared.pagination} aria-label={label}>
+      <button type="button" className={shared.pageButton} disabled={disabled || page <= 1} onClick={() => onChange(page - 1)} aria-label="Página anterior">
+        <ChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      {pageItems(page, last).map((item, index) =>
+        item === 'gap' ? (
+          <span key={`gap-${index}`} className={styles.pageGap} aria-hidden="true">
+            …
+          </span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            className={shared.pageButton}
+            disabled={disabled}
+            aria-current={item === page ? 'page' : undefined}
+            aria-label={`Página ${item}`}
+            onClick={() => (item === page ? undefined : onChange(item))}
+          >
+            {formatCount(item)}
+          </button>
+        ),
+      )}
+      <button type="button" className={shared.pageButton} disabled={disabled || page >= last} onClick={() => onChange(page + 1)} aria-label="Próxima página">
+        <ChevronRight size={16} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </nav>
   )
 }
 
-
-/* ---------- Layout pieces ---------- */
+/* ---------- Layout pieces (also used by Compliance › KYC and Governança › Auditoria) ---------- */
 
 /** Label-left / value-right rows, as in the approved detail compositions. */
 export function KeyValueList({ rows }: { rows: { label: string; value: ReactNode }[] }) {
@@ -302,7 +371,7 @@ export function TabPanel<T extends string>({
   )
 }
 
-/** Removable list context (e.g. "Investidor: João Carvalho") coming from another module's link. */
+/** Removable list context (e.g. "Investidor #123") coming from another screen's link. */
 export function ContextChip({ label, onRemove, removeLabel, dataName }: { label: string; onRemove: () => void; removeLabel: string; dataName: string }) {
   return (
     <div className={shared.activeFilters}>
@@ -329,17 +398,19 @@ export function SortSelect<K extends string>({
   options,
   sort,
   onChange,
+  label = 'Ordenar por',
 }: {
   className: string
   options: SortOption<K>[]
   sort: SortState<K>
   onChange: (sort: SortState<K>) => void
+  label?: string
 }) {
   const id = useId()
   return (
     <div className={`${styles.sortBar} ${className}`}>
       <label htmlFor={id} className={styles.sortLabel}>
-        Ordenar por
+        {label}
       </label>
       <span className={`${fin.filter} ${styles.sortField}`}>
         <select

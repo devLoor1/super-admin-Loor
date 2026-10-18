@@ -1,270 +1,221 @@
-import { useMemo, useState, type CSSProperties } from 'react'
-import { ChartColumn, Clock, Eye, FilterX, Flag, Play, Search } from 'lucide-react'
+import { useEffect, useMemo, type CSSProperties } from 'react'
+import { ChartColumn, CircleCheck, Clock, Eye, FilterX, OctagonX, Search, SearchX } from 'lucide-react'
+import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
+import { useUrlSearchDraft } from '../../../app/useUrlSearchDraft'
+import { EmptyState } from '../../../components/ui/EmptyState'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { MODALITY_CATALOG } from '../../finance-modalities/modalitiesModel'
-import { useOpportunities } from '../../operation/opportunities/opportunityStore'
-import { ModalityChip } from '../../operation/opportunities/OpportunityParts'
-import { NoResults, PageIntro, Pagination, SortButton, SummaryCards, WhitelabelTag } from '../../operation/shared/OperationUi'
-import {
-  PAGE_SIZE,
-  compareDate,
-  compareText,
-  normalize,
-  whitelabelName,
-  type SortState,
-} from '../../operation/shared/operationModel'
+import { PageIntro, SortButton, SummaryCards, type SummaryCard } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
 import core from '../shared/FinanceCore.module.css'
-import { PROTOTYPE_WHITELABELS } from '../../whitelabels/prototypeWhitelabels'
 import {
+  FINANCE_SEARCH_MAX_LENGTH,
+  INVESTMENT_SORT_KEYS,
   INVESTMENT_STATUSES,
-  INVESTMENT_STATUS_META,
-  PAYMENT_STATUSES,
-  PAYMENT_STATUS_META,
-  formatMoney,
-  investmentHref,
+  type InvestmentQuery,
+  type InvestmentRecord,
+  type InvestmentSortKey,
   type InvestmentStatus,
-  type PaymentStatus,
-} from '../shared/financeCoreModel'
-import { INVESTMENTS, paymentById, walletById, walletRelations } from '../shared/financeCoreRecords'
-import { dateText, investorName } from '../shared/financeCoreRefs'
+  type SortOrder,
+} from '../shared/financeApi'
+import { dateText, financeErrorView, formatCount, investmentStatusMeta, rangeText, tenantNames } from '../shared/financePresentation'
+import {
+  investmentHref,
+  investmentsHref,
+  investorProfileHref,
+  parseInvestmentListRoute,
+  type FinanceListProps,
+  type InvestmentListRoute,
+} from '../shared/financeRoute'
 import {
   ContextChip,
   DateStack,
   FinanceCoreShell,
-  SortSelect,
-  type SortOption,
+  IgnoredParams,
   InvestmentStatusPill,
-  InvestorRef,
   Money,
-  OpportunityRef,
-  PaymentStatusPill,
+  ReadError,
+  ServerPagination,
+  SkeletonRows,
+  TenantTag,
 } from '../shared/FinanceCoreUi'
+import { useFinanceTenants, useInvestmentList } from '../shared/useFinanceData'
 import styles from './Investments.module.css'
 
-type SortKey = 'investor' | 'opportunity' | 'amount' | 'status' | 'updatedAt'
-type PaymentFilter = 'all' | 'none' | PaymentStatus
-
-const STATUS_ORDER = Object.fromEntries(INVESTMENT_STATUSES.map((status, index) => [status, index])) as Record<InvestmentStatus, number>
-
-
-const SORT_OPTIONS: SortOption<SortKey>[] = [
-  { key: 'investor', label: 'Investidor', ascending: 'A–Z', descending: 'Z–A' },
-  { key: 'opportunity', label: 'Oportunidade', ascending: 'A–Z', descending: 'Z–A' },
-  { key: 'amount', label: 'Valor', ascending: 'menor primeiro', descending: 'maior primeiro' },
-  { key: 'status', label: 'Status', ascending: 'Pendente → Encerrado', descending: 'Encerrado → Pendente' },
-  { key: 'updatedAt', label: 'Atualizado em', ascending: 'mais antigo', descending: 'mais recente' },
-]
+const SORT_LABEL: Record<InvestmentSortKey, string> = { createdAt: 'Criado em', updatedAt: 'Atualizado em', status: 'Status' }
+const ORDER_LABEL: Record<InvestmentSortKey, Record<SortOrder, string>> = {
+  createdAt: { desc: 'mais recente', asc: 'mais antigo' },
+  updatedAt: { desc: 'mais recente', asc: 'mais antigo' },
+  status: { asc: 'A–Z', desc: 'Z–A' },
+}
 
 /**
- * `#/finance/investments` — Investimentos V1: global, READ-ONLY financial
- * supervision. Search, filters, sort, local pagination and "Abrir". No create,
- * edit, status change, cancel, confirm, settle, refund or bulk action.
- * Optional context from other modules: `?investidor=` (Operação ›
- * Investidores) and `?wallet=` (investments a wallet's movements reference).
+ * `#/finance/investments` — Investimentos (Finance Read V1): global, READ-ONLY
+ * list from `GET /investments`. Search, status, Whitelabel, investor and
+ * opportunity filters, sorting and pagination are all applied by the Control
+ * Plane (URL-backed). No create, edit, status change, confirmation,
+ * settlement, cancellation or refund exists.
  */
-export function InvestmentsPage({ investorId, walletId }: { investorId?: string; walletId?: string }) {
-  const opportunities = useOpportunities()
-  const [query, setQuery] = useState('')
-  const [whitelabel, setWhitelabel] = useState('all')
-  const [status, setStatus] = useState<'all' | InvestmentStatus>('all')
-  const [modality, setModality] = useState('all')
-  const [payment, setPayment] = useState<PaymentFilter>('all')
-  const [investor, setInvestor] = useState(investorId ?? '')
-  const [wallet, setWallet] = useState(walletId ?? '')
-  const [sort, setSort] = useState<SortState<SortKey>>({ key: 'updatedAt', direction: 'descending' })
-  const [page, setPage] = useState(1)
-
-  // A new route context (e.g. another investor's "Ver investimentos") replaces the local one.
-  const [routeContext, setRouteContext] = useState(`${investorId ?? ''}|${walletId ?? ''}`)
-  if (routeContext !== `${investorId ?? ''}|${walletId ?? ''}`) {
-    setRouteContext(`${investorId ?? ''}|${walletId ?? ''}`)
-    setInvestor(investorId ?? '')
-    setWallet(walletId ?? '')
-    setPage(1)
-  }
-
-  const opportunityName = (id: string) => opportunities.find((item) => item.id === id)?.name
-  const walletInvestmentIds = useMemo(
-    () => (wallet ? new Set(walletRelations(wallet).investments.map((item) => item.investmentId)) : null),
-    [wallet],
-  )
-
-  const filtered = useMemo(() => {
-    const needle = normalize(query)
-    const nameOf = (id: string) => opportunities.find((item) => item.id === id)?.name ?? ''
-    const rows = INVESTMENTS.filter((item) => {
-      if (whitelabel !== 'all' && item.whitelabelId !== whitelabel) return false
-      if (status !== 'all' && item.status !== status) return false
-      if (modality !== 'all' && item.modality !== modality) return false
-      if (payment !== 'all') {
-        const related = paymentById(item.paymentId)
-        if (payment === 'none' ? Boolean(item.paymentId) : related?.status !== payment) return false
-      }
-      if (investor && item.investorId !== investor) return false
-      if (walletInvestmentIds && !walletInvestmentIds.has(item.investmentId)) return false
-      return (
-        !needle ||
-        normalize(
-          `${item.investmentId} ${item.investorId} ${investorName(item.investorId) ?? ''} ${item.opportunityId} ${nameOf(item.opportunityId)}`,
-        ).includes(needle)
-      )
-    })
-    const direction = sort.direction === 'ascending' ? 1 : -1
-    return [...rows].sort((a, b) => {
-      if (sort.key === 'updatedAt') {
-        if (!a.updatedAt || !b.updatedAt) return compareDate(a.updatedAt ?? null, b.updatedAt ?? null)
-        return direction * compareDate(a.updatedAt, b.updatedAt)
-      }
-      const value =
-        sort.key === 'investor'
-          ? compareText(investorName(a.investorId) ?? a.investorId, investorName(b.investorId) ?? b.investorId)
-          : sort.key === 'opportunity'
-            ? compareText(nameOf(a.opportunityId) || a.opportunityId, nameOf(b.opportunityId) || b.opportunityId)
-            : sort.key === 'amount'
-              ? a.amount - b.amount
-              : STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-      return direction * (value || compareText(a.investmentId, b.investmentId))
-    })
-  }, [opportunities, query, whitelabel, status, modality, payment, investor, walletInvestmentIds, sort])
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const current = Math.min(page, pageCount)
-  const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE)
-  const filtersActive =
-    Boolean(query.trim()) || [whitelabel, status, modality, payment].some((value) => value !== 'all') || Boolean(investor || wallet)
-
-  const count = (key: InvestmentStatus) => INVESTMENTS.filter((item) => item.status === key).length
-
-  function update<T>(setter: (value: T) => void) {
-    return (value: T) => {
-      setter(value)
-      setPage(1)
-    }
-  }
-
-  function syncRouteContext(nextInvestor: string, nextWallet: string) {
-    // Removing either chip must also remove its URL parameter, even when the other remains.
-    const params = new URLSearchParams()
-    if (nextInvestor) params.set('investidor', nextInvestor)
-    if (nextWallet) params.set('wallet', nextWallet)
-    const search = params.toString()
-    window.location.hash = `#/finance/investments${search ? `?${search}` : ''}`
-  }
-
-  function removeInvestor() {
-    setInvestor('')
-    setPage(1)
-    syncRouteContext('', wallet)
-  }
-
-  function removeWallet() {
-    setWallet('')
-    setPage(1)
-    syncRouteContext(investor, '')
-  }
-
-  function clearFilters() {
-    setQuery('')
-    setWhitelabel('all')
-    setStatus('all')
-    setModality('all')
-    setPayment('all')
-    setInvestor('')
-    setWallet('')
-    setPage(1)
-    if (investorId !== undefined || walletId !== undefined) syncRouteContext('', '')
-  }
-
-  function toggleSort(key: SortKey) {
-    setPage(1)
-    setSort((currentSort) =>
-      currentSort.key !== key
-        ? { key, direction: key === 'updatedAt' || key === 'amount' ? 'descending' : 'ascending' }
-        : { key, direction: currentSort.direction === 'ascending' ? 'descending' : 'ascending' },
-    )
-  }
-
-  const sortHeader = (key: SortKey, label: string) => (
-    <SortButton label={label} sorted={sort.key === key} direction={sort.direction} onClick={() => toggleSort(key)} />
-  )
-  const ariaSort = (key: SortKey) => (sort.key === key ? sort.direction : undefined)
-
+export function InvestmentsPage(props: FinanceListProps) {
   return (
     <FinanceCoreShell section="investments" title="Investimentos">
-      <PageIntro text="Acompanhe investimentos de todos os Whitelabels em uma só visão financeira. Somente leitura: nenhuma ação altera investimento, pagamento ou wallet." />
+      <PageIntro text="Investimentos de todos os Whitelabels, com dados do Control Plane. Somente leitura: nenhuma ação cria, altera, confirma ou estorna investimentos." />
+      <InvestmentList {...props} />
+    </FinanceCoreShell>
+  )
+}
 
+function InvestmentList({ status, whitelabel, investidor, oportunidade, search: searchParam, page, sort, order, routeKey = '' }: FinanceListProps) {
+  useRestoreReplacedScroll(routeKey)
+  const { state: route, ignored } = useMemo(
+    () => parseInvestmentListRoute({ status, whitelabel, investidor, oportunidade, search: searchParam, page, sort, order }),
+    [status, whitelabel, investidor, oportunidade, searchParam, page, sort, order],
+  )
+  const tenants = useFinanceTenants()
+  const tenantData = tenants.state.status === 'success' ? tenants.state.data : null
+  const nameOf = tenantNames(tenantData)
+
+  const query: InvestmentQuery = {
+    page: route.page,
+    search: route.search,
+    status: route.status,
+    whitelabelId: route.whitelabelId,
+    investorId: route.investorId,
+    opportunityId: route.opportunityId,
+    sort: route.sort,
+    order: route.order,
+  }
+  const list = useInvestmentList(query)
+  const data = list.state.status === 'success' ? list.state.data : null
+  // Investments answer a page past the end with an empty page (meta.page = requested): clamp below.
+  const pageOutOfRange = data !== null && data.rows.length === 0 && data.total > 0
+  const loading = list.state.status === 'loading' || list.state.status === 'idle' || pageOutOfRange
+  const listError = list.state.status === 'error' ? financeErrorView(list.state.error, 'os investimentos') : null
+
+  /* Scope counts (Backend totals, one perPage=1 read per status; never a client count). */
+  const scope = { search: route.search, whitelabelId: route.whitelabelId, investorId: route.investorId, opportunityId: route.opportunityId }
+  const countQuery = (status?: InvestmentStatus): InvestmentQuery => ({ ...scope, page: 1, perPage: 1, status, sort: 'createdAt', order: 'desc' })
+  const totalCount = useInvestmentList(countQuery())
+  const paidCount = useInvestmentList(countQuery('paid'))
+  const waitingCount = useInvestmentList(countQuery('waiting_payment'))
+  const failedCount = useInvestmentList(countQuery('failed'))
+  const countOf = (remote: ReturnType<typeof useInvestmentList>) => (remote.state.status === 'success' ? formatCount(remote.state.data.total) : null)
+
+  const search = useUrlSearchDraft({
+    urlSearch: route.search,
+    urlKey: routeKey,
+    maxLength: FINANCE_SEARCH_MAX_LENGTH,
+    commit: (next) => replaceRouteKeepingScroll(investmentsHref({ ...route, search: next, page: 1 })),
+  })
+
+  /** Any change other than the page goes back to page 1; the pending search is carried, never the stale URL value. */
+  function navigate(next: Partial<InvestmentListRoute>) {
+    const pendingSearch = search.pendingSearch()
+    const resetPage = !('page' in next) || pendingSearch !== route.search
+    replaceRouteKeepingScroll(investmentsHref({ ...route, search: pendingSearch, ...next, page: resetPage ? 1 : next.page }))
+  }
+
+  useEffect(() => {
+    if (!data) return
+    const target = data.total === 0 ? 1 : Math.min(route.page, data.lastPage)
+    if (target !== route.page) replaceRouteKeepingScroll(investmentsHref({ ...route, page: target }))
+  }, [data, route])
+
+  const filtersActive =
+    route.search !== '' || search.draft.trim() !== '' || Boolean(route.status || route.whitelabelId || route.investorId || route.opportunityId)
+  function clearFilters() {
+    search.clear()
+    replaceRouteKeepingScroll(investmentsHref({ sort: route.sort, order: route.order }))
+  }
+
+  function toggleSort(key: InvestmentSortKey) {
+    navigate(route.sort !== key ? { sort: key, order: key === 'status' ? 'asc' : 'desc' } : { sort: key, order: route.order === 'asc' ? 'desc' : 'asc' })
+  }
+  const ariaSort = (key: InvestmentSortKey) => (route.sort === key ? (route.order === 'asc' ? 'ascending' : 'descending') : undefined)
+  const sortHeader = (key: InvestmentSortKey) => (
+    <SortButton label={SORT_LABEL[key]} sorted={route.sort === key} direction={route.order === 'asc' ? 'ascending' : 'descending'} onClick={() => toggleSort(key)} />
+  )
+
+  const scopeLabel = route.whitelabelId ? nameOf(route.whitelabelId) : 'Todos os Whitelabels'
+  const cards: SummaryCard[] = [
+    { label: 'Total de investimentos', value: countOf(totalCount), detail: route.search ? `${scopeLabel} · resultado da busca` : scopeLabel, icon: ChartColumn, tone: 'blue' },
+    { label: 'Pagos', value: countOf(paidCount), detail: 'Status do investimento: pago', icon: CircleCheck, tone: 'teal' },
+    { label: 'Aguardando pagamento', value: countOf(waitingCount), detail: 'Status do investimento', icon: Clock, tone: 'amber' },
+    { label: 'Com falha', value: countOf(failedCount), detail: 'Status do investimento: falhou', icon: OctagonX, tone: 'violet' },
+  ]
+
+  const listContext = investmentsHref(route)
+  const columns = [styles.colId, styles.colInvestor, styles.colOpportunity, styles.colWl, styles.colQuotes, styles.colAmount, styles.colStatus, styles.colCreated, styles.colUpdated, shared.colActions]
+  const tenantOptions = tenantData?.rows ?? []
+
+  return (
+    <>
       <SummaryCards
         title="Resumo dos investimentos"
-        note="Contagens de registros do protótipo (todos os Whitelabels) — não são dados de produção nem volumes financeiros."
-        cards={[
-          { label: 'Total de investimentos', value: INVESTMENTS.length, detail: 'Todos os Whitelabels', icon: ChartColumn, tone: 'blue' },
-          { label: 'Ativos', value: count('active'), detail: 'Estado do protótipo', icon: Play, tone: 'teal' },
-          { label: 'Pendentes', value: count('pending'), detail: 'Estado do protótipo', icon: Clock, tone: 'amber' },
-          { label: 'Encerrados', value: count('closed'), detail: 'Estado do protótipo', icon: Flag, tone: 'violet' },
-        ]}
+        cards={cards}
+        note="Contagens informadas pelo Control Plane para o escopo atual (Whitelabel, investidor, oportunidade e busca). Nenhum valor monetário é somado nesta tela."
       />
 
-      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="inv-list-title">
+      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="inv-list-title" data-investment-list>
         <h2 id="inv-list-title" className="visually-hidden">
           Lista de investimentos
         </h2>
-        <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 4 } as CSSProperties}>
+        <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 3 } as CSSProperties}>
           <label className={fin.search}>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-            <span className="visually-hidden">Buscar por ID, investidor ou oportunidade</span>
+            <span className="visually-hidden">Buscar por nome ou e-mail do investidor, ou nome da oportunidade (busca feita pelo Control Plane)</span>
             <input
+              id="investment-search"
               type="search"
-              value={query}
-              placeholder="Buscar por ID, investidor ou oportunidade…"
-              onChange={(event) => update(setQuery)(event.target.value)}
+              value={search.draft}
+              maxLength={FINANCE_SEARCH_MAX_LENGTH}
+              placeholder="Buscar investidor ou oportunidade…"
+              onChange={(event) => search.setDraft(event.target.value)}
             />
           </label>
           <div className={shared.filterSelects}>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por Whitelabel</span>
-              <select value={whitelabel} onChange={(event) => update(setWhitelabel)(event.target.value)}>
-                <option value="all">Todos os Whitelabels</option>
-                {PROTOTYPE_WHITELABELS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
               <span className="visually-hidden">Filtrar por status do investimento</span>
-              <select value={status} onChange={(event) => update(setStatus)(event.target.value as 'all' | InvestmentStatus)}>
+              <select id="investment-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as InvestmentStatus) })}>
                 <option value="all">Todos os status</option>
                 {INVESTMENT_STATUSES.map((key) => (
                   <option key={key} value={key}>
-                    {INVESTMENT_STATUS_META[key].label}
+                    {investmentStatusMeta(key).label}
                   </option>
                 ))}
               </select>
             </label>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por modalidade</span>
-              <select value={modality} onChange={(event) => update(setModality)(event.target.value)}>
-                <option value="all">Todas as modalidades</option>
-                {MODALITY_CATALOG.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
+              <span className="visually-hidden">Filtrar por Whitelabel</span>
+              <select id="investment-whitelabel" value={route.whitelabelId ?? 'all'} onChange={(event) => navigate({ whitelabelId: event.target.value === 'all' ? undefined : event.target.value })}>
+                <option value="all">Todos os Whitelabels</option>
+                {tenantOptions.map((row) => (
+                  <option key={row.whitelabelId} value={row.whitelabelId}>
+                    {nameOf(row.whitelabelId)}
                   </option>
                 ))}
+                {route.whitelabelId && !tenantOptions.some((row) => row.whitelabelId === route.whitelabelId) ? (
+                  <option value={route.whitelabelId}>{nameOf(route.whitelabelId)}</option>
+                ) : null}
               </select>
             </label>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por pagamento relacionado</span>
-              <select value={payment} onChange={(event) => update(setPayment)(event.target.value as PaymentFilter)}>
-                <option value="all">Todos os pagamentos</option>
-                <option value="none">Sem pagamento vinculado</option>
-                {PAYMENT_STATUSES.map((key) => (
-                  <option key={key} value={key}>
-                    Pagamento: {PAYMENT_STATUS_META[key].label.toLowerCase()}
-                  </option>
-                ))}
+              <span className="visually-hidden">Ordenar investimentos</span>
+              <select
+                id="investment-sort"
+                value={`${route.sort}:${route.order}`}
+                onChange={(event) => {
+                  const [sort, order] = event.target.value.split(':') as [InvestmentSortKey, SortOrder]
+                  navigate({ sort, order })
+                }}
+              >
+                {INVESTMENT_SORT_KEYS.flatMap((key) =>
+                  (['desc', 'asc'] as const).map((order) => (
+                    <option key={`${key}:${order}`} value={`${key}:${order}`}>
+                      {SORT_LABEL[key]} ({ORDER_LABEL[key][order]})
+                    </option>
+                  )),
+                )}
               </select>
             </label>
           </div>
@@ -274,149 +225,199 @@ export function InvestmentsPage({ investorId, walletId }: { investorId?: string;
           </OutlineButton>
         </div>
 
-        {investor ? (
+        {route.investorId ? (
           <ContextChip
             dataName="investor"
-            label={`Investidor: ${investorName(investor) ?? investor}`}
-            removeLabel={`Remover filtro do investidor ${investorName(investor) ?? investor}`}
-            onRemove={removeInvestor}
+            label={`Investidor #${route.investorId}`}
+            removeLabel={`Remover filtro do investidor ${route.investorId}`}
+            onRemove={() => navigate({ investorId: undefined })}
           />
         ) : null}
-        {wallet ? (
+        {route.opportunityId ? (
           <ContextChip
-            dataName="wallet"
-            label={`Wallet: ${wallet}${walletById(wallet) ? '' : ' (não encontrada)'}`}
-            removeLabel={`Remover filtro da wallet ${wallet}`}
-            onRemove={removeWallet}
+            dataName="opportunity"
+            label={`Oportunidade #${route.opportunityId}`}
+            removeLabel={`Remover filtro da oportunidade ${route.opportunityId}`}
+            onRemove={() => navigate({ opportunityId: undefined })}
           />
         ) : null}
-
-        <SortSelect className={styles.sortVisible} options={SORT_OPTIONS} sort={sort} onChange={(next) => {
-          setSort(next)
-          setPage(1)
-        }} />
+        <IgnoredParams ignored={ignored} />
 
         <div className={fin.tableArea}>
-          <table className={`${fin.table} ${shared.table} ${styles.table}`}>
-            <caption className="visually-hidden">Investimentos de todos os Whitelabels (protótipo, somente leitura)</caption>
-            <thead>
-              <tr>
-                <th scope="col" className={styles.colId}>
-                  Investimento
-                </th>
-                <th scope="col" className={styles.colInvestor} aria-sort={ariaSort('investor')}>
-                  {sortHeader('investor', 'Investidor')}
-                </th>
-                <th scope="col" className={styles.colOpportunity} aria-sort={ariaSort('opportunity')}>
-                  {sortHeader('opportunity', 'Oportunidade')}
-                </th>
-                <th scope="col" className={styles.colWl}>
-                  Whitelabel
-                </th>
-                <th scope="col" className={styles.colMod}>
-                  Modalidade
-                </th>
-                <th scope="col" className={styles.colAmount} aria-sort={ariaSort('amount')}>
-                  {sortHeader('amount', 'Valor')}
-                </th>
-                <th scope="col" className={styles.colStatus} aria-sort={ariaSort('status')}>
-                  {sortHeader('status', 'Status')}
-                </th>
-                <th scope="col" className={styles.colPayment}>
-                  Pagamento
-                </th>
-                <th scope="col" className={styles.colUpdated} aria-sort={ariaSort('updatedAt')}>
-                  {sortHeader('updatedAt', 'Atualizado em')}
-                </th>
-                <th scope="col" className={shared.colActions}>
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((item) => {
-                const href = investmentHref(item.investmentId)
-                const related = paymentById(item.paymentId)
-                const oppName = opportunityName(item.opportunityId)
-                const paymentCell = related ? (
-                  <PaymentStatusPill status={related.status} />
+          {listError ? (
+            <ReadError error={listError} onRetry={list.reload} />
+          ) : (
+            <table className={`${fin.table} ${shared.table} ${styles.table}`} aria-busy={loading || undefined}>
+              <caption className="visually-hidden">
+                Investimentos ({scopeLabel}), dados do Control Plane{data ? `, página ${data.page} de ${data.lastPage}` : ''}. Valores em reais, a partir de centavos
+                informados pelo Control Plane.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className={styles.colId}>
+                    Investimento
+                  </th>
+                  <th scope="col" className={styles.colInvestor}>
+                    Investidor
+                  </th>
+                  <th scope="col" className={styles.colOpportunity}>
+                    Oportunidade
+                  </th>
+                  <th scope="col" className={styles.colWl}>
+                    Whitelabel
+                  </th>
+                  <th scope="col" className={styles.colQuotes}>
+                    Cotas
+                  </th>
+                  <th scope="col" className={styles.colAmount}>
+                    Valor
+                  </th>
+                  <th scope="col" className={styles.colStatus} aria-sort={ariaSort('status')}>
+                    {sortHeader('status')}
+                  </th>
+                  <th scope="col" className={styles.colCreated} aria-sort={ariaSort('createdAt')}>
+                    {sortHeader('createdAt')}
+                  </th>
+                  <th scope="col" className={styles.colUpdated} aria-sort={ariaSort('updatedAt')}>
+                    {sortHeader('updatedAt')}
+                  </th>
+                  <th scope="col" className={shared.colActions}>
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <SkeletonRows columns={columns} />
                 ) : (
-                  <span className={shared.muted}>{item.paymentId ? 'Pagamento não encontrado' : 'Sem pagamento'}</span>
-                )
-                return (
-                  <tr key={item.investmentId} className={fin.row} data-investment={item.investmentId}>
-                    <td className={styles.colId}>
-                      <span className={shared.cellText}>
-                        <a href={href} className={shared.rowLink}>
-                          {item.investmentId}
-                        </a>
-                        <span className={styles.metaParties}>
-                          {investorName(item.investorId) ?? item.investorId} · {oppName ?? item.opportunityId}
-                        </span>
-                        <span className={styles.metaWl}>{whitelabelName(item.whitelabelId)}</span>
-                        <span className={styles.metaMod}>Modalidade: {MODALITY_CATALOG.find((m) => m.id === item.modality)?.name}</span>
-                        <span className={styles.metaPayment}>
-                          Pagamento: {related ? `${related.paymentId} · ${PAYMENT_STATUS_META[related.status].label}` : 'sem pagamento'}
-                        </span>
-                        <span className={styles.metaUpdated}>Atualizado em {dateText(item.updatedAt)}</span>
-                        <span className={styles.metaStates}>
-                          <span className={styles.metaAmount}>{formatMoney(item.amount, item.currency)}</span>
-                          <InvestmentStatusPill status={item.status} />
-                        </span>
-                      </span>
-                    </td>
-                    <td className={styles.colInvestor}>
-                      <InvestorRef investorId={item.investorId} />
-                    </td>
-                    <td className={styles.colOpportunity}>
-                      <OpportunityRef opportunityId={item.opportunityId} name={oppName} />
-                    </td>
-                    <td className={styles.colWl}>
-                      <WhitelabelTag whitelabelId={item.whitelabelId} />
-                    </td>
-                    <td className={styles.colMod}>
-                      <ModalityChip modality={item.modality} />
-                    </td>
-                    <td className={styles.colAmount}>
-                      <Money amount={item.amount} currency={item.currency} />
-                    </td>
-                    <td className={styles.colStatus}>
-                      <InvestmentStatusPill status={item.status} />
-                    </td>
-                    <td className={styles.colPayment}>{paymentCell}</td>
-                    <td className={styles.colUpdated}>
-                      <DateStack iso={item.updatedAt} />
-                    </td>
-                    <td className={shared.colActions}>
-                      <a
-                        href={href}
-                        className={`${fin.iconButton} ${shared.actionLink}`}
-                        aria-label={`Abrir investimento ${item.investmentId}`}
-                        data-open-record={item.investmentId}
-                      >
-                        <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
-                      </a>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          {rows.length === 0 ? <NoResults title="Nenhum investimento encontrado" description="Ajuste a busca, os filtros ou o contexto." /> : null}
+                  data?.rows.map((row) => (
+                    <InvestmentRow
+                      key={row.id}
+                      row={row}
+                      tenant={nameOf(row.whitelabelId)}
+                      href={investmentHref(row.id, listContext)}
+                      onInvestor={route.investorId === row.investorId ? undefined : () => navigate({ investorId: row.investorId })}
+                      onOpportunity={route.opportunityId === row.opportunityId ? undefined : () => navigate({ opportunityId: row.opportunityId })}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {!listError && data && !loading && data.rows.length === 0 ? (
+            <div className={core.feedback} data-list-empty>
+              {filtersActive ? (
+                <>
+                  <EmptyState icon={SearchX} title="Nenhum investimento encontrado" description="O Control Plane não encontrou investimentos para estes filtros." />
+                  <OutlineButton onClick={clearFilters}>Limpar filtros</OutlineButton>
+                </>
+              ) : (
+                <EmptyState icon={ChartColumn} title="Nenhum investimento registrado" description="O Control Plane não retornou investimentos." />
+              )}
+            </div>
+          ) : null}
         </div>
 
-        <div className={shared.footer}>
-          <p className={shared.range} aria-live="polite">
-            {filtered.length
-              ? `Mostrando ${(current - 1) * PAGE_SIZE + 1}–${Math.min(current * PAGE_SIZE, filtered.length)} de ${filtered.length} ${
-                  filtered.length === 1 ? 'investimento' : 'investimentos'
-                }`
-              : 'Nenhum investimento'}
-            {filtersActive ? ` (filtrados de ${INVESTMENTS.length})` : ''}
-          </p>
-          <Pagination label="Paginação de investimentos" page={current} pageCount={pageCount} onPage={setPage} />
-        </div>
+        {listError ? null : (
+          <div className={shared.footer}>
+            <p className={shared.range} aria-live="polite">
+              {data && !loading ? rangeText(data, 'investimento', 'investimentos', 'Nenhum investimento') : 'Carregando investimentos…'}
+              <span className={core.dataNote}> · Dados do Control Plane</span>
+            </p>
+            <ServerPagination
+              label="Paginação de investimentos"
+              current={route.page}
+              last={(data ?? list.lastData)?.lastPage ?? 1}
+              disabled={loading}
+              onChange={(page) => navigate({ page })}
+            />
+          </div>
+        )}
       </section>
-    </FinanceCoreShell>
+    </>
+  )
+}
+
+function InvestmentRow({
+  row,
+  tenant,
+  href,
+  onInvestor,
+  onOpportunity,
+}: {
+  row: InvestmentRecord
+  tenant: string
+  href: string
+  onInvestor?: () => void
+  onOpportunity?: () => void
+}) {
+  return (
+    <tr className={fin.row} data-investment={row.id}>
+      <td className={styles.colId}>
+        <span className={shared.cellText}>
+          <a href={href} className={shared.rowLink}>
+            Investimento {row.id}
+          </a>
+          <span className={styles.metaParties}>
+            Investidor #{row.investorId} · Oportunidade #{row.opportunityId}
+          </span>
+          <span className={styles.metaWl}>{tenant}</span>
+          <span className={styles.metaQuotes}>Cotas: {row.quoteQuantity ?? '—'}</span>
+          <span className={styles.metaDates}>
+            Criado em {dateText(row.createdAt)} · Atualizado em {dateText(row.updatedAt)}
+          </span>
+          <span className={styles.metaStates}>
+            <span className={styles.metaAmount}>
+              <Money cents={row.amountCents} />
+            </span>
+            <InvestmentStatusPill status={row.status} />
+          </span>
+        </span>
+      </td>
+      <td className={styles.colInvestor}>
+        <span className={shared.cellText}>
+          <a href={investorProfileHref(row.investorId)} className={shared.inlineLink} aria-label={`Abrir investidor ${row.investorId} em Operação › Investidores`}>
+            Investidor #{row.investorId}
+          </a>
+          {onInvestor ? (
+            <button type="button" className={core.filterInline} onClick={onInvestor} data-filter-investor={row.investorId}>
+              Filtrar por este investidor
+            </button>
+          ) : null}
+        </span>
+      </td>
+      <td className={styles.colOpportunity}>
+        <span className={shared.cellText}>
+          <span>Oportunidade #{row.opportunityId}</span>
+          {onOpportunity ? (
+            <button type="button" className={core.filterInline} onClick={onOpportunity} data-filter-opportunity={row.opportunityId}>
+              Filtrar por esta oportunidade
+            </button>
+          ) : null}
+        </span>
+      </td>
+      <td className={styles.colWl}>
+        <TenantTag whitelabelId={row.whitelabelId} name={tenant} />
+      </td>
+      <td className={styles.colQuotes}>{row.quoteQuantity ?? <span className={shared.muted}>—</span>}</td>
+      <td className={styles.colAmount}>
+        <Money cents={row.amountCents} />
+      </td>
+      <td className={styles.colStatus}>
+        <InvestmentStatusPill status={row.status} />
+      </td>
+      <td className={styles.colCreated}>
+        <DateStack iso={row.createdAt} />
+      </td>
+      <td className={styles.colUpdated}>
+        <DateStack iso={row.updatedAt} />
+      </td>
+      <td className={shared.colActions}>
+        <a href={href} className={`${fin.iconButton} ${shared.actionLink}`} aria-label={`Abrir investimento ${row.id}`} data-open-record={row.id}>
+          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+        </a>
+      </td>
+    </tr>
   )
 }

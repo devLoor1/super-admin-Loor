@@ -7,7 +7,8 @@ Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
 dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
 **Investidores** and **Empreendedores** (Operação) — **Finance Core V1** —
-**Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro) — and
+**Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro; Control Plane
+reads since Finance Read Integration V1) — and
 **Compliance › KYC V1** plus **Auditoria V1** (Governança).
 
 Frontend homologation: canonical **`dev`** → Git-connected Netlify
@@ -85,6 +86,23 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > ainda abre o ID ilustrativo `wl_proto_01`, que pede a escolha de um Whitelabel
 > do Control Plane. Ver
 > [`docs/accounts-read-integration-v1.md`](docs/accounts-read-integration-v1.md).
+> **Financeiro › Investimentos, Pagamentos / PIX e Wallet** leem o Control Plane
+> (`GET /api/investments[/:id]`, `GET /api/payments[/:id]`, `GET /api/wallets[/:id]`,
+> `GET /api/wallets/:id/movements`, `GET /api/wallets/:id/investments`) — **somente
+> leitura**: filtros, ordenação e paginação no servidor (estado na URL), valores em
+> centavos inteiros de BRL formatados só na exibição (valor ausente é "Valor
+> indisponível", nunca R$ 0,00), saldo autoritativo do Backend (nunca calculado nem
+> somado entre Whitelabels), status do pagamento independente do status do
+> investimento, referências PIX parciais e documentos exatamente como o Backend os
+> mascara (resposta com documento sem máscara é recusada inteira). Os registros
+> ilustrativos de Finance Core foram removidos. Nenhuma escrita financeira existe. Ver
+> [`docs/finance-read-integration-v1.md`](docs/finance-read-integration-v1.md).
+> **Finance Read delivery status:** independently reviewed in the isolated feature
+> worktree for one local commit only; not pushed, promoted or deployed. Synthetic
+> browser QA and the live Finance-derived Investor destination read/reload/history
+> gate passed. The earlier timeout/502 did not recur; its precise historical cause
+> is unproven. Deployed Finance-candidate UI-to-live-API E2E remains a separate
+> promotion-cycle task.
 > Demais telas ainda usam **dados ilustrativos locais** — saves/pause/testes
 > não batem na API. Contrato e próximos wire-ups:
 > [`backend-super-admin-Loor/docs/fe-integration-contract-v1.md`](https://github.com/devLoor1/backend-super-admin-Loor/blob/dev/docs/fe-integration-contract-v1.md).
@@ -117,13 +135,12 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > investment, opportunity and account actions are notices — never links with
 > real ids into the prototype modules;
 > **no account, KYC or financial mutation exists in Operation**.
-> Finance Core (Investimentos, Pagamentos / PIX, Wallet) is **read-only
-> supervision** over illustrative, frozen records that reference each other
-> only by explicit ids: no status, amount or balance is synchronised or
-> computed, the PIX tab never shows a payload, key, copy-and-paste code or
-> payable QR Code, "Saldo representado" is a prototype representation, and
-> **no charge, confirmation, settlement, refund, credit/debit, transfer or
-> any other financial operation exists**.
+> Investimentos, Pagamentos / PIX and Wallet read the Control Plane (Finance
+> Read Integration V1, see above): no status, amount or balance is synchronised
+> or computed on the client, the PIX tab never shows a payload, key,
+> copy-and-paste code or payable QR Code, and **no charge, confirmation,
+> settlement, refund, credit/debit, transfer or any other financial operation
+> exists**.
 > Compliance › KYC lists illustrative cases that reference Operation
 > participants; evidences are metadata only (no file, upload, OCR or
 > biometrics), and reviewing evidence, adding / resolving / reopening pending
@@ -173,11 +190,14 @@ regras** (`#/whitelabels/:whitelabelId/finance/modalities`) and **Segmentos e us
 dos recursos** (`#/whitelabels/:whitelabelId/finance/segments-resource-uses`, one
 entry for both catalogs); on all three screens the Financeiro links keep the
 displayed Whitelabel. Financeiro also lists the three global Finance Core
-screens: **Investimentos** (`#/finance/investments`, optional `?investidor=:id`
-or `?wallet=:id` context, and `/:investmentId`), **Pagamentos / PIX**
-(`#/finance/payments`, optional `?wallet=:id`, and `/:paymentId`) and **Wallet**
-(`#/finance/wallets` and `/:walletId`, optional `?movimento=:movementId` that
-opens the inline movement detail). **Operação** links to `#/operation/opportunities` and, while
+screens (Control Plane reads): **Investimentos** (`#/finance/investments`,
+optional `?status=`, `?whitelabel=`, `?investidor=`, `?oportunidade=`, `?search=`,
+`?page=`, `?sort=`, `?order=`, and `/:investmentId` with optional `?returnTo=`),
+**Pagamentos / PIX** (`#/finance/payments`, same parameters, and `/:paymentId`) and
+**Wallet** (`#/finance/wallets`, optional `?search=`, `?page=`, `?sort=`, `?order=`,
+and `/:walletId` with optional `?aba=`, `?mpage=`, `?tipo=`, `?categoria=`,
+`?oportunidade=`, `?ipage=`, `?istatus=`, `?movimento=` that opens the inline
+movement detail, and `?returnTo=`). **Operação** links to `#/operation/opportunities` and, while
 active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 (global screens across Whitelabels): `#/operation/opportunities` (optional
 `?empreendedor=:id`), `/new`, `/:opportunityId`, `/:opportunityId/edit` (optional
@@ -251,8 +271,8 @@ src/
                                     "#/whitelabels/:id/finance/segments-resource-uses",
                                     "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
                                     "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]",
-                                    "#/finance/investments[?investidor=…|?wallet=…]", "/:id",
-                                    "#/finance/payments[?wallet=…]", "/:id", "#/finance/wallets", "/:id[?movimento=…]",
+                                    "#/finance/investments[?status=…&whitelabel=…&investidor=…&oportunidade=…]", "/:id",
+                                    "#/finance/payments[?…same…]", "/:id", "#/finance/wallets", "/:id[?aba=…&movimento=…]",
                                     "#/compliance/kyc[?participant=…&whitelabel=…&status=…]", "/:id",
                                     "#/audit[?resourceType=…&resourceId=…&whitelabel=…&actor=…&action=…]", "/:id", else login
   lib/api.ts                        Nest transport (VITE_API_BASE_URL, X-Correlation-ID, timeout, typed errors)
@@ -377,11 +397,12 @@ src/
       companies/                    Companies Frontend V1 PROTOTYPE: candidate contract types, isolated illustrative
                                     source, presenter, URL state, list + detail (no request, no CRUD)
     finance-core/
-      shared/                       models (Investment ≠ Payment ≠ Wallet ≠ WalletMovement), frozen seeds, explicit-reference
-                                    lookups, read-only references to Operation / Gateways, Finance Core frame, session activity
-      investments/                  Investimentos list + read-only detail (Visão geral, Pagamento / PIX, Wallet / Movimentações)
-      payments/                     Pagamentos / PIX list + read-only detail (Visão geral, PIX, Relações financeiras)
-      wallets/                      Wallet list + read-only detail (movements with inline detail, Relações financeiras)
+      shared/                       Finance Read V1: GET-only adapters + strict parsers (financeApi), display boundary
+                                    (financePresentation: centavos → R$, labels, partial references, error copy), URL state
+                                    (financeRoute), keyed read hooks, Finance frame + shared UI, in-memory session activity
+      investments/                  Investimentos: server-filtered list + read-only detail (Visão geral, Pagamento / PIX, Wallet)
+      payments/                     Pagamentos / PIX: server-filtered list + read-only detail (Visão geral, PIX, Relações)
+      wallets/                      Wallet: list with authoritative balances + detail (summary, movements, Whitelabel investments)
     compliance-kyc/                 Compliance › KYC: model, frozen case seeds, session store (KYC only), live participant
                                     resolution, list, case detail (4 tabs), local-action dialogs, navigation helper for other modules
     governance-audit/               Auditoria: GET /audit reads (auditApi, URL state, sanitizer / labels), read-only list

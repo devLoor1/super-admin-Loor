@@ -1,282 +1,112 @@
 import { useEffect, useState } from 'react'
-import { ChartColumn, ExternalLink, Info, Link2, QrCode, Target, Wallet as WalletIcon } from 'lucide-react'
-import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
+import { ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import primary from '../../../components/ui/PrimaryButton.module.css'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { useOpportunities } from '../../operation/opportunities/opportunityStore'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, WhitelabelTag, type DomainNavItem } from '../../operation/shared/OperationUi'
+import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
 import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
+import type { PaymentDetail } from '../shared/financeApi'
 import {
-  PAYMENT_METHOD_META,
-  gatewaysHref,
-  investmentHref,
-  opportunityHref,
-  walletHref,
-  type Payment,
-} from '../shared/financeCoreModel'
-import { investmentById, movementsForPayment, paymentById, walletIdsOf } from '../shared/financeCoreRecords'
-import { dateText, investorName, useGatewayResolver } from '../shared/financeCoreRefs'
+  STATUS_INDEPENDENCE_NOTE,
+  dateText,
+  financeErrorView,
+  partialReference,
+  paymentMethodLabel,
+  paymentTypeLabel,
+  providerLabel,
+  tenantNames,
+} from '../shared/financePresentation'
+import { investmentHref, investorProfileHref, paymentListReturnHash, paymentsHref, walletHref } from '../shared/financeRoute'
 import {
-  DateStack,
   DetailHero,
-  DirectionTag,
+  DetailStatus,
   FinanceCoreShell,
-  GatewayTag,
-  InvestmentStatusPill,
   KeyValueList,
-  MethodTag,
   Money,
-  MovementStatusPill,
   PaymentStatusPill,
   RecordNotFound,
   TabPanel,
+  TenantTag,
 } from '../shared/FinanceCoreUi'
+import { useFinanceTenants, usePaymentDetail } from '../shared/useFinanceData'
 import styles from '../shared/FinanceCore.module.css'
 import local from './Payments.module.css'
 
 type Tab = 'overview' | 'pix' | 'relations' | 'activity'
 const TAB_PREFIX = 'payment-detail'
 
-/** `#/finance/payments/:paymentId` — read-only payment / PIX record. */
-export function PaymentDetailPage({ paymentId }: { paymentId: string }) {
-  const payment = paymentById(paymentId)
-  if (!payment) return <RecordNotFound section="payments" title="Pagamento não encontrado" id={paymentId} />
+/** `#/finance/payments/:paymentId` — read-only investment PIX charge from `GET /payments/:id`. */
+export function PaymentDetailPage({ paymentId, returnTo }: { paymentId: string; returnTo?: string }) {
+  const detail = usePaymentDetail(paymentId)
+  const back = paymentListReturnHash(returnTo)
+  if (detail.state.status === 'error') {
+    const view = financeErrorView(detail.state.error, 'o pagamento')
+    if (view.notFound) return <RecordNotFound section="payments" title="Pagamento não encontrado" id={paymentId} backHref={back} />
+    return <DetailStatus section="payments" id={paymentId} error={view} onRetry={detail.reload} />
+  }
+  if (detail.state.status !== 'success') return <DetailStatus section="payments" id={paymentId} />
   return (
-    <FinanceCoreShell section="payments" title="Pagamentos / PIX" trail={[payment.paymentId]}>
-      <PaymentContent payment={payment} />
+    <FinanceCoreShell section="payments" title="Pagamentos / PIX" trail={[`Pagamento ${paymentId}`]}>
+      <PaymentContent payment={detail.state.data} back={back} />
     </FinanceCoreShell>
   )
 }
 
-function PaymentContent({ payment }: { payment: Readonly<Payment> }) {
-  const notify = usePrototypeNotice()
-  const activity = useFinanceCoreActivity(payment.paymentId)
-  const opportunities = useOpportunities()
-  const resolveGateway = useGatewayResolver()
-  const [tab, setTab] = useState<Tab>('overview')
-  const id = payment.paymentId
-  const gateway = resolveGateway(payment.gatewayId)
-  const investment = investmentById(payment.investmentId)
-  const opportunity = payment.opportunityId ? opportunities.find((item) => item.id === payment.opportunityId) : undefined
-  const investor = investorName(payment.investorId)
-  const movements = movementsForPayment(id)
-  const walletIds = walletIdsOf(movements)
-  const isPix = payment.method === 'pix'
-  const gatewayDestination = gatewaysHref(payment.whitelabelId)
+function PartialReference({ value }: { value: string | null }) {
+  const shown = partialReference(value)
+  if (!shown) return <span className={shared.muted}>Não informado</span>
+  return (
+    <span>
+      <span className={styles.mono}>{shown}</span>
+      {shown !== value ? <span className={styles.partialTag}>(parcial)</span> : null}
+    </span>
+  )
+}
 
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(id, { title, detail })
+function PaymentContent({ payment, back }: { payment: PaymentDetail; back: string }) {
+  const tenants = useFinanceTenants()
+  const tenant = tenantNames(tenants.state.status === 'success' ? tenants.state.data : null)(payment.whitelabelId)
+  const id = payment.id
+  const activity = useFinanceCoreActivity(`payment:${id}`)
+  const [tab, setTab] = useState<Tab>('overview')
+  const log = (title: string, detail?: string) => addFinanceCoreActivity(`payment:${id}`, { title, detail })
 
   useEffect(() => {
-    addFinanceCoreActivity(id, { title: 'Pagamento consultado', detail: 'Visão financeira (somente leitura)' })
+    addFinanceCoreActivity(`payment:${id}`, { title: 'Pagamento consultado', detail: 'Leitura do Control Plane (somente leitura)' })
   }, [id])
 
   function changeTab(next: Tab) {
     setTab(next)
-    if (next === 'pix') log('Dados do PIX consultados', isPix ? 'Sem QR Code, payload ou chave no protótipo' : `Método ${PAYMENT_METHOD_META[payment.method].label}`)
-    if (next === 'relations') log('Relações financeiras consultadas', `${investment ? 1 : 0} investimento · ${movements.length} movimentação(ões)`)
-  }
-
-  const onInvestment = () => log('Navegação para Investimentos solicitada', payment.investmentId)
-  const onGateway = () => log('Navegação para Gateways e contas solicitada', `${payment.gatewayId} (sem link direto ao gateway)`)
-  const onOpportunity = () => log('Navegação para Operação › Oportunidades solicitada', payment.opportunityId)
-  const onWallet = (walletId: string) => log('Navegação para Wallet solicitada', walletId)
-  const noInvestment = () => {
-    log('Investimento sem destino', 'Pagamento sem investimento — nenhuma navegação feita')
-    notify('Este pagamento não referencia um investimento no protótipo. Nenhuma navegação foi feita.')
-  }
-  const noOpportunity = () => {
-    log('Oportunidade sem destino', 'Pagamento sem oportunidade — nenhuma navegação feita')
-    notify('Este pagamento não referencia uma oportunidade no protótipo. Nenhuma navegação foi feita.')
-  }
-  const noWallet = () => {
-    log('Wallet sem destino', 'Nenhuma movimentação referencia este pagamento — nenhuma navegação feita')
-    notify('Nenhuma movimentação de wallet referencia este pagamento. Nenhuma navegação foi feita.')
+    if (next === 'pix') log('Dados do PIX consultados', 'Referências exibidas parcialmente')
+    if (next === 'relations') log('Relações consultadas', `Investimento ${payment.investmentId}`)
   }
 
   const navItems: DomainNavItem[] = [
-    payment.investmentId
-      ? {
-          key: 'investment',
-          label: 'Ver investimento',
-          description: `Investimentos — ${payment.investmentId}`,
-          icon: ChartColumn,
-          href: investmentHref(payment.investmentId),
-          onSelect: onInvestment,
-        }
-      : { key: 'investment', label: 'Ver investimento', description: 'Pagamento sem investimento vinculado', icon: ChartColumn, onSelect: noInvestment },
+    { key: 'investment', label: 'Ver investimento', description: `Investimentos — investimento ${payment.investmentId}`, icon: ChartColumn, href: investmentHref(payment.investmentId) },
+    { key: 'investor', label: 'Ver investidor', description: 'Operação › Investidores — perfil do investidor', icon: UserRound, href: investorProfileHref(payment.investorId) },
     {
-      key: 'gateway',
-      label: 'Ver gateway',
-      description: `Gateways e contas de ${gateway ? gateway.name : payment.gatewayId} (Whitelabel do pagamento)`,
-      icon: Link2,
-      href: gatewayDestination,
-      onSelect: onGateway,
+      key: 'investor-payments',
+      label: 'Pagamentos deste investidor',
+      description: `Lista filtrada pelo Control Plane — investidor #${payment.investorId}`,
+      icon: QrCode,
+      href: paymentsHref({ investorId: payment.investorId }),
     },
-    payment.opportunityId
-      ? {
-          key: 'opportunity',
-          label: 'Ver oportunidade',
-          description: 'Operação › Oportunidades — origem do investimento',
-          icon: Target,
-          href: opportunityHref(payment.opportunityId),
-          onSelect: onOpportunity,
-        }
-      : { key: 'opportunity', label: 'Ver oportunidade', description: 'Pagamento sem oportunidade referenciada', icon: Target, onSelect: noOpportunity },
-    walletIds.length
-      ? {
-          key: 'wallet',
-          label: 'Ver na Wallet',
-          description: `Wallet — ${walletIds.join(', ')}`,
-          icon: WalletIcon,
-          href: walletHref(walletIds[0]),
-          onSelect: () => onWallet(walletIds[0]),
-        }
-      : { key: 'wallet', label: 'Ver na Wallet', description: 'Nenhuma movimentação referencia este pagamento', icon: WalletIcon, onSelect: noWallet },
+    { key: 'wallet', label: 'Wallet do Whitelabel', description: `Wallet — ${tenant} (uma wallet por Whitelabel)`, icon: WalletIcon, href: walletHref(payment.whitelabelId) },
   ]
 
   const tabs: { value: Tab; label: string }[] = [
     { value: 'overview', label: 'Visão geral' },
     { value: 'pix', label: 'PIX' },
-    { value: 'relations', label: 'Relações financeiras' },
+    { value: 'relations', label: 'Relações' },
     { value: 'activity', label: 'Atividade da sessão' },
   ]
-
-  const investmentCard = (
-    <section className={fin.card} aria-labelledby={`pay-inv-title-${tab}`}>
-      <h3 id={`pay-inv-title-${tab}`} className={fin.cardTitleSm}>
-        Investimento relacionado
-      </h3>
-      {payment.investmentId ? (
-        <>
-          <KeyValueList
-            rows={[
-              { label: 'Investimento', value: payment.investmentId },
-              { label: 'Investidor', value: investorName(investment?.investorId) ?? '—' },
-              {
-                label: 'Oportunidade',
-                value: investment ? opportunities.find((item) => item.id === investment.opportunityId)?.name ?? investment.opportunityId : '—',
-              },
-              {
-                label: 'Status do investimento',
-                value: investment ? <InvestmentStatusPill status={investment.status} /> : 'Investimento não encontrado',
-              },
-            ]}
-          />
-          <div className={styles.cardActions}>
-            <a href={investmentHref(payment.investmentId)} className={`${outline.button} ${styles.primaryLink}`} onClick={onInvestment} data-view-investment>
-              Ver investimento
-              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-            </a>
-          </div>
-        </>
-      ) : (
-        <p className={styles.emptyLine} data-empty="investment">
-          <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-          Este pagamento não referencia um investimento. Pagamentos podem existir sem investimento neste protótipo.
-        </p>
-      )}
-    </section>
-  )
-
-  const movementsCard = (detailed: boolean) => (
-    <section className={fin.card} aria-labelledby={`pay-mov-title-${tab}`}>
-      <h3 id={`pay-mov-title-${tab}`} className={fin.cardTitleSm}>
-        Movimentações de wallet
-      </h3>
-      <p className={fin.cardSubtitle}>Movimentações cuja origem explícita é este pagamento — nenhum saldo é calculado.</p>
-      {movements.length ? (
-        <div className={styles.tableWrap}>
-          <table className={`${shared.miniTable} ${styles.miniTable}`}>
-            <caption className="visually-hidden">Movimentações de wallet que referenciam o pagamento {id}</caption>
-            <thead>
-              <tr>
-                <th scope="col">Movimento</th>
-                {detailed ? (
-                  <th scope="col" className={styles.optional}>
-                    Natureza
-                  </th>
-                ) : null}
-                <th scope="col" className={styles.optional}>
-                  Descrição
-                </th>
-                {detailed ? (
-                  <th scope="col" className={styles.optional}>
-                    Valor
-                  </th>
-                ) : null}
-                <th scope="col" className={styles.optional}>
-                  Status
-                </th>
-                <th scope="col" className={styles.optional}>
-                  Data
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {movements.map((movement) => (
-                <tr key={movement.movementId} data-movement={movement.movementId}>
-                  <td>
-                    <span className={shared.cellText}>
-                      <a href={walletHref(movement.walletId, movement.movementId)} className={shared.rowLink} onClick={() => onWallet(movement.walletId)}>
-                        {movement.movementId}
-                      </a>
-                      <span className={shared.rowId}>Wallet {movement.walletId}</span>
-                      <span className={styles.inline}>
-                        {detailed ? <DirectionTag direction={movement.direction} /> : null}
-                        {detailed ? <Money amount={movement.amount} currency={movement.currency} /> : null}
-                        <MovementStatusPill status={movement.status} />
-                        <span>{movement.description}</span>
-                        <span>{dateText(movement.createdAt)}</span>
-                      </span>
-                    </span>
-                  </td>
-                  {detailed ? (
-                    <td className={styles.optional}>
-                      <DirectionTag direction={movement.direction} />
-                    </td>
-                  ) : null}
-                  <td className={styles.optional}>{movement.description}</td>
-                  {detailed ? (
-                    <td className={styles.optional}>
-                      <Money amount={movement.amount} currency={movement.currency} />
-                    </td>
-                  ) : null}
-                  <td className={styles.optional}>
-                    <MovementStatusPill status={movement.status} />
-                  </td>
-                  <td className={styles.optional}>
-                    <DateStack iso={movement.createdAt} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className={styles.emptyLine} data-empty="movements">
-          <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-          Nenhuma movimentação de wallet referencia este pagamento.
-        </p>
-      )}
-      {walletIds.length ? (
-        <div className={styles.cardActions}>
-          <a href={walletHref(walletIds[0])} className={`${outline.button} ${styles.primaryLink}`} onClick={() => onWallet(walletIds[0])} data-view-wallet>
-            Ver na Wallet {walletIds[0]}
-            <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-          </a>
-        </div>
-      ) : null}
-    </section>
-  )
 
   return (
     <>
       <div>
-        <BackLink href="#/finance/payments" label="Voltar para Pagamentos / PIX" />
+        <BackLink href={back} label="Voltar para Pagamentos / PIX" />
       </div>
 
       <DetailHero
@@ -284,26 +114,19 @@ function PaymentContent({ payment }: { payment: Readonly<Payment> }) {
         title={`Pagamento ${id}`}
         status={<PaymentStatusPill status={payment.status} />}
         meta={[
-          { label: 'Método', value: <MethodTag method={payment.method} /> },
-          { label: 'Gateway', value: gateway?.name ?? `${payment.gatewayId} (não encontrado)` },
-          { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={payment.whitelabelId} /> },
-          { label: 'Investimento', value: payment.investmentId ?? 'Sem investimento' },
+          { label: 'Valor', value: <Money cents={payment.amountCents} /> },
+          { label: 'Investimento', value: <span>#{payment.investmentId}</span> },
+          { label: 'Whitelabel', value: <TenantTag whitelabelId={payment.whitelabelId} name={tenant} /> },
         ]}
         actions={
           <>
-            {payment.investmentId ? (
-              <a href={investmentHref(payment.investmentId)} className={`${outline.button} ${shared.secondaryButton}`} onClick={onInvestment} data-hero="investment">
-                Ver investimento
-                <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-              </a>
-            ) : (
-              <OutlineButton className={shared.secondaryButton} onClick={noInvestment} data-hero="investment">
-                Ver investimento
-              </OutlineButton>
-            )}
-            <a href={gatewayDestination} className={`${outline.button} ${shared.secondaryButton}`} onClick={onGateway} data-hero="gateway">
-              <Link2 size={15} strokeWidth={1.8} aria-hidden="true" />
-              Ver gateway
+            <a href={investmentHref(payment.investmentId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="investment">
+              Ver investimento
+              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+            </a>
+            <a href={investorProfileHref(payment.investorId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="investor">
+              Ver investidor
+              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
             </a>
           </>
         }
@@ -322,102 +145,99 @@ function PaymentContent({ payment }: { payment: Readonly<Payment> }) {
             <KeyValueList
               rows={[
                 { label: 'ID do pagamento', value: id },
-                { label: 'Investimento', value: payment.investmentId ?? 'Sem investimento vinculado' },
-                { label: 'Investidor', value: investor ?? (payment.investorId ? `${payment.investorId} (não encontrado)` : 'Não informado') },
-                {
-                  label: 'Oportunidade',
-                  value: opportunity?.name ?? (payment.opportunityId ? `${payment.opportunityId} (não encontrada)` : 'Não informada'),
-                },
-                { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={payment.whitelabelId} /> },
-                { label: 'Gateway', value: <GatewayTag gateway={gateway} gatewayId={payment.gatewayId} /> },
-                { label: 'Método', value: <MethodTag method={payment.method} /> },
-                { label: 'Valor', value: <Money amount={payment.amount} currency={payment.currency} /> },
-                { label: 'Status', value: <PaymentStatusPill status={payment.status} /> },
-                { label: 'Referência externa', value: payment.externalReference ?? '—' },
+                { label: 'Status do pagamento', value: <PaymentStatusPill status={payment.status} /> },
+                { label: 'Valor', value: <Money cents={payment.amountCents} /> },
+                { label: 'Método', value: paymentMethodLabel(payment.paymentMethod) },
+                { label: 'Tipo', value: paymentTypeLabel(payment.type) },
+                { label: 'Provedor', value: providerLabel(payment.provider) },
+                { label: 'Whitelabel', value: <TenantTag whitelabelId={payment.whitelabelId} name={tenant} /> },
                 { label: 'Criado em', value: dateText(payment.createdAt) },
                 { label: 'Atualizado em', value: dateText(payment.updatedAt) },
-                { label: 'Pago em', value: dateText(payment.paidAt) },
               ]}
             />
           </section>
           <DomainNavCard
             title="Navegação para domínios responsáveis"
-            intro="Investimento, gateway, oportunidade e wallet pertencem a outros módulos. Daqui você só navega até eles."
+            intro="Investimento, investidor e wallet pertencem a outros domínios. Daqui você só navega até eles."
             items={navItems}
           />
         </div>
         <InfoNote>
-          <strong>Pagamentos / PIX V1 é um módulo de supervisão financeira.</strong> Geração de cobrança, confirmação, liquidação,
-          cancelamento, estorno e reprocessamento permanecem fora deste módulo. Nada aqui chama um gateway ou banco.
+          <strong>Somente leitura.</strong> Dados de <code>GET /payments/{id}</code> — a cobrança PIX de um investimento, que não é o investimento nem a
+          wallet. Nenhuma ação gera cobrança, confirma, cancela, estorna ou reprocessa pagamentos.
         </InfoNote>
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="pix" current={tab}>
-        <div className={shared.panelGrid}>
+        <div className={local.stack}>
           <section className={fin.card} aria-labelledby="pay-pix-title">
             <h3 id="pay-pix-title" className={fin.cardTitleSm}>
               Dados do PIX
             </h3>
-            {isPix ? (
-              <KeyValueList
-                rows={[
-                  { label: 'Método', value: <MethodTag method={payment.method} /> },
-                  { label: 'Identificador da cobrança', value: payment.pixChargeId ?? '—' },
-                  { label: 'TxID / referência PIX', value: payment.pixReference ?? '—' },
-                  { label: 'Status PIX', value: <PaymentStatusPill status={payment.status} /> },
-                  { label: 'Gateway', value: <GatewayTag gateway={gateway} gatewayId={payment.gatewayId} /> },
-                  { label: 'Criado em', value: dateText(payment.createdAt) },
-                  { label: 'Atualizado em', value: dateText(payment.updatedAt) },
-                  { label: 'Pago em', value: dateText(payment.paidAt) },
-                ]}
-              />
-            ) : (
-              <>
-                <KeyValueList
-                  rows={[
-                    { label: 'Método', value: <MethodTag method={payment.method} /> },
-                    { label: 'Gateway', value: <GatewayTag gateway={gateway} gatewayId={payment.gatewayId} /> },
-                  ]}
-                />
-                <p className={styles.emptyLine} data-empty="pix">
-                  <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                  Este pagamento usa {PAYMENT_METHOD_META[payment.method].label}: não há dados de PIX para exibir.
-                </p>
-              </>
-            )}
-            {isPix ? (
-              <div className={local.qrPlaceholder} role="note" data-qr-placeholder>
-                <QrCode size={30} strokeWidth={1.4} aria-hidden="true" />
-                <span>QR Code não disponível no protótipo.</span>
-              </div>
-            ) : null}
-            <div className={styles.cardActions}>
-              <a href={gatewayDestination} className={`${primary.button} ${styles.primaryLink}`} onClick={onGateway} data-view-gateway>
-                Ver gateway
-                <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-              </a>
-            </div>
+            <p className={fin.cardSubtitle}>Referências de transação exibidas parcialmente. Não há QR Code, chave PIX ou código copia-e-cola nesta tela.</p>
+            <KeyValueList
+              rows={[
+                { label: 'TxID', value: <PartialReference value={payment.txid} /> },
+                { label: 'End-to-end ID', value: <PartialReference value={payment.externalEndToEndId} /> },
+                { label: 'Expira em', value: payment.expirationAt ? dateText(payment.expirationAt) : 'Não informado' },
+                { label: 'Pago em', value: payment.paymentAt ? dateText(payment.paymentAt) : 'Sem data de pagamento' },
+                { label: 'Liquidado em', value: payment.liquidationAt ? dateText(payment.liquidationAt) : 'Sem data de liquidação' },
+              ]}
+            />
           </section>
-          <div className={local.stack}>
-            {investmentCard}
-            {movementsCard(false)}
-          </div>
         </div>
-        <InfoNote>
-          Identificadores de cobrança e TxID são valores fictícios do protótipo. Não existe payload, código copia-e-cola, chave PIX, QR
-          Code pagável ou link de pagamento; no protótipo, o status PIX é o próprio status do pagamento.
-        </InfoNote>
+        <InfoNote>Datas e referências vêm do Control Plane. Um pagamento só é considerado pago pelo próprio status do pagamento.</InfoNote>
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="relations" current={tab}>
-        <div className={shared.panelGrid}>
-          {investmentCard}
-          {movementsCard(true)}
-        </div>
-        <InfoNote>
-          Pagamento ≠ investimento ≠ movimentação de wallet. As relações existem apenas porque os registros se referenciam
-          explicitamente; nenhum status ou valor é sincronizado.
-        </InfoNote>
+        <section className={fin.card} aria-labelledby="pay-rel-title">
+          <h3 id="pay-rel-title" className={fin.cardTitleSm}>
+            Relações do pagamento
+          </h3>
+          <p className={fin.cardSubtitle}>Identificadores informados pelo próprio pagamento — nenhuma relação é inferida.</p>
+          <KeyValueList
+            rows={[
+              {
+                label: 'Investimento',
+                value: (
+                  <a href={investmentHref(payment.investmentId)} className={shared.inlineLink} data-relation="investment">
+                    Investimento #{payment.investmentId}
+                  </a>
+                ),
+              },
+              {
+                label: 'Investidor',
+                value: (
+                  <a href={investorProfileHref(payment.investorId)} className={shared.inlineLink} data-relation="investor">
+                    Investidor #{payment.investorId}
+                  </a>
+                ),
+              },
+              {
+                label: 'Oportunidade',
+                value: (
+                  <span className={shared.cellText}>
+                    <span>Oportunidade #{payment.opportunityId}</span>
+                    <a href={paymentsHref({ opportunityId: payment.opportunityId })} className={shared.inlineLink} data-relation="opportunity-payments">
+                      <Target size={13} strokeWidth={1.8} aria-hidden="true" /> Pagamentos desta oportunidade
+                    </a>
+                  </span>
+                ),
+              },
+              { label: 'Whitelabel', value: <TenantTag whitelabelId={payment.whitelabelId} name={tenant} /> },
+            ]}
+          />
+          <div className={styles.cardActions}>
+            <a href={investmentHref(payment.investmentId)} className={`${primary.button} ${styles.primaryLink}`} data-view-investment>
+              Ver investimento
+              <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+            </a>
+          </div>
+          <p className={styles.emptyLine}>
+            <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+            {STATUS_INDEPENDENCE_NOTE}
+          </p>
+        </section>
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="activity" current={tab}>

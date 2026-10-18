@@ -464,9 +464,115 @@ const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8'
 for (const path of ['src/components', 'src/lib', 'src/features/dashboard', 'src/app/useUnsavedChangesGuard.ts', 'src/app/prototypeNavigation.ts', 'src/app/routeQuery.ts', 'src/app/useUrlSearchDraft.ts']) {
   check(git('diff', '--name-only', BASELINE, '--', path).trim() === '', `${path}: unchanged from ${BASELINE.slice(0, 7)} (sidebar, shortcuts, shared clients)`)
 }
-const appNow = codeOnly(await readFile(resolve(root, 'src/app/App.tsx'), 'utf8'), 'App.tsx')
-const appBefore = codeOnly(git('show', `${BASELINE}:src/app/App.tsx`), 'App.tsx')
-check(appNow === appBefore, 'App.tsx code identical to the baseline (route resolver, session guard and post-login landing unchanged; comments only)')
+// Finance Read Integration V1 (a later, reviewed unit) changed ONLY the Finance Read route
+// statements of App.tsx (URL params handed to the six Finance Read pages). Those statements
+// are located by syntax (never by line range) and must be EXACTLY the reviewed statements
+// below (allowlist, each once). Resolver and render statements are replaced by a positional
+// marker, so they must stay where the baseline has them (after the session guard, among the
+// other routes); everything else (route resolver, session guard, post-login landing) must
+// stay identical to the baseline.
+const REVIEWED_FINANCE_READ_STATEMENTS = [
+  "function financeListParams(params, search) { const value = (key) => params.get(key) || undefined; return { status: value('status'), whitelabel: value('whitelabel'), investidor: value('investidor'), oportunidade: value('oportunidade'), search: value('search'), page: value('page'), sort: value('sort'), order: value('order'), wallet: value('wallet'), routeKey: search, }; }",
+  "const WALLET_DETAIL_KEYS = ['aba', 'mpage', 'tipo', 'categoria', 'oportunidade', 'ipage', 'istatus', 'movimento', 'returnTo'];",
+  "if (path === 'finance/investments') return { view: 'finance-investments', params: financeListParams(params, search) };",
+  "if (path === 'finance/payments') return { view: 'finance-payments', params: financeListParams(params, search) };",
+  "if (path === 'finance/wallets') { const { search: query, page, sort, order, routeKey } = financeListParams(params, search); return { view: 'finance-wallets', params: { search: query, page, sort, order, routeKey } }; }",
+  "const investment = INVESTMENT_PATH.exec(path);",
+  "if (investment) { return { view: 'finance-investment', investmentId: decodeSegment(investment[1]), returnTo: params.get('returnTo') ?? undefined }; }",
+  "const payment = PAYMENT_PATH.exec(path);",
+  "if (payment) return { view: 'finance-payment', paymentId: decodeSegment(payment[1]), returnTo: params.get('returnTo') ?? undefined };",
+  "const wallet = WALLET_PATH.exec(path);",
+  "if (wallet) { const walletParams = {}; for (const key of WALLET_DETAIL_KEYS) walletParams[key] = params.get(key) || undefined; return { view: 'finance-wallet', walletId: decodeSegment(wallet[1]), params: walletParams, search }; }",
+  "if (route.view === 'finance-investments') return <InvestmentsPage {...route.params}/>;",
+  "if (route.view === 'finance-investment') { return <InvestmentDetailPage key={route.investmentId} investmentId={route.investmentId} returnTo={route.returnTo}/>; }",
+  "if (route.view === 'finance-payments') return <PaymentsPage {...route.params}/>;",
+  "if (route.view === 'finance-payment') return <PaymentDetailPage key={route.paymentId} paymentId={route.paymentId} returnTo={route.returnTo}/>;",
+  "if (route.view === 'finance-wallets') return <WalletsPage {...route.params}/>;",
+  "if (route.view === 'finance-wallet') { return <WalletDetailPage key={route.walletId} walletId={route.walletId} routeKey={route.search} {...route.params}/>; }",
+]
+const FINANCE_READ_VIEWS = /^route\.view === 'finance-(investments|investment|payments|payment|wallets|wallet)'$/
+const FINANCE_READ_PAGES = new Set(['InvestmentsPage', 'InvestmentDetailPage', 'PaymentsPage', 'PaymentDetailPage', 'WalletsPage', 'WalletDetailPage'])
+function withoutFinanceReadRoutes(code) {
+  const file = ts.createSourceFile('App.jsx', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX)
+  const cuts = []
+  const statementText = (node) => node.getText(file).replace(/\s+/g, ' ')
+  function inspect(statement, inResolver) {
+    const text = statementText(statement)
+    if (ts.isFunctionDeclaration(statement) && statement.name?.text === 'financeListParams') return 'helper'
+    if (ts.isVariableStatement(statement) && /^const WALLET_DETAIL_KEYS = \[/.test(text)) return 'helper'
+    if (inResolver && ts.isVariableStatement(statement) && /^const (investment|payment|wallet) = (INVESTMENT|PAYMENT|WALLET)_PATH\.exec\(path\);?$/.test(text)) return 'resolver'
+    if (ts.isIfStatement(statement)) {
+      const condition = statementText(statement.expression)
+      if (inResolver && /^path === 'finance\/(investments|payments|wallets)'$/.test(condition)) return 'resolver'
+      if (inResolver && /^(investment|payment|wallet)$/.test(condition)) return 'resolver'
+      if (FINANCE_READ_VIEWS.test(condition)) return 'render'
+    }
+    return null
+  }
+  function visit(node, inResolver) {
+    const resolver = inResolver || (ts.isFunctionDeclaration(node) && node.name?.text === 'routeFromHash')
+    if (ts.isSourceFile(node) || ts.isBlock(node)) {
+      for (const statement of node.statements) {
+        const kind = inspect(statement, resolver)
+        if (kind) cuts.push({ kind, start: statement.getStart(file), end: statement.getEnd(), text: statementText(statement), node: statement })
+        else visit(statement, resolver)
+      }
+      return
+    }
+    ts.forEachChild(node, (child) => visit(child, resolver))
+  }
+  visit(file, false)
+  let rest = code
+  for (const cut of [...cuts].sort((a, b) => b.start - a.start)) {
+    rest = rest.slice(0, cut.start) + (cut.kind === 'helper' ? ' ' : ` __FINANCE_READ_${cut.kind.toUpperCase()}__ `) + rest.slice(cut.end)
+  }
+  rest = rest.replace(/\s+/g, ' ').replace(/(__FINANCE_READ_(?:RESOLVER|RENDER)__)(?: \1)+/g, '$1').trim()
+  return { rest, cuts, file }
+}
+const cutKinds = (app) => ['helper', 'resolver', 'render'].map((kind) => app.cuts.filter((cut) => cut.kind === kind).length).join('/')
+const appBefore = withoutFinanceReadRoutes(codeOnly(git('show', `${BASELINE}:src/app/App.tsx`), 'App.tsx'))
+/** Every reason the Finance Read exemption would NOT hold for this App.tsx code (empty = holds). */
+function financeExemptionProblems(appCode) {
+  const app = withoutFinanceReadRoutes(appCode)
+  const problems = []
+  if (app.rest !== appBefore.rest) problems.push('code outside the reviewed statements, or their position, differs from the baseline')
+  if (cutKinds(app) !== '2/9/6' || cutKinds(appBefore) !== '0/9/6') problems.push(`statement counts ${cutKinds(app)} (baseline ${cutKinds(appBefore)})`)
+  const texts = app.cuts.map((cut) => cut.text)
+  const unreviewed = texts.filter((text) => !REVIEWED_FINANCE_READ_STATEMENTS.includes(text))
+  if (unreviewed.length) problems.push(`unreviewed statement: ${unreviewed[0].slice(0, 80)}`)
+  if (REVIEWED_FINANCE_READ_STATEMENTS.some((text) => texts.filter((item) => item === text).length !== 1)) problems.push('a reviewed statement is missing or duplicated')
+  for (const cut of app.cuts) {
+    if (/authed|LoginPage|DashboardPage|SHELL_VIEWS|validateSession|location|sessionStorage|localStorage|fetch|subscribeSession|menu-visibility|Visibility/.test(cut.text)) problems.push(`session / landing / transport code in: ${cut.text.slice(0, 60)}`)
+    if (cut.kind === 'render') {
+      const tags = []
+      const collect = (node) => {
+        if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) tags.push(node.tagName.getText(app.file))
+        ts.forEachChild(node, collect)
+      }
+      collect(cut.node)
+      if (tags.length !== 1 || !FINANCE_READ_PAGES.has(tags[0])) problems.push(`render statement renders ${tags.join(',')}`)
+    }
+  }
+  return problems
+}
+const appCodeNow = codeOnly(await readFile(resolve(root, 'src/app/App.tsx'), 'utf8'), 'App.tsx')
+const exemptionProblems = financeExemptionProblems(appCodeNow)
+check(exemptionProblems.length === 0, `App.tsx identical to the baseline except the reviewed Finance Read statements, in the baseline positions: ${exemptionProblems.join('; ')}`)
+const walletsRender = "if (route.view === 'finance-wallets') return <WalletsPage {...route.params}/>;"
+const guardLine = "if (!authed || route.view === 'login')"
+const normalizedNow = appCodeNow.replace(/\s+/g, ' ')
+check(normalizedNow.includes(walletsRender) && normalizedNow.includes(guardLine), 'Exemption probes target the real App.tsx statements')
+for (const [label, mutate] of [
+  ['Finance render moved above the session guard', (code) => code.replace(walletsRender, '').replace(guardLine, `${walletsRender} ${guardLine}`)],
+  ['navigation side effect inside a Finance render', (code) => code.replace(walletsRender, "if (route.view === 'finance-wallets') { window.location.hash = '#/whitelabels'; return <WalletsPage {...route.params}/>; }")],
+  ['resolver hijack', (code) => code.replace("if (path === 'finance/payments') return { view: 'finance-payments', params: financeListParams(params, search) };", "if (path === 'finance/payments') return { view: 'dashboard' };")],
+  ['side effect inside a Finance helper', (code) => code.replace("routeKey: search, }; }", "routeKey: search, subscribe: subscribeSession(() => {}) }; }")],
+  ['duplicated resolver statement', (code) => code.replace("const investment = INVESTMENT_PATH.exec(path);", "const investment = INVESTMENT_PATH.exec(path); if (path === 'finance/payments') return { view: 'finance-payments', params: financeListParams(params, search) };")],
+  ['non-Finance route changed', (code) => code.replace(guardLine, "if (route.view === 'login')")],
+]) {
+  const mutated = mutate(normalizedNow)
+  check(mutated !== normalizedNow && financeExemptionProblems(mutated).length > 0, `Planted App.tsx change is rejected by the Finance Read exemption: ${label}`)
+}
 // Later units must explicitly declare their reviewed files, NOT exempt an entire
 // domain directory. New files, read adapters, routes, auth and shared code remain
 // protected. The exception does not exempt these files from the scans above/below.
@@ -479,11 +585,26 @@ const REVIEWED_WHITELABEL_FILES = new Set([
   'crud/whitelabelCommands.ts', 'crud/whitelabelForm.ts', 'crud/whitelabelMutationContract.ts',
   'crud/whitelabelMutationOutcome.ts', 'crud/whitelabelMutationRunner.ts',
 ].map((path) => `src/features/whitelabels/${path}`))
-const outsideMenuVisibility = (path) => !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path)
+// Finance Read Integration V1: reviewed Finance Read files (rewritten pages, new read
+// adapters, removed prototype fixtures). Explicit paths only — never the whole domain.
+const REVIEWED_FINANCE_READ_FILES = new Set([
+  'investments/InvestmentDetailPage.tsx', 'investments/Investments.module.css', 'investments/InvestmentsPage.tsx',
+  'payments/PaymentDetailPage.tsx', 'payments/Payments.module.css', 'payments/PaymentsPage.tsx',
+  'wallets/WalletDetailPage.tsx', 'wallets/Wallets.module.css', 'wallets/WalletsPage.tsx',
+  'shared/FinanceCore.module.css', 'shared/FinanceCoreUi.tsx', 'shared/financeCoreActivity.ts',
+  'shared/financeApi.ts', 'shared/financePresentation.ts', 'shared/financeRoute.ts', 'shared/useFinanceData.ts',
+  'shared/financeCoreModel.ts', 'shared/financeCoreRecords.ts', 'shared/financeCoreRefs.ts', 'shared/prototypeFinanceCore.ts', // reviewed removals
+].map((path) => `src/features/finance-core/${path}`))
+const outsideMenuVisibility = (path) =>
+  !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
-check(changedOutside.length === 0 && untrackedOutside.length === 0, 'Only explicitly reviewed Whitelabel source files may change outside Menu Visibility; other domains and read adapters remain protected')
-for (const path of ['src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelApi.ts', 'src/features/whitelabels/useWhitelabelData.ts', 'src/components/shell/navigation.ts', 'src/lib/authSession.ts']) {
+check(changedOutside.length === 0 && untrackedOutside.length === 0, 'Only explicitly reviewed Whitelabel and Finance Read source files may change outside Menu Visibility; other domains and read adapters remain protected')
+for (const path of [
+  'src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelApi.ts', 'src/features/whitelabels/useWhitelabelData.ts',
+  'src/components/shell/navigation.ts', 'src/lib/authSession.ts',
+  'src/features/finance-core/shared/financeWrite.ts', 'src/features/finance-core/wallets/WalletTransfer.tsx', 'src/features/finance-gateways/FinanceGatewaysPage.tsx',
+]) {
   check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
 }
 for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
@@ -491,6 +612,12 @@ for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
   const source = await readFile(file, 'utf8')
   check(!unsafeCapability(source, false, rel === 'src/features/whitelabels/whitelabelApi.ts'), `${rel}: Whitelabel exception grants no transport capability; only its canonical GET adapter is allowed`)
   check(!unsafeCapability(source, true), `${rel}: Whitelabel exception grants no browser persistence capability`)
+}
+for (const file of await walk(resolve(root, 'src/features/finance-core'))) {
+  const rel = relative(root, file).replaceAll('\\', '/')
+  const source = await readFile(file, 'utf8')
+  check(!unsafeCapability(source, false, rel === 'src/features/finance-core/shared/financeApi.ts'), `${rel}: Finance Read exception grants no transport capability; only its canonical GET adapter is allowed`)
+  check(!unsafeCapability(source, true), `${rel}: Finance Read exception grants no browser persistence capability`)
 }
 for (const source of ['window["fetch"]("/api/whitelabels", {method:"POST"})', 'const send = fetch; send("/api/whitelabels")', 'import {authenticatedPatch as save} from "../../../lib/apiClient"']) {
   check(unsafeCapability(source), 'Planted Whitelabel write capability rejected inside reviewed files')

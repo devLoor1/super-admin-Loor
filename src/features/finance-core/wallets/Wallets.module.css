@@ -1,43 +1,28 @@
 /*
- * Wallet V1 — list columns (collapse by the list card's container width,
- * data moved under the wallet id) and the Movimentações tab with its inline
- * movement detail.
+ * Wallet (Finance Read V1) — list columns (collapse by the list card's
+ * container width, data moved under the wallet name) and the wallet detail:
+ * Backend summary, movement history with its inline detail, and the
+ * Whitelabel's investments.
  */
 
 .table {
   table-layout: auto;
 }
 
-/* Sort select (FinanceCoreUi) once sortable columns start to collapse. */
-@container (max-width: 1100px) {
-  .sortVisible.sortVisible {
-    display: flex;
-  }
-}
-
 .colId {
-  min-width: 96px;
-}
-
-.colOwner {
-  min-width: 170px;
+  min-width: 190px;
 }
 
 .colWl,
 .colCurrency,
 .colBalance,
-.colMovements,
-.colStatus,
-.colUpdated {
+.colBalanceAt,
+.colCreated {
   white-space: nowrap;
 }
 
-.ownerName {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-  color: var(--text-on-dark);
-  overflow-wrap: anywhere;
+.colBalance {
+  font-variant-numeric: tabular-nums;
 }
 
 .contextMark {
@@ -52,7 +37,6 @@
   color: var(--text-on-dark-secondary);
 }
 
-.metaOwner,
 .metaContext,
 .metaUpdated {
   display: none;
@@ -79,7 +63,8 @@
 }
 
 @container (max-width: 1100px) {
-  .colUpdated {
+  .colBalanceAt,
+  .colCreated {
     display: none;
   }
 
@@ -88,7 +73,7 @@
   }
 }
 
-@container (max-width: 900px) {
+@container (max-width: 820px) {
   .colWl,
   .colCurrency {
     display: none;
@@ -99,26 +84,14 @@
   }
 }
 
-@container (max-width: 700px) {
-  .colOwner,
-  .colMovements {
+@container (max-width: 520px) {
+  .table thead,
+  .colBalance {
     display: none;
-  }
-
-  .metaOwner {
-    display: block;
   }
 
   .colId {
     min-width: 0;
-  }
-}
-
-@container (max-width: 520px) {
-  .table thead,
-  .colBalance,
-  .colStatus {
-    display: none;
   }
 
   .metaStates {
@@ -127,27 +100,6 @@
 }
 
 /* ---------- Detail ---------- */
-
-.prototypeTag {
-  display: inline-block;
-  padding: 1px 7px;
-  border: 1px dashed rgb(164 176 236 / 0.4);
-  border-radius: 6px;
-  font-size: 10.5px;
-  font-weight: 600;
-  line-height: 16px;
-  color: var(--status-neutral-fg);
-  white-space: nowrap;
-}
-
-.summaryLink {
-  gap: 8px;
-  height: 38px;
-  padding: 0 14px;
-  font-size: 12.5px;
-  white-space: nowrap;
-  text-decoration: none;
-}
 
 .summaryStats {
   display: grid;
@@ -174,19 +126,42 @@
 
 .summaryStats dd {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 4px 8px;
   min-height: 26px;
   margin: 0;
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.summaryStats [data-primary] {
+  border-color: rgb(126 118 255 / 0.4);
+  background: rgb(98 90 230 / 0.08);
+}
+
+.sourceNote {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.subFilters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 /* Table + inline detail: side by side when the tab panel is wide, stacked otherwise. */
 .movementsArea {
   container-type: inline-size;
   min-width: 0;
+  margin-top: 14px;
 }
 
 .movementLayout {
@@ -208,23 +183,27 @@
 }
 
 .movementId {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   line-height: 19px;
   color: var(--text-on-dark);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
-.mvDirection,
+.mvKind,
 .mvAmount,
 .mvStatus,
 .mvDate,
-.mvSource {
+.mvCategory {
   white-space: nowrap;
 }
 
-.mvDescription {
-  min-width: 160px;
+.mvAmount {
+  font-variant-numeric: tabular-nums;
+}
+
+.mvCounterparty {
+  min-width: 150px;
 }
 
 .metaDescription,
@@ -237,8 +216,15 @@
   overflow-wrap: anywhere;
 }
 
-@container (max-width: 940px) {
-  .mvSource {
+.document {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text-on-dark-muted);
+}
+
+@container (max-width: 980px) {
+  .mvCategory,
+  .mvStatus {
     display: none;
   }
 
@@ -248,7 +234,7 @@
 }
 
 @container (max-width: 720px) {
-  .mvDescription,
+  .mvCounterparty,
   .mvDate {
     display: none;
   }
@@ -260,9 +246,8 @@
 
 @container (max-width: 520px) {
   .movementTable thead,
-  .mvDirection,
-  .mvAmount,
-  .mvStatus {
+  .mvKind,
+  .mvAmount {
     display: none;
   }
 
@@ -284,6 +269,7 @@
 
 .detailHead h3 {
   border-radius: 4px;
+  overflow-wrap: anywhere;
 }
 
 .detailHead h3:focus {
@@ -292,29 +278,4 @@
 
 .detailHead h3:focus-visible {
   box-shadow: var(--focus-ring-dark);
-}
-
-.transferList {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.transferList li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  padding: 10px 12px;
-  border: 1px dashed rgb(247 191 109 / 0.35);
-  border-radius: 10px;
-}
-
-.transferButton {
-  gap: 7px;
-  height: 34px;
-  padding: 0 12px;
-  font-size: 12px;
-  white-space: nowrap;
 }

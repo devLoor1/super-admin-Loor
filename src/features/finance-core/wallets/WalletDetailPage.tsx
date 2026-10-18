@@ -1,264 +1,185 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { ArrowLeftRight, ChartColumn, ExternalLink, Eye, Info, QrCode, UserRound, X } from 'lucide-react'
-import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
-import { OutlineButton } from '../../../components/ui/OutlineButton'
+import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
+import { ArrowLeftRight, ChartColumn, Eye, Info, QrCode, SearchX, Building, X } from 'lucide-react'
+import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
+import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
-import primary from '../../../components/ui/PrimaryButton.module.css'
+import { StatusPill } from '../../../components/ui/StatusPill'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, WhitelabelTag, type DomainNavItem } from '../../operation/shared/OperationUi'
-import { countLabel } from '../../operation/shared/operationModel'
+import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
 import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
 import {
-  CURRENCY_LABEL,
-  MOVEMENT_DIRECTION_META,
-  MOVEMENT_SOURCE_LABEL,
-  MOVEMENT_STATUS_META,
-  TRANSFER_PENDING_MESSAGE,
-  formatMoney,
-  investmentHref,
-  investorHref,
-  paymentHref,
-  walletHref,
-  type Wallet,
-  type WalletMovement,
-} from '../shared/financeCoreModel'
-import { walletById, walletRelations } from '../shared/financeCoreRecords'
-import { dateText, investorName, ownerLabel } from '../shared/financeCoreRefs'
+  INVESTMENT_STATUSES,
+  MOVEMENT_CATEGORIES,
+  type InvestmentStatus,
+  type MovementCategory,
+  type MovementKind,
+  type MovementRecord,
+  type WalletDetail,
+} from '../shared/financeApi'
 import {
+  BALANCE_UNAVAILABLE,
+  MOVEMENT_KIND_DESCRIPTION,
+  MOVEMENT_KIND_LABEL,
+  counterpartyTypeLabel,
+  dateText,
+  financeErrorView,
+  formatCount,
+  investmentStatusMeta,
+  movementCategoryLabel,
+  movementStatusLabel,
+  providerLabel,
+  rangeText,
+  referenceEntry,
+} from '../shared/financePresentation'
+import {
+  investmentHref,
+  investmentsHref,
+  investorProfileHref,
+  parseWalletDetailRoute,
+  paymentsHref,
+  walletHref,
+  walletListReturnHash,
+  whitelabelRecordHref,
+  type RawParams,
+  type WalletDetailRoute,
+  type WalletTab,
+} from '../shared/financeRoute'
+import {
+  ContextChip,
   DateStack,
   DetailHero,
-  DirectionTag,
+  DetailStatus,
   FinanceCoreShell,
+  IgnoredParams,
   InvestmentStatusPill,
   KeyValueList,
-  MethodTag,
+  KindTag,
   Money,
-  MovementStatusPill,
-  PaymentStatusPill,
+  ReadError,
   RecordNotFound,
+  ServerPagination,
+  SkeletonRows,
   TabPanel,
-  WalletStatusPill,
 } from '../shared/FinanceCoreUi'
+import { useWalletDetail, useWalletInvestments, useWalletMovements } from '../shared/useFinanceData'
 import styles from '../shared/FinanceCore.module.css'
 import local from './Wallets.module.css'
 
-type Tab = 'overview' | 'movements' | 'relations' | 'activity'
 const TAB_PREFIX = 'wallet-detail'
-const PAYMENTS_OF = (walletId: string) => `#/finance/payments?wallet=${encodeURIComponent(walletId)}`
-const INVESTMENTS_OF = (walletId: string) => `#/finance/investments?wallet=${encodeURIComponent(walletId)}`
+
+type WalletDetailProps = { walletId: string; routeKey?: string } & RawParams
 
 /**
- * `#/finance/wallets/:walletId` (optional `?movimento=`) — read-only wallet.
- * Selecting a movement opens an inline detail on the same route.
+ * `#/finance/wallets/:walletId` — one Whitelabel ledger wallet from
+ * `GET /wallets/:id` (`:id` = whitelabelId): authoritative balance and Backend
+ * summary, movement history (`/movements`, server-paginated, no search or
+ * sort) and the Whitelabel's investments (`/investments` alias). Read-only.
  */
-export function WalletDetailPage({ walletId, movementId }: { walletId: string; movementId?: string }) {
-  const wallet = walletById(walletId)
-  if (!wallet) return <RecordNotFound section="wallets" title="Wallet não encontrada" id={walletId} />
+export function WalletDetailPage({ walletId, routeKey = '', ...params }: WalletDetailProps) {
+  const detail = useWalletDetail(walletId)
+  const back = walletListReturnHash(params.returnTo)
+  if (detail.state.status === 'error') {
+    const view = financeErrorView(detail.state.error, 'a wallet')
+    if (view.notFound) return <RecordNotFound section="wallets" title="Wallet não encontrada" id={walletId} backHref={back} />
+    return <DetailStatus section="wallets" id={walletId} error={view} onRetry={detail.reload} />
+  }
+  if (detail.state.status !== 'success') return <DetailStatus section="wallets" id={walletId} />
+  const wallet = detail.state.data
   return (
-    <FinanceCoreShell section="wallets" title="Wallet" trail={[wallet.walletId]}>
-      <WalletContent wallet={wallet} movementId={movementId} />
+    <FinanceCoreShell section="wallets" title="Wallet" trail={[wallet.name ?? `Wallet ${walletId}`]}>
+      <WalletContent wallet={wallet} back={back} params={params} routeKey={routeKey} />
     </FinanceCoreShell>
   )
 }
 
-function WalletContent({ wallet, movementId }: { wallet: Readonly<Wallet>; movementId?: string }) {
-  const notify = usePrototypeNotice()
-  const id = wallet.walletId
-  const activity = useFinanceCoreActivity(id)
-  const relations = useMemo(() => walletRelations(id), [id])
-  const { movements } = relations
-  const owner = ownerLabel(wallet.ownerReference)
-  const ownsMovement = (candidate: string | undefined) => Boolean(candidate && movements.some((item) => item.movementId === candidate))
-
-  const [tab, setTab] = useState<Tab>(movementId ? 'movements' : 'overview')
-  const [selectedId, setSelectedId] = useState<string | null>(ownsMovement(movementId) ? (movementId ?? null) : null)
-  const [focusTick, setFocusTick] = useState(ownsMovement(movementId) ? 1 : 0)
-  const [routeMovement, setRouteMovement] = useState(movementId)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const tableRef = useRef<HTMLDivElement>(null)
-
-  // A new `?movimento=` on the same wallet (Back / Forward, another link) opens that movement.
-  if (routeMovement !== movementId) {
-    setRouteMovement(movementId)
-    setSelectedId(ownsMovement(movementId) ? (movementId ?? null) : null)
-    if (movementId) {
-      setTab('movements')
-      setFocusTick((tick) => tick + 1)
-    }
-  }
-
-  const selected = movements.find((item) => item.movementId === selectedId) ?? null
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(id, { title, detail })
+function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetail; back: string; params: RawParams; routeKey: string }) {
+  useRestoreReplacedScroll(routeKey)
+  const id = wallet.id
+  const { aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo } = params
+  const { state: route, ignored } = useMemo(
+    () => parseWalletDetailRoute({ aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo }),
+    [aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo],
+  )
+  const name = wallet.name ?? `Whitelabel #${wallet.whitelabelId}`
+  const activity = useFinanceCoreActivity(`wallet:${id}`)
+  const log = (title: string, detail?: string) => addFinanceCoreActivity(`wallet:${id}`, { title, detail })
 
   useEffect(() => {
-    addFinanceCoreActivity(id, { title: 'Wallet consultada', detail: 'Visão financeira (somente leitura)' })
+    addFinanceCoreActivity(`wallet:${id}`, { title: 'Wallet consultada', detail: 'Leitura do Control Plane (somente leitura)' })
   }, [id])
 
-  useEffect(() => {
-    if (!movementId) return
-    if (movements.some((item) => item.movementId === movementId)) {
-      addFinanceCoreActivity(id, { title: `Movimento ${movementId} aberto`, detail: 'Detalhe somente leitura (referência na URL)' })
-    } else {
-      notify(`O movimento “${movementId}” não pertence a esta wallet no protótipo.`)
-    }
-  }, [id, movementId, movements, notify])
-
-  useEffect(() => {
-    if (focusTick > 0) headingRef.current?.focus()
-  }, [focusTick])
-
-  function changeTab(next: Tab) {
-    setTab(next)
-    if (next === 'movements') log('Movimentações consultadas', countLabel(movements.length, 'movimentação', 'movimentações', 'Nenhuma movimentação'))
-    if (next === 'relations') log('Relações financeiras consultadas', `${relations.payments.length} pagamento(s) · ${relations.investments.length} investimento(s)`)
+  function navigate(next: Partial<WalletDetailRoute>) {
+    replaceRouteKeepingScroll(walletHref(id, { ...route, ...next }))
   }
 
-  function openMovement(movement: Readonly<WalletMovement>) {
-    // Keep reload and Back / Forward aligned with the visible selection.
-    window.location.assign(walletHref(id, movement.movementId))
+  function changeTab(next: WalletTab) {
+    navigate({ tab: next, movementId: undefined })
+    if (next === 'movimentacoes') log('Movimentações consultadas', 'Histórico do ledger (paginado pelo Control Plane)')
+    if (next === 'investimentos') log('Investimentos do Whitelabel consultados', `Whitelabel ${wallet.whitelabelId}`)
   }
 
-  function closeMovement() {
-    const closing = selectedId
-    setSelectedId(null)
-    // Same wallet component: no remount, and Back can reopen the inspected movement.
-    if (movementId) window.location.assign(walletHref(id))
-    window.requestAnimationFrame(() => {
-      tableRef.current?.querySelector<HTMLElement>(`[data-movement-open="${closing}"]`)?.focus()
-    })
-  }
-
-  function onPanelKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
-      closeMovement()
-    }
-  }
-
-  const notifyTransfer = (transferId: string) => {
-    log(`Transferência ${transferId}: módulo pendente`, 'Nenhuma navegação feita')
-    notify(TRANSFER_PENDING_MESSAGE)
-  }
-  const onOwner = () => log('Navegação para Operação › Investidores solicitada', owner.reference)
-  const ownerWithoutProfile = () => {
-    log('Titular sem destino', `${owner.reference} — nenhuma navegação feita`)
-    notify(`O titular desta wallet é um contexto operacional (${owner.reference}) sem módulo navegável no protótipo. Nenhuma navegação foi feita.`)
-  }
-  const onPayments = () => log('Navegação para Pagamentos / PIX solicitada', 'Lista filtrada por esta wallet')
-  const onInvestments = () => log('Navegação para Investimentos solicitada', 'Lista filtrada por esta wallet')
-  const noPayments = () => {
-    log('Pagamentos sem destino', 'Nenhuma movimentação referencia pagamentos — nenhuma navegação feita')
-    notify('Nenhuma movimentação desta wallet referencia um pagamento. Nenhuma navegação foi feita.')
-  }
-  const noInvestments = () => {
-    log('Investimentos sem destino', 'Nenhuma referência explícita — nenhuma navegação feita')
-    notify('Nenhuma movimentação desta wallet referencia um investimento. Nenhuma navegação foi feita.')
-  }
-
-  const ownerIsInvestor = wallet.ownerReference?.kind === 'investor'
-  const ownerHref = wallet.ownerReference?.kind === 'investor' ? investorHref(wallet.ownerReference.investorId) : undefined
-
+  const summary = wallet.summary
   const navItems: DomainNavItem[] = [
-    ownerHref
-      ? { key: 'owner', label: 'Ver titular', description: 'Operação › Investidores — dados do titular', icon: UserRound, href: ownerHref, onSelect: onOwner }
-      : { key: 'owner', label: 'Ver titular', description: 'Contexto operacional sem perfil navegável', icon: UserRound, onSelect: ownerWithoutProfile },
-    relations.payments.length
-      ? {
-          key: 'payments',
-          label: 'Ver Pagamentos / PIX',
-          description: `${countLabel(relations.payments.length, 'pagamento relacionado', 'pagamentos relacionados', '')}`,
-          icon: QrCode,
-          href: PAYMENTS_OF(id),
-          onSelect: onPayments,
-        }
-      : { key: 'payments', label: 'Ver Pagamentos / PIX', description: 'Nenhum pagamento referenciado', icon: QrCode, onSelect: noPayments },
-    relations.investments.length
-      ? {
-          key: 'investments',
-          label: 'Ver investimentos',
-          description: `${countLabel(relations.investments.length, 'investimento relacionado', 'investimentos relacionados', '')}`,
-          icon: ChartColumn,
-          href: INVESTMENTS_OF(id),
-          onSelect: onInvestments,
-        }
-      : { key: 'investments', label: 'Ver investimentos', description: 'Nenhum investimento referenciado', icon: ChartColumn, onSelect: noInvestments },
     {
       key: 'movements',
       label: 'Ver movimentações',
-      description: `Consultar histórico da wallet — ${countLabel(movements.length, 'movimentação', 'movimentações', 'nenhuma movimentação')}`,
+      description:
+        summary?.countIn != null && summary.countOut != null
+          ? `${formatCount(summary.countIn)} entradas · ${formatCount(summary.countOut)} saídas (Control Plane)`
+          : 'Histórico do ledger (Control Plane)',
       icon: ArrowLeftRight,
-      onSelect: () => changeTab('movements'),
+      onSelect: () => changeTab('movimentacoes'),
     },
+    { key: 'investments', label: 'Investimentos do Whitelabel', description: 'Lista do Control Plane escopada por esta wallet', icon: ChartColumn, onSelect: () => changeTab('investimentos') },
+    { key: 'payments', label: 'Pagamentos do Whitelabel', description: 'Pagamentos / PIX filtrados pelo Control Plane', icon: QrCode, href: paymentsHref({ whitelabelId: wallet.whitelabelId }) },
+    { key: 'whitelabel', label: 'Registro do Whitelabel', description: 'Plataformas › Whitelabels', icon: Building, href: whitelabelRecordHref(wallet.whitelabelId) },
   ]
 
-  const tabs: { value: Tab; label: string }[] = [
-    { value: 'overview', label: 'Visão geral' },
-    { value: 'movements', label: 'Movimentações' },
-    { value: 'relations', label: 'Relações financeiras' },
-    { value: 'activity', label: 'Atividade da sessão' },
+  const tabs: { value: WalletTab; label: string }[] = [
+    { value: 'visao-geral', label: 'Visão geral' },
+    { value: 'movimentacoes', label: 'Movimentações' },
+    { value: 'investimentos', label: 'Investimentos' },
+    { value: 'atividade', label: 'Atividade da sessão' },
   ]
-
-  const lastMovement = [...movements].sort((a, b) => ((a.createdAt ?? '') < (b.createdAt ?? '') ? 1 : -1))[0]
 
   return (
     <>
       <div>
-        <BackLink href="#/finance/wallets" label="Voltar para Wallet" />
+        <BackLink href={back} label="Voltar para Wallet" />
       </div>
 
       <DetailHero
         monogram="W"
-        title={`Wallet ${id}`}
-        status={<WalletStatusPill status={wallet.status} />}
+        title={`Wallet ${name}`}
+        status={<StatusPill tone="neutral" label="Ledger do Whitelabel" />}
         meta={[
-          { label: 'Moeda', value: wallet.currency },
-          {
-            label: 'Titular / contexto',
-            value: (
-              <>
-                <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
-                {owner.name} <span className={shared.heroId}>{owner.reference}</span>
-              </>
-            ),
-          },
-          { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={wallet.whitelabelId} /> },
+          { label: 'Saldo autoritativo', value: <Money cents={wallet.authoritativeBalanceCents} unavailable={BALANCE_UNAVAILABLE} /> },
+          { label: 'Saldo consultado em', value: dateText(wallet.balanceTimestamp) },
+          { label: 'Whitelabel', value: <span>{name} <span className={shared.heroId}>#{wallet.whitelabelId}</span></span> },
         ]}
         actions={
           <>
-            {ownerHref ? (
-              <a href={ownerHref} className={`${outline.button} ${shared.secondaryButton}`} onClick={onOwner} data-hero="owner">
-                <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
-                Ver titular
-              </a>
-            ) : (
-              <OutlineButton className={shared.secondaryButton} onClick={ownerWithoutProfile} data-hero="owner">
-                <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
-                Ver titular
-              </OutlineButton>
-            )}
-            {relations.investments.length ? (
-              <a href={INVESTMENTS_OF(id)} className={`${outline.button} ${shared.secondaryButton}`} onClick={onInvestments} data-hero="investments">
-                <ChartColumn size={15} strokeWidth={1.8} aria-hidden="true" />
-                Ver investimentos
-              </a>
-            ) : (
-              <OutlineButton className={shared.secondaryButton} onClick={noInvestments} data-hero="investments">
-                <ChartColumn size={15} strokeWidth={1.8} aria-hidden="true" />
-                Ver investimentos
-              </OutlineButton>
-            )}
+            <button type="button" className={`${outline.button} ${shared.secondaryButton}`} onClick={() => changeTab('movimentacoes')} data-hero="movements">
+              <ArrowLeftRight size={15} strokeWidth={1.8} aria-hidden="true" />
+              Ver movimentações
+            </button>
+            <a href={whitelabelRecordHref(wallet.whitelabelId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="whitelabel">
+              <Building size={15} strokeWidth={1.8} aria-hidden="true" />
+              Ver Whitelabel
+            </a>
           </>
         }
       />
 
+      <IgnoredParams ignored={ignored} />
+
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label={`Seções da wallet ${id}`} tabs={tabs} value={tab} onChange={changeTab} />
+        <Tabs idPrefix={TAB_PREFIX} label={`Seções da wallet ${name}`} tabs={tabs} value={route.tab} onChange={changeTab} />
       </div>
 
-      <TabPanel prefix={TAB_PREFIX} tab="overview" current={tab}>
+      <TabPanel prefix={TAB_PREFIX} tab="visao-geral" current={route.tab}>
         <div className={shared.panelGrid}>
           <section className={fin.card} aria-labelledby="wal-info-title">
             <h3 id="wal-info-title" className={fin.cardTitleSm}>
@@ -266,187 +187,318 @@ function WalletContent({ wallet, movementId }: { wallet: Readonly<Wallet>; movem
             </h3>
             <KeyValueList
               rows={[
-                { label: 'ID da wallet', value: id },
-                { label: 'Titular / contexto', value: `${owner.name} (${owner.reference})` },
-                { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={wallet.whitelabelId} /> },
-                { label: 'Moeda', value: CURRENCY_LABEL[wallet.currency] },
-                {
-                  label: 'Saldo representado',
-                  value: (
-                    <>
-                      <Money amount={wallet.representedBalance} currency={wallet.currency} />
-                      <span className={local.prototypeTag}>Representação do protótipo</span>
-                    </>
-                  ),
-                },
-                { label: 'Status', value: <WalletStatusPill status={wallet.status} /> },
+                { label: 'ID da wallet', value: `${id} (mesmo ID do Whitelabel)` },
+                { label: 'Whitelabel', value: name },
+                { label: 'Slug', value: wallet.slug ?? 'Não informado' },
+                { label: 'Titular', value: 'Whitelabel — ledger da plataforma' },
+                { label: 'Moeda', value: 'BRL · centavos inteiros' },
+                { label: 'Saldo autoritativo', value: <Money cents={wallet.authoritativeBalanceCents} unavailable={BALANCE_UNAVAILABLE} /> },
+                { label: 'Saldo consultado em', value: dateText(wallet.balanceTimestamp) },
                 { label: 'Criada em', value: dateText(wallet.createdAt) },
                 { label: 'Atualizada em', value: dateText(wallet.updatedAt) },
               ]}
             />
-            {!ownerIsInvestor ? (
-              <p className={shared.callout} style={{ marginTop: 12 }}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>Titular de contexto operacional (ilustrativo). O modelo de titularidade das wallets ainda está em aberto.</span>
-              </p>
-            ) : null}
           </section>
-          <DomainNavCard
-            title="Navegação para domínios responsáveis"
-            intro="Titular, pagamentos e investimentos pertencem a outros módulos. Daqui você só navega até eles."
-            items={navItems}
-          />
+          <DomainNavCard title="Navegação" intro="Movimentações e investimentos desta wallet, e os domínios relacionados." items={navItems} />
         </div>
+
+        <section className={fin.card} aria-labelledby="wal-summary-title" data-wallet-summary>
+          <h3 id="wal-summary-title" className={fin.cardTitleSm}>
+            Resumo do ledger
+          </h3>
+          {summary ? (
+            <>
+              <dl className={local.summaryStats}>
+                <div data-primary>
+                  <dt>Saldo autoritativo</dt>
+                  <dd>
+                    <Money cents={summary.authoritativeBalanceCents} unavailable={BALANCE_UNAVAILABLE} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Total de entradas</dt>
+                  <dd>
+                    <Money cents={summary.totalInCents} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Total de saídas</dt>
+                  <dd>
+                    <Money cents={summary.totalOutCents} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Movimentações de entrada</dt>
+                  <dd>{summary.countIn === null ? <span className={styles.moneyUnavailable}>Não informado</span> : formatCount(summary.countIn)}</dd>
+                </div>
+                <div>
+                  <dt>Movimentações de saída</dt>
+                  <dd>{summary.countOut === null ? <span className={styles.moneyUnavailable}>Não informado</span> : formatCount(summary.countOut)}</dd>
+                </div>
+              </dl>
+              <p className={local.sourceNote}>
+                Valores agregados informados pelo Control Plane (<code>summary</code>). Nenhum valor desta tela é calculado a partir das movimentações.
+              </p>
+            </>
+          ) : (
+            <p className={styles.emptyLine} data-empty="summary">
+              <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+              O Control Plane não informou o resumo desta wallet.
+            </p>
+          )}
+        </section>
         <InfoNote>
-          <strong>Wallet V1 é um módulo de supervisão financeira.</strong> O saldo exibido é uma representação do protótipo — não é valor
-          sacável, transferível ou liquidado, e não é calculado a partir das movimentações. Nenhuma ação credita, debita, transfere,
-          bloqueia ou ajusta saldo.
+          <strong>Somente leitura.</strong> O saldo vem do Control Plane (<code>authoritativeBalanceCents</code>) — não é recalculado a partir de entradas
+          menos saídas. Nenhuma ação credita, debita, transfere, saca ou ajusta saldo.
         </InfoNote>
       </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="movements" current={tab}>
-        <section className={fin.card} aria-labelledby="wal-summary-title">
-          <div className={shared.cardHead}>
-            <h3 id="wal-summary-title" className={fin.cardTitleSm}>
-              Resumo da wallet
-            </h3>
-            {relations.payments.length ? (
-              <a href={PAYMENTS_OF(id)} className={`${primary.button} ${local.summaryLink}`} onClick={onPayments} data-view-payments>
-                Ver Pagamentos / PIX
-                <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-              </a>
-            ) : null}
-          </div>
-          <dl className={local.summaryStats}>
-            <div>
-              <dt>Saldo representado</dt>
-              <dd>
-                <Money amount={wallet.representedBalance} currency={wallet.currency} />
-              </dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>
-                <WalletStatusPill status={wallet.status} />
-              </dd>
-            </div>
-            <div>
-              <dt>Quantidade de movimentações</dt>
-              <dd>{movements.length}</dd>
-            </div>
-            <div>
-              <dt>Última movimentação</dt>
-              <dd>{dateText(lastMovement?.createdAt)}</dd>
-            </div>
-          </dl>
-        </section>
+      <TabPanel prefix={TAB_PREFIX} tab="movimentacoes" current={route.tab}>
+        <MovementsPanel walletId={id} route={route} navigate={navigate} log={log} />
+      </TabPanel>
+
+      <TabPanel prefix={TAB_PREFIX} tab="investimentos" current={route.tab}>
+        <WalletInvestmentsPanel walletId={id} whitelabelId={wallet.whitelabelId} route={route} navigate={navigate} />
+      </TabPanel>
+
+      <TabPanel prefix={TAB_PREFIX} tab="atividade" current={route.tab}>
+        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para esta wallet." />
+      </TabPanel>
+    </>
+  )
+}
+
+/* ---------- Movements ---------- */
+
+function MovementsPanel({
+  walletId,
+  route,
+  navigate,
+  log,
+}: {
+  walletId: string
+  route: WalletDetailRoute
+  navigate: (next: Partial<WalletDetailRoute>) => void
+  log: (title: string, detail?: string) => void
+}) {
+  const movements = useWalletMovements(walletId, { page: route.movementPage, kind: route.kind, category: route.category, opportunityId: route.opportunityId })
+  const data = movements.state.status === 'success' ? movements.state.data : null
+  const loading = movements.state.status === 'loading' || movements.state.status === 'idle'
+  const error = movements.state.status === 'error' ? financeErrorView(movements.state.error, 'as movimentações') : null
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const tableRef = useRef<HTMLDivElement>(null)
+  // The open movement is URL state (`?movimento=`); there is no movement detail endpoint, so it only exists within the loaded page.
+  const selectedId = route.movementId ?? null
+  const selected = data?.rows.find((row) => row.id === selectedId) ?? null
+  const selectionMissing = Boolean(selectedId && data && !loading && !selected)
+
+  // The Backend clamps a page past the end to the last page (meta.page). Follow it downwards only, so a
+  // misbehaving response can never drive an endless page loop, and never request beyond lastPage.
+  useEffect(() => {
+    if (data && data.page < route.movementPage) navigate({ movementPage: data.page, movementId: undefined })
+  }, [data, route.movementPage, navigate])
+
+  useEffect(() => {
+    if (selected) headingRef.current?.focus()
+  }, [selected])
+
+  function changeFilter(next: Partial<WalletDetailRoute>) {
+    navigate({ ...next, movementPage: 1, movementId: undefined })
+  }
+
+  function open(movement: MovementRecord) {
+    navigate({ movementId: movement.id })
+    log('Movimentação aberta', movement.id)
+  }
+
+  function close() {
+    const closing = selectedId
+    navigate({ movementId: undefined })
+    window.requestAnimationFrame(() => {
+      tableRef.current?.querySelector<HTMLElement>(`[data-movement-open="${CSS.escape(closing ?? '')}"]`)?.focus()
+    })
+  }
+
+  function onPanelKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    }
+  }
+
+  const filtersActive = Boolean(route.kind || route.category || route.opportunityId)
+  const columns = ['', local.mvKind, local.mvCategory, local.mvCounterparty, local.mvAmount, local.mvStatus, local.mvDate, shared.colActions]
+
+  return (
+    <>
+      <section className={fin.card} aria-labelledby="wal-movements-title" ref={tableRef} data-movements>
+        <h3 id="wal-movements-title" className={fin.cardTitleSm}>
+          Movimentações do ledger
+        </h3>
+        <p className={fin.cardSubtitle}>
+          Ordem fixa do Control Plane (data, mais recente primeiro). Valores sempre positivos: a direção é o tipo (entrada / saída). Busca e ordenação não são
+          oferecidas pelo contrato.
+        </p>
+        <div className={local.subFilters}>
+          <label className={fin.filter}>
+            <span className="visually-hidden">Filtrar movimentações por tipo</span>
+            <select id="movement-kind" value={route.kind ?? 'all'} onChange={(event) => changeFilter({ kind: event.target.value === 'all' ? undefined : (event.target.value as MovementKind) })}>
+              <option value="all">Entradas e saídas</option>
+              <option value="in">{MOVEMENT_KIND_LABEL.in}s</option>
+              <option value="out">{MOVEMENT_KIND_LABEL.out}s</option>
+            </select>
+          </label>
+          <label className={fin.filter}>
+            <span className="visually-hidden">Filtrar movimentações por categoria</span>
+            <select
+              id="movement-category"
+              value={route.category ?? 'all'}
+              onChange={(event) => changeFilter({ category: event.target.value === 'all' ? undefined : (event.target.value as MovementCategory) })}
+            >
+              <option value="all">Todas as categorias</option>
+              {MOVEMENT_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {movementCategoryLabel(category)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {route.opportunityId ? (
+          <ContextChip
+            dataName="movement-opportunity"
+            label={`Oportunidade #${route.opportunityId}`}
+            removeLabel={`Remover filtro da oportunidade ${route.opportunityId}`}
+            onRemove={() => changeFilter({ opportunityId: undefined })}
+          />
+        ) : null}
+
+        {selectionMissing ? (
+          <p className={styles.emptyLine} data-movement-missing>
+            <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+            A movimentação {selectedId} não está nesta página do histórico. Não há leitura individual de movimentação no contrato.
+          </p>
+        ) : null}
 
         <div className={local.movementsArea}>
           <div className={local.movementLayout} data-has-detail={selected ? '' : undefined}>
-            <section className={fin.card} aria-labelledby="wal-movements-title" ref={tableRef}>
-              <h3 id="wal-movements-title" className={fin.cardTitleSm}>
-                Movimentações
-              </h3>
-              <p className={fin.cardSubtitle}>Movimentações relacionadas a esta wallet. Linhas somente leitura — selecione para ver o detalhe.</p>
-              {movements.length ? (
-                <div className={styles.tableWrap}>
-                  <table className={`${fin.table} ${shared.table} ${local.movementTable}`}>
-                    <caption className="visually-hidden">Movimentações da wallet {id} (somente leitura)</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Movimento</th>
-                        <th scope="col" className={local.mvDirection}>
-                          Natureza
-                        </th>
-                        <th scope="col" className={local.mvDescription}>
-                          Descrição
-                        </th>
-                        <th scope="col" className={local.mvSource}>
-                          Origem
-                        </th>
-                        <th scope="col" className={local.mvSource}>
-                          Referência
-                        </th>
-                        <th scope="col" className={local.mvAmount}>
-                          Valor
-                        </th>
-                        <th scope="col" className={local.mvStatus}>
-                          Status
-                        </th>
-                        <th scope="col" className={local.mvDate}>
-                          Data
-                        </th>
-                        <th scope="col" className={shared.colActions}>
-                          Ação
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {movements.map((movement) => {
-                        const active = movement.movementId === selectedId
-                        const source = movement.sourceType ? MOVEMENT_SOURCE_LABEL[movement.sourceType] : 'Não informada'
+            <div className={styles.tableWrap}>
+              {error ? (
+                <ReadError error={error} onRetry={movements.reload} compact />
+              ) : (
+                <table className={`${fin.table} ${shared.table} ${local.movementTable}`} aria-busy={loading || undefined}>
+                  <caption className="visually-hidden">
+                    Movimentações da wallet {walletId}, dados do Control Plane{data ? `, página ${data.page} de ${data.lastPage}` : ''}. Valores positivos; a direção
+                    está na coluna Tipo.
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Movimentação</th>
+                      <th scope="col" className={local.mvKind}>
+                        Tipo
+                      </th>
+                      <th scope="col" className={local.mvCategory}>
+                        Categoria
+                      </th>
+                      <th scope="col" className={local.mvCounterparty}>
+                        Contraparte
+                      </th>
+                      <th scope="col" className={local.mvAmount}>
+                        Valor
+                      </th>
+                      <th scope="col" className={local.mvStatus}>
+                        Status de origem
+                      </th>
+                      <th scope="col" className={local.mvDate}>
+                        Data
+                      </th>
+                      <th scope="col" className={shared.colActions}>
+                        Ação
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <SkeletonRows columns={columns} rows={5} />
+                    ) : (
+                      data?.rows.map((movement) => {
+                        const active = movement.id === selectedId
                         return (
-                          <tr key={movement.movementId} className={fin.row} data-active={active || undefined} data-movement={movement.movementId}>
+                          <tr key={movement.id} className={fin.row} data-active={active || undefined} data-movement={movement.id} data-kind={movement.kind}>
                             <td>
                               <span className={shared.cellText}>
-                                <span className={local.movementId}>{movement.movementId}</span>
+                                <span className={local.movementId}>{movement.id}</span>
                                 <span className={local.metaDescription}>
-                                  {movement.description} · {dateText(movement.createdAt)}
+                                  {movement.description ?? 'Sem descrição'} · {dateText(movement.date)}
                                 </span>
                                 <span className={local.metaSource}>
-                                  Origem: {source}
-                                  {movement.sourceId ? ` · ${movement.sourceId}` : ''}
+                                  {movementCategoryLabel(movement.category)} · {movementStatusLabel(movement.status)}
                                 </span>
                                 <span className={local.metaStates}>
-                                  <DirectionTag direction={movement.direction} />
-                                  <span className={local.metaAmount}>{formatMoney(movement.amount, movement.currency)}</span>
-                                  <MovementStatusPill status={movement.status} />
+                                  <KindTag kind={movement.kind} />
+                                  <span className={local.metaAmount}>
+                                    <Money cents={movement.amountCents} />
+                                  </span>
                                 </span>
                               </span>
                             </td>
-                            <td className={local.mvDirection}>
-                              <DirectionTag direction={movement.direction} />
+                            <td className={local.mvKind}>
+                              <KindTag kind={movement.kind} />
                             </td>
-                            <td className={local.mvDescription}>{movement.description}</td>
-                            <td className={local.mvSource}>{source}</td>
-                            <td className={local.mvSource}>
-                              <SourceReference movement={movement} onTransfer={notifyTransfer} />
+                            <td className={local.mvCategory}>{movementCategoryLabel(movement.category)}</td>
+                            <td className={local.mvCounterparty}>
+                              <span className={shared.cellText}>
+                                <span>{movement.counterparty?.name ?? 'Não informado'}</span>
+                                <span className={shared.rowId}>
+                                  {counterpartyTypeLabel(movement.counterparty?.type ?? null)}
+                                  {movement.counterparty?.document ? (
+                                    <>
+                                      {' · '}
+                                      <span className={local.document}>{movement.counterparty.document}</span>
+                                    </>
+                                  ) : null}
+                                </span>
+                              </span>
                             </td>
                             <td className={local.mvAmount}>
-                              <Money amount={movement.amount} currency={movement.currency} />
+                              <Money cents={movement.amountCents} />
+                              <span className="visually-hidden"> ({MOVEMENT_KIND_LABEL[movement.kind].toLowerCase()})</span>
                             </td>
-                            <td className={local.mvStatus}>
-                              <MovementStatusPill status={movement.status} />
-                            </td>
+                            <td className={local.mvStatus}>{movementStatusLabel(movement.status)}</td>
                             <td className={local.mvDate}>
-                              <DateStack iso={movement.createdAt} />
+                              <DateStack iso={movement.date} />
                             </td>
                             <td className={shared.colActions}>
                               <button
                                 type="button"
                                 className={`${fin.iconButton} ${shared.actionLink}`}
-                                aria-label={`Ver detalhes do movimento ${movement.movementId}`}
+                                aria-label={`Ver detalhes da movimentação ${movement.id}`}
                                 aria-expanded={active}
-                                aria-controls="movement-detail"
-                                data-movement-open={movement.movementId}
-                                onClick={() => (active ? closeMovement() : openMovement(movement))}
+                                aria-controls={active ? 'movement-detail' : undefined}
+                                data-movement-open={movement.id}
+                                onClick={() => (active ? close() : open(movement))}
                               >
                                 <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
                               </button>
                             </td>
                           </tr>
                         )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className={styles.emptyLine} data-empty="movements">
-                  <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                  Nenhuma movimentação registrada para esta wallet no protótipo.
-                </p>
+                      })
+                    )}
+                  </tbody>
+                </table>
               )}
-            </section>
+              {!error && data && !loading && data.rows.length === 0 ? (
+                <div className={styles.feedbackCompact} data-movements-empty>
+                  <EmptyState
+                    icon={filtersActive ? SearchX : ArrowLeftRight}
+                    title={filtersActive ? 'Nenhuma movimentação para estes filtros' : 'Nenhuma movimentação registrada'}
+                    description={filtersActive ? 'O Control Plane não retornou movimentações para estes filtros.' : 'O ledger desta wallet não tem movimentações.'}
+                  />
+                </div>
+              ) : null}
+            </div>
 
             {selected ? (
               <section
@@ -454,284 +506,273 @@ function WalletContent({ wallet, movementId }: { wallet: Readonly<Wallet>; movem
                 className={`${fin.card} ${local.movementDetail}`}
                 aria-labelledby="movement-detail-title"
                 onKeyDown={onPanelKeyDown}
-                data-movement-detail={selected.movementId}
+                data-movement-detail={selected.id}
               >
                 <div className={local.detailHead}>
                   <h3 id="movement-detail-title" className={fin.cardTitleSm} tabIndex={-1} ref={headingRef}>
-                    Movimento {selected.movementId}
+                    Movimentação {selected.id}
                   </h3>
-                  <button type="button" className={fin.iconButton} onClick={closeMovement} aria-label="Fechar detalhe do movimento">
+                  <button type="button" className={fin.iconButton} onClick={close} aria-label="Fechar detalhe da movimentação">
                     <X size={15} strokeWidth={1.9} aria-hidden="true" />
                   </button>
                 </div>
-                <p className={fin.cardSubtitle}>Registro somente leitura. Nenhuma ação altera a movimentação ou o saldo.</p>
-                <KeyValueList
-                  rows={[
-                    { label: 'ID do movimento', value: selected.movementId },
-                    { label: 'Wallet', value: selected.walletId },
-                    { label: 'Natureza', value: MOVEMENT_DIRECTION_META[selected.direction].label },
-                    { label: 'Descrição', value: selected.description },
-                    { label: 'Valor', value: <Money amount={selected.amount} currency={selected.currency} /> },
-                    { label: 'Status', value: MOVEMENT_STATUS_META[selected.status].label },
-                    { label: 'Origem', value: selected.sourceType ? MOVEMENT_SOURCE_LABEL[selected.sourceType] : 'Não informada' },
-                    { label: 'Referência', value: selected.sourceId ?? '—' },
-                    { label: 'Criado em', value: dateText(selected.createdAt) },
-                    { label: 'Atualizado em', value: dateText(selected.updatedAt) },
-                  ]}
-                />
-                <div className={styles.cardActions}>
-                  <MovementDestination movement={selected} onTransfer={notifyTransfer} log={log} />
-                </div>
+                <p className={fin.cardSubtitle}>Registro somente leitura do ledger. Nenhuma ação altera a movimentação ou o saldo.</p>
+                <MovementDetail movement={selected} onOpportunity={(opportunityId) => changeFilter({ opportunityId })} />
               </section>
             ) : null}
           </div>
         </div>
-        <InfoNote>
-          Wallet, pagamentos e investimentos mantêm estados independentes neste protótipo. Movimentações não recalculam o saldo
-          representado e não podem ser criadas, editadas, estornadas ou conciliadas aqui.
-        </InfoNote>
-      </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="relations" current={tab}>
-        <div className={shared.panelGrid}>
-          <section className={fin.card} aria-labelledby="wal-rel-payments">
-            <h3 id="wal-rel-payments" className={fin.cardTitleSm}>
-              Pagamentos relacionados
-            </h3>
-            <p className={fin.cardSubtitle}>Pagamentos referenciados pelas movimentações desta wallet.</p>
-            {relations.payments.length ? (
-              <div className={styles.tableWrap}>
-                <table className={`${shared.miniTable} ${styles.miniTable}`}>
-                  <caption className="visually-hidden">Pagamentos referenciados pelas movimentações da wallet {id}</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Pagamento</th>
-                      <th scope="col" className={styles.optional}>
-                        Método
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Valor
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {relations.payments.map((ref) => (
-                      <tr key={ref.paymentId} data-related-payment={ref.paymentId}>
-                        <td>
-                          <span className={shared.cellText}>
-                            {ref.payment ? (
-                              <a href={paymentHref(ref.paymentId)} className={shared.rowLink} onClick={onPayments}>
-                                {ref.paymentId}
-                              </a>
-                            ) : (
-                              <span>{ref.paymentId} (não encontrado)</span>
-                            )}
-                            <span className={shared.rowId}>Via {ref.movementIds.join(', ')}</span>
-                            {ref.payment ? (
-                              <span className={styles.inline}>
-                                <MethodTag method={ref.payment.method} />
-                                <Money amount={ref.payment.amount} currency={ref.payment.currency} />
-                                <PaymentStatusPill status={ref.payment.status} />
-                              </span>
-                            ) : null}
-                          </span>
-                        </td>
-                        <td className={styles.optional}>{ref.payment ? <MethodTag method={ref.payment.method} /> : '—'}</td>
-                        <td className={styles.optional}>{ref.payment ? <Money amount={ref.payment.amount} currency={ref.payment.currency} /> : '—'}</td>
-                        <td className={styles.optional}>{ref.payment ? <PaymentStatusPill status={ref.payment.status} /> : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className={styles.emptyLine}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Nenhum pagamento referenciado.
-              </p>
-            )}
-          </section>
-
-          <section className={fin.card} aria-labelledby="wal-rel-investments">
-            <h3 id="wal-rel-investments" className={fin.cardTitleSm}>
-              Investimentos relacionados
-            </h3>
-            <p className={fin.cardSubtitle}>Referência direta de uma movimentação, ou de um pagamento referenciado que aponta o investimento.</p>
-            {relations.investments.length ? (
-              <div className={styles.tableWrap}>
-                <table className={`${shared.miniTable} ${styles.miniTable}`}>
-                  <caption className="visually-hidden">Investimentos referenciados (direta ou indiretamente) pela wallet {id}</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Investimento</th>
-                      <th scope="col" className={styles.optional}>
-                        Investidor
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Status
-                      </th>
-                      <th scope="col" className={styles.optional}>
-                        Relação
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {relations.investments.map((ref) => {
-                      const via = ref.via.map((item) => (item.kind === 'movement' ? `movimento ${item.id}` : `pagamento ${item.id}`)).join(' · ')
-                      return (
-                        <tr key={ref.investmentId} data-related-investment={ref.investmentId}>
-                          <td>
-                            <span className={shared.cellText}>
-                              {ref.investment ? (
-                                <a href={investmentHref(ref.investmentId)} className={shared.rowLink} onClick={onInvestments}>
-                                  {ref.investmentId}
-                                </a>
-                              ) : (
-                                <span>{ref.investmentId} (não encontrado)</span>
-                              )}
-                              <span className={styles.inline}>
-                                {investorName(ref.investment?.investorId) ?? '—'}
-                                {ref.investment ? <InvestmentStatusPill status={ref.investment.status} /> : null}
-                                <span className={styles.viaTag}>Via {via}</span>
-                              </span>
-                            </span>
-                          </td>
-                          <td className={styles.optional}>{investorName(ref.investment?.investorId) ?? '—'}</td>
-                          <td className={styles.optional}>{ref.investment ? <InvestmentStatusPill status={ref.investment.status} /> : '—'}</td>
-                          <td className={styles.optional}>
-                            <span className={styles.viaTag}>Via {via}</span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className={styles.emptyLine}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Nenhum investimento referenciado.
-              </p>
-            )}
-          </section>
-
-          <section className={fin.card} aria-labelledby="wal-rel-transfers">
-            <div className={shared.cardHead}>
-              <h3 id="wal-rel-transfers" className={fin.cardTitleSm}>
-                Transferências
-              </h3>
-              <span className={shared.pendingTag}>Módulo pendente</span>
-            </div>
-            <p className={fin.cardSubtitle}>Referências de transferência carregadas pelas movimentações. O módulo de Transferências ainda não existe.</p>
-            {relations.transfers.length ? (
-              <ul className={local.transferList}>
-                {relations.transfers.map((ref) => (
-                  <li key={ref.transferId} data-related-transfer={ref.transferId}>
-                    <span className={shared.cellText}>
-                      <span className={local.movementId}>{ref.transferId}</span>
-                      <span className={shared.rowId}>Via {ref.movementIds.join(', ')}</span>
-                    </span>
-                    <OutlineButton className={local.transferButton} onClick={() => notifyTransfer(ref.transferId)} data-transfer={ref.transferId}>
-                      <ArrowLeftRight size={14} strokeWidth={1.8} aria-hidden="true" />
-                      Ver transferência
-                    </OutlineButton>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.emptyLine}>
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                Nenhuma transferência referenciada.
-              </p>
-            )}
-          </section>
-        </div>
-        <InfoNote>
-          Somente relações explícitas entre registros do protótipo. Wallet ≠ movimentação ≠ pagamento ≠ investimento: nada é
-          sincronizado ou recalculado.
-        </InfoNote>
-      </TabPanel>
-
-      <TabPanel prefix={TAB_PREFIX} tab="activity" current={tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para esta wallet." />
-      </TabPanel>
+        {error ? null : (
+          <div className={shared.footer}>
+            <p className={shared.range} aria-live="polite">
+              {data && !loading ? rangeText(data, 'movimentação', 'movimentações', 'Nenhuma movimentação') : 'Carregando movimentações…'}
+            </p>
+            <ServerPagination
+              label="Paginação de movimentações"
+              current={data?.page ?? route.movementPage}
+              last={(data ?? movements.lastData)?.lastPage ?? 1}
+              disabled={loading}
+              onChange={(page) => navigate({ movementPage: page, movementId: undefined })}
+            />
+          </div>
+        )}
+      </section>
+      <InfoNote>
+        Documentos de contraparte aparecem exatamente como o Control Plane os envia — mascarados. Uma resposta com documento sem máscara é recusada inteira e
+        nada é exibido.
+      </InfoNote>
     </>
   )
 }
 
-/** Table cell: payment / investment references link to their modules; transfers answer with the pending notice. */
-function SourceReference({ movement, onTransfer }: { movement: Readonly<WalletMovement>; onTransfer: (id: string) => void }) {
-  if (!movement.sourceId) return <span className={shared.muted}>—</span>
-  if (movement.sourceType === 'payment') {
-    return (
-      <a href={paymentHref(movement.sourceId)} className={shared.inlineLink}>
-        {movement.sourceId}
-      </a>
-    )
-  }
-  if (movement.sourceType === 'investment') {
-    return (
-      <a href={investmentHref(movement.sourceId)} className={shared.inlineLink}>
-        {movement.sourceId}
-      </a>
-    )
-  }
-  if (movement.sourceType === 'transfer') {
-    const transferId = movement.sourceId
-    return (
-      <button type="button" className={styles.pendingButton} onClick={() => onTransfer(transferId)} aria-label={`${transferId} — módulo de Transferências pendente`}>
-        {transferId}
-      </button>
-    )
-  }
-  return <span>{movement.sourceId}</span>
+function MovementDetail({ movement, onOpportunity }: { movement: MovementRecord; onOpportunity: (opportunityId: string) => void }) {
+  const references = Object.entries(movement.reference).map(([key, value]) => referenceEntry(key, value))
+  const investmentId = typeof movement.reference.investment_id === 'number' ? String(movement.reference.investment_id) : null
+  return (
+    <>
+      <KeyValueList
+        rows={[
+          { label: 'ID da movimentação', value: <span className={styles.mono}>{movement.id}</span> },
+          {
+            label: 'Tipo',
+            value: (
+              <span className={shared.cellText}>
+                <KindTag kind={movement.kind} />
+                <span className={shared.rowId}>{MOVEMENT_KIND_DESCRIPTION[movement.kind]}</span>
+              </span>
+            ),
+          },
+          { label: 'Categoria', value: movementCategoryLabel(movement.category) },
+          { label: 'Valor', value: <Money cents={movement.amountCents} /> },
+          { label: 'Data', value: dateText(movement.date) },
+          { label: 'Descrição', value: movement.description ?? 'Sem descrição' },
+          { label: 'Contraparte', value: `${movement.counterparty?.name ?? 'Não informado'} (${counterpartyTypeLabel(movement.counterparty?.type ?? null)})` },
+          { label: 'Documento', value: movement.counterparty?.document ? <span className={styles.mono}>{movement.counterparty.document}</span> : 'Não informado' },
+          {
+            label: 'Oportunidade',
+            value: movement.opportunity ? (
+              <span className={shared.cellText}>
+                <span>
+                  {movement.opportunity.name ?? 'Sem nome'} (#{movement.opportunity.id})
+                </span>
+                <button type="button" className={styles.filterInline} onClick={() => onOpportunity(movement.opportunity!.id)} data-filter-movement-opportunity>
+                  Filtrar movimentações desta oportunidade
+                </button>
+              </span>
+            ) : (
+              'Não informada'
+            ),
+          },
+          { label: 'Provedor', value: providerLabel(movement.provider) },
+          { label: 'Status de origem', value: movementStatusLabel(movement.status) },
+        ]}
+      />
+      <h4 className={local.sourceNote}>Referências de origem</h4>
+      {references.length ? (
+        <KeyValueList
+          rows={references.map((entry) => ({
+            label: entry.label,
+            value: (
+              <span>
+                <span className={styles.mono}>{entry.value}</span>
+                {entry.partial ? <span className={styles.partialTag}>(parcial)</span> : null}
+              </span>
+            ),
+          }))}
+        />
+      ) : (
+        <p className={styles.emptyLine}>
+          <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+          Sem referências informadas.
+        </p>
+      )}
+      {investmentId ? (
+        <div className={styles.cardActions}>
+          <a href={investmentHref(investmentId)} className={`${outline.button} ${styles.primaryLink}`} data-movement-target="investment">
+            Ver investimento {investmentId}
+          </a>
+        </div>
+      ) : null}
+    </>
+  )
 }
 
-/** Inline detail actions: the responsible module, or a controlled notice. */
-function MovementDestination({
-  movement,
-  onTransfer,
-  log,
+/* ---------- Wallet investments (alias) ---------- */
+
+function WalletInvestmentsPanel({
+  walletId,
+  whitelabelId,
+  route,
+  navigate,
 }: {
-  movement: Readonly<WalletMovement>
-  onTransfer: (id: string) => void
-  log: (title: string, detail?: string) => void
+  walletId: string
+  whitelabelId: string
+  route: WalletDetailRoute
+  navigate: (next: Partial<WalletDetailRoute>) => void
 }) {
-  if (movement.sourceType === 'payment' && movement.sourceId) {
-    const target = movement.sourceId
-    return (
-      <a href={paymentHref(target)} className={`${outline.button} ${styles.primaryLink}`} onClick={() => log('Navegação para Pagamentos / PIX solicitada', target)} data-movement-target="payment">
-        Ver pagamento {target}
-        <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-      </a>
-    )
-  }
-  if (movement.sourceType === 'investment' && movement.sourceId) {
-    const target = movement.sourceId
-    return (
-      <a href={investmentHref(target)} className={`${outline.button} ${styles.primaryLink}`} onClick={() => log('Navegação para Investimentos solicitada', target)} data-movement-target="investment">
-        Ver investimento {target}
-        <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
-      </a>
-    )
-  }
-  if (movement.sourceType === 'transfer' && movement.sourceId) {
-    const target = movement.sourceId
-    return (
-      <OutlineButton className={styles.primaryLink} onClick={() => onTransfer(target)} data-movement-target="transfer">
-        <ArrowLeftRight size={15} strokeWidth={1.8} aria-hidden="true" />
-        Ver transferência {target}
-        <span className={shared.pendingTag}>Módulo pendente</span>
-      </OutlineButton>
-    )
-  }
+  const investments = useWalletInvestments(walletId, { page: route.investmentPage, status: route.investmentStatus, sort: 'createdAt', order: 'desc' })
+  const data = investments.state.status === 'success' ? investments.state.data : null
+  const pageOutOfRange = data !== null && data.rows.length === 0 && data.total > 0
+  const loading = investments.state.status === 'loading' || investments.state.status === 'idle' || pageOutOfRange
+  const error = investments.state.status === 'error' ? financeErrorView(investments.state.error, 'os investimentos do Whitelabel') : null
+
+  useEffect(() => {
+    if (!data) return
+    const target = data.total === 0 ? 1 : Math.min(route.investmentPage, data.lastPage)
+    if (target !== route.investmentPage) navigate({ investmentPage: target })
+  }, [data, route.investmentPage, navigate])
+
+  const columns = ['', local.mvCounterparty, local.mvAmount, local.mvStatus, local.mvDate, shared.colActions]
+  const listContext = investmentsHref({ whitelabelId })
+
   return (
-    <p className={styles.emptyLine} data-movement-target="none">
-      <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-      Origem não detalhada no protótipo — sem módulo de destino.
-    </p>
+    <section className={fin.card} aria-labelledby="wal-investments-title" data-wallet-investments>
+      <h3 id="wal-investments-title" className={fin.cardTitleSm}>
+        Investimentos do Whitelabel
+      </h3>
+      <p className={fin.cardSubtitle}>
+        <code>GET /wallets/{walletId}/investments</code> — o Control Plane aplica o escopo do Whitelabel desta wallet. Mais recentes primeiro.
+      </p>
+      <div className={local.subFilters}>
+        <label className={fin.filter}>
+          <span className="visually-hidden">Filtrar investimentos por status</span>
+          <select
+            id="wallet-investment-status"
+            value={route.investmentStatus ?? 'all'}
+            onChange={(event) => navigate({ investmentStatus: event.target.value === 'all' ? undefined : (event.target.value as InvestmentStatus), investmentPage: 1 })}
+          >
+            <option value="all">Todos os status</option>
+            {INVESTMENT_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {investmentStatusMeta(status).label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className={local.movementsArea}>
+        <div className={styles.tableWrap}>
+          {error ? (
+            <ReadError error={error} onRetry={investments.reload} compact />
+          ) : (
+            <table className={`${fin.table} ${shared.table} ${local.movementTable}`} aria-busy={loading || undefined}>
+              <caption className="visually-hidden">Investimentos do Whitelabel {whitelabelId}, dados do Control Plane.</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Investimento</th>
+                  <th scope="col" className={local.mvCounterparty}>
+                    Investidor
+                  </th>
+                  <th scope="col" className={local.mvAmount}>
+                    Valor
+                  </th>
+                  <th scope="col" className={local.mvStatus}>
+                    Status
+                  </th>
+                  <th scope="col" className={local.mvDate}>
+                    Criado em
+                  </th>
+                  <th scope="col" className={shared.colActions}>
+                    Ação
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <SkeletonRows columns={columns} rows={5} />
+                ) : (
+                  data?.rows.map((row) => (
+                    <tr key={row.id} className={fin.row} data-wallet-investment={row.id}>
+                      <td>
+                        <span className={shared.cellText}>
+                          <a href={investmentHref(row.id, listContext)} className={shared.rowLink}>
+                            Investimento {row.id}
+                          </a>
+                          <span className={local.metaDescription}>
+                            Investidor #{row.investorId} · {dateText(row.createdAt)}
+                          </span>
+                          <span className={local.metaStates}>
+                            <span className={local.metaAmount}>
+                              <Money cents={row.amountCents} />
+                            </span>
+                            <InvestmentStatusPill status={row.status} />
+                          </span>
+                        </span>
+                      </td>
+                      <td className={local.mvCounterparty}>
+                        <a href={investorProfileHref(row.investorId)} className={shared.inlineLink}>
+                          Investidor #{row.investorId}
+                        </a>
+                      </td>
+                      <td className={local.mvAmount}>
+                        <Money cents={row.amountCents} />
+                      </td>
+                      <td className={local.mvStatus}>
+                        <InvestmentStatusPill status={row.status} />
+                      </td>
+                      <td className={local.mvDate}>
+                        <DateStack iso={row.createdAt} />
+                      </td>
+                      <td className={shared.colActions}>
+                        <a href={investmentHref(row.id, listContext)} className={`${fin.iconButton} ${shared.actionLink}`} aria-label={`Abrir investimento ${row.id}`}>
+                          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+                        </a>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+          {!error && data && !loading && data.rows.length === 0 ? (
+            <div className={styles.feedbackCompact} data-wallet-investments-empty>
+              <EmptyState
+                icon={ChartColumn}
+                title={route.investmentStatus ? 'Nenhum investimento com este status' : 'Nenhum investimento neste Whitelabel'}
+                description="O Control Plane não retornou investimentos para esta wallet."
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {error ? null : (
+        <div className={shared.footer}>
+          <p className={shared.range} aria-live="polite">
+            {data && !loading ? rangeText(data, 'investimento', 'investimentos', 'Nenhum investimento') : 'Carregando investimentos…'}{' '}
+            <a href={investmentsHref({ whitelabelId, status: route.investmentStatus })} className={shared.inlineLink}>
+              Abrir em Investimentos
+            </a>
+          </p>
+          <ServerPagination
+            label="Paginação dos investimentos do Whitelabel"
+            current={route.investmentPage}
+            last={(data ?? investments.lastData)?.lastPage ?? 1}
+            disabled={loading}
+            onChange={(page) => navigate({ investmentPage: page })}
+          />
+        </div>
+      )}
+    </section>
   )
 }

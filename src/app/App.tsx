@@ -23,6 +23,7 @@ import { PaymentsPage } from '../features/finance-core/payments/PaymentsPage'
 import { PaymentDetailPage } from '../features/finance-core/payments/PaymentDetailPage'
 import { WalletsPage } from '../features/finance-core/wallets/WalletsPage'
 import { WalletDetailPage } from '../features/finance-core/wallets/WalletDetailPage'
+import type { FinanceListProps, RawParams, WalletListProps } from '../features/finance-core/shared/financeRoute'
 import { KycListPage } from '../features/compliance-kyc/KycListPage'
 import { KycDetailPage } from '../features/compliance-kyc/KycDetailPage'
 import { AuditListPage } from '../features/governance-audit/AuditListPage'
@@ -83,12 +84,12 @@ type Route =
   | { view: 'operation-entrepreneur'; entrepreneurId: string; returnTo?: string }
   | { view: 'operation-company-list'; whitelabel?: string; page?: string; query?: string; previa?: string; search: string }
   | { view: 'operation-company'; companyId: string; returnTo?: string; previa?: string }
-  | { view: 'finance-investments'; investorId?: string; walletId?: string }
-  | { view: 'finance-investment'; investmentId: string }
-  | { view: 'finance-payments'; walletId?: string }
-  | { view: 'finance-payment'; paymentId: string }
-  | { view: 'finance-wallets' }
-  | { view: 'finance-wallet'; walletId: string; movementId?: string }
+  | { view: 'finance-investments'; params: FinanceListProps }
+  | { view: 'finance-investment'; investmentId: string; returnTo?: string }
+  | { view: 'finance-payments'; params: FinanceListProps }
+  | { view: 'finance-payment'; paymentId: string; returnTo?: string }
+  | { view: 'finance-wallets'; params: WalletListProps }
+  | { view: 'finance-wallet'; walletId: string; params: RawParams; search: string }
   | { view: 'compliance-kyc'; participant?: string; whitelabel?: string; status?: string; search: string }
   | { view: 'compliance-kyc-case'; kycCaseId: string }
   | {
@@ -200,6 +201,25 @@ function decodeSegment(value: string) {
   }
 }
 
+/** Finance Read list URL params, validated by each page before any request. */
+function financeListParams(params: URLSearchParams, search: string): FinanceListProps {
+  const value = (key: string) => params.get(key) || undefined
+  return {
+    status: value('status'),
+    whitelabel: value('whitelabel'),
+    investidor: value('investidor'),
+    oportunidade: value('oportunidade'),
+    search: value('search'),
+    page: value('page'),
+    sort: value('sort'),
+    order: value('order'),
+    wallet: value('wallet'),
+    routeKey: search,
+  }
+}
+
+const WALLET_DETAIL_KEYS = ['aba', 'mpage', 'tipo', 'categoria', 'oportunidade', 'ipage', 'istatus', 'movimento', 'returnTo'] as const
+
 /**
  * `#/dashboard`, `#/whitelabels` (optional `?id=` Backend Whitelabel id, `?page=`,
  * `?search=`, `?status=active|inactive`), `#/whitelabels/:whitelabelId/accounts`
@@ -218,10 +238,12 @@ function decodeSegment(value: string) {
  * Empresas (prototype, contextual page under Empreendedores — no menu id of its own):
  * `#/operation/companies` (optional `?whitelabel=` illustrative ref, `?page=`, `?search=`,
  * prototype-only `?previa=`), `#/operation/companies/:companyId` (optional `?returnTo=`, `?previa=`),
- * Finance Core (global): `#/finance/investments` (optional `?investidor=` / `?wallet=`),
- * `#/finance/investments/:investmentId`, `#/finance/payments` (optional `?wallet=`),
- * `#/finance/payments/:paymentId`, `#/finance/wallets`,
- * `#/finance/wallets/:walletId` (optional `?movimento=:movementId`),
+ * Finance Read (global, Control Plane GETs): `#/finance/investments` and `#/finance/payments`
+ * (optional `?status=`, `?whitelabel=`, `?investidor=`, `?oportunidade=`, `?search=`, `?page=`,
+ * `?sort=`, `?order=`), `#/finance/investments/:investmentId` and `#/finance/payments/:paymentId`
+ * (optional `?returnTo=` list context), `#/finance/wallets` (optional `?search=`, `?page=`,
+ * `?sort=`, `?order=`), `#/finance/wallets/:walletId` (optional `?aba=`, `?mpage=`, `?tipo=`,
+ * `?categoria=`, `?oportunidade=`, `?ipage=`, `?istatus=`, `?movimento=`, `?returnTo=`),
  * Compliance › KYC: `#/compliance/kyc` (optional `?participant=`, `?whitelabel=`,
  * `?status=`), `#/compliance/kyc/:kycCaseId`,
  * Auditoria (Control Plane audit log): `#/audit` (optional `?search=`, `?order=asc`, `?page=`;
@@ -328,22 +350,23 @@ function routeFromHash(): Route {
       previa: params.get('previa') || undefined,
     }
   }
-  if (path === 'finance/investments') {
-    return {
-      view: 'finance-investments',
-      investorId: params.get('investidor') ?? undefined,
-      walletId: params.get('wallet') ?? undefined,
-    }
+  if (path === 'finance/investments') return { view: 'finance-investments', params: financeListParams(params, search) }
+  if (path === 'finance/payments') return { view: 'finance-payments', params: financeListParams(params, search) }
+  if (path === 'finance/wallets') {
+    const { search: query, page, sort, order, routeKey } = financeListParams(params, search)
+    return { view: 'finance-wallets', params: { search: query, page, sort, order, routeKey } }
   }
-  if (path === 'finance/payments') return { view: 'finance-payments', walletId: params.get('wallet') ?? undefined }
-  if (path === 'finance/wallets') return { view: 'finance-wallets' }
   const investment = INVESTMENT_PATH.exec(path)
-  if (investment) return { view: 'finance-investment', investmentId: decodeSegment(investment[1]) }
+  if (investment) {
+    return { view: 'finance-investment', investmentId: decodeSegment(investment[1]), returnTo: params.get('returnTo') ?? undefined }
+  }
   const payment = PAYMENT_PATH.exec(path)
-  if (payment) return { view: 'finance-payment', paymentId: decodeSegment(payment[1]) }
+  if (payment) return { view: 'finance-payment', paymentId: decodeSegment(payment[1]), returnTo: params.get('returnTo') ?? undefined }
   const wallet = WALLET_PATH.exec(path)
   if (wallet) {
-    return { view: 'finance-wallet', walletId: decodeSegment(wallet[1]), movementId: params.get('movimento') ?? undefined }
+    const walletParams: RawParams = {}
+    for (const key of WALLET_DETAIL_KEYS) walletParams[key] = params.get(key) || undefined
+    return { view: 'finance-wallet', walletId: decodeSegment(wallet[1]), params: walletParams, search }
   }
   const param = (key: string) => params.get(key) || undefined
   if (path === 'compliance/kyc') {
@@ -482,15 +505,16 @@ export function App() {
   if (route.view === 'operation-company') {
     return <CompanyDetailPage key={route.companyId} companyId={route.companyId} returnTo={route.returnTo} previa={route.previa} />
   }
-  if (route.view === 'finance-investments') return <InvestmentsPage investorId={route.investorId} walletId={route.walletId} />
+  if (route.view === 'finance-investments') return <InvestmentsPage {...route.params} />
   if (route.view === 'finance-investment') {
-    return <InvestmentDetailPage key={route.investmentId} investmentId={route.investmentId} />
+    return <InvestmentDetailPage key={route.investmentId} investmentId={route.investmentId} returnTo={route.returnTo} />
   }
-  if (route.view === 'finance-payments') return <PaymentsPage walletId={route.walletId} />
-  if (route.view === 'finance-payment') return <PaymentDetailPage key={route.paymentId} paymentId={route.paymentId} />
-  if (route.view === 'finance-wallets') return <WalletsPage />
+  if (route.view === 'finance-payments') return <PaymentsPage {...route.params} />
+  if (route.view === 'finance-payment') return <PaymentDetailPage key={route.paymentId} paymentId={route.paymentId} returnTo={route.returnTo} />
+  if (route.view === 'finance-wallets') return <WalletsPage {...route.params} />
   if (route.view === 'finance-wallet') {
-    return <WalletDetailPage key={route.walletId} walletId={route.walletId} movementId={route.movementId} />
+    // keyed by wallet: switching wallet A → B remounts, so no state or late response of A leaks into B
+    return <WalletDetailPage key={route.walletId} walletId={route.walletId} routeKey={route.search} {...route.params} />
   }
   if (route.view === 'compliance-kyc') {
     return <KycListPage participant={route.participant} whitelabel={route.whitelabel} status={route.status} routeKey={route.search} />

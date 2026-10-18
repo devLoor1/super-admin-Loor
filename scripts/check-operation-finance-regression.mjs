@@ -31,7 +31,6 @@ globalThis.fetch = () => { throw new Error('Unexpected network operation in mode
 let checks = 0
 function check(condition, message) { assert.ok(condition, message); checks += 1 }
 
-const finance = await load('src/features/finance-core/shared/financeCoreRecords.ts')
 const participants = await load('src/features/operation/shared/participants.ts')
 const { PROTOTYPE_KYC_CASES: cases } = await load('src/features/compliance-kyc/prototypeKyc.ts')
 const investor = await load('src/features/operation/investors/investorApi.ts')
@@ -39,37 +38,32 @@ const entrepreneur = await load('src/features/operation/entrepreneurs/entreprene
 const entrepreneurRoute = await load('src/features/operation/entrepreneurs/entrepreneurRoute.ts')
 const route = await load('src/features/operation/investors/investorRoute.ts')
 const operation = await load('src/features/operation/shared/operationModel.ts')
-const before = JSON.stringify([finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS])
+const financeApi = await load('src/features/finance-core/shared/financeApi.ts')
 
-for (const rows of [finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS]) {
-  check(rows.length > 0, 'Existing Finance records must be retained')
-  check(Object.isFrozen(rows), 'Finance arrays remain read-only')
-  for (const item of rows) check(Object.isFrozen(item), 'Finance records remain read-only')
+// Finance Read Integration V1 replaced the illustrative Finance Core records with the
+// Control Plane reads (`check-finance-read.mjs` covers the adapters). The prototype
+// record modules are gone, so no screen can fall back to them, and no prototype
+// identifier can reach the Backend.
+for (const file of ['financeCoreRecords.ts', 'prototypeFinanceCore.ts', 'financeCoreRefs.ts', 'financeCoreModel.ts']) {
+  await assert.rejects(access(resolve(root, 'src/features/finance-core/shared', file)), undefined, `${file}: illustrative Finance records removed`)
+  checks += 1
 }
-for (const item of finance.INVESTMENTS) {
-  check(finance.investmentById(item.investmentId) === item, 'Investment identity remains independent')
-  for (const ref of finance.movementsForInvestment(item)) {
-    check(ref.via === 'investment'
-      ? ref.movement.sourceType === 'investment' && ref.movement.sourceId === item.investmentId
-      : ref.movement.sourceType === 'payment' && ref.movement.sourceId === item.paymentId,
-    'Movement relationships use explicit foreign references, not amount/name inference')
-  }
-  if (item.investorId) check(investor.isPrototypeId(item.investorId), 'Finance prototype ids must not become Core Investor ids')
+const FINANCE_SCREENS = [
+  'investments/InvestmentsPage.tsx', 'investments/InvestmentDetailPage.tsx',
+  'payments/PaymentsPage.tsx', 'payments/PaymentDetailPage.tsx',
+  'wallets/WalletsPage.tsx', 'wallets/WalletDetailPage.tsx', 'shared/FinanceCoreUi.tsx',
+]
+for (const file of FINANCE_SCREENS) {
+  const source = await readFile(resolve(root, 'src/features/finance-core', file), 'utf8')
+  check(!/from\s+['"][^'"]*(?:financeCoreRecords|prototypeFinanceCore|financeCoreRefs|financeCoreModel|shared\/participants|prototypeKyc|prototypeWhitelabels|prototypeAccounts|opportunityStore)['"]/.test(source), `${file}: no prototype record fallback in Finance Read screens`)
+  check(!/sessionStorage|localStorage|\bfetch\s*\(|apiClient/.test(source), `${file}: screens use the Finance read adapter, never storage or transport`)
 }
-for (const item of finance.PAYMENTS) {
-  check(finance.paymentById(item.paymentId) === item, 'Payment identity remains independent')
-  for (const movement of finance.movementsForPayment(item.paymentId)) {
-    check(movement.sourceType === 'payment' && movement.sourceId === item.paymentId, 'Payment lineage remains explicit')
-  }
+const financeAdapter = await readFile(resolve(root, 'src/features/finance-core/shared/financeApi.ts'), 'utf8')
+check(!/\b(?:apiRequest|authenticatedPost|authenticatedPut|authenticatedPatch|authenticatedDelete)\b/.test(financeAdapter), 'Finance adapter is GET-only')
+for (const prototypeId of ['INV-0001', 'PG-0001', 'WAL-0001', 'wal-001', 'inv-1', '0', '-1', '1.5', '']) {
+  check(!financeApi.isServerFinanceId(prototypeId), `Prototype-style id "${prototypeId}" can never be sent to the Control Plane`)
 }
-for (const wallet of finance.WALLETS) {
-  check(finance.walletById(wallet.walletId) === wallet, 'Wallet identity remains independent')
-  const refs = finance.walletRelations(wallet.walletId)
-  check(refs.movements.every(item => item.walletId === wallet.walletId), 'Wallet movement scope is retained')
-  check(finance.walletIdsOf(refs.movements).every(id => id === wallet.walletId), 'No inferred cross-wallet relationship')
-  for (const ref of refs.payments) check(ref.movementIds.every(id => refs.movements.some(m => m.movementId === id && m.sourceId === ref.paymentId)), 'Explicit payment relation')
-}
-check(before === JSON.stringify([finance.INVESTMENTS, finance.PAYMENTS, finance.WALLETS, finance.WALLET_MOVEMENTS]), 'Read lookups cannot synchronize balances/statuses')
+check(financeApi.isServerFinanceId('4') && financeApi.isServerFinanceId('2140'), 'Backend numeric ids are accepted')
 check(participants.ENTREPRENEUR_PROFILES.length > 0, 'Entrepreneur prototype remains available')
 for (const item of participants.ENTREPRENEUR_PROFILES) {
   check(item.kind === 'entrepreneur' && item.id === item.account.id, 'Entrepreneur identity retained')

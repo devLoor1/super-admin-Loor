@@ -1,262 +1,227 @@
-import { useMemo, useState, type CSSProperties } from 'react'
-import { ChartColumn, CircleCheck, Clock, Eye, FilterX, Play, Search } from 'lucide-react'
+import { useEffect, useMemo, type CSSProperties } from 'react'
+import { CircleCheck, Clock, Eye, FilterX, QrCode, RotateCcw, Search, SearchX } from 'lucide-react'
+import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
+import { useUrlSearchDraft } from '../../../app/useUrlSearchDraft'
+import { EmptyState } from '../../../components/ui/EmptyState'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { useOpportunities } from '../../operation/opportunities/opportunityStore'
-import { NoResults, PageIntro, Pagination, SortButton, SummaryCards, WhitelabelTag } from '../../operation/shared/OperationUi'
-import {
-  PAGE_SIZE,
-  compareDate,
-  compareText,
-  normalize,
-  whitelabelName,
-  type SortState,
-} from '../../operation/shared/operationModel'
+import { PageIntro, SortButton, SummaryCards, type SummaryCard } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
-import { PROTOTYPE_WHITELABELS } from '../../whitelabels/prototypeWhitelabels'
+import core from '../shared/FinanceCore.module.css'
 import {
-  PAYMENT_METHODS,
-  PAYMENT_METHOD_META,
+  FINANCE_SEARCH_MAX_LENGTH,
+  PAYMENT_SORT_KEYS,
   PAYMENT_STATUSES,
-  PAYMENT_STATUS_META,
-  formatMoney,
-  paymentHref,
-  type PaymentMethod,
+  type PaymentQuery,
+  type PaymentRecord,
+  type PaymentSortKey,
   type PaymentStatus,
-} from '../shared/financeCoreModel'
-import { PAYMENTS, walletById, walletRelations } from '../shared/financeCoreRecords'
-import { dateText, gatewayFilterLabel, investorName, useGatewayResolver } from '../shared/financeCoreRefs'
+  type SortOrder,
+} from '../shared/financeApi'
+import {
+  dateText,
+  financeErrorView,
+  formatCount,
+  paymentMethodLabel,
+  paymentStatusMeta,
+  providerLabel,
+  rangeText,
+  tenantNames,
+} from '../shared/financePresentation'
+import {
+  investmentHref,
+  investorProfileHref,
+  parsePaymentListRoute,
+  paymentHref,
+  paymentsHref,
+  type FinanceListProps,
+  type PaymentListRoute,
+} from '../shared/financeRoute'
 import {
   ContextChip,
   DateStack,
   FinanceCoreShell,
-  SortSelect,
-  type SortOption,
-  GatewayTag,
-  InvestorRef,
-  MethodTag,
+  IgnoredParams,
   Money,
-  OpportunityRef,
   PaymentStatusPill,
+  ReadError,
+  ServerPagination,
+  SkeletonRows,
+  TenantTag,
 } from '../shared/FinanceCoreUi'
+import { useFinanceTenants, usePaymentList } from '../shared/useFinanceData'
 import styles from './Payments.module.css'
 
-type SortKey = 'id' | 'amount' | 'status' | 'gateway' | 'updatedAt'
-type InvestmentFilter = 'all' | 'with' | 'without'
-
-const STATUS_ORDER = Object.fromEntries(PAYMENT_STATUSES.map((status, index) => [status, index])) as Record<PaymentStatus, number>
-
-
-const SORT_OPTIONS: SortOption<SortKey>[] = [
-  { key: 'id', label: 'Pagamento', ascending: 'crescente', descending: 'decrescente' },
-  { key: 'amount', label: 'Valor', ascending: 'menor primeiro', descending: 'maior primeiro' },
-  { key: 'status', label: 'Status', ascending: 'Pendente → Falhou', descending: 'Falhou → Pendente' },
-  { key: 'gateway', label: 'Gateway', ascending: 'A–Z', descending: 'Z–A' },
-  { key: 'updatedAt', label: 'Atualizado em', ascending: 'mais antigo', descending: 'mais recente' },
-]
+const SORT_LABEL: Record<PaymentSortKey, string> = { createdAt: 'Criado em', updatedAt: 'Atualizado em', status: 'Status', amount: 'Valor' }
+const ORDER_LABEL: Record<PaymentSortKey, Record<SortOrder, string>> = {
+  createdAt: { desc: 'mais recente', asc: 'mais antigo' },
+  updatedAt: { desc: 'mais recente', asc: 'mais antigo' },
+  status: { asc: 'A–Z', desc: 'Z–A' },
+  amount: { desc: 'maior primeiro', asc: 'menor primeiro' },
+}
 
 /**
- * `#/finance/payments` — Pagamentos / PIX V1: global, READ-ONLY supervision
- * of payment records. No charge creation, PIX generation, confirmation,
- * settlement, cancellation, refund, reversal, reprocessing or wallet credit.
- * Optional context: `?wallet=` (payments a wallet's movements reference).
+ * `#/finance/payments` — Pagamentos / PIX (Finance Read V1): global, READ-ONLY
+ * list of investment PIX charges from `GET /payments`. Filters, sorting and
+ * pagination are applied by the Control Plane. No charge creation, PIX
+ * generation, confirmation, cancellation, refund or reprocessing exists.
  */
-export function PaymentsPage({ walletId }: { walletId?: string }) {
-  const opportunities = useOpportunities()
-  const resolveGateway = useGatewayResolver()
-  const [query, setQuery] = useState('')
-  const [whitelabel, setWhitelabel] = useState('all')
-  const [status, setStatus] = useState<'all' | PaymentStatus>('all')
-  const [method, setMethod] = useState<'all' | PaymentMethod>('all')
-  const [gateway, setGateway] = useState('all')
-  const [investment, setInvestment] = useState<InvestmentFilter>('all')
-  const [wallet, setWallet] = useState(walletId ?? '')
-  const [sort, setSort] = useState<SortState<SortKey>>({ key: 'updatedAt', direction: 'descending' })
-  const [page, setPage] = useState(1)
-
-  const [routeWallet, setRouteWallet] = useState(walletId)
-  if (routeWallet !== walletId) {
-    setRouteWallet(walletId)
-    setWallet(walletId ?? '')
-    setPage(1)
-  }
-
-  const opportunityName = (id: string | undefined) => (id ? opportunities.find((item) => item.id === id)?.name : undefined)
-  const gatewayIds = [...new Set(PAYMENTS.map((item) => item.gatewayId))]
-  const walletPaymentIds = useMemo(
-    () => (wallet ? new Set(walletRelations(wallet).payments.map((item) => item.paymentId)) : null),
-    [wallet],
-  )
-
-  const filtered = useMemo(() => {
-    const needle = normalize(query)
-    const nameOf = (id: string | undefined) => (id ? opportunities.find((item) => item.id === id)?.name ?? '' : '')
-    const gatewayName = (id: string) => resolveGateway(id)?.name ?? id
-    const rows = PAYMENTS.filter((item) => {
-      if (whitelabel !== 'all' && item.whitelabelId !== whitelabel) return false
-      if (status !== 'all' && item.status !== status) return false
-      if (method !== 'all' && item.method !== method) return false
-      if (gateway !== 'all' && item.gatewayId !== gateway) return false
-      if (investment !== 'all' && Boolean(item.investmentId) !== (investment === 'with')) return false
-      if (walletPaymentIds && !walletPaymentIds.has(item.paymentId)) return false
-      return (
-        !needle ||
-        normalize(
-          [
-            item.paymentId,
-            item.investmentId ?? '',
-            item.investorId ?? '',
-            investorName(item.investorId) ?? '',
-            item.opportunityId ?? '',
-            nameOf(item.opportunityId),
-          ].join(' '),
-        ).includes(needle)
-      )
-    })
-    const direction = sort.direction === 'ascending' ? 1 : -1
-    return [...rows].sort((a, b) => {
-      if (sort.key === 'updatedAt') {
-        if (!a.updatedAt || !b.updatedAt) return compareDate(a.updatedAt ?? null, b.updatedAt ?? null)
-        return direction * compareDate(a.updatedAt, b.updatedAt)
-      }
-      const value =
-        sort.key === 'id'
-          ? compareText(a.paymentId, b.paymentId)
-          : sort.key === 'amount'
-            ? a.amount - b.amount
-            : sort.key === 'gateway'
-              ? compareText(gatewayName(a.gatewayId), gatewayName(b.gatewayId))
-              : STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-      return direction * (value || compareText(a.paymentId, b.paymentId))
-    })
-  }, [opportunities, resolveGateway, query, whitelabel, status, method, gateway, investment, walletPaymentIds, sort])
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const current = Math.min(page, pageCount)
-  const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE)
-  const filtersActive =
-    Boolean(query.trim()) || [whitelabel, status, method, gateway, investment].some((value) => value !== 'all') || Boolean(wallet)
-
-  const count = (key: PaymentStatus) => PAYMENTS.filter((item) => item.status === key).length
-
-  function update<T>(setter: (value: T) => void) {
-    return (value: T) => {
-      setter(value)
-      setPage(1)
-    }
-  }
-
-  function removeWallet() {
-    setWallet('')
-    setPage(1)
-    if (walletId !== undefined) window.location.hash = '#/finance/payments'
-  }
-
-  function clearFilters() {
-    setQuery('')
-    setWhitelabel('all')
-    setStatus('all')
-    setMethod('all')
-    setGateway('all')
-    setInvestment('all')
-    removeWallet()
-  }
-
-  function toggleSort(key: SortKey) {
-    setPage(1)
-    setSort((currentSort) =>
-      currentSort.key !== key
-        ? { key, direction: key === 'updatedAt' || key === 'amount' ? 'descending' : 'ascending' }
-        : { key, direction: currentSort.direction === 'ascending' ? 'descending' : 'ascending' },
-    )
-  }
-
-  const sortHeader = (key: SortKey, label: string) => (
-    <SortButton label={label} sorted={sort.key === key} direction={sort.direction} onClick={() => toggleSort(key)} />
-  )
-  const ariaSort = (key: SortKey) => (sort.key === key ? sort.direction : undefined)
-
+export function PaymentsPage(props: FinanceListProps) {
   return (
     <FinanceCoreShell section="payments" title="Pagamentos / PIX">
-      <PageIntro text="Acompanhe pagamentos de todos os Whitelabels em uma só visão financeira. Somente leitura: nenhuma cobrança, PIX, confirmação, liquidação ou estorno é feito aqui." />
+      <PageIntro text="Cobranças PIX de investimentos em todos os Whitelabels, com dados do Control Plane. Somente leitura: nenhuma ação gera, confirma, cancela ou estorna pagamentos." />
+      <PaymentList {...props} />
+    </FinanceCoreShell>
+  )
+}
 
+function PaymentList({ status, whitelabel, investidor, oportunidade, search: searchParam, page, sort, order, routeKey = '' }: FinanceListProps) {
+  useRestoreReplacedScroll(routeKey)
+  const { state: route, ignored } = useMemo(
+    () => parsePaymentListRoute({ status, whitelabel, investidor, oportunidade, search: searchParam, page, sort, order }),
+    [status, whitelabel, investidor, oportunidade, searchParam, page, sort, order],
+  )
+  const tenants = useFinanceTenants()
+  const tenantData = tenants.state.status === 'success' ? tenants.state.data : null
+  const nameOf = tenantNames(tenantData)
+
+  const list = usePaymentList({
+    page: route.page,
+    search: route.search,
+    status: route.status,
+    whitelabelId: route.whitelabelId,
+    investorId: route.investorId,
+    opportunityId: route.opportunityId,
+    sort: route.sort,
+    order: route.order,
+  })
+  const data = list.state.status === 'success' ? list.state.data : null
+  const pageOutOfRange = data !== null && data.rows.length === 0 && data.total > 0
+  const loading = list.state.status === 'loading' || list.state.status === 'idle' || pageOutOfRange
+  const listError = list.state.status === 'error' ? financeErrorView(list.state.error, 'os pagamentos') : null
+
+  const scope = { search: route.search, whitelabelId: route.whitelabelId, investorId: route.investorId, opportunityId: route.opportunityId }
+  const countQuery = (status?: PaymentStatus): PaymentQuery => ({ ...scope, page: 1, perPage: 1, status, sort: 'createdAt', order: 'desc' })
+  const totalCount = usePaymentList(countQuery())
+  const paidCount = usePaymentList(countQuery('paid'))
+  const waitingCount = usePaymentList(countQuery('waiting_payment'))
+  const refundedCount = usePaymentList(countQuery('refunded'))
+  const countOf = (remote: ReturnType<typeof usePaymentList>) => (remote.state.status === 'success' ? formatCount(remote.state.data.total) : null)
+
+  const search = useUrlSearchDraft({
+    urlSearch: route.search,
+    urlKey: routeKey,
+    maxLength: FINANCE_SEARCH_MAX_LENGTH,
+    commit: (next) => replaceRouteKeepingScroll(paymentsHref({ ...route, search: next, page: 1 })),
+  })
+
+  function navigate(next: Partial<PaymentListRoute>) {
+    const pendingSearch = search.pendingSearch()
+    const resetPage = !('page' in next) || pendingSearch !== route.search
+    replaceRouteKeepingScroll(paymentsHref({ ...route, search: pendingSearch, ...next, page: resetPage ? 1 : next.page }))
+  }
+
+  useEffect(() => {
+    if (!data) return
+    const target = data.total === 0 ? 1 : Math.min(route.page, data.lastPage)
+    if (target !== route.page) replaceRouteKeepingScroll(paymentsHref({ ...route, page: target }))
+  }, [data, route])
+
+  const filtersActive =
+    route.search !== '' || search.draft.trim() !== '' || Boolean(route.status || route.whitelabelId || route.investorId || route.opportunityId)
+  function clearFilters() {
+    search.clear()
+    replaceRouteKeepingScroll(paymentsHref({ sort: route.sort, order: route.order }))
+  }
+
+  function toggleSort(key: PaymentSortKey) {
+    navigate(route.sort !== key ? { sort: key, order: key === 'status' ? 'asc' : 'desc' } : { sort: key, order: route.order === 'asc' ? 'desc' : 'asc' })
+  }
+  const ariaSort = (key: PaymentSortKey) => (route.sort === key ? (route.order === 'asc' ? 'ascending' : 'descending') : undefined)
+  const sortHeader = (key: PaymentSortKey) => (
+    <SortButton label={SORT_LABEL[key]} sorted={route.sort === key} direction={route.order === 'asc' ? 'ascending' : 'descending'} onClick={() => toggleSort(key)} />
+  )
+
+  const scopeLabel = route.whitelabelId ? nameOf(route.whitelabelId) : 'Todos os Whitelabels'
+  const cards: SummaryCard[] = [
+    { label: 'Total de pagamentos', value: countOf(totalCount), detail: route.search ? `${scopeLabel} · resultado da busca` : scopeLabel, icon: QrCode, tone: 'blue' },
+    { label: 'Pagos', value: countOf(paidCount), detail: 'Status do pagamento: pago', icon: CircleCheck, tone: 'teal' },
+    { label: 'Aguardando pagamento', value: countOf(waitingCount), detail: 'Cobrança ainda não paga', icon: Clock, tone: 'amber' },
+    { label: 'Reembolsados', value: countOf(refundedCount), detail: 'Status do pagamento', icon: RotateCcw, tone: 'violet' },
+  ]
+
+  const listContext = paymentsHref(route)
+  const columns = [styles.colId, styles.colInvestment, styles.colInvestor, styles.colWl, styles.colProvider, styles.colAmount, styles.colStatus, styles.colPaid, styles.colCreated, shared.colActions]
+  const tenantOptions = tenantData?.rows ?? []
+
+  return (
+    <>
       <SummaryCards
         title="Resumo dos pagamentos"
-        note="Contagens de registros do protótipo (todos os Whitelabels) — não são dados de produção nem totais financeiros."
-        cards={[
-          { label: 'Total de pagamentos', value: PAYMENTS.length, detail: `${count('failed')} com falha`, icon: ChartColumn, tone: 'blue' },
-          { label: 'Pendentes', value: count('pending'), detail: 'Estado do protótipo', icon: Clock, tone: 'amber' },
-          { label: 'Em processamento', value: count('processing'), detail: 'Estado do protótipo', icon: Play, tone: 'teal' },
-          { label: 'Pagos', value: count('paid'), detail: 'Estado do protótipo', icon: CircleCheck, tone: 'violet' },
-        ]}
+        cards={cards}
+        note="Contagens informadas pelo Control Plane para o escopo atual (Whitelabel, investidor, oportunidade e busca). Nenhum valor monetário é somado nesta tela."
       />
 
-      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="pay-list-title">
+      <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="pay-list-title" data-payment-list>
         <h2 id="pay-list-title" className="visually-hidden">
           Lista de pagamentos
         </h2>
-        <div className={shared.filters} style={{ '--filter-count': 5 } as CSSProperties}>
+        <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 3 } as CSSProperties}>
           <label className={fin.search}>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-            <span className="visually-hidden">Buscar por ID, investimento, investidor ou oportunidade</span>
+            <span className="visually-hidden">Buscar por TxID, nome ou e-mail do investidor (busca feita pelo Control Plane)</span>
             <input
+              id="payment-search"
               type="search"
-              value={query}
-              placeholder="Buscar por ID, investimento, investidor ou oportunidade…"
-              onChange={(event) => update(setQuery)(event.target.value)}
+              value={search.draft}
+              maxLength={FINANCE_SEARCH_MAX_LENGTH}
+              placeholder="Buscar por TxID ou investidor…"
+              onChange={(event) => search.setDraft(event.target.value)}
             />
           </label>
           <div className={shared.filterSelects}>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por Whitelabel</span>
-              <select value={whitelabel} onChange={(event) => update(setWhitelabel)(event.target.value)}>
-                <option value="all">Todos os Whitelabels</option>
-                {PROTOTYPE_WHITELABELS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
               <span className="visually-hidden">Filtrar por status do pagamento</span>
-              <select value={status} onChange={(event) => update(setStatus)(event.target.value as 'all' | PaymentStatus)}>
+              <select id="payment-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as PaymentStatus) })}>
                 <option value="all">Todos os status</option>
                 {PAYMENT_STATUSES.map((key) => (
                   <option key={key} value={key}>
-                    {PAYMENT_STATUS_META[key].label}
+                    {paymentStatusMeta(key).label}
                   </option>
                 ))}
               </select>
             </label>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por método</span>
-              <select value={method} onChange={(event) => update(setMethod)(event.target.value as 'all' | PaymentMethod)}>
-                <option value="all">Todos os métodos</option>
-                {PAYMENT_METHODS.map((key) => (
-                  <option key={key} value={key}>
-                    Método: {PAYMENT_METHOD_META[key].label}
+              <span className="visually-hidden">Filtrar por Whitelabel</span>
+              <select id="payment-whitelabel" value={route.whitelabelId ?? 'all'} onChange={(event) => navigate({ whitelabelId: event.target.value === 'all' ? undefined : event.target.value })}>
+                <option value="all">Todos os Whitelabels</option>
+                {tenantOptions.map((row) => (
+                  <option key={row.whitelabelId} value={row.whitelabelId}>
+                    {nameOf(row.whitelabelId)}
                   </option>
                 ))}
+                {route.whitelabelId && !tenantOptions.some((row) => row.whitelabelId === route.whitelabelId) ? (
+                  <option value={route.whitelabelId}>{nameOf(route.whitelabelId)}</option>
+                ) : null}
               </select>
             </label>
             <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por gateway</span>
-              <select value={gateway} onChange={(event) => update(setGateway)(event.target.value)}>
-                <option value="all">Todos os gateways</option>
-                {gatewayIds.map((id) => (
-                  <option key={id} value={id}>
-                    {gatewayFilterLabel(resolveGateway(id), id)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={fin.filter}>
-              <span className="visually-hidden">Filtrar por vínculo com investimento</span>
-              <select value={investment} onChange={(event) => update(setInvestment)(event.target.value as InvestmentFilter)}>
-                <option value="all">Com e sem investimento</option>
-                <option value="with">Com investimento</option>
-                <option value="without">Sem investimento</option>
+              <span className="visually-hidden">Ordenar pagamentos</span>
+              <select
+                id="payment-sort"
+                value={`${route.sort}:${route.order}`}
+                onChange={(event) => {
+                  const [sort, order] = event.target.value.split(':') as [PaymentSortKey, SortOrder]
+                  navigate({ sort, order })
+                }}
+              >
+                {PAYMENT_SORT_KEYS.flatMap((key) =>
+                  (['desc', 'asc'] as const).map((order) => (
+                    <option key={`${key}:${order}`} value={`${key}:${order}`}>
+                      {SORT_LABEL[key]} ({ORDER_LABEL[key][order]})
+                    </option>
+                  )),
+                )}
               </select>
             </label>
           </div>
@@ -266,145 +231,183 @@ export function PaymentsPage({ walletId }: { walletId?: string }) {
           </OutlineButton>
         </div>
 
-        {wallet ? (
+        {route.investorId ? (
           <ContextChip
-            dataName="wallet"
-            label={`Wallet: ${wallet}${walletById(wallet) ? '' : ' (não encontrada)'}`}
-            removeLabel={`Remover filtro da wallet ${wallet}`}
-            onRemove={removeWallet}
+            dataName="investor"
+            label={`Investidor #${route.investorId}`}
+            removeLabel={`Remover filtro do investidor ${route.investorId}`}
+            onRemove={() => navigate({ investorId: undefined })}
           />
         ) : null}
-
-        <SortSelect className={styles.sortVisible} options={SORT_OPTIONS} sort={sort} onChange={(next) => {
-          setSort(next)
-          setPage(1)
-        }} />
+        {route.opportunityId ? (
+          <ContextChip
+            dataName="opportunity"
+            label={`Oportunidade #${route.opportunityId}`}
+            removeLabel={`Remover filtro da oportunidade ${route.opportunityId}`}
+            onRemove={() => navigate({ opportunityId: undefined })}
+          />
+        ) : null}
+        <IgnoredParams ignored={ignored} />
 
         <div className={fin.tableArea}>
-          <table className={`${fin.table} ${shared.table} ${styles.table}`}>
-            <caption className="visually-hidden">Pagamentos de todos os Whitelabels (protótipo, somente leitura)</caption>
-            <thead>
-              <tr>
-                <th scope="col" className={styles.colId} aria-sort={ariaSort('id')}>
-                  {sortHeader('id', 'Pagamento')}
-                </th>
-                <th scope="col" className={styles.colInvestment}>
-                  Investimento
-                </th>
-                <th scope="col" className={styles.colInvestor}>
-                  Investidor
-                </th>
-                <th scope="col" className={styles.colOpportunity}>
-                  Oportunidade
-                </th>
-                <th scope="col" className={styles.colWl}>
-                  Whitelabel
-                </th>
-                <th scope="col" className={styles.colMethod}>
-                  Método
-                </th>
-                <th scope="col" className={styles.colGateway} aria-sort={ariaSort('gateway')}>
-                  {sortHeader('gateway', 'Gateway')}
-                </th>
-                <th scope="col" className={styles.colAmount} aria-sort={ariaSort('amount')}>
-                  {sortHeader('amount', 'Valor')}
-                </th>
-                <th scope="col" className={styles.colStatus} aria-sort={ariaSort('status')}>
-                  {sortHeader('status', 'Status')}
-                </th>
-                <th scope="col" className={styles.colUpdated} aria-sort={ariaSort('updatedAt')}>
-                  {sortHeader('updatedAt', 'Atualizado em')}
-                </th>
-                <th scope="col" className={shared.colActions}>
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((item) => {
-                const href = paymentHref(item.paymentId)
-                const resolved = resolveGateway(item.gatewayId)
-                const oppName = opportunityName(item.opportunityId)
-                return (
-                  <tr key={item.paymentId} className={fin.row} data-payment={item.paymentId}>
-                    <td className={styles.colId}>
-                      <span className={shared.cellText}>
-                        <a href={href} className={shared.rowLink}>
-                          {item.paymentId}
-                        </a>
-                        <span className={styles.metaRelations}>
-                          Investimento: {item.investmentId ?? '—'} · {investorName(item.investorId) ?? 'sem investidor'}
-                        </span>
-                        <span className={styles.metaOpportunity}>
-                          {PAYMENT_METHOD_META[item.method].label} · Oportunidade: {oppName ?? (item.opportunityId ? item.opportunityId : '—')}
-                        </span>
-                        <span className={styles.metaContext}>
-                          {whitelabelName(item.whitelabelId)} · {resolved?.name ?? item.gatewayId}
-                        </span>
-                        <span className={styles.metaUpdated}>Atualizado em {dateText(item.updatedAt)}</span>
-                        <span className={styles.metaStates}>
-                          <span className={styles.metaAmount}>{formatMoney(item.amount, item.currency)}</span>
-                          <PaymentStatusPill status={item.status} />
-                        </span>
-                      </span>
-                    </td>
-                    <td className={styles.colInvestment}>
-                      {item.investmentId ?? <span className={shared.muted}>—</span>}
-                    </td>
-                    <td className={styles.colInvestor}>
-                      <InvestorRef investorId={item.investorId} />
-                    </td>
-                    <td className={styles.colOpportunity}>
-                      <OpportunityRef opportunityId={item.opportunityId} name={oppName} />
-                    </td>
-                    <td className={styles.colWl}>
-                      <WhitelabelTag whitelabelId={item.whitelabelId} />
-                    </td>
-                    <td className={styles.colMethod}>
-                      <MethodTag method={item.method} />
-                    </td>
-                    <td className={styles.colGateway}>
-                      <GatewayTag gateway={resolved} gatewayId={item.gatewayId} />
-                    </td>
-                    <td className={styles.colAmount}>
-                      <Money amount={item.amount} currency={item.currency} />
-                    </td>
-                    <td className={styles.colStatus}>
-                      <PaymentStatusPill status={item.status} />
-                    </td>
-                    <td className={styles.colUpdated}>
-                      <DateStack iso={item.updatedAt} />
-                    </td>
-                    <td className={shared.colActions}>
-                      <a
-                        href={href}
-                        className={`${fin.iconButton} ${shared.actionLink}`}
-                        aria-label={`Abrir pagamento ${item.paymentId}`}
-                        data-open-record={item.paymentId}
-                      >
-                        <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
-                      </a>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          {rows.length === 0 ? <NoResults title="Nenhum pagamento encontrado" description="Ajuste a busca, os filtros ou o contexto." /> : null}
+          {listError ? (
+            <ReadError error={listError} onRetry={list.reload} />
+          ) : (
+            <table className={`${fin.table} ${shared.table} ${styles.table}`} aria-busy={loading || undefined}>
+              <caption className="visually-hidden">
+                Pagamentos PIX ({scopeLabel}), dados do Control Plane{data ? `, página ${data.page} de ${data.lastPage}` : ''}.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className={styles.colId}>
+                    Pagamento
+                  </th>
+                  <th scope="col" className={styles.colInvestment}>
+                    Investimento
+                  </th>
+                  <th scope="col" className={styles.colInvestor}>
+                    Investidor
+                  </th>
+                  <th scope="col" className={styles.colWl}>
+                    Whitelabel
+                  </th>
+                  <th scope="col" className={styles.colProvider}>
+                    Provedor
+                  </th>
+                  <th scope="col" className={styles.colAmount} aria-sort={ariaSort('amount')}>
+                    {sortHeader('amount')}
+                  </th>
+                  <th scope="col" className={styles.colStatus} aria-sort={ariaSort('status')}>
+                    {sortHeader('status')}
+                  </th>
+                  <th scope="col" className={styles.colPaid}>
+                    Pago em
+                  </th>
+                  <th scope="col" className={styles.colCreated} aria-sort={ariaSort('createdAt')}>
+                    {sortHeader('createdAt')}
+                  </th>
+                  <th scope="col" className={shared.colActions}>
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <SkeletonRows columns={columns} />
+                ) : (
+                  data?.rows.map((row) => (
+                    <PaymentRow
+                      key={row.id}
+                      row={row}
+                      tenant={nameOf(row.whitelabelId)}
+                      href={paymentHref(row.id, listContext)}
+                      onInvestor={route.investorId === row.investorId ? undefined : () => navigate({ investorId: row.investorId })}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {!listError && data && !loading && data.rows.length === 0 ? (
+            <div className={core.feedback} data-list-empty>
+              {filtersActive ? (
+                <>
+                  <EmptyState icon={SearchX} title="Nenhum pagamento encontrado" description="O Control Plane não encontrou pagamentos para estes filtros." />
+                  <OutlineButton onClick={clearFilters}>Limpar filtros</OutlineButton>
+                </>
+              ) : (
+                <EmptyState icon={QrCode} title="Nenhum pagamento registrado" description="O Control Plane não retornou pagamentos." />
+              )}
+            </div>
+          ) : null}
         </div>
 
-        <div className={shared.footer}>
-          <p className={shared.range} aria-live="polite">
-            {filtered.length
-              ? `Mostrando ${(current - 1) * PAGE_SIZE + 1}–${Math.min(current * PAGE_SIZE, filtered.length)} de ${filtered.length} ${
-                  filtered.length === 1 ? 'pagamento' : 'pagamentos'
-                }`
-              : 'Nenhum pagamento'}
-            {filtersActive ? ` (filtrados de ${PAYMENTS.length})` : ''}
-          </p>
-          <Pagination label="Paginação de pagamentos" page={current} pageCount={pageCount} onPage={setPage} />
-        </div>
+        {listError ? null : (
+          <div className={shared.footer}>
+            <p className={shared.range} aria-live="polite">
+              {data && !loading ? rangeText(data, 'pagamento', 'pagamentos', 'Nenhum pagamento') : 'Carregando pagamentos…'}
+              <span className={core.dataNote}> · Dados do Control Plane</span>
+            </p>
+            <ServerPagination
+              label="Paginação de pagamentos"
+              current={route.page}
+              last={(data ?? list.lastData)?.lastPage ?? 1}
+              disabled={loading}
+              onChange={(page) => navigate({ page })}
+            />
+          </div>
+        )}
       </section>
-    </FinanceCoreShell>
+    </>
+  )
+}
+
+function PaymentRow({ row, tenant, href, onInvestor }: { row: PaymentRecord; tenant: string; href: string; onInvestor?: () => void }) {
+  return (
+    <tr className={fin.row} data-payment={row.id}>
+      <td className={styles.colId}>
+        <span className={shared.cellText}>
+          <a href={href} className={shared.rowLink}>
+            Pagamento {row.id}
+          </a>
+          <span className={styles.metaMethod}>{paymentMethodLabel(row.paymentMethod)} · {providerLabel(row.provider)}</span>
+          <span className={styles.metaRelations}>
+            Investimento #{row.investmentId} · Investidor #{row.investorId}
+          </span>
+          <span className={styles.metaContext}>{tenant}</span>
+          <span className={styles.metaDates}>
+            Pago em {row.paymentAt ? dateText(row.paymentAt) : '—'} · Criado em {dateText(row.createdAt)}
+          </span>
+          <span className={styles.metaStates}>
+            <span className={styles.metaAmount}>
+              <Money cents={row.amountCents} />
+            </span>
+            <PaymentStatusPill status={row.status} />
+          </span>
+        </span>
+      </td>
+      <td className={styles.colInvestment}>
+        <a href={investmentHref(row.investmentId)} className={shared.inlineLink}>
+          Investimento #{row.investmentId}
+        </a>
+      </td>
+      <td className={styles.colInvestor}>
+        <span className={shared.cellText}>
+          <a href={investorProfileHref(row.investorId)} className={shared.inlineLink} aria-label={`Abrir investidor ${row.investorId} em Operação › Investidores`}>
+            Investidor #{row.investorId}
+          </a>
+          {onInvestor ? (
+            <button type="button" className={core.filterInline} onClick={onInvestor} data-filter-investor={row.investorId}>
+              Filtrar por este investidor
+            </button>
+          ) : null}
+        </span>
+      </td>
+      <td className={styles.colWl}>
+        <TenantTag whitelabelId={row.whitelabelId} name={tenant} />
+      </td>
+      <td className={styles.colProvider}>
+        <span className={shared.cellText}>
+          <span>{providerLabel(row.provider)}</span>
+          <span className={shared.rowId}>{paymentMethodLabel(row.paymentMethod)}</span>
+        </span>
+      </td>
+      <td className={styles.colAmount}>
+        <Money cents={row.amountCents} />
+      </td>
+      <td className={styles.colStatus}>
+        <PaymentStatusPill status={row.status} />
+      </td>
+      <td className={styles.colPaid}>{row.paymentAt ? <DateStack iso={row.paymentAt} /> : <span className={shared.muted}>Sem data de pagamento</span>}</td>
+      <td className={styles.colCreated}>
+        <DateStack iso={row.createdAt} />
+      </td>
+      <td className={shared.colActions}>
+        <a href={href} className={`${fin.iconButton} ${shared.actionLink}`} aria-label={`Abrir pagamento ${row.id}`} data-open-record={row.id}>
+          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+        </a>
+      </td>
+    </tr>
   )
 }

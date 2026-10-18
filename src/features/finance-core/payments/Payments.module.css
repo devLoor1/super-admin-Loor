@@ -1,45 +1,34 @@
 /*
- * Pagamentos / PIX V1 — list columns. Columns collapse by the list card's
- * container width; their data moves under the payment id.
+ * Pagamentos / PIX (Finance Read V1) — list columns. Columns collapse by the
+ * list card's container width; their data moves under the payment id.
  */
 
 .table {
   table-layout: auto;
 }
 
-/* Sort select (FinanceCoreUi) once sortable columns start to collapse. */
-@container (max-width: 1320px) {
-  .sortVisible.sortVisible {
-    display: flex;
-  }
-}
-
 .colId {
-  min-width: 96px;
+  min-width: 120px;
 }
 
 .colInvestor {
-  min-width: 160px;
-}
-
-.colOpportunity {
-  min-width: 130px;
+  min-width: 140px;
 }
 
 .colInvestment,
 .colWl,
-.colMethod,
-.colGateway,
+.colProvider,
 .colAmount,
 .colStatus,
-.colUpdated {
+.colPaid,
+.colCreated {
   white-space: nowrap;
 }
 
+.metaMethod,
 .metaRelations,
-.metaOpportunity,
 .metaContext,
-.metaUpdated {
+.metaDates {
   display: none;
   margin-top: 3px;
   font-size: 11.5px;
@@ -63,39 +52,34 @@
   color: var(--text-on-dark);
 }
 
-@container (max-width: 1320px) {
-  .colUpdated {
+@container (max-width: 1380px) {
+  .colPaid,
+  .colCreated {
     display: none;
   }
 
-  .metaUpdated {
+  .metaDates {
     display: block;
   }
 }
 
 @container (max-width: 1180px) {
   .colWl,
-  .colGateway {
+  .colProvider {
     display: none;
   }
 
-  .metaContext {
+  .metaContext,
+  .metaMethod {
     display: block;
+  }
+
+  .colId {
+    min-width: 188px;
   }
 }
 
-@container (max-width: 1000px) {
-  .colOpportunity,
-  .colMethod {
-    display: none;
-  }
-
-  .metaOpportunity {
-    display: block;
-  }
-}
-
-@container (max-width: 800px) {
+@container (max-width: 840px) {
   .colInvestment,
   .colInvestor {
     display: none;
@@ -110,7 +94,7 @@
   }
 }
 
-@container (max-width: 520px) {
+@container (max-width: 560px) {
   .table thead,
   .colAmount,
   .colStatus {
@@ -122,28 +106,7 @@
   }
 }
 
-/* ---------- Detail ---------- */
-
-/* Never a scannable code: a dashed frame with a generic icon and the notice. */
-.qrPlaceholder {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 12px 14px;
-  border: 1px dashed var(--surface-border-strong);
-  border-radius: 10px;
-  background: rgb(255 255 255 / 0.015);
-  font-size: 12.5px;
-  line-height: 18px;
-  color: var(--text-on-dark-muted);
-}
-
-.qrPlaceholder svg {
-  flex: none;
-  color: var(--icon-on-dark);
-}
-
+/* Detail: grid of stacked cards. */
 .stack {
   display: grid;
   gap: 14px;

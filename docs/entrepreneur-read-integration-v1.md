@@ -1,5 +1,10 @@
 # Entrepreneur Read Integration V1
 
+> **Update (2026-10-18):** the Company finding below is superseded by
+> [Opportunities + Companies Read Integration V1](opportunities-companies-read-integration-v1.md). The Entrepreneur
+> profile now reads the Entrepreneur → Company relationship (`GET /entrepreneurs/:id/company`, cardinality 0..1);
+> "Aguardando integração da empresa" is no longer shown. The Entrepreneur contract itself still has no Company field.
+
 Third real-data unit of the Super Admin frontend, implemented by Cloud from
 `dev` `e8e97f0` for Codex review. **Operação › Empreendedores** (list and
 detail) now reads the Nest Control Plane. It is **read-only**: there are no

@@ -1,5 +1,10 @@
 # Companies Frontend V1
 
+> **SUPERSEDED (2026-10-18)** by [Opportunities + Companies Read Integration V1](opportunities-companies-read-integration-v1.md):
+> Empresas now reads the Control Plane (`GET /companies`, `GET /companies/:id`, `GET /entrepreneurs/:id/company`).
+> The prototype source, preview states and illustrative provenance described below were removed. This record is kept
+> as history only.
+
 Frontend-only unit, implemented by Cloud from `dev` `075809e`, then reviewed
 and narrowly refined by Codex on `feature/companies-frontend-v1`. It adds a dedicated **Empresas** list and
 detail, ready for a future `GET /companies` / `GET /companies/:id`.

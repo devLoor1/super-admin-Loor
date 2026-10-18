@@ -45,13 +45,3 @@
   background: rgb(96 88 240 / 0.2);
   color: var(--text-on-dark);
 }
-
-.tag {
-  padding: 0 6px;
-  border: 1px dashed rgb(247 191 109 / 0.45);
-  border-radius: 6px;
-  font-size: 10.5px;
-  font-weight: 600;
-  line-height: 16px;
-  color: #e8cf9c;
-}

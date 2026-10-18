@@ -1,41 +1,41 @@
-import { useMemo, type ReactNode } from 'react'
-import { Building2, CircleAlert, Info, Link2, RotateCw, ScanFace, SearchX, Target, Unplug, Wallet, type LucideIcon } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
+import { Building2, CircleAlert, Info, Link2, RotateCw, ScanFace, SearchX, Target, UserRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { Breadcrumb } from '../../../components/shell/TopHeader'
 import { EmptyState } from '../../../components/ui/EmptyState'
+import outline from '../../../components/ui/OutlineButton.module.css'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
-import { describeApiError } from '../../../lib/apiErrors'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { formatWhitelabelDate } from '../../whitelabels/whitelabelApi'
+import { maskPhone } from '../entrepreneurs/entrepreneurApi'
+import { entrepreneurHref } from '../entrepreneurs/entrepreneurRoute'
+import { addOperationActivity } from '../shared/operationActivity'
 import { crumbLabel } from '../shared/operationModel'
 import { BackLink, DetailList, InfoNote, OperationShell } from '../shared/OperationUi'
+import { operationReadErrorView } from '../shared/readErrors'
+import { useWhitelabelRecord } from '../shared/whitelabelContext'
 import shared from '../shared/Operation.module.css'
 import participants from '../shared/Participants.module.css'
 import states from '../shared/ReadStates.module.css'
-import type { CompanyRelationView, CompanyView } from './companyPresent'
-import { companyDetailPreviewHref, companyListReturnHash, parseCompanyPreview, type CompanyPreview } from './companyRoute'
-import { OfficialStatus, PreviewNotice, ProvenanceNotice, RelationValue } from './CompanyParts'
+import type { CompanyDetail } from './companyApi'
+import { companyDate, companyDisplayName, formatCnpj, validationSourceLabel } from './companyPresent'
+import { companyListReturnHash, parseCompanyRoute } from './companyRoute'
+import { CompanyStatusBadge, CompanyTenant } from './CompanyParts'
 import { useCompanyDetail } from './useCompanyData'
 import styles from './Companies.module.css'
 
-const DETAIL_PREVIEWS: readonly CompanyPreview[] = ['loading', 'unavailable', 'error']
-
 /**
- * `#/operation/companies/:companyId` — read-only Company detail (prototype).
- * Sections: Empresa, Relacionamentos, Sistema. KYC, Oportunidades and
- * Finanças are not part of the Company record and stay pending: no fake
- * finance, opportunity, KYC, investment or payment data. Illustrative
- * Entrepreneur / Whitelabel references are never linked or requested.
+ * `#/operation/companies/:companyId` — read-only Company from
+ * `GET /companies/:id`. Sections: Empresa, Contato, Relacionamentos, Sistema.
+ * KYC, Oportunidades and Finanças are not part of the Company record and stay
+ * pending: no fake KYC, opportunity, investment or payment data. The
+ * Entrepreneur link is `company.entrepreneurId` (never inferred from names).
  */
 export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: string; returnTo?: string; previa?: string }) {
-  const { preview, ignored } = useMemo(() => {
-    const ignoredParams: string[] = []
-    return { preview: parseCompanyPreview(previa, DETAIL_PREVIEWS, ignoredParams), ignored: ignoredParams }
-  }, [previa])
-  const detail = useCompanyDetail(companyId, preview)
+  // The prototype-era `?previa=` state preview no longer exists: reported, never applied.
+  const ignored = useMemo(() => (previa === undefined ? [] : parseCompanyRoute({ previa }).ignored), [previa])
+  const detail = useCompanyDetail(companyId)
   const listHref = companyListReturnHash(returnTo)
   const listCrumb: Breadcrumb = { label: 'Empresas', href: listHref }
-  const error = detail.state.status === 'error' ? describeApiError(detail.state.error, 'a empresa') : null
-  const previewNotice = preview ? <PreviewNotice preview={preview} exitHref={companyDetailPreviewHref(companyId, undefined, returnTo)} /> : null
+  const error = detail.state.status === 'error' ? operationReadErrorView(detail.state.error, 'a empresa') : null
   const back = (
     <div>
       <BackLink href={listHref} label="Voltar para Empresas" />
@@ -51,8 +51,7 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
             title="Empresa não encontrada"
             description={
               <>
-                Nenhuma empresa ilustrativa usa o ID “{companyId}”. A integração de Empresas está pendente: nenhum dado do Control Plane foi
-                consultado.{' '}
+                Nenhuma empresa do Control Plane usa o ID “{companyId}”.{' '}
                 <a href={listHref} className={shared.inlineLink}>
                   Voltar para Empresas
                 </a>
@@ -64,27 +63,10 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
     )
   }
 
-  if (detail.state.status === 'unavailable') {
-    return (
-      <OperationShell section="entrepreneurs" title="Empresas" trail={[listCrumb, `ID ${companyId}`]}>
-        {back}
-        {previewNotice}
-        <section className={`${fin.card} ${states.feedback}`} data-company-state="unavailable">
-          <EmptyState
-            icon={Unplug}
-            title="Contrato de Empresas indisponível"
-            description="O Control Plane ainda não oferece o detalhe de Empresas. Nenhum dado é exibido e nenhuma requisição foi feita."
-          />
-        </section>
-      </OperationShell>
-    )
-  }
-
   if (error) {
     return (
       <OperationShell section="entrepreneurs" title="Empresas" trail={[listCrumb, `ID ${companyId}`]}>
         {back}
-        {previewNotice}
         <section className={`${fin.card} ${states.feedback}`} role="alert" data-company-state="error">
           <EmptyState icon={CircleAlert} title={error.title} description={error.description} />
           {error.correlationId ? (
@@ -107,7 +89,6 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
     return (
       <OperationShell section="entrepreneurs" title="Empresas" trail={[listCrumb, `ID ${companyId}`]}>
         {back}
-        {previewNotice}
         <section className={`${fin.card} ${shared.hero}`} aria-busy="true" aria-label="Carregando empresa" data-company-state="loading">
           <span className={participants.heroAvatar} aria-hidden="true" />
           <div className={states.heroSkeleton} aria-hidden="true">
@@ -125,9 +106,8 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
 
   const company = detail.state.data
   return (
-    <OperationShell section="entrepreneurs" title="Empresas" trail={[listCrumb, crumbLabel(company.displayName)]}>
+    <OperationShell section="entrepreneurs" title="Empresas" trail={[listCrumb, crumbLabel(companyDisplayName(company))]}>
       {back}
-      {company.provenance === 'prototype' ? <ProvenanceNotice detail /> : null}
       {ignored.length ? (
         <p className={states.ignoredNote} role="status" data-ignored-params>
           <Info size={14} strokeWidth={1.9} aria-hidden="true" />
@@ -139,46 +119,63 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
   )
 }
 
-function CompanyProfile({ company }: { company: CompanyView }) {
-  const illustrative = company.provenance === 'prototype'
-  const date = (value: string | null) => formatWhitelabelDate(value, true) ?? 'Não informado'
+// Company ids overlap numerically with other domains: session activity is keyed by domain + id.
+const activityKey = (id: string) => `company:${id}`
+
+function CompanyProfile({ company }: { company: CompanyDetail }) {
+  const whitelabel = useWhitelabelRecord(company.whitelabelId)
+  const tenant = whitelabel.state.status === 'success' ? whitelabel.state.data.name : `Whitelabel #${company.whitelabelId}`
+  const date = (value: string | null) => companyDate(value, true) ?? 'Não informado'
+  const name = companyDisplayName(company)
+  const cnpj = formatCnpj(company.cnpj)
+
+  useEffect(() => {
+    addOperationActivity(activityKey(company.id), { title: 'Empresa consultada', detail: 'Dados do Control Plane (somente leitura)' })
+  }, [company.id])
+
+  const entrepreneurLink = (
+    <a href={entrepreneurHref(company.entrepreneurId)} className={shared.inlineLink} data-relation="entrepreneur">
+      Empreendedor #{company.entrepreneurId}
+    </a>
+  )
 
   return (
     <>
-      <section className={`${fin.card} ${shared.hero}`} aria-labelledby="company-title" data-company-state="loaded" data-provenance={company.provenance}>
+      <section className={`${fin.card} ${shared.hero}`} aria-labelledby="company-title" data-company-state="loaded">
         <span className={shared.heroIcon} aria-hidden="true">
           <Building2 size={24} strokeWidth={1.6} />
         </span>
         <div className={shared.heroHeading}>
           <div className={shared.heroTitleRow}>
             <h2 id="company-title" className={shared.heroTitle}>
-              {company.displayName}
+              {name}
             </h2>
+            <CompanyStatusBadge status={company.status} />
           </div>
           {company.tradeName && company.legalName ? <p className={styles.heroSub}>{company.tradeName}</p> : null}
-          <p className={shared.heroId}>
-            {illustrative ? 'ID ilustrativo da empresa' : 'ID da empresa (Control Plane)'}: {company.id}
-          </p>
+          <p className={shared.heroId}>ID da empresa (Control Plane): {company.id}</p>
           <div className={shared.heroMeta}>
             <div className={shared.heroMetaItem}>
               <span className={shared.heroMetaLabel}>Empreendedor</span>
-              <span className={shared.heroMetaValue}>
-                <RelationValue relation={company.entrepreneur} kind="entrepreneur" />
-              </span>
+              <span className={shared.heroMetaValue}>{entrepreneurLink}</span>
             </div>
             <div className={shared.heroMetaItem}>
               <span className={shared.heroMetaLabel}>Whitelabel</span>
               <span className={shared.heroMetaValue}>
-                <RelationValue relation={company.whitelabel} kind="whitelabel" />
+                <CompanyTenant whitelabelId={company.whitelabelId} name={tenant} />
               </span>
             </div>
             <div className={shared.heroMetaItem}>
-              <span className={shared.heroMetaLabel}>Status oficial</span>
-              <span className={shared.heroMetaValue} data-official-status>
-                <OfficialStatus status={company.officialStatus} />
-              </span>
+              <span className={shared.heroMetaLabel}>CNPJ</span>
+              <span className={`${shared.heroMetaValue} ${styles.mono}`}>{cnpj ?? 'Não informado'}</span>
             </div>
           </div>
+        </div>
+        <div className={shared.heroActions}>
+          <a href={entrepreneurHref(company.entrepreneurId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="entrepreneur">
+            <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
+            Ver empreendedor
+          </a>
         </div>
       </section>
 
@@ -187,57 +184,64 @@ function CompanyProfile({ company }: { company: CompanyView }) {
           <h3 id="company-section-company" className={fin.cardTitleSm}>
             Empresa
           </h3>
-          <p className={fin.cardSubtitle}>
-            {illustrative ? 'Identificação ilustrativa — somente leitura.' : 'Dados do Control Plane — somente leitura.'}
-          </p>
+          <p className={fin.cardSubtitle}>Dados do Control Plane — somente leitura.</p>
           <DetailList
             rows={[
               { label: 'Razão social', value: company.legalName ?? 'Não informada' },
               { label: 'Nome fantasia', value: company.tradeName ?? 'Não informado' },
-              {
-                label: 'CNPJ',
-                value: (
-                  <span className={styles.valueStack}>
-                    <span className={styles.mono}>{company.taxIdMasked ?? 'Não informado'}</span>
-                    {company.taxIdMasked ? (
-                      <span className={styles.valueNote}>
-                        {illustrative ? 'Valor sintético, exibido mascarado. ' : 'Exibido mascarado. '}
-                        Formato, validação e unicidade aguardam definição.
-                      </span>
-                    ) : null}
-                  </span>
-                ),
-              },
-              { label: 'Status oficial', value: <OfficialStatus status={company.officialStatus} /> },
+              { label: 'CNPJ', value: <span className={styles.mono}>{cnpj ?? 'Não informado'}</span> },
+              { label: 'Status da validação', value: <CompanyStatusBadge status={company.status} /> },
+              { label: 'Fonte da validação', value: validationSourceLabel(company.validationSource) },
+              { label: 'Validada em', value: date(company.validatedAt) },
             ]}
           />
         </section>
 
+        <section className={fin.card} aria-labelledby="company-section-contact" data-company-section="contact">
+          <h3 id="company-section-contact" className={fin.cardTitleSm}>
+            Contato
+          </h3>
+          <p className={fin.cardSubtitle}>Contato da empresa informado pelo Control Plane. O telefone é exibido mascarado.</p>
+          <DetailList
+            rows={[
+              { label: 'E-mail', value: company.email ?? 'Não informado' },
+              { label: 'Telefone', value: maskPhone(company.phone) ?? 'Não informado' },
+            ]}
+          />
+        </section>
+      </div>
+
+      <div className={shared.panelGrid}>
         <section className={fin.card} aria-labelledby="company-section-relationships" data-company-section="relationships">
           <h3 id="company-section-relationships" className={fin.cardTitleSm}>
             Relacionamentos
           </h3>
-          <p className={fin.cardSubtitle}>
-            {illustrative ? 'Referências ilustrativas, sem vínculo com registros do Control Plane.' : 'Empreendedor e Whitelabel aos quais a empresa está vinculada.'}
-          </p>
+          <p className={fin.cardSubtitle}>Empreendedor e Whitelabel aos quais a empresa está vinculada.</p>
           <DetailList
             rows={[
-              { label: 'Empreendedor', value: <RelationDetail relation={company.entrepreneur} kind="entrepreneur" /> },
-              { label: 'Whitelabel', value: <RelationDetail relation={company.whitelabel} kind="whitelabel" /> },
+              { label: 'Empreendedor', value: entrepreneurLink },
+              {
+                label: 'Whitelabel',
+                value: (
+                  <span className={shared.cellText}>
+                    <CompanyTenant whitelabelId={company.whitelabelId} name={tenant} />
+                    <a href={`#/whitelabels?id=${encodeURIComponent(company.whitelabelId)}`} className={shared.inlineLink} data-relation="whitelabel">
+                      Ver Whitelabel (ID {company.whitelabelId})
+                    </a>
+                  </span>
+                ),
+              },
             ]}
           />
           <p className={`${shared.callout} ${styles.sectionCallout}`}>
             <Link2 size={15} strokeWidth={1.8} aria-hidden="true" />
             <span>
-              No contrato futuro, o vínculo oficial será <code className={styles.code}>company.entrepreneurId</code> (e{' '}
-              <code className={styles.code}>company.whitelabelId</code>). Empresa e empreendedor são entidades distintas, com identidades
-              independentes; a quantidade de empresas por empreendedor ainda não foi definida.
+              O vínculo oficial é <code className={styles.code}>company.entrepreneurId</code>: cada empresa pertence a exatamente um empreendedor, e cada
+              empreendedor tem no máximo uma empresa. Empresa, empreendedor e Whitelabel têm identidades independentes.
             </span>
           </p>
         </section>
-      </div>
 
-      <div className={shared.panelGrid}>
         <section className={fin.card} aria-labelledby="company-section-system" data-company-section="system">
           <h3 id="company-section-system" className={fin.cardTitleSm}>
             Sistema
@@ -245,45 +249,31 @@ function CompanyProfile({ company }: { company: CompanyView }) {
           <DetailList
             rows={[
               { label: 'ID da empresa', value: <span className={styles.code}>{company.id}</span> },
-              { label: 'Origem dos dados', value: illustrative ? 'Ilustrativa (protótipo)' : 'Control Plane' },
-              { label: 'Criado em', value: date(company.createdAt) },
-              { label: 'Atualizado em', value: date(company.updatedAt) },
+              { label: 'Origem dos dados', value: 'Control Plane' },
+              { label: 'Criada em', value: date(company.createdAt) },
+              { label: 'Atualizada em', value: date(company.updatedAt) },
             ]}
           />
         </section>
-
-        <section className={fin.card} aria-labelledby="company-section-domains" data-company-section="pending-domains">
-          <h3 id="company-section-domains" className={fin.cardTitleSm}>
-            Outros domínios
-          </h3>
-          <p className={fin.cardSubtitle}>Não fazem parte do cadastro da empresa e aguardam integração nos módulos responsáveis.</p>
-          <ul className={styles.domains}>
-            <PendingDomain icon={ScanFace} title="KYC" note="Aguardando integração do KYC" />
-            <PendingDomain icon={Target} title="Oportunidades" note="Aguardando integração — nenhuma oportunidade é exibida" />
-            <PendingDomain icon={Wallet} title="Finanças" note="Sem dados financeiros — nenhum total ou valor é exibido" />
-          </ul>
-        </section>
       </div>
 
+      <section className={fin.card} aria-labelledby="company-section-domains" data-company-section="pending-domains">
+        <h3 id="company-section-domains" className={fin.cardTitleSm}>
+          Outros domínios
+        </h3>
+        <p className={fin.cardSubtitle}>Não fazem parte do cadastro da empresa.</p>
+        <ul className={styles.domains}>
+          <PendingDomain icon={ScanFace} title="KYC" note="Aguardando integração do KYC" />
+          <PendingDomain icon={Target} title="Oportunidades" note="O Control Plane não oferece consulta de oportunidades por empresa ou empreendedor" />
+          <PendingDomain icon={Wallet} title="Finanças" note="Sem dados financeiros — nenhum total ou valor é exibido" />
+        </ul>
+      </section>
+
       <InfoNote>
-        <strong>Somente leitura.</strong> Criação, edição e remoção de Empresas não fazem parte desta versão. Empresa e empreendedor são
-        cadastros distintos: nenhum dado desta tela é derivado do perfil de um empreendedor.
+        <strong>Somente leitura.</strong> Criação, edição e remoção de Empresas não fazem parte desta integração. Nenhum dado desta tela é derivado do
+        perfil do empreendedor.
       </InfoNote>
     </>
-  )
-}
-
-function RelationDetail({ relation, kind }: { relation: CompanyRelationView; kind: 'entrepreneur' | 'whitelabel' }) {
-  if (relation.kind === 'missing') return <span data-relation-detail={kind}>Não informado</span>
-  const note: ReactNode =
-    relation.kind === 'illustrative'
-      ? `Referência ilustrativa — sem vínculo com ${kind === 'entrepreneur' ? 'um empreendedor' : 'um Whitelabel'} do Control Plane.`
-      : null
-  return (
-    <span className={styles.valueStack} data-relation-detail={kind}>
-      <RelationValue relation={relation} kind={kind} />
-      {note ? <span className={styles.valueNote}>{note}</span> : null}
-    </span>
   )
 }
 
@@ -297,7 +287,7 @@ function PendingDomain({ icon: Icon, title, note }: { icon: LucideIcon; title: s
         {title}
         <span className={styles.domainNote}>{note}</span>
       </span>
-      <span className={`${shared.pendingTag} ${styles.domainTag}`}>Pendente</span>
+      <span className={`${shared.pendingTag} ${styles.domainTag}`}>Indisponível</span>
     </li>
   )
 }

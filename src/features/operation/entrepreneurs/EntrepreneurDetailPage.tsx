@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Building2, CircleAlert, Info, RotateCw, SearchX, ShieldCheck, Target, UserRound } from 'lucide-react'
+import { CircleAlert, Info, RotateCw, SearchX, ShieldCheck, Target, UserRound } from 'lucide-react'
 import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
@@ -11,6 +11,8 @@ import { describeApiError } from '../../../lib/apiErrors'
 import { BusinessBadge } from '../../whitelabel-accounts/AccountBadges'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import { formatWhitelabelDate } from '../../whitelabels/whitelabelApi'
+import { CompanyRelationValue, EntrepreneurCompanyPanel } from '../companies/EntrepreneurCompanyPanel'
+import { useEntrepreneurCompany } from '../companies/useCompanyData'
 import { addOperationActivity, useOperationActivity } from '../shared/operationActivity'
 import { crumbLabel, initials } from '../shared/operationModel'
 import { BackLink, DetailList, DomainNavCard, InfoNote, OperationShell, SessionActivityCard, type DomainNavItem } from '../shared/OperationUi'
@@ -28,7 +30,7 @@ const TAB_PREFIX = 'participant-detail'
 const PENDING = {
   account: 'Contas do Whitelabel ainda é um protótipo e não reconhece empreendedores do Control Plane. Nenhuma navegação foi feita.',
   opportunities:
-    'Operação › Oportunidades ainda é um protótipo; oportunidades deste empreendedor não estão integradas. Nenhuma navegação foi feita.',
+    'O Control Plane não oferece consulta de oportunidades por empreendedor (Oportunidades não aceita esse filtro). Nenhuma navegação foi feita.',
   compliance:
     'Compliance › KYC ainda é um protótipo; não há caso KYC do Control Plane vinculado a este empreendedor. Nenhuma navegação foi feita.',
 }
@@ -39,10 +41,12 @@ const activityKey = (id: string) => `entrepreneur:${id}`
 /**
  * `#/operation/entrepreneurs/:entrepreneurId` — read-only profile from
  * `GET /entrepreneurs/:id` (Core Entrepreneur id). Only fields the Control
- * Plane returns are shown. The contract has no Company: the company row says
- * "Aguardando integração da empresa" and no prototype company is shown.
- * KYC, opportunities and account administration are not integrated and their
- * prototype destinations are never linked with real ids.
+ * Plane returns are shown. The Company (0..1) comes from
+ * `GET /entrepreneurs/:id/company`, scoped to the Entrepreneur's Whitelabel:
+ * present, "Sem empresa vinculada" (`data: null`) and failures stay distinct.
+ * KYC and account administration are not integrated and their prototype
+ * destinations are never linked with real ids; the Control Plane offers no
+ * per-Entrepreneur Opportunity read.
  */
 export function EntrepreneurDetailPage({ entrepreneurId, returnTo }: { entrepreneurId: string; returnTo?: string }) {
   const prototypeLink = isPrototypeId(entrepreneurId)
@@ -60,7 +64,7 @@ export function EntrepreneurDetailPage({ entrepreneurId, returnTo }: { entrepren
             description={
               <>
                 {prototypeLink
-                  ? `“${entrepreneurId}” é um ID de protótipo (de Oportunidades ou Compliance, que ainda usam dados ilustrativos) e não corresponde a um empreendedor do Control Plane.`
+                  ? `“${entrepreneurId}” é um ID de protótipo (de um módulo que ainda usa dados ilustrativos, como Compliance) e não corresponde a um empreendedor do Control Plane.`
                   : `Nenhum empreendedor do Control Plane usa o ID “${entrepreneurId}”.`}{' '}
                 <a href={listHref} className={shared.inlineLink}>
                   Voltar para Empreendedores
@@ -136,6 +140,8 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
   const access = accessMeta(entrepreneur.accessState)
   const profile = profileMeta(entrepreneur.businessState)
   const name = entrepreneur.fullName ?? 'Nome não informado'
+  // Keyed by Entrepreneur + tenant: a Company read for one Entrepreneur can never be shown for another.
+  const company = useEntrepreneurCompany(entrepreneur.id, entrepreneur.whitelabelId)
 
   const log = (title: string, detail?: string) => addOperationActivity(key, { title, detail })
 
@@ -166,7 +172,7 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
     {
       key: 'opportunities',
       label: 'Ver oportunidades',
-      description: 'Operação › Oportunidades — ainda em protótipo, não integrado',
+      description: 'Operação › Oportunidades — sem consulta por empreendedor no Control Plane',
       icon: Target,
       onSelect: () => pending('opportunities', 'Navegação para Oportunidades indisponível'),
       pending: true,
@@ -228,8 +234,8 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
             </div>
             <div className={shared.heroMetaItem}>
               <span className={shared.heroMetaLabel}>Empresa</span>
-              <span className={shared.heroMetaValue} data-company-pending>
-                <BusinessBadge tone="neutral" label="Aguardando integração da empresa" />
+              <span className={shared.heroMetaValue} data-company-hero>
+                <CompanyRelationValue remote={company} />
               </span>
             </div>
             <div className={shared.heroMetaItem}>
@@ -275,7 +281,7 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
                   label: 'Situação do cadastro',
                   value: profile ? <BusinessBadge tone={profile.tone} label={profile.label} /> : 'Não informado',
                 },
-                { label: 'Empresa', value: <BusinessBadge tone="neutral" label="Aguardando integração da empresa" /> },
+                { label: 'Empresa', value: <CompanyRelationValue remote={company} /> },
                 { label: 'E-mail verificado em', value: date(entrepreneur.emailVerifiedAt) },
                 { label: 'Criado em', value: date(entrepreneur.createdAt) },
                 { label: 'Atualizado em', value: date(entrepreneur.updatedAt) },
@@ -284,34 +290,23 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
           </section>
           <DomainNavCard
             title="Navegação para domínios responsáveis"
-            intro="Conta, oportunidades e KYC pertencem a outros módulos, que ainda são protótipos e não reconhecem empreendedores do Control Plane."
+            intro="Conta e KYC pertencem a módulos que ainda são protótipos e não reconhecem empreendedores do Control Plane; Oportunidades não oferece consulta por empreendedor."
             items={navItems}
           />
         </div>
-        <section className={fin.card} aria-labelledby="entrepreneur-company-title" data-company-panel>
-          <h3 id="entrepreneur-company-title" className={fin.cardTitleSm}>
-            Empresa — aguardando integração
-          </h3>
-          <p className={shared.callout} style={{ marginTop: 12 }}>
-            <Building2 size={15} strokeWidth={1.8} aria-hidden="true" />
-            <span>
-              O contrato de empreendedores do Control Plane não traz empresa (identificação, razão social, CNPJ, situação ou vínculo).
-              Nenhum dado de empresa é exibido aqui, e a listagem de Empresas continua pendente de Backend e Produto.
-            </span>
-          </p>
-        </section>
+        <EntrepreneurCompanyPanel remote={company} variant="entrepreneur" entrepreneurId={entrepreneur.id} />
         <InfoNote>
           <strong>Empreendedores lê o Control Plane (somente leitura).</strong> “Situação do cadastro” é a completude do perfil do
-          empreendedor no Core — não é KYC nem validação de empresa. Empresa, KYC, oportunidades e ações de conta aguardam integração;
-          nenhum valor ilustrativo é exibido.
+          empreendedor no Core — não é KYC nem validação de empresa. A empresa vem do vínculo oficial empreendedor → empresa (no máximo uma);
+          KYC, oportunidades por empreendedor e ações de conta não estão disponíveis; nenhum valor ilustrativo é exibido.
         </InfoNote>
       </Panel>
 
       <Panel tab="relation" current={tab}>
         <PendingPanel
           icon={Target}
-          title="Oportunidades — aguardando integração"
-          description="As oportunidades deste empreendedor ainda não estão integradas: Operação › Oportunidades é um protótipo e o contrato de empreendedores não traz vínculos. Nenhuma oportunidade ou contagem ilustrativa é exibida."
+          title="Oportunidades por empreendedor — indisponível"
+          description="Operação › Oportunidades lê o Control Plane, mas o contrato não oferece filtro por empreendedor e a lista não é filtrada no navegador. Nenhuma oportunidade ou contagem ilustrativa é exibida aqui."
         />
       </Panel>
 

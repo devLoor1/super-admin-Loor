@@ -1,52 +1,62 @@
-import { useState, type ReactNode } from 'react'
-import { Database, Info, LayoutGrid, Pencil, RefreshCw, SearchX, SlidersHorizontal, Target } from 'lucide-react'
-import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
+import { useEffect, useState, type ReactNode } from 'react'
+import { CircleAlert, Database, ExternalLink, Info, LayoutGrid, RotateCw, SearchX, Target, UserRound } from 'lucide-react'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { IconTile } from '../../../components/ui/IconTile'
+import outline from '../../../components/ui/OutlineButton.module.css'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
-import primary from '../../../components/ui/PrimaryButton.module.css'
 import { Tabs } from '../../../components/ui/Tabs'
 import { tabId, tabPanelId } from '../../../components/ui/tabIds'
-import type { CatalogItem } from '../../finance-catalogs/catalogModel'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { CHOICE_LABEL, modalityMeta } from '../../finance-modalities/modalitiesModel'
-import { useModalityRules } from '../../finance-modalities/modalitiesStore'
+import { EntrepreneurCompanyPanel } from '../companies/EntrepreneurCompanyPanel'
+import { useEntrepreneurCompany } from '../companies/useCompanyData'
+import { entrepreneurHref } from '../entrepreneurs/entrepreneurRoute'
 import { addOperationActivity, useOperationActivity } from '../shared/operationActivity'
-import { crumbLabel, formatDateTime, whitelabelName } from '../shared/operationModel'
-import { entrepreneurById } from '../shared/participants'
-import { BackLink, DetailList, OperationShell, SessionActivityCard, WhitelabelTag } from '../shared/OperationUi'
+import { crumbLabel } from '../shared/operationModel'
+import { BackLink, DetailList, InfoNote, OperationShell, SessionActivityCard } from '../shared/OperationUi'
+import { operationReadErrorView } from '../shared/readErrors'
+import { useWhitelabelRecord } from '../shared/whitelabelContext'
 import shared from '../shared/Operation.module.css'
-import { useCatalogResolver, type ResolvedRef } from './classification'
-import { OPPORTUNITY_STATUS_META, type Opportunity } from './opportunityModel'
-import { setOpportunityStatus, useOpportunity } from './opportunityStore'
-import { CatalogChip, ModalityChip, OpportunityStatusPill } from './OpportunityParts'
-import { StatusDialog } from './StatusDialog'
+import states from '../shared/ReadStates.module.css'
+import type { OpportunityDetail } from './opportunityApi'
+import { fundraisingLabel, modalityLabel, opportunityDate, opportunityName, privacyLabel } from './opportunityPresent'
+import { opportunitiesHref, opportunityListReturnHash } from './opportunityRoute'
+import { ModalityChip, OpportunityStatusPill, TenantName } from './OpportunityParts'
+import { useOpportunityDetail } from './useOpportunityData'
 import styles from './Opportunities.module.css'
 
-type Tab = 'overview' | 'classification' | 'configuration' | 'activity'
+type Tab = 'overview' | 'classification' | 'company' | 'activity'
 const TABS: { value: Tab; label: string }[] = [
   { value: 'overview', label: 'Visão geral' },
   { value: 'classification', label: 'Classificação' },
-  { value: 'configuration', label: 'Configuração' },
+  { value: 'company', label: 'Empreendedor e empresa' },
   { value: 'activity', label: 'Atividade da sessão' },
 ]
 const TAB_PREFIX = 'opp-detail'
 
-/** `#/operation/opportunities/:opportunityId` — consultation, status switch, link to edit. No delete. */
-export function OpportunityDetailPage({ opportunityId }: { opportunityId: string }) {
-  const opportunity = useOpportunity(opportunityId)
-  if (!opportunity) {
+// Opportunity ids overlap numerically with other domains: session activity is keyed by domain + id.
+const activityKey = (id: string) => `opportunity:${id}`
+
+/**
+ * `#/operation/opportunities/:opportunityId` — read-only Opportunity from
+ * `GET /opportunities/:id`. Only fields the Control Plane returns are shown
+ * (no money, investments, investor counts or fundraising progress exist in
+ * the contract). No approval, publication, edit or status change.
+ */
+export function OpportunityDetailPage({ opportunityId, returnTo }: { opportunityId: string; returnTo?: string }) {
+  const detail = useOpportunityDetail(opportunityId)
+  const listHref = opportunityListReturnHash(returnTo)
+  const error = detail.state.status === 'error' ? operationReadErrorView(detail.state.error, 'a oportunidade') : null
+
+  if (error?.notFound) {
     return (
       <OperationShell section="opportunities" title="Oportunidades" trail={['Não encontrada']}>
-        <div className={shared.notFound}>
+        <div className={shared.notFound} data-opportunity-state="not-found">
           <EmptyState
             icon={SearchX}
             title="Oportunidade não encontrada"
             description={
               <>
-                Nenhuma oportunidade local usa o ID “{opportunityId}”. Oportunidades criadas nesta sessão somem ao recarregar a
-                página.{' '}
-                <a href="#/operation/opportunities" className={shared.inlineLink}>
+                Nenhuma oportunidade do Control Plane usa o ID “{opportunityId}”.{' '}
+                <a href={listHref} className={shared.inlineLink}>
                   Voltar para Oportunidades
                 </a>
               </>
@@ -56,218 +66,257 @@ export function OpportunityDetailPage({ opportunityId }: { opportunityId: string
       </OperationShell>
     )
   }
-  return <OpportunityDetail opportunity={opportunity} />
-}
 
-function OpportunityDetail({ opportunity }: { opportunity: Opportunity }) {
-  const notify = usePrototypeNotice()
-  const catalogs = useCatalogResolver()
-  const activity = useOperationActivity(opportunity.id)
-  const [tab, setTab] = useState<Tab>('overview')
-  const [statusOpen, setStatusOpen] = useState(false)
-  const classification = catalogs.resolve(opportunity)
-  const entrepreneur = opportunity.entrepreneurId ? entrepreneurById(opportunity.entrepreneurId) : undefined
-  const editHref = `#/operation/opportunities/${opportunity.id}/edit`
-
-  function applyStatus(status: Opportunity['status']) {
-    setStatusOpen(false)
-    if (status === opportunity.status) return
-    const before = OPPORTUNITY_STATUS_META[opportunity.status].label
-    setOpportunityStatus(opportunity.id, status)
-    addOperationActivity(opportunity.id, {
-      title: 'Status alterado localmente',
-      detail: `${before} → ${OPPORTUNITY_STATUS_META[status].label}`,
-    })
-    notify(`Status de “${opportunity.name}” alterado para ${OPPORTUNITY_STATUS_META[status].label} neste protótipo.`)
+  if (error) {
+    return (
+      <OperationShell section="opportunities" title="Oportunidades" trail={[`ID ${opportunityId}`]}>
+        <div>
+          <BackLink href={listHref} label="Voltar para Oportunidades" />
+        </div>
+        <section className={`${fin.card} ${states.feedback}`} role="alert" data-opportunity-state="error">
+          <EmptyState icon={CircleAlert} title={error.title} description={error.description} />
+          {error.correlationId ? (
+            <p className={states.diagnostic}>
+              Código de diagnóstico: <code className={states.code}>{error.correlationId}</code>
+            </p>
+          ) : null}
+          {error.retryable ? (
+            <OutlineButton onClick={detail.reload} data-retry>
+              <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
+              Tentar novamente
+            </OutlineButton>
+          ) : null}
+        </section>
+      </OperationShell>
+    )
   }
 
-  const entrepreneurValue = entrepreneur ? (
-    <a href={`#/operation/entrepreneurs/${entrepreneur.id}`} className={shared.inlineLink}>
-      {entrepreneur.account.name}
+  if (detail.state.status !== 'success') {
+    return (
+      <OperationShell section="opportunities" title="Oportunidades" trail={[`ID ${opportunityId}`]}>
+        <div>
+          <BackLink href={listHref} label="Voltar para Oportunidades" />
+        </div>
+        <section className={`${fin.card} ${shared.hero}`} aria-busy="true" aria-label="Carregando oportunidade" data-opportunity-state="loading">
+          <span className={shared.heroIcon} aria-hidden="true" />
+          <div className={states.heroSkeleton} aria-hidden="true">
+            <span className={states.skeleton} />
+            <span className={states.skeleton} />
+            <span className={states.skeleton} />
+          </div>
+          <p className="visually-hidden" role="status">
+            Carregando oportunidade…
+          </p>
+        </section>
+      </OperationShell>
+    )
+  }
+
+  const opportunity = detail.state.data
+  return (
+    <OperationShell section="opportunities" title="Oportunidades" trail={[crumbLabel(opportunityName(opportunity))]}>
+      <OpportunityContent opportunity={opportunity} listHref={listHref} />
+    </OperationShell>
+  )
+}
+
+function OpportunityContent({ opportunity, listHref }: { opportunity: OpportunityDetail; listHref: string }) {
+  const key = activityKey(opportunity.id)
+  const activity = useOperationActivity(key)
+  const [tab, setTab] = useState<Tab>('overview')
+  // Latched once the tab is first opened: switching tabs never re-enters the same read key
+  // (which would re-display the settled answer as current while a duplicate request runs).
+  const [companyRequested, setCompanyRequested] = useState(false)
+  const whitelabel = useWhitelabelRecord(opportunity.whitelabelId)
+  const tenant = whitelabel.state.status === 'success' ? whitelabel.state.data.name : `Whitelabel #${opportunity.whitelabelId}`
+  // Tenant-scoped lookup: the Entrepreneur must belong to the Opportunity's Whitelabel.
+  const company = useEntrepreneurCompany(companyRequested ? opportunity.entrepreneurId : null, opportunity.whitelabelId)
+  const name = opportunityName(opportunity)
+  const date = (value: string | null) => opportunityDate(value, true) ?? 'Não informado'
+
+  useEffect(() => {
+    addOperationActivity(key, { title: 'Oportunidade consultada', detail: 'Dados do Control Plane (somente leitura)' })
+  }, [key])
+
+  function changeTab(next: Tab) {
+    setTab(next)
+    if (next === 'company') setCompanyRequested(true)
+    if (next === 'company') addOperationActivity(key, { title: 'Empreendedor e empresa consultados', detail: `Empreendedor #${opportunity.entrepreneurId}` })
+  }
+
+  const entrepreneurLink = (
+    <a href={entrepreneurHref(opportunity.entrepreneurId)} className={shared.inlineLink} data-relation="entrepreneur">
+      Empreendedor #{opportunity.entrepreneurId}
     </a>
-  ) : opportunity.entrepreneurId ? (
-    'Empreendedor não encontrado'
-  ) : (
-    <span className={shared.muted}>Não vinculado</span>
+  )
+  const whitelabelValue = (
+    <span className={shared.cellText}>
+      <TenantName whitelabelId={opportunity.whitelabelId} name={tenant} />
+      <a href={`#/whitelabels?id=${encodeURIComponent(opportunity.whitelabelId)}`} className={shared.inlineLink} data-relation="whitelabel">
+        Ver Whitelabel (ID {opportunity.whitelabelId})
+      </a>
+    </span>
   )
 
   return (
-    <OperationShell section="opportunities" title="Oportunidades" trail={[crumbLabel(opportunity.name)]}>
+    <>
       <div>
-        <BackLink href="#/operation/opportunities" label="Voltar para Oportunidades" />
+        <BackLink href={listHref} label="Voltar para Oportunidades" />
       </div>
 
-      <section className={`${fin.card} ${shared.hero}`} aria-labelledby="opp-hero-title">
+      <section className={`${fin.card} ${shared.hero}`} aria-labelledby="opp-hero-title" data-opportunity-state="loaded">
         <span className={shared.heroIcon} aria-hidden="true">
           <Target size={26} strokeWidth={1.6} />
         </span>
         <div className={shared.heroHeading}>
           <div className={shared.heroTitleRow}>
             <h2 id="opp-hero-title" className={shared.heroTitle}>
-              {opportunity.name}
+              {name}
             </h2>
             <OpportunityStatusPill status={opportunity.status} />
           </div>
-          <p className={shared.heroId}>ID (protótipo): {opportunity.id}</p>
+          <p className={shared.heroId}>ID da oportunidade (Control Plane): {opportunity.id}</p>
           <div className={shared.heroMeta}>
-            <HeroItem label="Whitelabel" value={<WhitelabelTag whitelabelId={opportunity.whitelabelId} />} />
-            <HeroItem label="Empreendedor" value={entrepreneurValue} />
+            <HeroItem label="Whitelabel" value={<TenantName whitelabelId={opportunity.whitelabelId} name={tenant} />} />
+            <HeroItem label="Empreendedor" value={entrepreneurLink} />
             <HeroItem label="Modalidade" value={<ModalityChip modality={opportunity.modality} />} />
           </div>
         </div>
         <div className={shared.heroActions}>
-          <OutlineButton className={shared.secondaryButton} onClick={() => setStatusOpen(true)} data-change-status>
-            <RefreshCw size={15} strokeWidth={1.8} aria-hidden="true" />
-            Alterar status
-          </OutlineButton>
-          <a href={editHref} className={`${primary.button} ${shared.ctaButton}`} data-edit-opportunity>
-            <Pencil size={15} strokeWidth={1.9} aria-hidden="true" />
-            Editar
+          <a href={entrepreneurHref(opportunity.entrepreneurId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="entrepreneur">
+            <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
+            Ver empreendedor
+          </a>
+          <a href={opportunitiesHref({ whitelabelId: opportunity.whitelabelId })} className={`${outline.button} ${shared.secondaryButton}`} data-hero="whitelabel-opportunities">
+            Oportunidades deste Whitelabel
+            <ExternalLink size={14} strokeWidth={1.8} aria-hidden="true" />
           </a>
         </div>
       </section>
 
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label="Seções da oportunidade" tabs={TABS} value={tab} onChange={setTab} />
+        <Tabs idPrefix={TAB_PREFIX} label="Seções da oportunidade" tabs={TABS} value={tab} onChange={changeTab} />
       </div>
 
       <TabPanel tab="overview" current={tab}>
         <div className={shared.panelGrid}>
           <section className={fin.card} aria-labelledby="opp-info-title">
-            <div className={shared.cardHead}>
-              <h3 id="opp-info-title" className={fin.cardTitleSm}>
-                Informações principais
-              </h3>
-              <a href={editHref} className={shared.cardEdit}>
-                <Pencil size={13} strokeWidth={1.8} aria-hidden="true" />
-                Editar<span className="visually-hidden"> informações principais</span>
-              </a>
-            </div>
+            <h3 id="opp-info-title" className={fin.cardTitleSm}>
+              Informações principais
+            </h3>
+            <p className={fin.cardSubtitle}>Dados do Control Plane — somente leitura.</p>
             <DetailList
               rows={[
-                { label: 'Nome', value: opportunity.name },
+                { label: 'Nome', value: opportunity.name ?? 'Não informado' },
+                { label: 'Razão social informada', value: opportunity.businessName ?? 'Não informada' },
                 { label: 'ID da oportunidade', value: opportunity.id },
-                { label: 'Whitelabel', value: <WhitelabelTag whitelabelId={opportunity.whitelabelId} /> },
-                { label: 'Empreendedor', value: entrepreneurValue },
-                { label: 'Status (protótipo)', value: <OpportunityStatusPill status={opportunity.status} /> },
-                { label: 'Atualizada em', value: formatDateTime(opportunity.updatedAt) ?? '—' },
-                {
-                  label: 'Descrição',
-                  value: opportunity.description || <span className={shared.muted}>Sem descrição</span>,
-                  wide: true,
-                },
+                { label: 'Status', value: <OpportunityStatusPill status={opportunity.status} /> },
+                { label: 'Modalidade', value: modalityLabel(opportunity.modality) },
+                { label: 'Visibilidade', value: privacyLabel(opportunity.isPrivate) },
+                { label: 'Meta mínima de captação', value: fundraisingLabel(opportunity.fundraisingCompletion) },
+                { label: 'Quantidade de cotas', value: opportunity.quotaQuantity === null ? 'Não informada' : String(opportunity.quotaQuantity) },
+                { label: 'Whitelabel', value: whitelabelValue },
+                { label: 'Empreendedor', value: entrepreneurLink },
               ]}
             />
           </section>
-
-          <section className={fin.card} aria-labelledby="opp-class-summary-title">
-            <div className={shared.cardHead}>
-              <h3 id="opp-class-summary-title" className={fin.cardTitleSm}>
-                Resumo de classificação
-              </h3>
-              <a href={`${editHref}?secao=classificacao`} className={shared.cardEdit}>
-                <Pencil size={13} strokeWidth={1.8} aria-hidden="true" />
-                Editar<span className="visually-hidden"> classificação</span>
-              </a>
-            </div>
-            <div className={styles.summaryRows}>
-              <SummaryRow icon={modalityMeta(opportunity.modality).icon} label="Modalidade">
-                <ModalityChip modality={opportunity.modality} />
-              </SummaryRow>
-              <SummaryRow icon={LayoutGrid} label={`Segmentos (${classification.segments.length})`}>
-                <RefChips items={classification.segments} catalog="segment" empty="Nenhum segmento" />
-              </SummaryRow>
-              <SummaryRow icon={Database} label={`Usos dos recursos (${classification.resourceUses.length})`}>
-                <RefChips items={classification.resourceUses} catalog="resource_use" empty="Nenhum uso dos recursos" />
-              </SummaryRow>
-            </div>
+          <section className={fin.card} aria-labelledby="opp-dates-title">
+            <h3 id="opp-dates-title" className={fin.cardTitleSm}>
+              Datas
+            </h3>
+            <DetailList
+              rows={[
+                { label: 'Abertura', value: date(opportunity.openedAt) },
+                { label: 'Prazo', value: date(opportunity.dueAt) },
+                { label: 'Encerramento', value: date(opportunity.endedAt) },
+                { label: 'Criada em', value: date(opportunity.createdAt) },
+                { label: 'Atualizada em', value: date(opportunity.updatedAt) },
+              ]}
+            />
           </section>
         </div>
+        <section className={fin.card} aria-labelledby="opp-text-title">
+          <h3 id="opp-text-title" className={fin.cardTitleSm}>
+            Descrição
+          </h3>
+          <DetailList
+            rows={[
+              { label: 'Descrição', value: opportunity.description ?? <span className={shared.muted}>Sem descrição</span>, wide: true },
+              { label: 'Sobre', value: opportunity.about ?? <span className={shared.muted}>Não informado</span>, wide: true },
+              ...(opportunity.reasonForArchiving ? [{ label: 'Motivo do arquivamento', value: opportunity.reasonForArchiving, wide: true }] : []),
+            ]}
+          />
+        </section>
+        <InfoNote>
+          <strong>Somente leitura.</strong> Aprovação, publicação, edição e mudança de status não fazem parte desta integração. O contrato de
+          Oportunidades não traz valores, investimentos, investidores ou progresso de captação — nada disso é exibido ou calculado.
+        </InfoNote>
       </TabPanel>
 
       <TabPanel tab="classification" current={tab}>
         <p className={shared.callout}>
           <Info size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Modalidade ≠ Segmento ≠ Uso dos recursos.</strong> São três classificações independentes, vindas de domínios
-            diferentes; nenhuma seleção altera outra e não há relacionamento automático entre elas.
+            <strong>Modalidade ≠ Segmento ≠ Uso dos recursos.</strong> São três dimensões independentes informadas pelo Control Plane; “Capital de
+            Giro” nunca é uma modalidade.
           </span>
         </p>
         <div className={styles.classGrid}>
-          <ClassCard
-            icon={modalityMeta(opportunity.modality).icon}
-            tone={modalityMeta(opportunity.modality).tone}
-            title="Modalidade"
-            source={{ label: 'Financeiro › Modalidades e regras', href: `#/whitelabels/${opportunity.whitelabelId}/finance/modalities` }}
-          >
-            <div className={styles.classList}>
-              <div className={styles.classItem}>
-                <span className={styles.classItemName}>
-                  <ModalityChip modality={opportunity.modality} />
-                </span>
-                <span className={styles.classItemMeta}>{modalityMeta(opportunity.modality).description}</span>
-              </div>
-            </div>
+          <ClassCard icon={Target} title="Modalidade">
+            <ClassItem name={<ModalityChip modality={opportunity.modality} />} meta={`Token: ${opportunity.modality}`} />
           </ClassCard>
           <span className={styles.neq} aria-hidden="true">
             ≠
           </span>
-          <ClassCard
-            icon={LayoutGrid}
-            tone="violet"
-            title="Segmentos"
-            source={{
-              label: 'Catálogo de Segmentos',
-              href: `#/whitelabels/${opportunity.whitelabelId}/finance/segments-resource-uses`,
-            }}
-          >
-            <RefList items={classification.segments} catalog="segment" source={catalogs.segmentsOf(opportunity.whitelabelId)} empty="Nenhum segmento selecionado." />
+          <ClassCard icon={LayoutGrid} title="Segmento">
+            {opportunity.segment ? (
+              <ClassItem name={opportunity.segment.name ?? 'Nome não informado'} meta={`ID do segmento: ${opportunity.segment.id}`} />
+            ) : (
+              <p className={`${styles.sourceLink} ${shared.muted}`}>Nenhum segmento informado.</p>
+            )}
           </ClassCard>
           <span className={styles.neq} aria-hidden="true">
             ≠
           </span>
-          <ClassCard
-            icon={Database}
-            tone="teal"
-            title="Usos dos recursos"
-            source={{
-              label: 'Catálogo de Usos dos recursos',
-              href: `#/whitelabels/${opportunity.whitelabelId}/finance/segments-resource-uses`,
-            }}
-          >
-            <RefList
-              items={classification.resourceUses}
-              catalog="resource_use"
-              source={catalogs.resourceUsesOf(opportunity.whitelabelId)}
-              empty="Nenhum uso dos recursos selecionado."
+          <ClassCard icon={Database} title="Uso dos recursos">
+            {opportunity.resourceUse ? (
+              <ClassItem name={opportunity.resourceUse.name ?? opportunity.resourceUse.code} meta={`Código: ${opportunity.resourceUse.code}`} />
+            ) : (
+              <p className={`${styles.sourceLink} ${shared.muted}`}>Nenhum uso dos recursos informado.</p>
+            )}
+          </ClassCard>
+        </div>
+        <InfoNote>Os catálogos de Segmentos e Usos dos recursos de Financeiro ainda são protótipos; nenhuma ligação com eles é feita a partir deste registro.</InfoNote>
+      </TabPanel>
+
+      <TabPanel tab="company" current={tab}>
+        <div className={shared.panelGrid}>
+          <section className={fin.card} aria-labelledby="opp-entrepreneur-title">
+            <h3 id="opp-entrepreneur-title" className={fin.cardTitleSm}>
+              Empreendedor responsável
+            </h3>
+            <p className={fin.cardSubtitle}>Empreendedor informado pela própria oportunidade no Control Plane.</p>
+            <DetailList
+              rows={[
+                { label: 'Empreendedor', value: entrepreneurLink },
+                { label: 'Whitelabel', value: <TenantName whitelabelId={opportunity.whitelabelId} name={tenant} /> },
+              ]}
             />
-          </ClassCard>
+          </section>
+          <EntrepreneurCompanyPanel remote={company} variant="opportunity" entrepreneurId={opportunity.entrepreneurId} />
         </div>
       </TabPanel>
 
-      <TabPanel tab="configuration" current={tab}>
-        <ConfigurationCard opportunity={opportunity} />
-      </TabPanel>
-
       <TabPanel tab="activity" current={tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma alteração local nesta oportunidade durante esta sessão." />
+        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para esta oportunidade." />
       </TabPanel>
-
-      {statusOpen ? <StatusDialog opportunity={opportunity} onCancel={() => setStatusOpen(false)} onApply={applyStatus} /> : null}
-    </OperationShell>
+    </>
   )
 }
 
 function TabPanel({ tab, current, children }: { tab: Tab; current: Tab; children: ReactNode }) {
   return (
-    <div
-      role="tabpanel"
-      id={tabPanelId(TAB_PREFIX, tab)}
-      aria-labelledby={tabId(TAB_PREFIX, tab)}
-      hidden={tab !== current}
-      tabIndex={0}
-      className={shared.tabPanel}
-    >
+    <div role="tabpanel" id={tabPanelId(TAB_PREFIX, tab)} aria-labelledby={tabId(TAB_PREFIX, tab)} hidden={tab !== current} tabIndex={0} className={shared.tabPanel}>
       {tab === current ? children : null}
     </div>
   )
@@ -282,135 +331,27 @@ function HeroItem({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-function SummaryRow({ icon, label, children }: { icon: typeof Target; label: string; children: ReactNode }) {
-  return (
-    <div className={styles.summaryRow}>
-      <span className={styles.summaryRowLabel}>
-        <IconTile icon={icon} tone="indigo" size="sm" />
-        {label}
-      </span>
-      <span className={shared.chipRow}>{children}</span>
-    </div>
-  )
-}
-
-function RefChips({ items, catalog, empty }: { items: ResolvedRef[]; catalog: 'segment' | 'resource_use'; empty: string }) {
-  if (!items.length) return <span className={shared.muted}>{empty}</span>
-  return (
-    <>
-      {items.map((item) => (
-        <CatalogChip key={item.id} item={item} catalog={catalog} />
-      ))}
-    </>
-  )
-}
-
-function ClassCard({
-  icon,
-  tone,
-  title,
-  source,
-  children,
-}: {
-  icon: typeof Target
-  tone: 'blue' | 'amber' | 'violet' | 'teal' | 'indigo' | 'plum' | 'neutral'
-  title: string
-  source: { label: string; href: string }
-  children: ReactNode
-}) {
+function ClassCard({ icon: Icon, title, children }: { icon: typeof Target; title: string; children: ReactNode }) {
   return (
     <section className={fin.card} aria-label={title}>
       <div className={shared.cellMain}>
-        <IconTile icon={icon} tone={tone} size="md" />
+        <span className={styles.classIcon} aria-hidden="true">
+          <Icon size={16} strokeWidth={1.7} />
+        </span>
         <h3 className={fin.cardTitleSm}>{title}</h3>
       </div>
       {children}
-      <p className={styles.sourceLink}>
-        Origem:{' '}
-        <a href={source.href} className={shared.inlineLink}>
-          {source.label}
-        </a>
-      </p>
     </section>
   )
 }
 
-const REF_STATE_LABEL = { active: 'Ativo no catálogo', inactive: 'Inativo no catálogo', missing: 'Não encontrado no catálogo local' } as const
-
-function RefList({
-  items,
-  catalog,
-  source,
-  empty,
-}: {
-  items: ResolvedRef[]
-  catalog: 'segment' | 'resource_use'
-  source: readonly Readonly<CatalogItem>[]
-  empty: string
-}) {
-  if (!items.length) return <p className={`${styles.sourceLink} ${shared.muted}`}>{empty}</p>
+function ClassItem({ name, meta }: { name: ReactNode; meta: string }) {
   return (
-    <ul className={styles.classList}>
-      {items.map((item) => {
-        const record = source.find((entry) => entry.id === item.id)
-        return (
-          <li key={item.id} className={styles.classItem} data-ref={item.id}>
-            <span className={styles.classItemName}>
-              <CatalogChip item={item} catalog={catalog} />
-            </span>
-            <span className={styles.classItemMeta}>
-              {REF_STATE_LABEL[item.state]} · {item.id}
-              {record?.description ? ` · ${record.description}` : ''}
-            </span>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-function ConfigurationCard({ opportunity }: { opportunity: Opportunity }) {
-  const rules = useModalityRules(opportunity.whitelabelId)
-  const choice = rules?.[opportunity.modality]?.opportunityConfig
-  const modality = modalityMeta(opportunity.modality).name
-  return (
-    <section className={fin.card} aria-labelledby="opp-config-title">
-      <div className={shared.cellMain}>
-        <IconTile icon={SlidersHorizontal} tone="indigo" size="md" />
-        <h3 id="opp-config-title" className={fin.cardTitleSm}>
-          Configuração da oportunidade
-        </h3>
+    <div className={styles.classList}>
+      <div className={styles.classItem}>
+        <span className={styles.classItemName}>{name}</span>
+        <span className={styles.classItemMeta}>{meta}</span>
       </div>
-      <p className={fin.cardSubtitle}>
-        Área reservada para parâmetros específicos desta oportunidade. Eles dependem de decisões de Produto, das regras da
-        modalidade e de contratos do Backend — por isso nenhum parâmetro é configurável nesta versão.
-      </p>
-      <DetailList
-        rows={[
-          { label: 'Parâmetros específicos', value: <span className={shared.muted}>Nenhum parâmetro disponível nesta versão</span>, wide: true },
-          {
-            label: `Regra da modalidade (${modality} em ${whitelabelName(opportunity.whitelabelId)})`,
-            value: (
-              <span className={styles.configValue}>
-                Permite configuração no nível da Oportunidade: <strong>{choice ? CHOICE_LABEL[choice] : 'Padrão não definido'}</strong>
-              </span>
-            ),
-            wide: true,
-          },
-          {
-            label: 'Depende de',
-            value: 'Decisões de Produto · regras da modalidade (Financeiro › Modalidades e regras) · contratos do Backend',
-            wide: true,
-          },
-        ]}
-      />
-      <p className={styles.sourceLink}>
-        Consulte a regra em{' '}
-        <a href={`#/whitelabels/${opportunity.whitelabelId}/finance/modalities`} className={shared.inlineLink}>
-          Financeiro › Modalidades e regras
-        </a>
-        . Esta tela apenas lê o valor; nada é configurado aqui.
-      </p>
-    </section>
+    </div>
   )
 }

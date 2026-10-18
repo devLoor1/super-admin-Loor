@@ -1,5 +1,10 @@
 # Operação › Oportunidades V1 — local implementation record
 
+> **SUPERSEDED (2026-10-18)** by [Opportunities + Companies Read Integration V1](opportunities-companies-read-integration-v1.md):
+> Oportunidades now reads the Control Plane (`GET /opportunities`, `GET /opportunities/:id`), read-only. The local
+> create / edit / status flow, catalog pickers, model, seeds and store described below were removed (`/new` and `/:id/edit`
+> show a read-only "indisponível" state). This record is kept as history only.
+
 Claude implemented Operation V1 on 2026-10-07 in the local working tree of
 `feature/super-admin-operation-v1` (HEAD
 `ec86b475e0126667e2fbece490730bdecc271584`, read from `.git/HEAD` and the

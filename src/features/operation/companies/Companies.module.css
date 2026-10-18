@@ -1,54 +1,9 @@
 /*
- * Companies Frontend V1 (prototype) — list columns, provenance / preview
- * notices and detail extras. Layout, table, hero and card primitives come from
- * the shared Operation and Finance stylesheets. Columns collapse by the list
- * card's container width; their data moves under the company name.
+ * Empresas (Companies Read V1) — list columns and detail extras. Layout,
+ * table, hero and card primitives come from the shared Operation and Finance
+ * stylesheets. Columns collapse by the list card's container width; their
+ * data moves under the company name.
  */
-
-/* ---------- Provenance / preview notices ---------- */
-
-.provenance,
-.preview {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 9px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  font-size: 12.5px;
-  line-height: 18px;
-}
-
-.provenance {
-  border: 1px dashed rgb(247 191 109 / 0.32);
-  background: rgb(247 191 109 / 0.05);
-  color: var(--text-on-dark-secondary);
-}
-
-.provenance svg {
-  margin-top: 1px;
-  color: #f2c983;
-}
-
-.provenance strong {
-  font-weight: 600;
-  color: #ecd8ae;
-}
-
-.preview {
-  border: 1px solid #2c3664;
-  background: rgb(80 92 200 / 0.08);
-  color: var(--text-on-dark-secondary);
-}
-
-.preview svg {
-  margin-top: 1px;
-  color: #b9b4ff;
-}
-
-.preview strong {
-  font-weight: 600;
-  color: var(--text-on-dark);
-}
 
 /* ---------- List columns ---------- */
 
@@ -194,6 +149,19 @@
 
 .sectionCallout {
   margin-top: 14px;
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.panelActions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .code {

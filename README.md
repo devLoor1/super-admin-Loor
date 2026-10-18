@@ -6,7 +6,8 @@ Frontend of the **Super Admin LOØR**: Login V1, the application-frame
 Settings V1** (Configurações do Whitelabel), **Whitelabel E-mails V1**,
 **Finance / Gateways V1**, **Modalidades e regras V1** and **Segmentos e usos
 dos recursos V1** (Financeiro), **Operation V1** — **Oportunidades**,
-**Investidores** and **Empreendedores** (Operação) — **Finance Core V1** —
+**Investidores** and **Empreendedores** (Operação; Oportunidades and Empresas
+read the Control Plane since Opportunities + Companies Read Integration V1) — **Finance Core V1** —
 **Investimentos**, **Pagamentos / PIX** and **Wallet** (Financeiro; Control Plane
 reads since Finance Read Integration V1) — and
 **Compliance › KYC V1** plus **Auditoria V1** (Governança).
@@ -42,15 +43,30 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > **Operação › Empreendedores** (lista global, separação por Whitelabel e detalhe)
 > lê o Control Plane (`GET /api/entrepreneurs`, `GET /api/entrepreneurs/:id`,
 > `GET /api/whitelabels/:id/accounts?tipo=empreendedores`) — somente leitura;
-> empresa, KYC e oportunidades aparecem como "aguardando integração". O contrato
-> não tem entidade Empresa: **o requisito "Empresas" continua em aberto**. Ver
+> a empresa do empreendedor vem do vínculo oficial `GET /api/entrepreneurs/:id/company`
+> (no máximo uma; "Sem empresa vinculada" só quando o Backend confirma `data: null`;
+> falhas nunca aparecem como ausência); KYC e oportunidades por empreendedor não
+> estão disponíveis. Ver
 > [`docs/entrepreneur-read-integration-v1.md`](docs/entrepreneur-read-integration-v1.md).
 > **Operação › Empreendedores › Empresas** (`#/operation/companies`, sem item
-> próprio no menu) é um **protótipo**: lista e detalhe usam somente dados
-> ilustrativos isolados ("Dados ilustrativos — integração de Empresas
-> pendente"), sem nenhuma requisição de Empresas, sem vínculo com
-> empreendedores ou Whitelabels reais e sem CRUD. Ver
-> [`docs/companies-frontend-v1.md`](docs/companies-frontend-v1.md).
+> próprio no menu nem ID de visibilidade) lê o Control Plane (`GET /api/companies`,
+> `GET /api/companies/:id`) — somente leitura: busca, Whitelabel, status de
+> validação, ordenação e paginação no servidor; vínculo com o empreendedor por
+> `company.entrepreneurId`; sem CRUD. **Operação › Oportunidades** lê o Control
+> Plane (`GET /api/opportunities`, `GET /api/opportunities/:id`) — somente leitura:
+> filtros por Whitelabel, status e modalidade, busca, ordenação e paginação no
+> servidor; nenhum valor financeiro, investimento ou progresso de captação é
+> exibido (o contrato não os tem); criar, editar, aprovar e mudar status não
+> existem (`/new` e `/:id/edit` mostram "indisponível"). Os dados ilustrativos
+> de Oportunidades e Empresas foram removidos. Ver
+> [`docs/opportunities-companies-read-integration-v1.md`](docs/opportunities-companies-read-integration-v1.md)
+> (registros anteriores: [`docs/operation-opportunities-v1.md`](docs/operation-opportunities-v1.md),
+> [`docs/companies-frontend-v1.md`](docs/companies-frontend-v1.md)).
+> **Opportunities + Companies Read delivery status:** independently reviewed on
+> `feature/opportunities-companies-read-integration-v1` for a local feature commit;
+> not pushed, promoted or deployed. Canonical suites, focused synthetic browser QA
+> and bounded live GET contract checks passed (evidence limits in § J of the unit
+> doc); deployed UI-to-live-API E2E remains a separately authorized promotion task.
 > **Configurações › Visibilidade dos módulos** (`#/settings/menu-visibility`,
 > aberto pelo item existente Configurações) — **Integração V1, Etapa A**: a
 > configuração global persistida é lida de `GET /api/homolog/menu-visibility`
@@ -129,12 +145,10 @@ promotion and deployed Accounts UI-to-live-API E2E require separate authorizatio
 > create, edit, activate/inactivate and delete are local to the browser
 > session, the two catalogs are never linked, and **the catalog screen creates,
 > changes or counts no Opportunity**.
-> Operação uses illustrative Opportunities (no amounts or financial
-> parameters) with a local create/edit/status flow — no delete; Investidores
-> and Empreendedores read the Control Plane (see above) and their KYC,
-> investment, opportunity and account actions are notices — never links with
-> real ids into the prototype modules;
-> **no account, KYC or financial mutation exists in Operation**.
+> Operação reads the Control Plane for Oportunidades, Empresas, Investidores
+> and Empreendedores (see above); KYC, investment and account actions are
+> notices — never links with real ids into prototype modules;
+> **no Opportunity, Company, account, KYC or financial mutation exists in Operation**.
 > Investimentos, Pagamentos / PIX and Wallet read the Control Plane (Finance
 > Read Integration V1, see above): no status, amount or balance is synchronised
 > or computed on the client, the PIX tab never shows a payload, key,
@@ -200,9 +214,13 @@ and `/:walletId` with optional `?aba=`, `?mpage=`, `?tipo=`, `?categoria=`,
 movement detail, and `?returnTo=`). **Operação** links to `#/operation/opportunities` and, while
 active, lists exactly **Oportunidades**, **Investidores** and **Empreendedores**
 (global screens across Whitelabels): `#/operation/opportunities` (optional
-`?empreendedor=:id`), `/new`, `/:opportunityId`, `/:opportunityId/edit` (optional
-`?secao=classificacao`), `#/operation/investors[/:investorId]` and
-`#/operation/entrepreneurs[/:entrepreneurId]`. **Compliance** links to
+`?whitelabel=`, `?status=`, `?modalidade=`, `?search=`, `?sort=`, `?order=`, `?page=`;
+a leftover `?empreendedor=` is reported as unsupported), `/:opportunityId` (optional
+`?returnTo=`), `/new` and `/:opportunityId/edit` (read-only "indisponível"),
+`#/operation/investors[/:investorId]` and `#/operation/entrepreneurs[/:entrepreneurId]`;
+Empresas is contextual under Empreendedores: `#/operation/companies` (optional
+`?whitelabel=`, `?status=`, `?search=`, `?sort=`, `?order=`, `?page=`) and
+`/:companyId` (optional `?returnTo=`). **Compliance** links to
 `#/compliance/kyc` and, while active, lists only **KYC**: `#/compliance/kyc`
 (optional `?participant=`, `?whitelabel=`, `?status=`) and
 `#/compliance/kyc/:kycCaseId`. **Auditoria** is its own top-level destination:
@@ -269,7 +287,8 @@ src/
                                     "#/whitelabels/:id/finance/gateways",
                                     "#/whitelabels/:id/finance/modalities",
                                     "#/whitelabels/:id/finance/segments-resource-uses",
-                                    "#/operation/opportunities[?empreendedor=…]", "/new", "/:id", "/:id/edit[?secao=…]",
+                                    "#/operation/opportunities[?whitelabel=…&status=…&modalidade=…]", "/new", "/:id", "/:id/edit",
+                                    "#/operation/companies[?whitelabel=…&status=…]", "/:id",
                                     "#/operation/investors[/:id]", "#/operation/entrepreneurs[/:id]",
                                     "#/finance/investments[?status=…&whitelabel=…&investidor=…&oportunidade=…]", "/:id",
                                     "#/finance/payments[?…same…]", "/:id", "#/finance/wallets", "/:id[?aba=…&movimento=…]",
@@ -389,13 +408,14 @@ src/
     operation/
       shared/                       Operation frame (nav + Dot Matrix), list/detail pieces, participant projections over
                                     Accounts, KYC vocabulary, session activity, pending-module copy, discard dialog
-      opportunities/                list, create/edit page, detail + tabs, status dialog, catalog pickers, model, seeds, store
+      opportunities/                Opportunities Read V1: GET-only adapter + strict parser (opportunityApi), presenter,
+                                    URL state, list + detail (read-only; /new and /:id/edit show "indisponível")
       investors/                    Control Plane reads: global / Whitelabel-scoped list, profile (investorApi, URL state);
                                     KYC and investments pending (unused Investor association seed removed)
       entrepreneurs/                Control Plane reads: global / Whitelabel-scoped list, profile (entrepreneurApi,
-                                    URL state); Company, KYC and opportunities pending (no Company in the contract)
-      companies/                    Companies Frontend V1 PROTOTYPE: candidate contract types, isolated illustrative
-                                    source, presenter, URL state, list + detail (no request, no CRUD)
+                                    URL state); Company via the Entrepreneur → Company relationship; KYC pending
+      companies/                    Companies Read V1: GET-only adapter (companyApi, cardinality 0..1), presenter, URL
+                                    state, list + detail, Entrepreneur → Company panel (no CRUD)
     finance-core/
       shared/                       Finance Read V1: GET-only adapters + strict parsers (financeApi), display boundary
                                     (financePresentation: centavos → R$, labels, partial references, error copy), URL state
@@ -859,7 +879,10 @@ review record for scope, evidence and fallback checks.
   "módulo ainda não implementado" notice instead of a broken route or an empty
   placeholder module. Operation performs no account, KYC or financial
   mutation.
-- **Oportunidades.** Local list (search, Whitelabel, status, modality, Segment
+- **Oportunidades** now read the Control Plane —
+  [Opportunities + Companies Read Integration V1](docs/opportunities-companies-read-integration-v1.md);
+  the bullet below describes the V1 prototype only (removed).
+- **Oportunidades (V1 prototype).** Local list (search, Whitelabel, status, modality, Segment
   and Resource Use filters, sort, pagination), dedicated create/edit page,
   detail (Visão geral, Classificação, Configuração, Atividade da sessão),
   prototype status Rascunho / Ativa / Pausada with no transition graph, no
@@ -873,7 +896,7 @@ review record for scope, evidence and fallback checks.
 - **Investidores** and **Empreendedores** now read the Control Plane — see
   [Investor Read Integration V1](docs/investor-read-integration-v1.md) and
   [Entrepreneur Read Integration V1](docs/entrepreneur-read-integration-v1.md)
-  (no Company in the contract: Empresas remains open). The projection bullet
+  (Empresas: see [Opportunities + Companies Read Integration V1](docs/opportunities-companies-read-integration-v1.md)). The projection bullet
   below describes the V1 prototype only.
 - **Investidores / Empreendedores.** Read-only projections of the Accounts
   prototype records (operational id = account prototype id; tenant context on

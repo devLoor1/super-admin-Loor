@@ -17,6 +17,8 @@ import { EntrepreneursPage } from '../features/operation/entrepreneurs/Entrepren
 import { EntrepreneurDetailPage } from '../features/operation/entrepreneurs/EntrepreneurDetailPage'
 import { CompaniesPage } from '../features/operation/companies/CompaniesPage'
 import { CompanyDetailPage } from '../features/operation/companies/CompanyDetailPage'
+import type { CompanyListProps } from '../features/operation/companies/companyRoute'
+import type { OpportunityListProps } from '../features/operation/opportunities/opportunityRoute'
 import { InvestmentsPage } from '../features/finance-core/investments/InvestmentsPage'
 import { InvestmentDetailPage } from '../features/finance-core/investments/InvestmentDetailPage'
 import { PaymentsPage } from '../features/finance-core/payments/PaymentsPage'
@@ -74,15 +76,15 @@ type Route =
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
   | { view: 'finance-catalogs'; whitelabelId: string }
-  | { view: 'operation-opportunities'; entrepreneurId?: string }
+  | { view: 'operation-opportunities'; params: OpportunityListProps }
   | { view: 'operation-opportunity-new' }
   | { view: 'operation-entrepreneurs'; whitelabel?: string; page?: string; query?: string; search: string }
   | { view: 'operation-investors'; whitelabel?: string; page?: string; query?: string; search: string }
-  | { view: 'operation-opportunity'; opportunityId: string }
+  | { view: 'operation-opportunity'; opportunityId: string; returnTo?: string }
   | { view: 'operation-opportunity-edit'; opportunityId: string; focusClassification: boolean }
   | { view: 'operation-investor'; investorId: string; returnTo?: string }
   | { view: 'operation-entrepreneur'; entrepreneurId: string; returnTo?: string }
-  | { view: 'operation-company-list'; whitelabel?: string; page?: string; query?: string; previa?: string; search: string }
+  | { view: 'operation-company-list'; params: CompanyListProps }
   | { view: 'operation-company'; companyId: string; returnTo?: string; previa?: string }
   | { view: 'finance-investments'; params: FinanceListProps }
   | { view: 'finance-investment'; investmentId: string; returnTo?: string }
@@ -183,7 +185,7 @@ const OPPORTUNITY_PATH = /^operation\/opportunities\/([\w-]+)$/
 const OPPORTUNITY_EDIT_PATH = /^operation\/opportunities\/([\w-]+)\/edit$/
 const INVESTOR_PATH = /^operation\/investors\/([\w-]+)$/
 const ENTREPRENEUR_PATH = /^operation\/entrepreneurs\/([\w-]+)$/
-/** Companies prototype detail: any non-empty segment, so unknown / malformed ids reach the not-found state. */
+/** Companies Read detail: any non-empty segment, so unknown / malformed ids reach the not-found state (only positive Core ids are requested). */
 const COMPANY_PATH = /^operation\/companies\/([^/]+)$/
 /** Finance Core detail ids: any non-empty segment, so malformed ids reach the not-found state. */
 const INVESTMENT_PATH = /^finance\/investments\/([^/]+)$/
@@ -229,15 +231,17 @@ const WALLET_DETAIL_KEYS = ['aba', 'mpage', 'tipo', 'categoria', 'oportunidade',
  * (optional `?section=smtp|envios|templates`), `#/whitelabels/:whitelabelId/finance/gateways`,
  * `#/whitelabels/:whitelabelId/finance/modalities`,
  * `#/whitelabels/:whitelabelId/finance/segments-resource-uses`,
- * Operation (global): `#/operation/opportunities` (optional `?empreendedor=:id`),
- * `#/operation/opportunities/new`, `#/operation/opportunities/:opportunityId`
- * (`/edit`, optional `?secao=classificacao`), `#/operation/investors` (optional `?whitelabel=`
+ * Operation (global): `#/operation/opportunities` (Opportunities Read: optional `?whitelabel=`,
+ * `?status=`, `?modalidade=`, `?search=`, `?page=`, `?sort=`, `?order=`; a leftover `?empreendedor=` is
+ * reported as unsupported), `#/operation/opportunities/:opportunityId` (optional `?returnTo=`),
+ * `#/operation/opportunities/new` and `/:id/edit` (read-only: "indisponível" state), `#/operation/investors` (optional `?whitelabel=`
  * Core Whitelabel id, `?page=`, `?search=`), `#/operation/investors/:investorId` (Core id),
  * `#/operation/entrepreneurs` (optional `?whitelabel=` Core Whitelabel id, `?page=`, `?search=`),
  * `#/operation/entrepreneurs/:entrepreneurId` (Core id, optional `?returnTo=` list context),
- * Empresas (prototype, contextual page under Empreendedores — no menu id of its own):
- * `#/operation/companies` (optional `?whitelabel=` illustrative ref, `?page=`, `?search=`,
- * prototype-only `?previa=`), `#/operation/companies/:companyId` (optional `?returnTo=`, `?previa=`),
+ * Empresas (Companies Read, contextual page under Empreendedores — no menu id of its own):
+ * `#/operation/companies` (optional `?whitelabel=` Core id, `?status=`, `?search=`, `?page=`, `?sort=`,
+ * `?order=`; a leftover `?previa=` is only reported as ignored), `#/operation/companies/:companyId`
+ * (optional `?returnTo=`),
  * Finance Read (global, Control Plane GETs): `#/finance/investments` and `#/finance/payments`
  * (optional `?status=`, `?whitelabel=`, `?investidor=`, `?oportunidade=`, `?search=`, `?page=`,
  * `?sort=`, `?order=`), `#/finance/investments/:investmentId` and `#/finance/payments/:paymentId`
@@ -294,7 +298,21 @@ function routeFromHash(): Route {
   if (catalogs) return { view: 'finance-catalogs', whitelabelId: catalogs[1] }
   const params = new URLSearchParams(search)
   if (path === 'operation/opportunities') {
-    return { view: 'operation-opportunities', entrepreneurId: params.get('empreendedor') ?? undefined }
+    const value = (key: string) => params.get(key) || undefined
+    return {
+      view: 'operation-opportunities',
+      params: {
+        whitelabel: value('whitelabel'),
+        status: value('status'),
+        modalidade: value('modalidade'),
+        search: value('search'),
+        page: value('page'),
+        sort: value('sort'),
+        order: value('order'),
+        empreendedor: value('empreendedor'),
+        routeKey: search,
+      },
+    }
   }
   if (path === 'operation/opportunities/new') return { view: 'operation-opportunity-new' }
   if (path === 'operation/investors') {
@@ -324,7 +342,7 @@ function routeFromHash(): Route {
     }
   }
   const opportunity = OPPORTUNITY_PATH.exec(path)
-  if (opportunity) return { view: 'operation-opportunity', opportunityId: opportunity[1] }
+  if (opportunity) return { view: 'operation-opportunity', opportunityId: opportunity[1], returnTo: params.get('returnTo') ?? undefined }
   const investor = INVESTOR_PATH.exec(path)
   if (investor) return { view: 'operation-investor', investorId: investor[1], returnTo: params.get('returnTo') ?? undefined }
   const entrepreneur = ENTREPRENEUR_PATH.exec(path)
@@ -332,13 +350,19 @@ function routeFromHash(): Route {
     return { view: 'operation-entrepreneur', entrepreneurId: entrepreneur[1], returnTo: params.get('returnTo') ?? undefined }
   }
   if (path === 'operation/companies') {
+    const value = (key: string) => params.get(key) || undefined
     return {
       view: 'operation-company-list',
-      whitelabel: params.get('whitelabel') || undefined,
-      page: params.get('page') || undefined,
-      query: params.get('search') || undefined,
-      previa: params.get('previa') || undefined,
-      search,
+      params: {
+        whitelabel: value('whitelabel'),
+        status: value('status'),
+        search: value('search'),
+        page: value('page'),
+        sort: value('sort'),
+        order: value('order'),
+        previa: value('previa'),
+        routeKey: search,
+      },
     }
   }
   const company = COMPANY_PATH.exec(path)
@@ -474,7 +498,7 @@ export function App() {
   if (route.view === 'finance') return <FinanceGatewaysPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-modalities') return <FinanceModalitiesPage whitelabelId={route.whitelabelId} />
   if (route.view === 'finance-catalogs') return <FinanceCatalogsPage whitelabelId={route.whitelabelId} />
-  if (route.view === 'operation-opportunities') return <OpportunitiesPage entrepreneurId={route.entrepreneurId} />
+  if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params} />
   if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />
   if (route.view === 'operation-opportunity-edit') {
     return (
@@ -487,7 +511,7 @@ export function App() {
     )
   }
   if (route.view === 'operation-opportunity') {
-    return <OpportunityDetailPage key={route.opportunityId} opportunityId={route.opportunityId} />
+    return <OpportunityDetailPage key={route.opportunityId} opportunityId={route.opportunityId} returnTo={route.returnTo} />
   }
   if (route.view === 'operation-investors') {
     return <InvestorsPage whitelabel={route.whitelabel} page={route.page} search={route.query} routeKey={route.search} />
@@ -500,7 +524,7 @@ export function App() {
     return <EntrepreneurDetailPage key={route.entrepreneurId} entrepreneurId={route.entrepreneurId} returnTo={route.returnTo} />
   }
   if (route.view === 'operation-company-list') {
-    return <CompaniesPage whitelabel={route.whitelabel} page={route.page} search={route.query} previa={route.previa} routeKey={route.search} />
+    return <CompaniesPage {...route.params} />
   }
   if (route.view === 'operation-company') {
     return <CompanyDetailPage key={route.companyId} companyId={route.companyId} returnTo={route.returnTo} previa={route.previa} />

@@ -490,8 +490,23 @@ const REVIEWED_FINANCE_READ_STATEMENTS = [
   "if (route.view === 'finance-wallets') return <WalletsPage {...route.params}/>;",
   "if (route.view === 'finance-wallet') { return <WalletDetailPage key={route.walletId} walletId={route.walletId} routeKey={route.search} {...route.params}/>; }",
 ]
+// Opportunities + Companies Read Integration V1 (a later, reviewed unit) changed ONLY the
+// Opportunities list / detail and Companies list route statements (URL params and the detail
+// return context handed to those pages). Same rules: exact statements, each once, baseline
+// positions. Opportunity create / edit and Company detail routes are unchanged.
+const REVIEWED_OPERATION_READ_STATEMENTS = [
+  "if (path === 'operation/opportunities') { const value = (key) => params.get(key) || undefined; return { view: 'operation-opportunities', params: { whitelabel: value('whitelabel'), status: value('status'), modalidade: value('modalidade'), search: value('search'), page: value('page'), sort: value('sort'), order: value('order'), empreendedor: value('empreendedor'), routeKey: search, }, }; }",
+  "if (opportunity) return { view: 'operation-opportunity', opportunityId: opportunity[1], returnTo: params.get('returnTo') ?? undefined };",
+  "if (path === 'operation/companies') { const value = (key) => params.get(key) || undefined; return { view: 'operation-company-list', params: { whitelabel: value('whitelabel'), status: value('status'), search: value('search'), page: value('page'), sort: value('sort'), order: value('order'), previa: value('previa'), routeKey: search, }, }; }",
+  "if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params}/>;",
+  "if (route.view === 'operation-opportunity') { return <OpportunityDetailPage key={route.opportunityId} opportunityId={route.opportunityId} returnTo={route.returnTo}/>; }",
+  "if (route.view === 'operation-company-list') { return <CompaniesPage {...route.params}/>; }",
+]
+const REVIEWED_LATER_UNIT_STATEMENTS = [...REVIEWED_FINANCE_READ_STATEMENTS, ...REVIEWED_OPERATION_READ_STATEMENTS]
 const FINANCE_READ_VIEWS = /^route\.view === 'finance-(investments|investment|payments|payment|wallets|wallet)'$/
+const OPERATION_READ_VIEWS = /^route\.view === 'operation-(opportunities|opportunity|company-list)'$/
 const FINANCE_READ_PAGES = new Set(['InvestmentsPage', 'InvestmentDetailPage', 'PaymentsPage', 'PaymentDetailPage', 'WalletsPage', 'WalletDetailPage'])
+const OPERATION_READ_PAGES = new Set(['OpportunitiesPage', 'OpportunityDetailPage', 'CompaniesPage'])
 function withoutFinanceReadRoutes(code) {
   const file = ts.createSourceFile('App.jsx', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX)
   const cuts = []
@@ -505,7 +520,9 @@ function withoutFinanceReadRoutes(code) {
       const condition = statementText(statement.expression)
       if (inResolver && /^path === 'finance\/(investments|payments|wallets)'$/.test(condition)) return 'resolver'
       if (inResolver && /^(investment|payment|wallet)$/.test(condition)) return 'resolver'
-      if (FINANCE_READ_VIEWS.test(condition)) return 'render'
+      if (inResolver && /^path === 'operation\/(opportunities|companies)'$/.test(condition)) return 'resolver'
+      if (inResolver && condition === 'opportunity') return 'resolver'
+      if (FINANCE_READ_VIEWS.test(condition) || OPERATION_READ_VIEWS.test(condition)) return 'render'
     }
     return null
   }
@@ -531,16 +548,16 @@ function withoutFinanceReadRoutes(code) {
 }
 const cutKinds = (app) => ['helper', 'resolver', 'render'].map((kind) => app.cuts.filter((cut) => cut.kind === kind).length).join('/')
 const appBefore = withoutFinanceReadRoutes(codeOnly(git('show', `${BASELINE}:src/app/App.tsx`), 'App.tsx'))
-/** Every reason the Finance Read exemption would NOT hold for this App.tsx code (empty = holds). */
+/** Every reason the later-unit (Finance Read, Opportunities + Companies Read) exemption would NOT hold for this App.tsx code (empty = holds). */
 function financeExemptionProblems(appCode) {
   const app = withoutFinanceReadRoutes(appCode)
   const problems = []
   if (app.rest !== appBefore.rest) problems.push('code outside the reviewed statements, or their position, differs from the baseline')
-  if (cutKinds(app) !== '2/9/6' || cutKinds(appBefore) !== '0/9/6') problems.push(`statement counts ${cutKinds(app)} (baseline ${cutKinds(appBefore)})`)
+  if (cutKinds(app) !== '2/12/9' || cutKinds(appBefore) !== '0/12/9') problems.push(`statement counts ${cutKinds(app)} (baseline ${cutKinds(appBefore)})`)
   const texts = app.cuts.map((cut) => cut.text)
-  const unreviewed = texts.filter((text) => !REVIEWED_FINANCE_READ_STATEMENTS.includes(text))
+  const unreviewed = texts.filter((text) => !REVIEWED_LATER_UNIT_STATEMENTS.includes(text))
   if (unreviewed.length) problems.push(`unreviewed statement: ${unreviewed[0].slice(0, 80)}`)
-  if (REVIEWED_FINANCE_READ_STATEMENTS.some((text) => texts.filter((item) => item === text).length !== 1)) problems.push('a reviewed statement is missing or duplicated')
+  if (REVIEWED_LATER_UNIT_STATEMENTS.some((text) => texts.filter((item) => item === text).length !== 1)) problems.push('a reviewed statement is missing or duplicated')
   for (const cut of app.cuts) {
     if (/authed|LoginPage|DashboardPage|SHELL_VIEWS|validateSession|location|sessionStorage|localStorage|fetch|subscribeSession|menu-visibility|Visibility/.test(cut.text)) problems.push(`session / landing / transport code in: ${cut.text.slice(0, 60)}`)
     if (cut.kind === 'render') {
@@ -550,18 +567,20 @@ function financeExemptionProblems(appCode) {
         ts.forEachChild(node, collect)
       }
       collect(cut.node)
-      if (tags.length !== 1 || !FINANCE_READ_PAGES.has(tags[0])) problems.push(`render statement renders ${tags.join(',')}`)
+      if (tags.length !== 1 || !(FINANCE_READ_PAGES.has(tags[0]) || OPERATION_READ_PAGES.has(tags[0]))) problems.push(`render statement renders ${tags.join(',')}`)
     }
   }
   return problems
 }
 const appCodeNow = codeOnly(await readFile(resolve(root, 'src/app/App.tsx'), 'utf8'), 'App.tsx')
 const exemptionProblems = financeExemptionProblems(appCodeNow)
-check(exemptionProblems.length === 0, `App.tsx identical to the baseline except the reviewed Finance Read statements, in the baseline positions: ${exemptionProblems.join('; ')}`)
+check(exemptionProblems.length === 0, `App.tsx identical to the baseline except the reviewed Finance Read and Opportunities + Companies Read statements, in the baseline positions: ${exemptionProblems.join('; ')}`)
 const walletsRender = "if (route.view === 'finance-wallets') return <WalletsPage {...route.params}/>;"
+const opportunitiesRender = "if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params}/>;"
+const companiesResolver = "if (path === 'operation/companies') {"
 const guardLine = "if (!authed || route.view === 'login')"
 const normalizedNow = appCodeNow.replace(/\s+/g, ' ')
-check(normalizedNow.includes(walletsRender) && normalizedNow.includes(guardLine), 'Exemption probes target the real App.tsx statements')
+check(normalizedNow.includes(walletsRender) && normalizedNow.includes(opportunitiesRender) && normalizedNow.includes(companiesResolver) && normalizedNow.includes(guardLine), 'Exemption probes target the real App.tsx statements')
 for (const [label, mutate] of [
   ['Finance render moved above the session guard', (code) => code.replace(walletsRender, '').replace(guardLine, `${walletsRender} ${guardLine}`)],
   ['navigation side effect inside a Finance render', (code) => code.replace(walletsRender, "if (route.view === 'finance-wallets') { window.location.hash = '#/whitelabels'; return <WalletsPage {...route.params}/>; }")],
@@ -569,9 +588,13 @@ for (const [label, mutate] of [
   ['side effect inside a Finance helper', (code) => code.replace("routeKey: search, }; }", "routeKey: search, subscribe: subscribeSession(() => {}) }; }")],
   ['duplicated resolver statement', (code) => code.replace("const investment = INVESTMENT_PATH.exec(path);", "const investment = INVESTMENT_PATH.exec(path); if (path === 'finance/payments') return { view: 'finance-payments', params: financeListParams(params, search) };")],
   ['non-Finance route changed', (code) => code.replace(guardLine, "if (route.view === 'login')")],
+  ['Opportunities render moved above the session guard', (code) => code.replace(opportunitiesRender, '').replace(guardLine, `${opportunitiesRender} ${guardLine}`)],
+  ['Opportunities render swapped for another page', (code) => code.replace(opportunitiesRender, "if (route.view === 'operation-opportunities') return <DashboardPage />;")],
+  ['Companies resolver hijack', (code) => code.replace(companiesResolver, "if (path === 'operation/companies') { return { view: 'dashboard' }; } if (false) {")],
+  ['Opportunity create route changed', (code) => code.replace("if (path === 'operation/opportunities/new') return { view: 'operation-opportunity-new' };", "if (path === 'operation/opportunities/new') return { view: 'operation-opportunities', params: {} };")],
 ]) {
   const mutated = mutate(normalizedNow)
-  check(mutated !== normalizedNow && financeExemptionProblems(mutated).length > 0, `Planted App.tsx change is rejected by the Finance Read exemption: ${label}`)
+  check(mutated !== normalizedNow && financeExemptionProblems(mutated).length > 0, `Planted App.tsx change is rejected by the later-unit exemption: ${label}`)
 }
 // Later units must explicitly declare their reviewed files, NOT exempt an entire
 // domain directory. New files, read adapters, routes, auth and shared code remain
@@ -595,15 +618,32 @@ const REVIEWED_FINANCE_READ_FILES = new Set([
   'shared/financeApi.ts', 'shared/financePresentation.ts', 'shared/financeRoute.ts', 'shared/useFinanceData.ts',
   'shared/financeCoreModel.ts', 'shared/financeCoreRecords.ts', 'shared/financeCoreRefs.ts', 'shared/prototypeFinanceCore.ts', // reviewed removals
 ].map((path) => `src/features/finance-core/${path}`))
+// Opportunities + Companies Read Integration V1: reviewed Operation files (rewritten pages, new
+// read adapters, the Entrepreneur → Company panel, removed prototype sources). Explicit paths only.
+const REVIEWED_OPERATION_READ_FILES = new Set([
+  'opportunities/Opportunities.module.css', 'opportunities/OpportunitiesPage.tsx', 'opportunities/OpportunityDetailPage.tsx',
+  'opportunities/OpportunityFormPage.tsx', 'opportunities/OpportunityParts.tsx',
+  'opportunities/opportunityApi.ts', 'opportunities/opportunityPresent.ts', 'opportunities/opportunityRoute.ts', 'opportunities/useOpportunityData.ts',
+  'opportunities/CatalogPicker.tsx', 'opportunities/StatusDialog.tsx', 'opportunities/classification.ts', // reviewed removals
+  'opportunities/opportunityModel.ts', 'opportunities/opportunityStore.ts', 'opportunities/prototypeOpportunities.ts', // reviewed removals
+  'companies/Companies.module.css', 'companies/CompaniesPage.tsx', 'companies/CompanyDetailPage.tsx', 'companies/CompanyParts.tsx',
+  'companies/EntrepreneurCompanyPanel.tsx', 'companies/companyApi.ts', 'companies/companyPresent.ts', 'companies/companyRelation.ts',
+  'companies/companyRoute.ts', 'companies/useCompanyData.ts',
+  'companies/companyContract.ts', 'companies/prototypeCompanies.ts', // reviewed removals
+  'entrepreneurs/EntrepreneurDetailPage.tsx',
+  'shared/EntrepreneurViews.module.css', 'shared/EntrepreneurViews.tsx', 'shared/coreIds.ts', 'shared/readErrors.ts',
+].map((path) => `src/features/operation/${path}`))
 const outsideMenuVisibility = (path) =>
-  !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path)
+  !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
-check(changedOutside.length === 0 && untrackedOutside.length === 0, 'Only explicitly reviewed Whitelabel and Finance Read source files may change outside Menu Visibility; other domains and read adapters remain protected')
+check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read and Opportunities + Companies Read source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)
 for (const path of [
   'src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelApi.ts', 'src/features/whitelabels/useWhitelabelData.ts',
   'src/components/shell/navigation.ts', 'src/lib/authSession.ts',
   'src/features/finance-core/shared/financeWrite.ts', 'src/features/finance-core/wallets/WalletTransfer.tsx', 'src/features/finance-gateways/FinanceGatewaysPage.tsx',
+  'src/features/operation/opportunities/opportunityWrite.ts', 'src/features/operation/companies/companyWrite.ts', 'src/features/operation/entrepreneurs/entrepreneurApi.ts',
+  'src/features/operation/investors/InvestorDetailPage.tsx', 'src/features/operation/shared/participants.ts',
 ]) {
   check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
 }
@@ -612,6 +652,15 @@ for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
   const source = await readFile(file, 'utf8')
   check(!unsafeCapability(source, false, rel === 'src/features/whitelabels/whitelabelApi.ts'), `${rel}: Whitelabel exception grants no transport capability; only its canonical GET adapter is allowed`)
   check(!unsafeCapability(source, true), `${rel}: Whitelabel exception grants no browser persistence capability`)
+}
+for (const dir of ['src/features/operation/opportunities', 'src/features/operation/companies']) {
+  for (const file of await walk(resolve(root, dir))) {
+    const rel = relative(root, file).replaceAll('\\', '/')
+    const source = await readFile(file, 'utf8')
+    const adapter = rel.endsWith('/opportunityApi.ts') || rel.endsWith('/companyApi.ts')
+    check(!unsafeCapability(source, false, adapter), `${rel}: Opportunities + Companies Read exception grants no transport capability; only its canonical GET adapters are allowed`)
+    check(!unsafeCapability(source, true), `${rel}: Opportunities + Companies Read exception grants no browser persistence capability`)
+  }
 }
 for (const file of await walk(resolve(root, 'src/features/finance-core'))) {
   const rel = relative(root, file).replaceAll('\\', '/')

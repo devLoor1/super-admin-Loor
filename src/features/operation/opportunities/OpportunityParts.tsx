@@ -1,60 +1,33 @@
-import type { ModalityId } from '../../finance-gateways/financeModel'
-import { modalityMeta } from '../../finance-modalities/modalitiesModel'
+import { Landmark, TrendingUp } from 'lucide-react'
 import { StatusPill } from '../../../components/ui/StatusPill'
-import styles from '../shared/Operation.module.css'
-import type { ResolvedRef } from './classification'
-import { OPPORTUNITY_STATUS_META, type OpportunityStatus } from './opportunityModel'
+import shared from '../shared/Operation.module.css'
+import { modalityLabel, opportunityStatusMeta } from './opportunityPresent'
 
-/** Modality chip — consumes the Finance catalog (Equity / Debt). */
-export function ModalityChip({ modality }: { modality: ModalityId }) {
-  const meta = modalityMeta(modality)
-  const Icon = meta.icon
+/** Modality chip for a Backend token (Equity / Debt); an unknown token is shown as sent, with a neutral icon. */
+export function ModalityChip({ modality }: { modality: string }) {
+  const Icon = modality === 'debt' ? Landmark : TrendingUp
   return (
-    <span className={styles.modalityChip} data-modality={modality}>
+    <span className={shared.modalityChip} data-modality={modality}>
       <Icon size={13} strokeWidth={1.9} aria-hidden="true" />
-      {meta.name}
+      {modalityLabel(modality)}
     </span>
   )
 }
 
-export function OpportunityStatusPill({ status }: { status: OpportunityStatus }) {
-  const meta = OPPORTUNITY_STATUS_META[status]
+/** Status pill: label text always present (status is never conveyed by colour alone). */
+export function OpportunityStatusPill({ status }: { status: string }) {
+  const meta = opportunityStatusMeta(status)
   return <StatusPill tone={meta.tone} label={meta.label} />
 }
 
-const STATE_LABEL = { inactive: 'Inativo no catálogo', missing: 'Fora do catálogo' } as const
-
-/** One catalog reference; inactive / removed records stay visible and labelled. */
-export function CatalogChip({ item, catalog }: { item: ResolvedRef; catalog: 'segment' | 'resource_use' }) {
+/** Core Whitelabel name (from the Whitelabel read) with its id; never a prototype tenant. */
+export function TenantName({ whitelabelId, name }: { whitelabelId: string; name: string }) {
   return (
-    <span className={styles.catalogChip} data-catalog={catalog} data-state={item.state}>
-      {item.state === 'missing' ? item.id : item.name}
-      {item.state !== 'active' ? <span className={styles.chipState}>{STATE_LABEL[item.state]}</span> : null}
-    </span>
-  )
-}
-
-/** Compact list cell: first reference + "+N" (the full list is on the detail page). */
-export function CatalogCell({
-  items,
-  catalog,
-  emptyLabel,
-}: {
-  items: ResolvedRef[]
-  catalog: 'segment' | 'resource_use'
-  emptyLabel: string
-}) {
-  if (!items.length) return <span className={styles.muted}>{emptyLabel}</span>
-  const [first, ...rest] = items
-  return (
-    <span className={styles.chipRow}>
-      <CatalogChip item={first} catalog={catalog} />
-      {rest.length ? (
-        <span className={styles.moreTag} title={rest.map((item) => item.name).join(', ')}>
-          +{rest.length}
-          <span className="visually-hidden"> ({rest.map((item) => item.name).join(', ')})</span>
-        </span>
-      ) : null}
+    <span className={shared.wlCell} data-tenant={whitelabelId}>
+      <span className={shared.wlMark} data-tone="neutral" aria-hidden="true">
+        {name.replace(/^Whitelabel\s+/i, '').charAt(0).toLocaleUpperCase('pt-BR') || '·'}
+      </span>
+      <span>{name}</span>
     </span>
   )
 }

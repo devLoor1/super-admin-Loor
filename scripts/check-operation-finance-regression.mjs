@@ -101,7 +101,11 @@ for (const source of [entrepreneurList, entrepreneurDetail]) {
   check(!/sessionStorage|localStorage|\bfetch\s*\(/.test(source), 'Entrepreneurs use canonical auth/read transport')
 }
 check(entrepreneurDetail.includes('`entrepreneur:${id}`'), 'Activity identity is namespaced against numeric Investor overlap')
-check(entrepreneurDetail.includes('Aguardando integração da empresa'), 'Missing Company is pending, not fabricated')
+// Opportunities + Companies Read V1: the Company is no longer "pending" — it is read from
+// GET /entrepreneurs/:id/company (0..1), tenant-scoped, and never fabricated (see check-opportunities-companies-read).
+const companyPanel = await readFile(resolve(root, 'src/features/operation/companies/EntrepreneurCompanyPanel.tsx'), 'utf8')
+check(entrepreneurDetail.includes('useEntrepreneurCompany(entrepreneur.id, entrepreneur.whitelabelId)'), 'Company is read authoritatively for this Entrepreneur and tenant, not fabricated')
+check(!entrepreneurDetail.includes('Aguardando integração da empresa') && companyPanel.includes('Sem empresa vinculada'), 'Company absence is the confirmed Backend state, not a pending placeholder')
 check(entrepreneurDetail.includes('prototypeLink ? null : entrepreneurId'), 'Prototype-origin Entrepreneur links do not reach Core')
 check(entrepreneurDetail.includes('Nenhuma navegação foi feita'), 'Real Entrepreneur ids do not enter prototype destinations')
 for (const component of ['ParticipantList.tsx', 'ParticipantDetail.tsx']) {

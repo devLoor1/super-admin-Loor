@@ -57,9 +57,8 @@ export function PendingActionButton({
 const OUTCOME_ICON = { success: CheckCircle2, danger: CircleAlert, warning: TriangleAlert } as const
 
 /**
- * Prepared presentation of a future write outcome (confirmed / rejected /
- * uncertain / stale). Display only: no screen renders it in this version —
- * it is reviewed through the mock-only harness.
+ * Safe presentation of the guarded write outcome. Raw Backend messages
+ * are never rendered; successful Core mutation does not promise durable Audit.
  */
 export function MutationOutcomeNotice({ view }: { view: MutationOutcomeView }) {
   const Icon = OUTCOME_ICON[view.tone]

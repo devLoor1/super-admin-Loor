@@ -1,11 +1,9 @@
 /*
- * Whitelabel mutation contract — TYPES, AVAILABILITY AND PRESENTATION ONLY.
+ * Whitelabel Operational V1 — contract and build-time activation boundary.
  *
- * NO LIVE MUTATIONS ARE ENABLED. Nothing in `crud/` sends a request: there is
- * no `fetch`, no `apiRequest`, no authenticated mutation client and no
- * production transport. The Control Plane contract this prepares (Nest
- * `backend-super-admin-Loor` `aea5392`, controller/DTOs unchanged since
- * `46bf79d`, source-confirmed, never live-write-verified):
+ * Real Create/name-only transports are implemented behind a default-OFF guard.
+ * Nest 88b7bf7 contract/controller/DTOs were inspected; only a live GET was
+ * performed. No production write has been exercised or authorized here.
  *
  *   POST   /api/whitelabels                  { name, slug, baseUrl }   SUPER_ADMIN   → prepared (create review)
  *   PATCH  /api/whitelabels/:id              { name }                  SUPER_ADMIN   → prepared (name-only edit review)
@@ -13,24 +11,26 @@
  *   PATCH  /api/whitelabels/:id/deactivate   —                         SUPER_ADMIN   → NOT offered
  *   DELETE /api/whitelabels/:id              alias of deactivate       SUPER_ADMIN   → NOT offered
  *
- * Enabling a write later requires an explicit authorization, a reviewed
- * transport in the shared API layer, and flipping that action below.
+ * Enabling a live write requires separate controlled activation authorization.
  */
 
 export type WhitelabelMutationOperation = 'create' | 'update-name'
 export type WhitelabelAction = WhitelabelMutationOperation | 'lifecycle'
 
-export type MutationAvailability = Readonly<{ available: false; pendingLabel: string; reason: string }>
+export type MutationAvailability = Readonly<{ available: boolean; pendingLabel: string; reason: string }>
 
-/** Every Whitelabel write is disabled — for every role, SUPER_ADMIN included. */
+/** Build-time only. Missing, false or any other value fails closed; no URL/storage override. */
+export const WHITELABEL_WRITES_ENABLED = import.meta.env.VITE_WHITELABEL_WRITES_ENABLED === 'true'
+
+/** Default configuration disables every write, including for SUPER_ADMIN. Lifecycle stays off. */
 export const WHITELABEL_MUTATIONS: Readonly<Record<WhitelabelAction, MutationAvailability>> = Object.freeze({
   create: Object.freeze({
-    available: false,
+    available: WHITELABEL_WRITES_ENABLED,
     pendingLabel: 'Criação aguardando liberação da integração.',
     reason: 'O envio da criação ainda não foi autorizado para o Control Plane.',
   }),
   'update-name': Object.freeze({
-    available: false,
+    available: WHITELABEL_WRITES_ENABLED,
     pendingLabel: 'Edição aguardando liberação da integração.',
     reason: 'O envio da alteração de nome ainda não foi autorizado para o Control Plane.',
   }),
@@ -72,8 +72,8 @@ export const WHITELABEL_OPEN_BLOCKERS = Object.freeze([
   Object.freeze({ id: 'B', label: 'Isolamento da recuperação de senha com tenant inativo: entrega Backend ainda não validada no ambiente' }),
   Object.freeze({ id: 'C', label: 'Política e efeitos de desativar o Whitelabel padrão' }),
   Object.freeze({ id: 'D', label: 'Edição de slug / URL base muda a resolução do tenant' }),
-  Object.freeze({ id: 'E', label: 'Comportamento de escrita do Core não confirmado (validação, envelope, status repetido, null)' }),
-  Object.freeze({ id: 'F', label: 'Audit best-effort após o Core na nova fonte Nest: consistência e versão implantada ainda não validadas' }),
-  Object.freeze({ id: 'G', label: 'Política de concorrência / versão / ETag de Whitelabels ainda não confirmada' }),
-  Object.freeze({ id: 'H', label: 'Código de slug duplicado (E_SLUG_TAKEN) depende do Core: não confirmado' }),
+  Object.freeze({ id: 'E', label: 'Smoke de escrita real ainda exige autorização e plano de isolamento/limpeza' }),
+  Object.freeze({ id: 'F', label: 'Audit é best-effort e não participa de transação atômica com o Core' }),
+  Object.freeze({ id: 'G', label: 'Concorrência last-write-wins; não há versão ou ETag neste ciclo' }),
+  Object.freeze({ id: 'H', label: '409 E_SLUG_TAKEN confirmado na fonte; smoke de escrita real pendente' }),
 ])

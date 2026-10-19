@@ -4,15 +4,13 @@ import { formatWhitelabelDate, type WhitelabelRecord } from '../whitelabelApi'
  * Whitelabel create / name-only edit rules — PURE (nothing here talks to the
  * Control Plane).
  *
- * Mirrors the Nest DTOs of `backend-super-admin-Loor` (rechecked at `aea5392`;
- * the DTOs are unchanged since `46bf79d`):
+ * Mirrors the Operational V1 Nest DTOs (source verified at `88b7bf7`):
  *
  *   CreateWhitelabelDto  name    @IsString @MinLength(2) @MaxLength(120)
- *                        slug    @IsString @Matches(/^[a-z0-9-]+$/) @MaxLength(80)
- *                        baseUrl @IsUrl({ require_tld: false })
+ *                        slug    lowercase alphanumeric groups, single inner hyphens, max 80
+ *                        baseUrl absolute http(s), TLD optional, no credentials in this UI
  *                        — all three REQUIRED; unknown keys → 400 (forbidNonWhitelisted)
- *   UpdateWhitelabelDto  the same three fields, each @IsOptional
- *                        — this UI edits `name` ONLY; slug / baseUrl stay read-only
+ *   UpdateWhitelabelDto  required name ONLY; slug / baseUrl rejected and read-only
  *
  * The Control Plane stays the authority: anything accepted here can still be
  * refused on submit (400 / 422). The URL rule below is deliberately a STRICTER
@@ -27,8 +25,8 @@ import { formatWhitelabelDate, type WhitelabelRecord } from '../whitelabelApi'
 export const NAME_MIN = 2
 export const NAME_MAX = 120
 export const SLUG_MAX = 80
-/** `@Matches(/^[a-z0-9-]+$/)` of both DTOs. */
-export const SLUG_PATTERN = /^[a-z0-9-]+$/
+/** Operational V1 Create DTO; no leading, trailing or repeated hyphen. */
+export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 /** validator.js `isURL` default `max_allowed_length` (13.15.35). */
 export const BASE_URL_MAX = 2084
 
@@ -81,7 +79,7 @@ export function nameError(name: string): string | undefined {
 export function slugError(slug: string): string | undefined {
   if (!slug) return 'Informe o identificador (slug).'
   if (slug.length > SLUG_MAX) return `Use no máximo ${SLUG_MAX} caracteres.`
-  if (!SLUG_PATTERN.test(slug)) return 'Use apenas letras minúsculas sem acento, números e hífens.'
+  if (!SLUG_PATTERN.test(slug)) return 'Use letras minúsculas sem acento e números, separados por hífens simples; sem hífen no início ou fim.'
   return undefined
 }
 
@@ -184,7 +182,7 @@ export type NameChange = Readonly<{ before: string; after: string }>
  * The normalized name differs from the authoritative one. Whitespace-only
  * differences are not a change (both sides are compared normalized).
  */
-export function nameChange(record: WhitelabelRecord, draft: Readonly<NameDraft>): NameChange | null {
+export function nameChange(record: Pick<WhitelabelRecord, 'name'>, draft: Readonly<NameDraft>): NameChange | null {
   const after = tidyName(text(draft.name))
   return after === tidyName(record.name) ? null : Object.freeze({ before: record.name, after })
 }

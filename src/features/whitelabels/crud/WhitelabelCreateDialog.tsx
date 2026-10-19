@@ -6,6 +6,10 @@ import { PrimaryButton } from '../../../components/ui/PrimaryButton'
 import dialogStyles from '../../whitelabel-settings/dialogs/SettingsDialogs.module.css'
 import { PendingActionButton, PendingBackendNotice } from './MutationStates'
 import { buildCreateCommand } from './whitelabelCommands'
+import type { WhitelabelRecord } from '../whitelabelApi'
+import { WHITELABEL_WRITES_ENABLED } from './whitelabelMutationContract'
+import { useWhitelabelMutation } from './useWhitelabelMutation'
+import { OperationalMutationState } from './OperationalMutationState'
 import {
   EMPTY_CREATE_DRAFT,
   NAME_MAX,
@@ -30,10 +34,10 @@ const PREFIX = 'wl-create'
  *
  * The form validates locally (rules of `CreateWhitelabelDto`), then stops at a
  * review that shows exactly what a future request would carry. The final
- * button stays `aria-disabled` for every role: nothing is sent, created or
- * saved, and the authoritative list / detail are never touched.
+ * button stays disabled by default. Explicit build-time activation connects
+ * the reviewed command to the guarded transport; no optimistic row is added.
  */
-export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: () => void; fallbackFocus?: () => HTMLElement | null }) {
+export function WhitelabelCreateDialog({ onClose, fallbackFocus, onConfirmed, onInspectRecord }: { onClose: () => void; fallbackFocus?: () => HTMLElement | null; onConfirmed?: (record: WhitelabelRecord) => void; onInspectRecord?: (record: WhitelabelRecord) => void }) {
   const [draft, setDraft] = useState<CreateDraft>(() => ({ ...EMPTY_CREATE_DRAFT }))
   const [errors, setErrors] = useState<CreateErrors>({})
   const [step, setStep] = useState<'form' | 'review'>('form')
@@ -41,19 +45,21 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
   const nameRef = useRef<HTMLInputElement>(null)
   const reviewRef = useRef<HTMLHeadingElement>(null)
   const keepRef = useRef<HTMLButtonElement>(null)
+  const mutation = useWhitelabelMutation('create', onConfirmed)
 
-  const dirty = isCreateDirty(draft)
+  const dirty = isCreateDirty(draft) && !(mutation.state.phase === 'settled' && mutation.state.outcome.state === 'confirmed')
+  const protectedAttempt = dirty || ('outcome' in mutation.state && mutation.state.outcome.state === 'uncertain')
 
   // Reload / tab close with typed data: let the browser ask.
   useEffect(() => {
-    if (!dirty) return
+    if (!protectedAttempt) return
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [dirty])
+  }, [protectedAttempt])
 
   useEffect(() => {
     if (confirmDiscard) keepRef.current?.focus()
@@ -69,6 +75,12 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
   }
 
   function requestClose() {
+    if (mutation.isBusy() || mutation.busy) return
+    if (mutation.hasAttempt) {
+      if ('outcome' in mutation.state && mutation.state.outcome.state === 'uncertain' && (mutation.state.phase !== 'verified' || mutation.state.readback === 'inconclusive')) setConfirmDiscard(true)
+      else { mutation.reset(); onClose() }
+      return
+    }
     if (dirty) setConfirmDiscard(true)
     else onClose()
   }
@@ -86,6 +98,8 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
   }
 
   function backToForm() {
+    if (mutation.command?.operation === 'create') setDraft({ ...mutation.command.body })
+    mutation.reset()
     setStep('form')
     window.requestAnimationFrame(() => nameRef.current?.focus())
   }
@@ -100,7 +114,7 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
     ) : null
 
   const built = step === 'review' ? buildCreateCommand(draft) : null
-  const command = built?.ok ? built.command : null
+  const command = mutation.command?.operation === 'create' ? mutation.command : built?.ok ? built.command : null
   const pendingId = `${PREFIX}-pending`
 
   let footer
@@ -108,16 +122,18 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
     footer = (
       <>
         <p className={dialogStyles.footerNote} role="alert">
-          Descartar os dados digitados? Nada foi enviado nem salvo.
+          {mutation.hasAttempt ? 'Fechar a conferência? O resultado continua guardado nesta sessão. Não reenvie a solicitação sem conferir.' : 'Descartar os dados digitados? Nada foi enviado nem salvo.'}
         </p>
         <OutlineButton ref={keepRef} className={dialogStyles.footerButton} onClick={() => setConfirmDiscard(false)}>
           Continuar editando
         </OutlineButton>
         <button type="button" className={dialogStyles.confirmWarning} onClick={onClose} data-discard>
-          Descartar
+          {mutation.hasAttempt ? 'Fechar conferência' : 'Descartar'}
         </button>
       </>
     )
+  } else if (mutation.hasAttempt) {
+    footer = <OutlineButton className={dialogStyles.footerButton} disabled={mutation.busy} onClick={requestClose}>Fechar</OutlineButton>
   } else if (step === 'form') {
     footer = (
       <>
@@ -139,7 +155,8 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
         <OutlineButton className={dialogStyles.footerButton} onClick={() => setConfirmDiscard(true)} data-review-discard>
           Descartar
         </OutlineButton>
-        <PendingActionButton label="Criar Whitelabel" describedBy={pendingId} />
+        {WHITELABEL_WRITES_ENABLED ? <PrimaryButton disabled={!command} onClick={() => { if (command) mutation.send(command) }}>Confirmar criação</PrimaryButton>
+          : <PendingActionButton label="Criar Whitelabel" describedBy={pendingId} />}
       </>
     )
   }
@@ -147,7 +164,7 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
   return (
     <Dialog
       title="Novo Whitelabel"
-      description="Preencha os três campos exigidos pelo Control Plane. A criação ainda não está liberada: nada é enviado."
+      description={WHITELABEL_WRITES_ENABLED ? 'Preencha os três campos e confira a revisão antes de confirmar a criação.' : 'Preencha os três campos exigidos pelo Control Plane. A criação ainda não está liberada: nada é enviado.'}
       icon={Plus}
       onClose={requestClose}
       initialFocusRef={nameRef}
@@ -155,8 +172,8 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
       size="lg"
       footer={footer}
     >
-      <div data-wl-form="create" data-step={step}>
-        {step === 'form' ? (
+      <div data-wl-form="create" data-step={mutation.hasAttempt ? 'result' : step}>
+        {step === 'form' && !mutation.hasAttempt ? (
           <form id={PREFIX} className={`${dialogStyles.form} ${styles.flush}`} onSubmit={submit} noValidate>
             <p className={styles.intro}>
               <Info size={14} strokeWidth={1.9} aria-hidden="true" />
@@ -257,7 +274,7 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
                 Definido pelo Control Plane
               </h3>
               <p className={dialogStyles.hint}>
-                ID, status, domínio, datas e vínculos não são enviados: o Control Plane e o Core os definem na criação.
+                O Whitelabel será criado ativo. ID, status, domínio, datas e vínculos não são enviados: o Control Plane e o Core os definem na criação.
               </p>
             </section>
           </form>
@@ -292,11 +309,12 @@ export function WhitelabelCreateDialog({ onClose, fallbackFocus }: { onClose: ()
               </p>
             </div>
 
-            <PendingBackendNotice action="create" id={pendingId} />
+            {!WHITELABEL_WRITES_ENABLED ? <PendingBackendNotice action="create" id={pendingId} /> : !mutation.hasAttempt ? <p role="note">A criação será ativa imediatamente. Confirme os valores antes de enviar.</p> : null}
+            {mutation.hasAttempt ? <OperationalMutationState mutation={mutation} onReview={backToForm} onInspectRecord={onInspectRecord ? record => { onInspectRecord(record); mutation.reset(); onClose() } : undefined} /> : null}
 
             {command ? (
               <details className={styles.payload}>
-                <summary>Requisição prevista (não enviada)</summary>
+                <summary>{mutation.hasAttempt ? 'Solicitação revisada' : 'Requisição prevista (não enviada)'}</summary>
                 <p className={styles.payloadRoute} data-request-route>
                   {command.route}
                 </p>

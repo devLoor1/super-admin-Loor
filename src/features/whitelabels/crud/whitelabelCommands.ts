@@ -4,11 +4,10 @@ import { nameChange, nameError, normalizeCreateDraft, validateCreate, type Creat
 /*
  * Pure command builders for the two prepared Whitelabel writes.
  *
- * A command is DATA: what a future, separately authorized transport would
- * send, and to which target. Building one never sends anything, never reads
- * the network and never changes the draft or the record it was built from.
- * The only consumers today are the review screens (shown, not sent) and the
- * mock-only tests in `scripts/`.
+ * A command is DATA: the allowlisted payload and its target. Building one
+ * never sends anything, never reads the network and never changes the draft
+ * or the record it was built from. Review screens, the default-OFF guarded
+ * transport and the synthetic tests reuse these builders.
  */
 
 /** Exactly the three `CreateWhitelabelDto` fields — never id, status, active, timestamps, relations, unknown keys or null. */
@@ -30,7 +29,7 @@ export type UpdateWhitelabelNameCommand = Readonly<{
   /** Taken from the selected, authoritative record — never from the draft. */
   targetId: string
   /** What the edit started from (authoritative detail): used to detect a stale record and to reconcile a read-back. */
-  baseline: Readonly<{ name: string; updatedAt: string | null }>
+  baseline: Readonly<{ name: string; updatedAt: string | null; slug: string; baseUrl: string | null }>
   body: UpdateWhitelabelNameBody
 }>
 
@@ -59,7 +58,7 @@ export type NameCommandResult =
  * that same Whitelabel: a draft opened for A can never produce a command for
  * B, and a stale draft can never be redirected.
  */
-export function buildNameUpdateCommand(input: Readonly<{ selectedId: string | null; record: WhitelabelRecord; draft: Readonly<NameDraft> }>): NameCommandResult {
+export function buildNameUpdateCommand(input: Readonly<{ selectedId: string | null; record: Pick<WhitelabelRecord, 'id' | 'name' | 'updatedAt' | 'slug' | 'baseUrl'>; draft: Readonly<NameDraft> }>): NameCommandResult {
   const { selectedId, record, draft } = input
   if (!isServerWhitelabelId(record.id)) return Object.freeze({ ok: false, reason: 'invalid-target' })
   if (selectedId !== record.id) return Object.freeze({ ok: false, reason: 'target-mismatch' })
@@ -73,7 +72,7 @@ export function buildNameUpdateCommand(input: Readonly<{ selectedId: string | nu
       operation: 'update-name',
       route: `PATCH /api/whitelabels/${record.id}`,
       targetId: record.id,
-      baseline: Object.freeze({ name: record.name, updatedAt: record.updatedAt }),
+      baseline: Object.freeze({ name: record.name, updatedAt: record.updatedAt, slug: record.slug, baseUrl: record.baseUrl }),
       body: Object.freeze({ name: change.after }),
     }),
   })

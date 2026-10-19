@@ -13,11 +13,9 @@ import {
 } from './whitelabelMutationOutcome'
 
 /*
- * Attempt coordinator for a FUTURE Whitelabel write — pure logic around
- * INJECTED ports. NOT IMPORTED BY ANY SCREEN, and there is no production
- * transport: the only transports are the mock-only fixtures under
- * `scripts/`. It fixes, ahead of any integration, the rules a real submit
- * must follow:
+ * Attempt coordinator around injected ports. Operational V1 supplies the
+ * narrowly guarded authenticated transport; tests supply synthetic ports.
+ * Default/deployed writes remain disabled. The coordinator enforces:
  *
  * - one write at a time: a repeated click / Enter while one is checking or
  *   pending is refused (`in-flight`) — exactly one transport call;

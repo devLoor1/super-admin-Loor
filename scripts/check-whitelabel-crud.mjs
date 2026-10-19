@@ -7,9 +7,9 @@ import ts from 'typescript'
 import { IS_LENGTH_REFERENCE, IS_URL_REFERENCE, RECORD_A, RECORD_B, STRICTER_THAN_IS_URL } from './fixtures/whitelabel-mutation-mocks.mjs'
 
 // Whitelabel CRUD Safe Preparation V1 — in-memory contract checks (synthetic, no network).
-// NO LIVE MUTATIONS ARE ENABLED: these checks also prove that no request code, no
-// production transport and no executable write path exists. Mock transport
-// scenarios live in scripts/check-whitelabel-crud-mocks.mjs.
+// Default-OFF form/command contracts. Raw HTTP/session access remains outside
+// the UI. The guarded real transport has independent intercepted tests in
+// check-whitelabel-operational.mjs; injected runner scenarios remain in the mock suite.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(pathToFileURL(resolve(root, 'package.json')))
 const modules = new Map()
@@ -58,6 +58,7 @@ async function componentUrl(path) {
     else if (specifier === 'react/jsx-runtime') url = pathToFileURL(require.resolve(specifier)).href
     else if (specifier.endsWith('.css')) url = dataModule('export default new Proxy({}, {get: (_, key) => key});')
     else if (REAL_TS.has(specifier)) url = await moduleUrl(resolve(dirname(path), `${specifier}.ts`))
+    else if (specifier === './useWhitelabelMutation') url = dataModule(`export const useWhitelabelMutation = () => ({state:{phase:'idle'},hasAttempt:false,command:null,isBusy:()=>false,reset:()=>true});`)
     else if (specifier === './MutationStates') url = await componentUrl(resolve(dirname(path), `${specifier}.tsx`))
     else {
       const names = clause.replace(/[{}]/g, '').split(',').map(value => value.trim()).filter(Boolean)
@@ -84,7 +85,7 @@ async function loadPageContent() {
     if (specifier === 'react') url = hookModule
     else if (specifier === 'react/jsx-runtime') url = pathToFileURL(require.resolve(specifier)).href
     else if (specifier.endsWith('.css')) url = dataModule('export default new Proxy({}, {get: (_, key) => key});')
-    else if (specifier.endsWith('/authSession')) url = dataModule('export const useSessionOperator = () => globalThis.__wlCrudPage.operator;')
+    else if (specifier.endsWith('/authSession')) url = dataModule('export const useSessionOperator = () => globalThis.__wlCrudPage.operator; export const getSessionVersion = () => 0;')
     else if (specifier === './useWhitelabelData') url = dataModule(`
       export const useWhitelabelList = () => ({state:{status:'success',data:globalThis.__wlCrudPage.list}});
       export const useWhitelabelDetail = id => ({state:{status:'success',data:globalThis.__wlCrudPage.records.find(record=>record.id===id)}});
@@ -173,10 +174,10 @@ await check('create: name length is counted like class-validator MinLength / Max
   }
 })
 await check('create: slug mirrors the DTO (lowercase, digits, hyphen, ≤ 80; never rewritten)', async () => {
-  for (const bad of ['Upper', 'com espaço', 'acentuação', 'under_score', 'dot.slug', 'x'.repeat(81)]) {
+  for (const bad of ['Upper', 'com espaço', 'acentuação', 'under_score', 'dot.slug', '-', '-abc', 'abc-', 'a--b', 'x'.repeat(81)]) {
     assert.ok(form.validateCreate({ ...valid, slug: bad }).slug, bad)
   }
-  for (const good of ['abc', 'a-1', '123', '-', 'x'.repeat(80)]) assert.equal(form.validateCreate({ ...valid, slug: good }).slug, undefined, good)
+  for (const good of ['abc', 'a-1', '123', 'x'.repeat(80)]) assert.equal(form.validateCreate({ ...valid, slug: good }).slug, undefined, good)
   assert.equal(form.normalizeCreateDraft({ ...valid, slug: ' Mixed-Case ' }).slug, 'Mixed-Case', 'no silent lower-casing: the operator fixes it')
 })
 await check('create: URL base must be an absolute http(s) URL (frontend subset of IsUrl({ require_tld: false }))', async () => {
@@ -266,7 +267,7 @@ await check('edit command: PATCH body is exactly { name }; slug / baseUrl / id i
   assert.deepEqual(Object.keys(built.command.body), ['name'])
   assert.equal(built.command.targetId, record.id)
   assert.equal(built.command.route, `PATCH /api/whitelabels/${record.id}`)
-  assert.deepEqual(built.command.baseline, { name: record.name, updatedAt: record.updatedAt })
+  assert.deepEqual(built.command.baseline, { name: record.name, updatedAt: record.updatedAt, slug: record.slug, baseUrl: record.baseUrl })
   assert.ok(Object.isFrozen(built.command.body))
   assert.equal(JSON.stringify(record), before)
 })
@@ -407,7 +408,7 @@ await check('outcome: E_SLUG_TAKEN is used when present but never required (gene
 })
 await check('read-back reconciliation: applied / not-applied / diverged, exact slug and baseline name only', async () => {
   const mine = { ...RECORD_B, slug: valid.slug, name: valid.name, baseUrl: valid.baseUrl }
-  assert.equal(outcome.reconcileCreateReadback(createCommand, { rows: [mine], complete: true }).result, 'applied')
+  assert.equal(outcome.reconcileCreateReadback(createCommand, { rows: [mine], complete: true }).result, 'found', 'GET cannot attribute a record to our POST')
   assert.equal(outcome.reconcileCreateReadback(createCommand, { rows: [{ ...mine, slug: `${valid.slug}-2` }], complete: true }).result, 'not-applied', 'search is fuzzy; only an exact slug counts')
   assert.equal(outcome.reconcileCreateReadback(createCommand, { rows: [], complete: false }).result, 'inconclusive', 'an incomplete page never proves absence')
   assert.equal(outcome.reconcileCreateReadback(createCommand, { rows: [mine, mine], complete: true }).result, 'diverged', 'ambiguous matches never confirm success')
@@ -423,8 +424,8 @@ await check('read-back reconciliation: applied / not-applied / diverged, exact s
 const wlDir = resolve(root, 'src/features/whitelabels')
 const crudFiles = (await readdir(resolve(wlDir, 'crud'))).filter((name) => /\.tsx?$/.test(name)).sort()
 await check('crud module: the expected files only (lifecycle dialog and the shared create/edit form removed)', async () => {
-  assert.deepEqual(crudFiles, ['MutationStates.tsx', 'WhitelabelActionsMenu.tsx', 'WhitelabelCreateDialog.tsx', 'WhitelabelNameEditDialog.tsx',
-    'whitelabelCommands.ts', 'whitelabelForm.ts', 'whitelabelMutationContract.ts', 'whitelabelMutationOutcome.ts', 'whitelabelMutationRunner.ts'])
+  assert.deepEqual(crudFiles, ['MutationStates.tsx', 'OperationalMutationState.tsx', 'WhitelabelActionsMenu.tsx', 'WhitelabelCreateDialog.tsx', 'WhitelabelNameEditDialog.tsx',
+    'useWhitelabelMutation.ts', 'whitelabelCommands.ts', 'whitelabelForm.ts', 'whitelabelMutationContract.ts', 'whitelabelMutationOutcome.ts', 'whitelabelMutationRunner.ts', 'whitelabelOperationalApi.ts'])
 })
 const crudSources = Object.fromEntries(await Promise.all(crudFiles.map(async (name) => [name, await readFile(resolve(wlDir, 'crud', name), 'utf8')])))
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
@@ -438,12 +439,12 @@ await check('crud sources: no request code, storage, logging or prototype data',
     assert.equal(/getAccessToken|Authorization|Bearer/.test(code), false, `${name}: no token access`)
   }
 })
-await check('no production transport: the runner is imported by no screen; nothing in src imports test fixtures', async () => {
+await check('only the narrow operational adapter/hook import the runner; nothing in src imports test fixtures', async () => {
   const walk = async (dir) => (await Promise.all((await readdir(dir, { withFileTypes: true })).map((entry) =>
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
-    if (!file.endsWith('whitelabelMutationRunner.ts')) assert.equal(/whitelabelMutationRunner/.test(source), false, file)
+    if (!['whitelabelMutationRunner.ts', 'whitelabelOperationalApi.ts', 'useWhitelabelMutation.ts'].some(name => file.endsWith(name))) assert.equal(/whitelabelMutationRunner/.test(source), false, file)
     assert.equal(/(from|import)\s*\(?\s*['"][^'"]*(scripts\/|fixtures\/|whitelabel-mutation-mocks)/.test(source), false, file)
     assert.equal(/createMockTransport|MockTransport|createMockReadback/.test(stripComments(source)), false, file)
   }
@@ -458,7 +459,8 @@ await check('final commit buttons are aria-disabled pending buttons, never submi
   assert.match(crudSources['WhitelabelNameEditDialog.tsx'], /<PendingActionButton label="Salvar nome"/)
   // Dialogs expose no "saved / created / removed" callback the page could use to alter authoritative data.
   for (const name of ['WhitelabelCreateDialog.tsx', 'WhitelabelNameEditDialog.tsx']) {
-    assert.equal(/onSave|onCreated|onSaved|onRemoved|onDeleted|onConfirm\b|onSubmitted|transport/.test(crudSources[name]), false, name)
+    assert.equal(/onSave|onCreated|onSaved|onRemoved|onDeleted|onConfirm\b|onSubmitted|transport/.test(stripComments(crudSources[name])), false, name)
+    assert.match(crudSources[name], /useWhitelabelMutation/)
   }
 })
 await check('lifecycle: activate / deactivate / DELETE have no dialog and no executable handler', async () => {
@@ -470,13 +472,18 @@ await check('lifecycle: activate / deactivate / DELETE have no dialog and no exe
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
   assert.equal(/Lifecycle|lifecycle/.test(page), false)
 })
-await check('the Whitelabel read adapter stays GET-only; no mutation verb exists in the frontend', async () => {
+await check('the Whitelabel read adapter/client stay GET-only; write methods are confined to login and the guarded client', async () => {
   const api = await readFile(resolve(wlDir, 'whitelabelApi.ts'), 'utf8')
   assert.equal(/'POST'|'PATCH'|'PUT'|'DELETE'|apiRequest\(/.test(api), false)
   const walk = async (dir) => (await Promise.all((await readdir(dir, { withFileTypes: true })).map((entry) =>
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if (file.replaceAll('\\', '/').endsWith('src/lib/whitelabelWriteClient.ts')) {
+      assert.match(source, /method: safe\.operation === 'create' \? 'POST' : 'PATCH'/)
+      assert.equal(/method:\s*['"](PUT|DELETE)['"]/.test(source), false)
+      continue
+    }
     assert.equal(/method:\s*['"](PATCH|PUT|DELETE)['"]/.test(source), false, file)
     if (/method:\s*['"]POST['"]/.test(source)) assert.match(file.replaceAll('\\', '/'), /src\/lib\/authSession\.ts$/, 'only the login uses POST')
   }
@@ -497,7 +504,7 @@ await check('page identity safety: switching selection discards the open edit; e
   assert.match(page, /if \(dialog\?\.kind === 'edit' && dialog\.record\.id !== selectedId\) \{\s*setDialog\(null\)/)
   assert.match(page, /A edição do nome foi descartada porque outro Whitelabel foi selecionado/)
   assert.match(page, /if \(writeAccess !== 'super-admin'\) return\s+if \(record\.id !== selectedId \|\| loadedDetail\?\.id !== record\.id\) \{\s+notify\([^)]*\)\s+return/)
-  assert.match(page, /setDialog\(\{ kind: 'edit', record: loadedDetail \}\)/, 'the authoritative detail, not a transition copy')
+  assert.match(page, /setDialog\(\{ kind: 'edit', record: loadedDetail, sessionVersion: getSessionVersion\(\) \}\)/, 'the authoritative detail and session, not a transition copy')
 })
 await check('page roles: access comes from the existing session operator; restricted entry points explain instead of opening', async () => {
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
@@ -544,6 +551,7 @@ await check('actual page: role loss closes create/edit drafts and never restores
       globalThis.__wlCrudPage.operator = roles === null ? null : { roles }
       h.render() // React rerenders after render-phase state adjustment.
       assert.equal(pageChild(h.render(), dialogName), null, `draft must close for ${JSON.stringify(roles)}`)
+      assert.doesNotMatch(textOf(findElement(h.render(), element => element.props?.['data-crud-announcement'])), /Nada foi enviado/, 'closing a dialog must not assert the outcome of a potentially sent request')
       globalThis.__wlCrudPage.operator = { roles: ['SUPER_ADMIN'] }
       assert.equal(pageChild(h.render(), dialogName), null, 'no hidden draft survives role loss')
       assert.equal(requests, 0)
@@ -557,6 +565,7 @@ await check('actual page: moving A to B clears A draft; B opens from B detail an
   h.props.params = { whitelabelId: RECORD_B.id }
   h.render()
   assert.equal(pageChild(h.render(), 'WhitelabelNameEditDialog'), null)
+  assert.doesNotMatch(textOf(findElement(h.render(), element => element.props?.['data-crud-announcement'])), /Nada foi enviado/, 'navigation cannot undo an already dispatched mutation')
   pageChild(h.render(), 'WhitelabelDetailPanel').props.onEditName(RECORD_A)
   assert.equal(pageChild(h.render(), 'WhitelabelNameEditDialog'), null, 'old target callback cannot open against B')
   pageChild(h.render(), 'WhitelabelDetailPanel').props.onEditName(RECORD_B)

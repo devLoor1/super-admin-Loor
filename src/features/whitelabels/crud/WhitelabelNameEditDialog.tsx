@@ -7,6 +7,9 @@ import dialogStyles from '../../whitelabel-settings/dialogs/SettingsDialogs.modu
 import type { WhitelabelRecord } from '../whitelabelApi'
 import { PendingActionButton, PendingBackendNotice } from './MutationStates'
 import { buildNameUpdateCommand } from './whitelabelCommands'
+import { WHITELABEL_WRITES_ENABLED } from './whitelabelMutationContract'
+import { useWhitelabelMutation } from './useWhitelabelMutation'
+import { OperationalMutationState } from './OperationalMutationState'
 import { NAME_MAX, NAME_MIN, dtoLength, isRecordStale, nameDraftFromRecord, nameError, readOnlyFacts, tidyName } from './whitelabelForm'
 import styles from './WhitelabelCrud.module.css'
 
@@ -19,7 +22,8 @@ const PREFIX = 'wl-edit'
  * Only the name can change: slug and URL base are read-only facts with no
  * input, no draft field and no hidden path. The target is the selected ID;
  * the page closes this dialog when the selection changes. The final button
- * stays `aria-disabled` for every role: nothing is sent or saved.
+ * stays disabled by default; controlled activation uses a freshness GET,
+ * name-only PATCH and authoritative refresh, never an optimistic rename.
  */
 export function WhitelabelNameEditDialog({
   record,
@@ -27,6 +31,8 @@ export function WhitelabelNameEditDialog({
   selectedId,
   onClose,
   fallbackFocus,
+  onConfirmed,
+  onInspectRecord,
 }: {
   /** Authoritative detail when the edit opened. */
   record: WhitelabelRecord
@@ -36,6 +42,8 @@ export function WhitelabelNameEditDialog({
   selectedId: string | null
   onClose: () => void
   fallbackFocus?: () => HTMLElement | null
+  onConfirmed?: (record: WhitelabelRecord) => void
+  onInspectRecord?: (record: WhitelabelRecord) => void
 }) {
   const [draft, setDraft] = useState(() => nameDraftFromRecord(record))
   const [nameIssue, setNameIssue] = useState<string | null>(null)
@@ -45,20 +53,22 @@ export function WhitelabelNameEditDialog({
   const nameRef = useRef<HTMLInputElement>(null)
   const reviewRef = useRef<HTMLHeadingElement>(null)
   const keepRef = useRef<HTMLButtonElement>(null)
+  const mutation = useWhitelabelMutation(`whitelabel:${record.id}`, onConfirmed)
 
   const stale = isRecordStale(record, latest)
   const built = buildNameUpdateCommand({ selectedId, record, draft })
-  const dirty = tidyName(draft.name) !== tidyName(record.name)
+  const dirty = tidyName(draft.name) !== tidyName(record.name) && !(mutation.state.phase === 'settled' && mutation.state.outcome.state === 'confirmed')
+  const protectedAttempt = dirty || ('outcome' in mutation.state && mutation.state.outcome.state === 'uncertain')
 
   useEffect(() => {
-    if (!dirty) return
+    if (!protectedAttempt) return
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [dirty])
+  }, [protectedAttempt])
 
   useEffect(() => {
     if (confirmDiscard) keepRef.current?.focus()
@@ -69,6 +79,12 @@ export function WhitelabelNameEditDialog({
   }, [step])
 
   function requestClose() {
+    if (mutation.isBusy() || mutation.busy) return
+    if (mutation.hasAttempt) {
+      if ('outcome' in mutation.state && mutation.state.outcome.state === 'uncertain' && (mutation.state.phase !== 'verified' || mutation.state.readback === 'inconclusive')) setConfirmDiscard(true)
+      else { mutation.reset(); onClose() }
+      return
+    }
     if (dirty) setConfirmDiscard(true)
     else onClose()
   }
@@ -96,28 +112,32 @@ export function WhitelabelNameEditDialog({
   }
 
   function backToForm() {
+    if (mutation.command?.operation === 'update-name') setDraft({ ...mutation.command.body })
+    mutation.reset()
     setStep('form')
     window.requestAnimationFrame(() => nameRef.current?.focus())
   }
 
   const pendingId = `${PREFIX}-pending`
-  const command = built.ok ? built.command : null
+  const command = mutation.command?.operation === 'update-name' ? mutation.command : built.ok ? built.command : null
 
   let footer
   if (confirmDiscard) {
     footer = (
       <>
         <p className={dialogStyles.footerNote} role="alert">
-          Descartar o novo nome? Nada foi enviado nem salvo.
+          {mutation.hasAttempt ? 'Fechar a conferência? O resultado continua guardado nesta sessão. Não reenvie a solicitação sem conferir.' : 'Descartar o novo nome? Nada foi enviado nem salvo.'}
         </p>
         <OutlineButton ref={keepRef} className={dialogStyles.footerButton} onClick={() => setConfirmDiscard(false)}>
           Continuar editando
         </OutlineButton>
         <button type="button" className={dialogStyles.confirmWarning} onClick={onClose} data-discard>
-          Descartar
+          {mutation.hasAttempt ? 'Fechar conferência' : 'Descartar'}
         </button>
       </>
     )
+  } else if (mutation.hasAttempt) {
+    footer = <OutlineButton className={dialogStyles.footerButton} disabled={mutation.busy} onClick={requestClose}>Fechar</OutlineButton>
   } else if (step === 'form') {
     footer = (
       <>
@@ -139,7 +159,8 @@ export function WhitelabelNameEditDialog({
         <OutlineButton className={dialogStyles.footerButton} onClick={() => setConfirmDiscard(true)} data-review-discard>
           Descartar
         </OutlineButton>
-        <PendingActionButton label="Salvar nome" describedBy={pendingId} />
+        {WHITELABEL_WRITES_ENABLED ? <PrimaryButton disabled={!command || stale} onClick={() => { if (command && !stale) mutation.send(command) }}>Confirmar novo nome</PrimaryButton>
+          : <PendingActionButton label="Salvar nome" describedBy={pendingId} />}
       </>
     )
   }
@@ -166,8 +187,8 @@ export function WhitelabelNameEditDialog({
       size="lg"
       footer={footer}
     >
-      <div data-wl-form="edit" data-step={step} data-wl-target={record.id}>
-        {step === 'form' ? (
+      <div data-wl-form="edit" data-step={mutation.hasAttempt ? 'result' : step} data-wl-target={record.id}>
+        {step === 'form' && !mutation.hasAttempt ? (
           <form id={PREFIX} className={`${dialogStyles.form} ${styles.flush}`} onSubmit={submit} noValidate>
             <p className={styles.intro}>
               <Info size={14} strokeWidth={1.9} aria-hidden="true" />
@@ -176,7 +197,7 @@ export function WhitelabelNameEditDialog({
                 conferência.
               </span>
             </p>
-            {staleNotice}
+            {!mutation.hasAttempt ? staleNotice : null}
 
             <div className={dialogStyles.field}>
               <div className={dialogStyles.labelRow}>
@@ -253,7 +274,7 @@ export function WhitelabelNameEditDialog({
             <h3 ref={reviewRef} tabIndex={-1} className={styles.reviewHeading}>
               Revisão da alteração de nome
             </h3>
-            {staleNotice}
+            {!mutation.hasAttempt ? staleNotice : null}
             {command ? (
               <ul className={styles.changes} aria-label="Alteração em relação ao Control Plane">
                 <li className={styles.change} data-change="name">
@@ -276,11 +297,12 @@ export function WhitelabelNameEditDialog({
               Identificador (slug) {record.slug || '—'} e URL base {record.baseUrl ?? '—'} permanecem como estão.
             </p>
 
-            <PendingBackendNotice action="update-name" id={pendingId} />
+            {!WHITELABEL_WRITES_ENABLED ? <PendingBackendNotice action="update-name" id={pendingId} /> : !mutation.hasAttempt ? <p>Sem controle de versão: uma alteração concorrente pode substituir este nome. Confira antes de confirmar.</p> : null}
+            {mutation.hasAttempt ? <OperationalMutationState mutation={mutation} onReview={backToForm} onInspectRecord={onInspectRecord ? record => { onInspectRecord(record); mutation.reset(); onClose() } : undefined} /> : null}
 
             {command ? (
               <details className={styles.payload}>
-                <summary>Requisição prevista (não enviada)</summary>
+                <summary>{mutation.hasAttempt ? 'Solicitação revisada' : 'Requisição prevista (não enviada)'}</summary>
                 <p className={styles.payloadRoute} data-request-route>
                   {command.route}
                 </p>

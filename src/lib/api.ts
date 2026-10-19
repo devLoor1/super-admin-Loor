@@ -99,6 +99,8 @@ export async function apiRequest<T>(
     signal?: AbortSignal
     /** Optional time budget; when exceeded the request fails with `kind: 'timeout'`. */
     timeoutMs?: number
+    /** A write must receive its documented success status, otherwise its result is uncertain. */
+    successStatus?: number
   } = {},
 ): Promise<T> {
   const requestId = correlationId()
@@ -158,7 +160,9 @@ export async function apiRequest<T>(
     throw new ApiError(response.status, body, { correlationId: echoedId })
   }
 
-  if (!parsed) throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })
+  if (!parsed || (options.successStatus !== undefined && response.status !== options.successStatus)) {
+    throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })
+  }
 
   return data as T
 }

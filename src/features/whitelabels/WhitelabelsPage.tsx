@@ -7,7 +7,7 @@ import type { Tone } from '../../components/ui/IconTile'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { describeApiError } from '../../lib/apiErrors'
-import { useSessionOperator } from '../../lib/authSession'
+import { getSessionVersion, useSessionOperator } from '../../lib/authSession'
 import { WhitelabelCreateDialog } from './crud/WhitelabelCreateDialog'
 import { WhitelabelNameEditDialog } from './crud/WhitelabelNameEditDialog'
 import { WRITE_ACCESS_NOTE, whitelabelWriteAccess } from './crud/whitelabelMutationContract'
@@ -37,12 +37,10 @@ type WhitelabelsPageProps = {
  * Control Plane (`GET /whitelabels`, `GET /whitelabels/:id`). The summary
  * cards are not integrated yet and keep their data-ready "—" state.
  *
- * Whitelabel CRUD Safe Preparation V1: "Novo Whitelabel" and "Editar nome"
- * (SUPER_ADMIN presentation) open review dialogs (`crud/`) prepared for the
- * Control Plane create / name-only PATCH contract. NO LIVE MUTATIONS ARE
- * ENABLED: the final buttons are disabled for every role, nothing is sent,
- * and the authoritative list / detail are never changed. Activation /
- * deactivation / DELETE are not offered.
+ * Operational V1 reuses the review dialogs for Create/name-only PATCH.
+ * Real transport is default-OFF and SUPER_ADMIN-only; confirmed operations
+ * refresh through GET, without optimistic list/detail changes. Activation,
+ * deactivation, DELETE and tenant identity updates remain unavailable.
  */
 export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT, routeKey = '', ...params }: WhitelabelsPageProps) {
   return (
@@ -62,7 +60,7 @@ const SUMMARY: { id: string; label: string; icon: LucideIcon; tone: Tone }[] = [
 const MOBILE_QUERY = '(max-width: 767px)'
 
 /** The edit dialog keeps the authoritative record it opened with; its ID must stay the selected one. */
-type CrudDialog = { kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord } | null
+type CrudDialog = ({ kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord }) & { sessionVersion: number } | null
 const SEARCH_DEBOUNCE_MS = 400
 
 function sortRows(rows: WhitelabelRecord[], sort: Sort) {
@@ -184,7 +182,7 @@ function WhitelabelsContent({
     navigate({ id, page: route.page }, 'push')
   }
 
-  /* ---------- CRUD dialogs (review only — nothing is sent) ---------- */
+  /* ---------- CRUD dialogs (guarded Operational V1) ---------- */
   const operator = useSessionOperator()
   const writeAccess = whitelabelWriteAccess(operator?.roles)
   const [dialog, setDialog] = useState<CrudDialog>(null)
@@ -194,9 +192,9 @@ function WhitelabelsContent({
   // Session revalidation can remove SUPER_ADMIN while a review is open.
   // Discard the preparation too, not just its entry points; role regain must
   // not reveal a draft retained from the previous permission context.
-  if (dialog !== null && writeAccess !== 'super-admin') {
+  if (dialog !== null && (writeAccess !== 'super-admin' || dialog.sessionVersion !== getSessionVersion())) {
     setDialog(null)
-    setCrudAnnouncement('A preparação foi descartada porque o perfil Super Admin não está mais confirmado. Nada foi enviado.')
+    setCrudAnnouncement('A preparação foi descartada porque o perfil Super Admin não está mais confirmado.')
   }
 
   // Identity safety: an edit belongs to the Whitelabel it opened for. When the
@@ -205,7 +203,7 @@ function WhitelabelsContent({
   // against the newly selected record (React: adjusting state on a prop change).
   if (dialog?.kind === 'edit' && dialog.record.id !== selectedId) {
     setDialog(null)
-    setCrudAnnouncement('A edição do nome foi descartada porque outro Whitelabel foi selecionado. Nada foi enviado.')
+    setCrudAnnouncement('A edição do nome foi descartada porque outro Whitelabel foi selecionado.')
   }
 
   function openCreate() {
@@ -214,7 +212,7 @@ function WhitelabelsContent({
       return
     }
     setCrudAnnouncement('')
-    setDialog({ kind: 'create' })
+    setDialog({ kind: 'create', sessionVersion: getSessionVersion() })
   }
 
   function openEditName(record: WhitelabelRecord) {
@@ -225,7 +223,12 @@ function WhitelabelsContent({
       return
     }
     setCrudAnnouncement('')
-    setDialog({ kind: 'edit', record: loadedDetail })
+    setDialog({ kind: 'edit', record: loadedDetail, sessionVersion: getSessionVersion() })
+  }
+  function mutationConfirmed(record: WhitelabelRecord) {
+    list.reload()
+    if (record.id === selectedId) detail.reload()
+    if (dialog?.kind === 'create') navigate({ id: record.id, page: 1, search: '', status: 'all' }, 'push')
   }
   const actionsFocusFor = useRef<string | null>(null)
   const focusDetailActions = () => document.querySelector<HTMLElement>('#whitelabel-detail [data-wl-actions]')
@@ -340,7 +343,7 @@ function WhitelabelsContent({
       </p>
 
       {writeAccess === 'super-admin' && dialog?.kind === 'create' ? (
-        <WhitelabelCreateDialog onClose={() => setDialog(null)} fallbackFocus={() => document.querySelector<HTMLElement>('[data-wl-create]')} />
+        <WhitelabelCreateDialog onClose={() => setDialog(null)} onConfirmed={mutationConfirmed} onInspectRecord={mutationConfirmed} fallbackFocus={() => document.querySelector<HTMLElement>('[data-wl-create]')} />
       ) : writeAccess === 'super-admin' && dialog?.kind === 'edit' && dialog.record.id === selectedId ? (
         <WhitelabelNameEditDialog
           key={dialog.record.id}
@@ -348,6 +351,8 @@ function WhitelabelsContent({
           latest={loadedDetail?.id === dialog.record.id ? loadedDetail : null}
           selectedId={selectedId}
           onClose={() => setDialog(null)}
+          onConfirmed={mutationConfirmed}
+          onInspectRecord={mutationConfirmed}
           fallbackFocus={focusDetailActions}
         />
       ) : null}

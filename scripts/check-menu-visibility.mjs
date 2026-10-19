@@ -379,13 +379,13 @@ const codeOnly = (source, name) =>
   }).outputText
 // Keep the prototype review's syntax-aware capability checks: a regex for
 // `fetch(` alone misses aliases and computed access such as window['fetch'].
-function unsafeCapability(source, storage = false, allowCanonicalGet = false) {
+function unsafeCapability(source, storage = false, allowCanonicalGet = false, allowWhitelabelWrite = false) {
   const ast = ts.createSourceFile('fixture.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const names = storage
     ? /^(localStorage|sessionStorage|indexedDB|cookie|caches)$/
-    : /^(fetch|apiRequest|authenticatedGet|authenticatedPost|authenticatedPut|authenticatedPatch|authenticatedDelete|XMLHttpRequest|sendBeacon|WebSocket|EventSource)$/
+    : /^(fetch|apiRequest|authenticatedGet|authenticatedWhitelabelWrite|authenticatedPost|authenticatedPut|authenticatedPatch|authenticatedDelete|XMLHttpRequest|sendBeacon|WebSocket|EventSource)$/
   let found = false
-  const forbidden = (name) => names.test(name) && !(allowCanonicalGet && name === 'authenticatedGet')
+  const forbidden = (name) => names.test(name) && !(allowCanonicalGet && name === 'authenticatedGet') && !(allowWhitelabelWrite && name === 'authenticatedWhitelabelWrite')
   function visit(node) {
     if (ts.isIdentifier(node) && forbidden(node.text)) found = true
     if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression) && forbidden(node.argumentExpression.text)) found = true
@@ -461,8 +461,16 @@ check(/useRemote\('menu-visibility', fetchMenuVisibility\)/.test(hook) && /expor
 
 // The real shell, routes, landing and shared clients are byte-identical to the baseline.
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
+// Operational V1's only shared transport change is opt-in success-status checking. Compare
+// every other byte, so exempting the file cannot hide an auth/read/route change.
+const statusOnlyApi = (await readFile(resolve(root, 'src/lib/api.ts'), 'utf8')).replaceAll('\r\n', '\n')
+  .replace('    /** A write must receive its documented success status, otherwise its result is uncertain. */\n    successStatus?: number\n', '')
+  .replace("  if (!parsed || (options.successStatus !== undefined && response.status !== options.successStatus)) {\n    throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })\n  }", "  if (!parsed) throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })")
+check(statusOnlyApi === git('show', BASELINE + ':src/lib/api.ts').replaceAll('\r\n', '\n'), 'Only the exact opt-in write success-status check may change the shared API transport')
 for (const path of ['src/components', 'src/lib', 'src/features/dashboard', 'src/app/useUnsavedChangesGuard.ts', 'src/app/prototypeNavigation.ts', 'src/app/routeQuery.ts', 'src/app/useUrlSearchDraft.ts']) {
-  check(git('diff', '--name-only', BASELINE, '--', path).trim() === '', `${path}: unchanged from ${BASELINE.slice(0, 7)} (sidebar, shortcuts, shared clients)`)
+  const changed = git('diff', '--name-only', BASELINE, '--', path).trim().split('\n').filter(Boolean)
+    .filter(file => !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts'].includes(file))
+  check(changed.length === 0, `${path}: unchanged except the explicit Operational V1 write client and status verification; shell/auth/GET client stay protected`)
 }
 // Finance Read Integration V1 (a later, reviewed unit) changed ONLY the Finance Read route
 // statements of App.tsx (URL params handed to the six Finance Read pages). Those statements
@@ -607,6 +615,7 @@ const REVIEWED_WHITELABEL_FILES = new Set([
   'crud/WhitelabelCreateDialog.tsx', 'crud/WhitelabelNameEditDialog.tsx',
   'crud/whitelabelCommands.ts', 'crud/whitelabelForm.ts', 'crud/whitelabelMutationContract.ts',
   'crud/whitelabelMutationOutcome.ts', 'crud/whitelabelMutationRunner.ts',
+  'crud/OperationalMutationState.tsx', 'crud/useWhitelabelMutation.ts', 'crud/whitelabelOperationalApi.ts',
 ].map((path) => `src/features/whitelabels/${path}`))
 // Finance Read Integration V1: reviewed Finance Read files (rewritten pages, new read
 // adapters, removed prototype fixtures). Explicit paths only — never the whole domain.
@@ -634,7 +643,7 @@ const REVIEWED_OPERATION_READ_FILES = new Set([
   'shared/EntrepreneurViews.module.css', 'shared/EntrepreneurViews.tsx', 'shared/coreIds.ts', 'shared/readErrors.ts',
 ].map((path) => `src/features/operation/${path}`))
 const outsideMenuVisibility = (path) =>
-  !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path)
+  !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
 check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read and Opportunities + Companies Read source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)
@@ -650,7 +659,7 @@ for (const path of [
 for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
   const rel = relative(root, file).replaceAll('\\', '/')
   const source = await readFile(file, 'utf8')
-  check(!unsafeCapability(source, false, rel === 'src/features/whitelabels/whitelabelApi.ts'), `${rel}: Whitelabel exception grants no transport capability; only its canonical GET adapter is allowed`)
+  check(!unsafeCapability(source, false, rel === 'src/features/whitelabels/whitelabelApi.ts', rel === 'src/features/whitelabels/crud/whitelabelOperationalApi.ts'), `${rel}: only the canonical GET adapter and narrow guarded Operational V1 adapter have transport capability`)
   check(!unsafeCapability(source, true), `${rel}: Whitelabel exception grants no browser persistence capability`)
 }
 for (const dir of ['src/features/operation/opportunities', 'src/features/operation/companies']) {

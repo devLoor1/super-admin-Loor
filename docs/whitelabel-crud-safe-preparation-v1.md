@@ -1,5 +1,9 @@
 # Whitelabel CRUD Safe Preparation V1 — Create + name-only edit (mock-only)
 
+> Historical preparation evidence. Current guarded transport, contract, activation boundary and
+> fresh tests are documented in [Whitelabel CRUD Operational V1](whitelabel-crud-operational-v1.md).
+> Statements below about the absence of a production transport describe the earlier preparation.
+
 Frontend-only unit prepared by Cloud on `work/whitelabel-crud-safe-preparation`, based on `dev`
 `e7c8683e760f552e4c69bf2ceebdae474ac3b8cd`, and left uncommitted for review. It supersedes the create /
 edit / deactivate sections of [`whitelabel-crud-frontend-v1.md`](whitelabel-crud-frontend-v1.md).

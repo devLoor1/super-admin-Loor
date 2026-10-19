@@ -5,11 +5,10 @@ import { FIELD_LABELS, tidyName, type CreateFieldKey } from './whitelabelForm'
 import type { WhitelabelMutationOperation } from './whitelabelMutationContract'
 
 /*
- * How a FUTURE Whitelabel write response must be read — PURE, no transport.
- * Exercised today only by the mock-only tests in `scripts/`. Mock responses
- * are fixtures, not proof of the real Core envelope.
+ * Pure response interpretation for the guarded Operational V1 transport.
+ * Tests use fixtures, never live writes; the contract was source-verified.
  *
- * Source facts this relies on (Nest `aea5392`, not deployment evidence):
+ * Source facts this relies on (Nest `88b7bf7`, not live-write evidence):
  * - guards (401 / 403), the throttler (429) and the ValidationPipe (400) run
  *   before the handler → those refusals happen before any Core call;
  * - Core 4xx is forwarded with its status (Core 401 / 403 → 503), except
@@ -53,12 +52,13 @@ function fieldsFrom(error: ApiError, operation: WhitelabelMutationOperation): Cr
 }
 
 function identityMatches(command: WhitelabelCommand, record: WhitelabelRecord) {
-  // Create: the same slug AND the requested values — the read-back applies the same rule, so a
-  // response and a read-back of the same record can never disagree.
+  // A direct success response must confirm all requested identity values. A later GET
+  // cannot attribute a Create to our request and is therefore labelled only "found".
   if (command.operation === 'create') {
     return record.slug === command.body.slug && tidyName(record.name) === command.body.name && record.baseUrl === command.body.baseUrl
   }
   return record.id === command.targetId && tidyName(record.name) === command.body.name
+    && record.slug === command.baseline.slug && record.baseUrl === command.baseline.baseUrl
 }
 
 export function interpretMutationResult(command: WhitelabelCommand, result: MutationTransportResult): MutationOutcome {
@@ -73,7 +73,14 @@ export function interpretMutationResult(command: WhitelabelCommand, result: Muta
     } catch {
       record = null
     }
-    if (record && identityMatches(command, record)) {
+    const createStateValid = command.operation !== 'create' || (
+      typeof result.body === 'object' && result.body !== null && 'data' in result.body
+      && typeof result.body.data === 'object' && result.body.data !== null
+      && 'isActive' in result.body.data && result.body.data.isActive === true
+      && 'id' in result.body.data && Number.isSafeInteger(result.body.data.id) && Number(result.body.data.id) > 0
+      && record?.status === 'active'
+    )
+    if (record && identityMatches(command, record) && createStateValid) {
       return Object.freeze({ ...base, targetId: record.id, state: 'confirmed', record })
     }
     return Object.freeze({ ...base, state: 'uncertain', cause: 'unverified-response', status: 200, next: 'authoritative-readback' })
@@ -114,15 +121,15 @@ export function interpretMutationResult(command: WhitelabelCommand, result: Muta
 
 /* ---------- authoritative read-back after an uncertain outcome ---------- */
 
-export type ReadbackResult = 'applied' | 'not-applied' | 'diverged' | 'inconclusive'
+export type ReadbackResult = 'applied' | 'found' | 'not-applied' | 'diverged' | 'inconclusive'
 export type CreateReadback = Readonly<{ rows: readonly WhitelabelRecord[]; complete: boolean }>
 
 /**
  * Create: rows of `GET /whitelabels?search=<slug>`. Only an exact slug match
  * counts. Absence is meaningful only if the injected read port guarantees
  * complete search coverage (never just the first page). A matching record
- * with other values, or multiple exact matches, is `diverged` (another
- * record owns the slug, or Core changed the values) — never "created".
+ * with other values, or multiple exact matches, is `diverged`. Even a full
+ * identity match is only `found`, never proof that this POST created it.
  */
 export function reconcileCreateReadback(command: CreateWhitelabelCommand, search: CreateReadback): Readonly<{ result: ReadbackResult; record?: WhitelabelRecord }> {
   const matches = search.rows.filter((row) => row.slug === command.body.slug)
@@ -130,7 +137,9 @@ export function reconcileCreateReadback(command: CreateWhitelabelCommand, search
   const record = matches[0]
   if (!record) return Object.freeze({ result: search.complete === true ? 'not-applied' : 'inconclusive' })
   const same = tidyName(record.name) === command.body.name && record.baseUrl === command.body.baseUrl
-  return Object.freeze({ result: same ? 'applied' : 'diverged', record })
+  // Even matching values cannot attribute this record to our timed-out POST: there is no
+  // idempotency key/request identity in GET. Surface the existing identity, never "created".
+  return Object.freeze({ result: same ? 'found' : 'diverged', record })
 }
 
 /**
@@ -139,7 +148,7 @@ export function reconcileCreateReadback(command: CreateWhitelabelCommand, search
  * concurrent change — the Backend has no version / ETag).
  */
 export function reconcileNameReadback(command: UpdateWhitelabelNameCommand, record: WhitelabelRecord): ReadbackResult {
-  if (record.id !== command.targetId) return 'diverged'
+  if (record.id !== command.targetId || record.slug !== command.baseline.slug || record.baseUrl !== command.baseline.baseUrl) return 'diverged'
   const name = tidyName(record.name)
   if (name === command.body.name) return 'applied'
   if (name === tidyName(command.baseline.name)) return 'not-applied'
@@ -149,6 +158,7 @@ export function reconcileNameReadback(command: UpdateWhitelabelNameCommand, reco
 /** Pre-submit freshness: the authoritative record still matches what the edit started from. */
 export function isCommandStale(command: UpdateWhitelabelNameCommand, latest: WhitelabelRecord) {
   return latest.id !== command.targetId || latest.name !== command.baseline.name || latest.updatedAt !== command.baseline.updatedAt
+    || latest.slug !== command.baseline.slug || latest.baseUrl !== command.baseline.baseUrl
 }
 
 /* ---------- presentation (safe copy only; raw Backend text is never shown) ---------- */
@@ -297,6 +307,18 @@ function rejectedCopy(outcome: Extract<MutationOutcome, { state: 'rejected' }>, 
 export type ReadbackView = Readonly<{ tone: OutcomeTone; title: string; description: string; allowsResubmit: boolean }>
 
 export function describeReadback(operation: WhitelabelMutationOperation, result: ReadbackResult): ReadbackView {
+  if (result === 'found') {
+    return Object.freeze({
+      tone: 'warning',
+      title: 'Registro compatível encontrado',
+      description: 'O slug, nome e URL base correspondem, mas a leitura não prova qual solicitação criou este registro. Confira o ID encontrado; não reenvie estes dados.',
+      allowsResubmit: false,
+    })
+  }
+  if (result === 'inconclusive') {
+    return Object.freeze({ tone: 'warning', title: 'Conferência inconclusiva',
+      description: 'A busca não cobriu todos os registros. Não envie de novo; repita somente a conferência por leitura.', allowsResubmit: false })
+  }
   if (result === 'applied') {
     return Object.freeze({
       tone: 'success',

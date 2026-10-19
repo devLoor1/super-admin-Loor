@@ -293,7 +293,7 @@ await check('Audit-failure 500 after a Core success: uncertain, then the read-ba
   assert.match(outcome.describeMutationOutcome(settled.outcome).description, /auditoria/)
   reads.store.set(CREATED.id, { ...CREATED }) // Core had applied it
   const verified = await runner.verify('create')
-  assert.equal(verified.readback, 'applied')
+  assert.equal(verified.readback, 'found')
   assert.equal(verified.record.id, CREATED.id)
   assert.equal(runner.submit(createCommand).reason, 'review-required')
   assert.equal(mock.calls.length, 1)

@@ -295,3 +295,53 @@ No source-contract obstacle to that sequential procedure was identified. Availab
 of the restricted authorized origin/session must be qualified at that stage; it is not
 proven by loopback mocks and is not a generic request for new Backend implementation.
 Permanent concurrent activation is **not** approved by this procedure.
+
+## Official homolog activation — corrected frontend-only authorization (2026-10-20)
+
+The current user authorization supersedes the temporary-origin procedure above for
+this activation: use only the official homolog frontend, with one SUPER_ADMIN
+operator and two sequential, explicitly reviewed UI PUTs (change `ajuda`, then
+restore the full original map). No Backend/Core or Render work is authorized.
+The existing Backend version check remains **non-atomic**; no concurrency-safety
+claim or parallel-writer test is made. Coordinate single-operator use before any
+broader concurrent rollout.
+
+The smallest supported activation is **site-scoped Netlify build configuration**;
+the approved application/transport/RBAC/navigation implementation remains unchanged.
+
+| Target | Configuration |
+| --- | --- |
+| Official homolog | `https://loor-super-admin.netlify.app` |
+| Netlify site ID | `25e47255-95dc-4ed6-a22a-8bce03017ee7` |
+| Git production branch for this homolog site | `dev` |
+| Homolog API | `https://backend-super-admin-loor.onrender.com/api` |
+| `VITE_MENU_VISIBILITY_WRITES_ENABLED` | Exact string `true` in this site's Production deploy context only; `false` for previews, branch deploys, agent runners and local development |
+| `VITE_WHITELABEL_WRITES_ENABLED` | Exact string `false` |
+| Actual sidebar enforcement | OFF, unchanged |
+
+These are public build-time booleans, not secrets. Current Netlify plan exposes all
+scopes rather than a selectable Builds-only scope; context/site isolation is retained.
+Changing a variable alone does not alter a published Vite bundle. Use the existing
+Git-connected build and verify the exact published commit/assets before any PUT.
+Local `.env.example` defaults stay OFF; no source-code hardcoding is introduced.
+
+Before the first UI PUT, preserve a fresh authoritative GET's complete 23-ID map,
+version, updatedAt and updatedBy in the sanitized local checkpoint. Re-read map and
+version immediately before each PUT. Exactly one non-protected `ajuda` difference
+is permitted. Require HTTP 200, validated acknowledgement and authoritative GET;
+reload to prove persisted state, not React memory. Restore all original preference
+values using the latest GET version, then GET/reload again. Versions and Audit
+history advance rather than rolling back. No Whitelabel or financial write is allowed.
+
+On timeout/5xx/malformed response/409/unexpected state, stop mutations and reconcile
+by GET; a 409 may occur after persistence under the existing Backend. Never retry
+automatically or overwrite another operator's changes. If the smoke fails, set this
+site's Menu Visibility flag to `false` and rebuild through the existing supported
+deployment workflow. Do not claim restoration until the original map is observed.
+
+Keep the homolog flag enabled after successful persistence/restoration validation,
+as explicitly requested. This does not activate sidebar filtering, alter role access,
+or resolve the known Backend concurrency limitation. Audit remains best-effort.
+Runtime result, release/deploy identifiers, request counts and restoration evidence
+must be recorded separately after execution; this activation procedure is not itself
+evidence that the two live PUTs have already occurred.

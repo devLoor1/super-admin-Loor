@@ -10,7 +10,7 @@ import { fetchMenuVisibility } from './menuVisibilityApi'
  * automatically. There is no fallback: while loading or after a failure the
  * screen shows that state, never illustrative preferences.
  */
-export function useMenuVisibilityConfig() {
-  const { state, reload } = useRemote('menu-visibility', fetchMenuVisibility)
+export function useMenuVisibilityConfig(sessionKey = '') {
+  const { state, reload } = useRemote(`menu-visibility:${sessionKey}`, fetchMenuVisibility)
   return { state, reload }
 }

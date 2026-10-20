@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { useSessionOperator } from '../../lib/authSession'
+import { MENU_VISIBILITY_WRITES_ENABLED } from '../../lib/menuVisibilityWriteClient'
 import fin from '../finance-gateways/sections/FinanceSections.module.css'
 import { InfoNote, PageIntro } from '../operation/shared/OperationUi'
 import shared from '../operation/shared/Operation.module.css'
@@ -16,6 +17,8 @@ import type { MenuVisibilityRead } from './menuVisibilityApi'
 import { describeVisibilityError, formatPersistedAt, formatReadAt, MENU_VISIBILITY_CONTRACT } from './menuVisibilityContract'
 import { parseVisibilityRoute } from './menuVisibilityRoute'
 import { useMenuVisibilityConfig } from './useVisibilitySource'
+import { useVisibilitySave, useVisibilitySessionKey } from './useVisibilitySave'
+import { VisibilitySaveFeedback } from './VisibilitySaveFeedback'
 import { VisibilityControls } from './VisibilityControls'
 import { DiscardVisibilityDialog, VisibilityReviewDialog } from './VisibilityDialogs'
 import { preferenceChanges } from './visibilityModel'
@@ -27,8 +30,7 @@ import styles from './MenuVisibility.module.css'
 /**
  * `#/settings/menu-visibility` — Configurações › Visibilidade dos módulos.
  *
- * MENU VISIBILITY — STAGE A (authoritative read) + STAGE B PREPARATION.
- * STAGE B PRODUCT RULES: PREPARED. STAGE B LIVE WRITE: NOT ENABLED.
+ * MENU VISIBILITY — version-aware read + guarded Stage B transport (default OFF).
  * REAL SIDEBAR ENFORCEMENT: NOT ENABLED.
  *
  * The persisted configuration comes from `GET /api/homolog/menu-visibility`
@@ -37,14 +39,15 @@ import styles from './MenuVisibility.module.css'
  * approved Product rules (visibilityPolicy.ts) lock Dashboard and
  * Configurações, and the isolated preview uses the pure resolver
  * (visibilityResolver.ts). SUPPORT_ADMIN / READ_ONLY see the configuration
- * read-only; FINANCIAL_ADMIN / COMPLIANCE_ADMIN get the Backend's 403. No PUT,
- * no browser storage, no context or singleton. The real sidebar, shortcuts,
+ * read-only; FINANCIAL_ADMIN / COMPLIANCE_ADMIN get the Backend's 403. Writes use
+ * an identity-bound in-memory attempt ledger, never browser storage. The real sidebar, shortcuts,
  * routes and post-login landing keep reading `navigation.ts` and ignore
  * visibility. Visibility is sidebar presentation, not authorization.
  */
 export function MenuVisibilityPage({ previa }: { previa?: string }) {
   const { ignored } = useMemo(() => parseVisibilityRoute({ previa }), [previa])
-  const source = useMenuVisibilityConfig()
+  const sessionKey = useVisibilitySessionKey()
+  const source = useMenuVisibilityConfig(sessionKey)
   // Canonical session operator (login / `GET /auth/me`): presentation only — the Backend stays the authority.
   const operator = useSessionOperator()
   const access = expectedAccess(operator?.roles)
@@ -64,8 +67,9 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
         <p className={styles.stage} data-visibility-stage={MENU_VISIBILITY_CONTRACT.stage} data-stage-b="prepared">
           <DatabaseZap size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Leitura integrada ao Control Plane; regras de Produto da Etapa B aplicadas nesta tela.</strong> Salvar e aplicar ao menu real
-            ainda não estão habilitados: as alterações ficam somente nesta tela, em memória, e o menu lateral real do Super Admin não é alterado.
+            <strong>Leitura integrada ao Control Plane; regras de Produto da Etapa B aplicadas nesta tela.</strong>{' '}
+            {MENU_VISIBILITY_WRITES_ENABLED ? 'Gravação global habilitada neste build; exige revisão e leitura de confirmação. ' : 'Salvar está desativado neste build: o rascunho fica em memória. '}
+            A aplicação ao menu lateral real não está habilitada.
           </span>
         </p>
         <p className={styles.access} data-access-mode={mode} data-expected-access={access}>
@@ -79,8 +83,7 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
           <span>
             {access === 'edit' ? (
               <>
-                <strong>Perfil com edição (SUPER_ADMIN).</strong> Você pode preparar um rascunho; salvar continua indisponível até a ativação da Etapa
-                B.
+                <strong>Perfil com edição (SUPER_ADMIN).</strong> Você pode preparar um rascunho;{MENU_VISIBILITY_WRITES_ENABLED ? ' salvar exige revisão explícita.' : ' salvar continua indisponível até autorização e ativação da Etapa B.'}
               </>
             ) : access === 'read' ? (
               <>
@@ -121,7 +124,7 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
       </div>
 
       {source.state.status === 'success' ? (
-        <VisibilityEditor key={mode} reference={source.state.data} mode={mode} />
+        <VisibilityEditor key={`${sessionKey}:${mode}`} reference={source.state.data} mode={mode} />
       ) : source.state.status === 'error' ? (
         <LoadError error={source.state.error} onRetry={source.reload} />
       ) : (
@@ -179,19 +182,23 @@ function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) 
 }
 
 function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibilityRead; mode: 'edit' | 'read' }) {
-  // The parent keys this editor by mode so role hydration cannot retain an edit dialog/draft in a read-only view.
+  // Identity/role/session changes remount: no draft or dialog can migrate to another operator.
   // The authoritative reference is captured once per mount: no later answer can replace it under a draft.
-  const [reference] = useState(loaded)
+  const { coordinator, state: save } = useVisibilitySave()
+  const [localReference, setReference] = useState(() => save.reference ?? loaded)
+  const reference = save.decision === 'applied' && save.readback ? save.readback : localReference
   const base = reference.map
   // The draft is an independent map: edits never touch the reference (both maps are frozen).
-  const [draft, setDraft] = useState(base)
+  const [draft, setDraft] = useState(() => save.candidate?.body.visibility ?? base)
   const [reviewing, setReviewing] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const panelTitleRef = useRef<HTMLHeadingElement>(null)
   const readOnly = mode === 'read'
+  const blocked = save.phase !== 'idle'
+  const pending = save.phase === 'saving' || save.phase === 'reading'
   // Read-only operators never hold a draft: whatever they see is the persisted reference.
-  const shown = readOnly ? base : draft
+  const shown = readOnly || save.decision === 'applied' ? base : draft
 
   const changes = useMemo(() => preferenceChanges(base, shown), [base, shown])
   const hiddenCount = useMemo(() => countSidebarHidden(shown), [shown])
@@ -200,10 +207,10 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
   const serverViolations = useMemo(() => policyViolations(base), [base])
   const draftViolations = useMemo(() => policyViolations(shown), [shown])
   const dirty = !readOnly && changes.length > 0
-  const guard = useUnsavedChangesGuard(dirty, () => setDraft(base))
+  const guard = useUnsavedChangesGuard(dirty || pending, () => setDraft(base))
 
   function change(id: MenuId, visible: boolean) {
-    if (readOnly) return
+    if (readOnly || blocked) return
     setDraft((current) => setDraftPreference(current, id, visible))
     const entry = menuEntry(id)
     const affected = entry.children.filter((child) => draft[child.id]).length
@@ -222,6 +229,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
   }
 
   function restoreProtected() {
+    if (readOnly || blocked) return
     setDraft((current) => restoreProtectedInDraft(current))
     setAnnouncement('Módulos protegidos marcados como visíveis no rascunho. A configuração persistida não foi alterada.')
   }
@@ -232,8 +240,24 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
     setAnnouncement('Alterações não salvas descartadas: o rascunho voltou à configuração persistida.')
   }
 
+  function saveReviewed() {
+    if (readOnly || blocked || !MENU_VISIBILITY_WRITES_ENABLED) return
+    setReviewing(false)
+    void coordinator.submit(reference, draft)
+  }
+
+  function reviewCurrent() {
+    const current = save.readback
+    const intended = save.candidate?.body.visibility
+    if (!current || !coordinator.acknowledge()) return
+    setReference(current)
+    setDraft(save.decision === 'applied' ? current.map : intended ?? current.map)
+    setAnnouncement('Leitura atual adotada explicitamente. Revise novamente as diferenças antes de qualquer novo salvamento.')
+  }
+
   return (
     <>
+      {save.phase !== 'idle' ? <VisibilitySaveFeedback state={save} onReadback={() => { void coordinator.retryReadback() }} onReview={reviewCurrent} /> : null}
       {serverViolations.length ? (
         <section className={styles.violation} aria-labelledby="mv-violation-title" data-policy-violation={serverViolations.map((item) => item.id).join(' ')}>
           <Lock size={16} strokeWidth={1.9} aria-hidden="true" />
@@ -263,7 +287,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
 
       <div className={styles.workspaceWrap}>
         <div className={styles.workspace}>
-          <VisibilityControls base={base} draft={shown} onChange={change} onLockedAttempt={lockedAttempt} readOnly={readOnly} />
+          <VisibilityControls base={base} draft={shown} onChange={change} onLockedAttempt={lockedAttempt} readOnly={readOnly || blocked} />
 
           <div className={styles.side}>
             <section className={fin.card} aria-labelledby="mv-persisted-title" data-visibility-persisted data-saved={reference.saved}>
@@ -272,6 +296,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
               </h2>
               <p className={fin.cardSubtitle}>Lida do Control Plane.{readOnly ? '' : ' É o ponto de partida do rascunho.'}</p>
               <dl className={styles.facts}>
+                <div className={styles.fact}><dt>Versão de referência</dt><dd data-reference-version={reference.version}>{reference.version}</dd></div>
                 <div className={styles.fact}>
                   <dt>Situação</dt>
                   <dd data-persisted-status>
@@ -347,7 +372,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
                   <span>
                     <strong>Consulta sem rascunho</strong>
                     Seu perfil pode ver a configuração persistida e a prévia do menu lateral. Somente SUPER_ADMIN prepara alterações, e salvar
-                    continua indisponível para todos até a ativação da Etapa B.
+                    exige autorização do build e do Backend.
                   </span>
                 </p>
               </section>
@@ -378,8 +403,8 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
                 <p className={styles.pending} data-persistence-pending>
                   <Clock3 size={15} strokeWidth={1.8} aria-hidden="true" />
                   <span>
-                    <strong>Salvar e aplicar ainda não estão habilitados</strong>
-                    Leitura integrada. Aplicação e persistência aguardam validação das regras e autorização. Nada é enviado.
+                    <strong>{MENU_VISIBILITY_WRITES_ENABLED ? `Rascunho da versão ${reference.version}` : 'Salvar ainda não está habilitado'}</strong>
+                    {MENU_VISIBILITY_WRITES_ENABLED ? 'Salvar exige revisão. O resultado só é confirmado após GET; nunca há reenvio automático.' : 'Gravações desativadas neste build. Nada é enviado.'} Aplicação ao menu real permanece desativada.
                   </span>
                 </p>
               </section>
@@ -414,11 +439,11 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
             · não salvo
           </p>
           <div className={styles.barActions}>
-            <OutlineButton className={styles.barButton} onClick={() => setConfirmDiscard(true)} data-discard>
+            <OutlineButton className={styles.barButton} disabled={blocked} onClick={() => setConfirmDiscard(true)} data-discard>
               <RotateCcw size={14} strokeWidth={1.8} aria-hidden="true" />
               Descartar alterações não salvas
             </OutlineButton>
-            <PrimaryButton className={styles.barButton} onClick={() => setReviewing(true)} data-review>
+            <PrimaryButton className={styles.barButton} disabled={blocked} onClick={() => setReviewing(true)} data-review>
               <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
               Revisar alterações
             </PrimaryButton>
@@ -426,7 +451,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
         </section>
       ) : null}
 
-      {reviewing ? <VisibilityReviewDialog base={base} draft={draft} onClose={() => setReviewing(false)} /> : null}
+      {reviewing ? <VisibilityReviewDialog base={base} reference={reference} draft={draft} canSave={!readOnly && !blocked && MENU_VISIBILITY_WRITES_ENABLED} onSave={saveReviewed} onClose={() => setReviewing(false)} /> : null}
       {confirmDiscard ? (
         <DiscardVisibilityDialog
           base={base}
@@ -442,6 +467,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
           base={base}
           draft={draft}
           destination={guard.pending.destination}
+          attempted={blocked}
           onStay={guard.stay}
           onDiscard={guard.discardAndContinue}
         />

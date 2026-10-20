@@ -5,6 +5,7 @@ import { OutlineButton } from '../../components/ui/OutlineButton'
 import dialogStyles from '../whitelabel-settings/dialogs/SettingsDialogs.module.css'
 import { menuEntry, menuLabelWithParent } from './menuRegistry'
 import { buildUpdateCandidate } from './menuVisibilityUpdate'
+import type { MenuVisibilityConfig } from './menuVisibilityContract'
 import { effectConsequences, preferenceChanges, type VisibilityMap } from './visibilityModel'
 import { PROTECTED_EXPLANATION, PROTECTED_MENU_IDS } from './visibilityPolicy'
 import { resolveVisibility } from './visibilityResolver'
@@ -16,24 +17,29 @@ const word = (visible: boolean) => (visible ? 'Visível' : 'Oculto')
  * Change review against the PERSISTED configuration. Lists stored-preference
  * changes, the effective sidebar consequences (parent / child), the protected
  * modules (rules 1, 2), the resulting sidebar and the complete candidate map a
- * future Stage B PUT would carry (`buildUpdateCandidate`). The final action is
- * `aria-disabled`: saving is not enabled and nothing is sent — no PUT, no
- * storage, no change to the real navigation, no local updatedAt / updatedBy,
- * no Audit. A candidate that hides a protected module is reported invalid.
+ * guarded Stage B PUT carries (`buildUpdateCandidate`). Disabled by default;
+ * an enabled build still requires a valid reviewed candidate. Never applies
+ * the real navigation, invents metadata or writes Audit from the frontend.
  */
 export function VisibilityReviewDialog({
   base,
+  reference,
   draft,
   onClose,
+  onSave,
+  canSave = false,
 }: {
   /** Persisted configuration read from the Control Plane. */
   base: VisibilityMap
+  reference: MenuVisibilityConfig
   draft: VisibilityMap
   onClose: () => void
+  onSave?: () => void
+  canSave?: boolean
 }) {
   const backRef = useRef<HTMLButtonElement>(null)
   const pendingId = useId()
-  const candidate = buildUpdateCandidate(base, draft, 'edit')
+  const candidate = buildUpdateCandidate(reference, draft, 'edit')
   const changes = candidate.changes
   const consequences = effectConsequences(base, draft)
   const resolution = resolveVisibility(draft)
@@ -56,9 +62,10 @@ export function VisibilityReviewDialog({
           <button
             type="button"
             className={styles.pendingAction}
-            aria-disabled="true"
+            disabled={!canSave || !candidate.valid}
+            aria-disabled={!canSave || !candidate.valid}
             aria-describedby={pendingId}
-            onClick={(event) => event.preventDefault()}
+            onClick={() => { if (canSave && candidate.valid) onSave?.() }}
             data-pending-save
           >
             <Save size={15} strokeWidth={1.8} aria-hidden="true" />
@@ -158,16 +165,16 @@ export function VisibilityReviewDialog({
         ) : null}
 
         <details className={styles.payload}>
-          <summary>Mapa completo do rascunho (corpo previsto do PUT, não enviado)</summary>
+          <summary>Mapa completo do rascunho e versão de referência (corpo do PUT)</summary>
           <pre data-put-preview>{JSON.stringify(candidate.body, null, 2)}</pre>
         </details>
 
         <p id={pendingId} className={styles.pending} data-persistence-pending>
           <Clock3 size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Salvar ainda não está habilitado</strong>
-            Leitura integrada. Aplicação e persistência aguardam validação das regras e autorização. Nenhuma requisição de alteração é enviada e o
-            menu lateral real não muda; o rascunho continua nesta tela até ser descartado ou até a página ser recarregada.
+            <strong>{canSave ? `Salvar configuração global a partir da versão ${reference.version}` : 'Salvar ainda não está habilitado'}</strong>
+            {canSave ? 'Uma única solicitação será enviada, seguida de leitura autoritativa. Conflitos e resultados incertos exigem nova revisão; nunca há reenvio automático. ' : 'Gravações desativadas neste build. Nenhuma requisição de alteração é enviada. '}
+            O menu lateral real não muda. Auditoria é best-effort e o Backend ainda não oferece atualização atômica por versão.
             {protectedIssues.length ? ' Além disso, este mapa candidato não poderia ser salvo enquanto houver módulo protegido oculto.' : ''}
           </span>
         </p>
@@ -184,6 +191,7 @@ export function DiscardVisibilityDialog({
   onStay,
   onDiscard,
   fallbackFocus,
+  attempted = false,
 }: {
   base: VisibilityMap
   draft: VisibilityMap
@@ -192,13 +200,15 @@ export function DiscardVisibilityDialog({
   onStay: () => void
   onDiscard: () => void
   fallbackFocus?: () => HTMLElement | null
+  /** A dispatched write is not cancelled or rolled back by leaving the page. */
+  attempted?: boolean
 }) {
   const stayRef = useRef<HTMLButtonElement>(null)
   const changes = preferenceChanges(base, draft)
   return (
     <Dialog
       title="Descartar alterações de visibilidade?"
-      description={`Ao ${destination}, o rascunho volta à configuração persistida lida do Control Plane. Nada foi salvo.`}
+      description={attempted ? `Ao ${destination}, apenas o rascunho local é descartado. Uma tentativa já foi enviada: sair não cancela, desfaz nem repete a gravação. Confira a leitura ao voltar.` : `Ao ${destination}, o rascunho volta à configuração persistida lida do Control Plane. Nada foi salvo.`}
       icon={AlertTriangle}
       tone="warning"
       onClose={onStay}

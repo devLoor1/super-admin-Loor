@@ -24,17 +24,16 @@ import { mapFrom, type VisibilityMap } from './visibilityModel'
  *   `updatedAt` is the row's ISO timestamp and `updatedBy` the saving
  *   operator's Control Plane id (not a name or e-mail).
  *
- * The PUT exists in the Backend (SUPER_ADMIN only, complete map, unknown /
- * missing / non-boolean → 400, Audit `UPDATE_MENU_VISIBILITY`, same response
- * envelope) but it is NOT CALLED in Stage A: this module has no request code,
- * saving stays disabled and nothing is applied to the real navigation.
+ * Stage B source verified at 88b7bf7 (2026-10-20): version is required by this
+ * frontend; PUT has a separate default-off transport. Enforcement stays off.
+ * See docs/menu-visibility-stage-b-operational-v1.md for the non-atomic update risk.
  */
 
 export const MENU_VISIBILITY_CONTRACT = {
-  stage: 'A',
+  stage: 'B-operational',
   /** The persisted configuration is read from the Control Plane. */
   readIntegrated: true,
-  /** Stage B — not enabled: no PUT is ever sent. */
+  /** Shipped default only; the transport's build-time guard is the sole activation authority. */
   updateEnabled: false,
   /** Stage B — not enabled: sidebar, shortcuts, routes and landing ignore visibility. */
   enforcementEnabled: false,
@@ -56,6 +55,8 @@ export const MENU_VISIBILITY_REGISTRY_MISMATCH = 'MENU_VISIBILITY_REGISTRY_MISMA
 export type MenuVisibilityConfig = Readonly<{
   /** Stored preference of every approved ID, as returned (fresh frozen copy, never the response object). */
   map: VisibilityMap
+  /** Authoritative revision; never inferred from dates or equal visibility maps. */
+  version: number
   scope: 'global'
   /** ISO timestamp of the last save, or null when nothing was ever saved. */
   updatedAt: string | null
@@ -100,7 +101,7 @@ const safeToken = (key: string) => (/^[A-Za-z0-9_.:-]{1,48}$/.test(key) ? key : 
  */
 export function parseMenuVisibilityResponse(payload: unknown): MenuVisibilityConfig {
   const data = isRecord(payload) && isRecord(payload.data) ? payload.data : null
-  if (!data || data.scope !== 'global' || !isRecord(data.visibility)) throw malformed()
+  if (!data || data.scope !== 'global' || !isRecord(data.visibility) || !validVisibilityVersion(data.version)) throw malformed()
   const visibility = data.visibility
   for (const id of MENU_VISIBILITY_IDS) {
     if (!Object.prototype.hasOwnProperty.call(visibility, id)) {
@@ -124,6 +125,7 @@ export function parseMenuVisibilityResponse(payload: unknown): MenuVisibilityCon
 
   return Object.freeze({
     map: mapFrom((id) => visibility[id] as boolean),
+    version: data.version,
     scope: 'global',
     updatedAt,
     updatedBy,
@@ -132,13 +134,18 @@ export function parseMenuVisibilityResponse(payload: unknown): MenuVisibilityCon
   })
 }
 
-/** Body a future Stage B PUT would carry: the complete map in registry order. Shown for review, NEVER SENT. */
-export type MenuVisibilityPutBody = { visibility: Record<MenuId, boolean> }
+export function validVisibilityVersion(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
 
-export function putRequestPreview(map: VisibilityMap): MenuVisibilityPutBody {
+/** Complete replacement, not effective/sidebar values. Version belongs to the original reference. */
+export type MenuVisibilityPutBody = { visibility: Record<MenuId, boolean>; version: number }
+
+export function putRequestPreview(map: VisibilityMap, version: number): MenuVisibilityPutBody {
+  if (!validVisibilityVersion(version)) throw new TypeError('Invalid visibility version')
   const visibility = {} as Record<MenuId, boolean>
   for (const id of MENU_VISIBILITY_IDS) visibility[id] = map[id]
-  return { visibility }
+  return { visibility, version }
 }
 
 /* ---------- presentation of persisted metadata ---------- */
@@ -180,7 +187,7 @@ export type VisibilityErrorView = {
 }
 
 /**
- * Maps a GET failure (and, for Stage B review, a mocked PUT failure) to safe
+ * Maps a GET or guarded Stage B PUT failure to safe
  * copy — never a raw Backend message. 401 stays with the canonical session
  * layer (`authenticatedGet` ends the session); the view only names it. On
  * save, no response, a timeout, a 5xx or an unreadable answer does not prove
@@ -282,8 +289,8 @@ export function describeVisibilityError(error: unknown, operation: VisibilityOpe
   if (operation === 'save' && (error.status === 400 || error.status === 422)) {
     return {
       kind: 'invalid',
-      title: 'Configuração recusada pelo Control Plane',
-      description: 'O mapa de visibilidade enviado não foi aceito. Nenhuma alteração deve ser considerada aplicada.',
+      title: error.code === 'E_MENU_LOCKED' ? 'Módulo protegido não pode ser ocultado' : 'Configuração recusada pelo Control Plane',
+      description: 'O mapa enviado foi recusado. Dashboard e Configurações devem permanecer visíveis. Confira a leitura atual antes de revisar.',
       retryable: false,
       correlationId,
     }
@@ -292,7 +299,7 @@ export function describeVisibilityError(error: unknown, operation: VisibilityOpe
     return {
       kind: 'conflict',
       title: 'A configuração mudou desde a leitura',
-      description: 'Outra alteração foi registrada antes desta. Recarregue a configuração e revise o rascunho.',
+    description: 'Conflito de versão. A solicitação pode ter persistido antes do conflito: confira a leitura atual e revise explicitamente, sem reenviar automaticamente.',
       retryable: false,
       correlationId,
     }

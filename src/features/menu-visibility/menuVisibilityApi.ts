@@ -2,12 +2,12 @@ import { authenticatedGet } from '../../lib/apiClient'
 import { MENU_VISIBILITY_CONTRACT, parseMenuVisibilityResponse, type MenuVisibilityConfig } from './menuVisibilityContract'
 
 /*
- * Menu Visibility read — the ONLY request this module makes.
+ * Menu Visibility authoritative read (Stage A, reused for Stage B reconciliation).
  *
  * `GET /api/homolog/menu-visibility` through the canonical authenticated client
  * (Bearer, X-Correlation-ID, timeout, cancellation and central 401 handling all
- * live there). No query parameters (the endpoint ignores them), no write
- * request, no browser storage: the answer lives only in the page's memory.
+ * live there). No query parameters (the endpoint ignores them), no browser storage.
+ * Guarded writes live separately in menuVisibilityWriteClient.ts.
  */
 
 export type MenuVisibilityRead = MenuVisibilityConfig &

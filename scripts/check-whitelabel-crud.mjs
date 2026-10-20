@@ -479,6 +479,12 @@ await check('the Whitelabel read adapter/client stay GET-only; write methods are
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if (file.replaceAll('\\', '/').endsWith('src/lib/menuVisibilityWriteClient.ts')) {
+      assert.match(source, /method: 'PUT'/)
+      assert.match(source, /VITE_MENU_VISIBILITY_WRITES_ENABLED === 'true'/)
+      assert.equal(/method:\s*['"](POST|PATCH|DELETE)['"]/.test(source), false)
+      continue
+    }
     if (file.replaceAll('\\', '/').endsWith('src/lib/whitelabelWriteClient.ts')) {
       assert.match(source, /method: safe\.operation === 'create' \? 'POST' : 'PATCH'/)
       assert.equal(/method:\s*['"](PUT|DELETE)['"]/.test(source), false)

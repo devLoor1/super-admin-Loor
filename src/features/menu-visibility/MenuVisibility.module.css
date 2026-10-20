@@ -119,6 +119,24 @@
   color: #ecd8ae;
 }
 
+.saveFeedback {
+  grid-template-columns: minmax(0, 1fr);
+  overflow-wrap: anywhere;
+}
+
+.saveFeedback[data-save-decision='applied'] {
+  border-color: rgb(104 202 167 / 0.4);
+  background: rgb(80 172 141 / 0.09);
+  color: #bce8d7;
+}
+
+.saveFeedback .barButton {
+  height: auto;
+  min-width: 0;
+  min-height: 40px;
+  white-space: normal;
+}
+
 /* Source legend: persisted / draft / preview / real application (pending). */
 .legend {
   display: grid;
@@ -792,7 +810,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Final save action while saving is not enabled (Stage A): aria-disabled, focusable. */
+/* Default-disabled action; enabled only by the build-time operational gate. */
 .pendingAction {
   display: inline-flex;
   align-items: center;
@@ -812,6 +830,17 @@
 .pendingAction:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring-dark);
+}
+
+.pendingAction:not(:disabled) {
+  border-style: solid;
+  background: rgb(98 90 230 / 0.22);
+  color: #e4e0ff;
+  cursor: pointer;
+}
+
+.pendingAction:disabled {
+  cursor: not-allowed;
 }
 
 /* ---------- Narrow screens ---------- */

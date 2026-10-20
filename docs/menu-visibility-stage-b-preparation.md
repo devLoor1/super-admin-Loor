@@ -1,5 +1,12 @@
 # Menu Visibility — Stage B preparation
 
+> Historical preparation record. The versionless payload, absence of production
+> transport and map-only reconciliation described below are superseded by
+> [Stage B Operational V1](menu-visibility-stage-b-operational-v1.md), implemented
+> locally on 2026-10-20. Its real PUT transport is build-time gated OFF by default;
+> live activation and actual sidebar enforcement remain unauthorized/disabled.
+> The Product rules and original review evidence below remain historical evidence.
+
 Cloud implemented this unit from `dev` `627b1e0` in an isolated worktree (branch `work/menu-visibility-stage-b-preparation`, not pushed) and left it uncommitted for Codex review. It builds on Stage A ([`menu-visibility-read-integration-v1.md`](menu-visibility-read-integration-v1.md)), which stays unchanged in behavior: authoritative GET, strict adapter, draft, review, discard, and no write.
 
 > **STAGE B PRODUCT RULES: PREPARED.** The approved rules drive the management screen, the isolated preview, the review and the candidate payload.

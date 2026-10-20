@@ -18,10 +18,8 @@ import { setPreference, type VisibilityMap } from './visibilityModel'
  *   8. Child preferences are kept independently of their parent.
  *
  * The frontend applies these rules to the management draft and the isolated
- * preview only. The Backend does NOT enforce rules 1–2 yet (its PUT accepts
- * `dashboard: false` / `configuracoes: false`): server enforcement is a Stage B
- * activation requirement. A persisted value that breaks a rule is reported,
- * never silently rewritten.
+ * preview only. Backend 88b7bf7 also enforces protected IDs (E_MENU_LOCKED).
+ * A malformed authoritative value is still reported, never silently rewritten.
  */
 
 /** Rules 1, 2 and 6: modules that can never be hidden. */

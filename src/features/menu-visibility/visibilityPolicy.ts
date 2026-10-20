@@ -17,8 +17,8 @@ import { setPreference, type VisibilityMap } from './visibilityModel'
  *      FINANCIAL_ADMIN / COMPLIANCE_ADMIN have no access (Backend 403).
  *   8. Child preferences are kept independently of their parent.
  *
- * The frontend applies these rules to the management draft and the isolated
- * preview only. Backend 88b7bf7 also enforces protected IDs (E_MENU_LOCKED).
+ * The frontend applies these rules to the management draft, isolated preview
+ * and authoritative real sidebar. Backend 88b7bf7 also enforces protected IDs (E_MENU_LOCKED).
  * A malformed authoritative value is still reported, never silently rewritten.
  */
 

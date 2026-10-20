@@ -1,6 +1,8 @@
 import type { Ref } from 'react'
-import { Layers, X } from 'lucide-react'
-import { PRIMARY_NAV, UTILITY_NAV, type NavItem } from './navigation'
+import { CircleAlert, Layers, LoaderCircle, RotateCw, X } from 'lucide-react'
+import type { NavItem } from './navigation'
+import { useMenuVisibilityResource } from '../../features/menu-visibility/useVisibilitySource'
+import { sidebarNavigation } from '../../features/menu-visibility/sidebarVisibility'
 import { moduleUnavailable, usePrototypeNotice } from './prototypeNotice'
 import { GlassNavItem } from '../originkit/GlassNavItem'
 import styles from './Sidebar.module.css'
@@ -23,6 +25,9 @@ type SidebarProps = {
  * tooltips. Below 768px: off-canvas drawer controlled by the header menu button.
  */
 export function Sidebar({ activeId, activeSubId, subNavHrefs, open, onClose, closeButtonRef, sidebarRef }: SidebarProps) {
+  const { snapshot, reload } = useMenuVisibilityResource()
+  const navigation = sidebarNavigation(snapshot)
+  const fallback = navigation.mode === 'fallback'
   return (
     <aside
       ref={sidebarRef}
@@ -32,6 +37,7 @@ export function Sidebar({ activeId, activeSubId, subNavHrefs, open, onClose, clo
       role={open ? 'dialog' : undefined}
       aria-modal={open || undefined}
       aria-label="Super Admin"
+      data-sidebar-visibility={navigation.mode}
     >
       <SidebarBackdrop />
 
@@ -51,13 +57,21 @@ export function Sidebar({ activeId, activeSubId, subNavHrefs, open, onClose, clo
         </button>
       </div>
 
+      {navigation.mode !== 'loaded' ? (
+        <div className={styles.visibilityNotice} role="status" data-sidebar-visibility-notice>
+          {fallback ? <CircleAlert size={15} aria-hidden="true" /> : <LoaderCircle size={15} aria-hidden="true" />}
+          <span className={styles.visibilityText}>{fallback ? 'Visibilidade salva indisponível. Menu padrão; acesso às páginas mantido.' : navigation.mode === 'refreshing' ? 'Atualizando visibilidade; última leitura mantida.' : 'Carregando visibilidade. Dashboard e Configurações disponíveis.'}</span>
+          {fallback ? <button type="button" onClick={reload} className={styles.visibilityRetry} aria-label="Recarregar visibilidade do menu" title="Visibilidade salva indisponível — tentar leitura novamente"><RotateCw size={16} aria-hidden="true" /></button> : null}
+        </div>
+      ) : null}
+
       <nav className={styles.primary} aria-label="Navegação principal">
-        <NavList items={PRIMARY_NAV} activeId={activeId} activeSubId={activeSubId} subNavHrefs={subNavHrefs} onNavigate={onClose} />
+        <NavList items={navigation.primary} activeId={activeId} activeSubId={activeSubId} subNavHrefs={subNavHrefs} onNavigate={onClose} />
       </nav>
 
       <div className={styles.bottom}>
         <nav className={styles.utility} aria-label="Utilitários">
-          <NavList items={UTILITY_NAV} activeId={activeId} onNavigate={onClose} compact />
+          <NavList items={navigation.utility} activeId={activeId} onNavigate={onClose} compact />
         </nav>
 
         <div className={styles.footer}>
@@ -107,7 +121,7 @@ function NavList({
         )
 
         return (
-          <li key={item.id}>
+          <li key={item.id} data-sidebar-menu-id={item.id}>
             <GlassNavItem
               href={subNavHrefs?.[item.id] ?? item.href}
               active={active}
@@ -124,7 +138,7 @@ function NavList({
                   const ChildIcon = child.icon
                   const current = child.id === activeSubId
                   return (
-                    <li key={child.id}>
+                    <li key={child.id} data-sidebar-menu-id={child.id}>
                       <a
                         href={subNavHrefs?.[child.id] ?? child.href}
                         className={styles.subItem}

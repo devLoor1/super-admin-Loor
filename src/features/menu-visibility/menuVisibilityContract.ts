@@ -25,20 +25,20 @@ import { mapFrom, type VisibilityMap } from './visibilityModel'
  *   operator's Control Plane id (not a name or e-mail).
  *
  * Stage B source verified at 88b7bf7 (2026-10-20): version is required by this
- * frontend; PUT has a separate default-off transport. Enforcement stays off.
+ * frontend; PUT has a separate default-off transport. Stage C applies GETs to the sidebar only.
  * See docs/menu-visibility-stage-b-operational-v1.md for the non-atomic update risk.
  */
 
 export const MENU_VISIBILITY_CONTRACT = {
-  stage: 'B-operational',
+  stage: 'C-sidebar',
   /** The persisted configuration is read from the Control Plane. */
   readIntegrated: true,
   /** Shipped default only; the transport's build-time guard is the sole activation authority. */
   updateEnabled: false,
-  /** Stage B — not enabled: sidebar, shortcuts, routes and landing ignore visibility. */
-  enforcementEnabled: false,
-  /** Stage B preparation: approved Product rules applied to the draft and preview (visibilityPolicy.ts). */
-  productRules: 'prepared',
+  /** Stage C: sidebar presentation only; shortcuts, routes, landing and RBAC are unaffected. */
+  enforcementEnabled: true,
+  /** Same approved rules for the authoritative sidebar and draft preview. */
+  productRules: 'applied',
   environment: 'homolog',
   /** Path for the canonical authenticated client (base URL already ends in `/api`). */
   getPath: '/homolog/menu-visibility',

@@ -11,7 +11,7 @@ export function VisibilitySaveFeedback({ state, onReadback, onReview }: { state:
   return <section className={`${styles.violation} ${styles.saveFeedback}`} role="status" aria-live="polite" aria-busy={pending} data-save-phase={state.phase} data-save-decision={state.decision}>
     <div>
       <h2 className={styles.violationTitle}>{pending ? state.phase === 'saving' ? 'Salvando configuração global…' : 'Confirmando por leitura autoritativa…' : titles[state.decision ?? 'not-confirmed']}</h2>
-      <p>{pending ? 'Uma única tentativa está em andamento. Sair da página não cancela nem reenvia a gravação.' : state.decision === 'applied' ? 'Resposta do PUT e GET subsequente coincidem em mapa, versão e metadados. O menu lateral real permanece inalterado.' : 'O rascunho e sua versão original foram preservados. Mapas iguais, sozinhos, não provam que esta tentativa causou a atualização.'}</p>
+      <p>{pending ? 'Uma única tentativa está em andamento. Sair da página não cancela nem reenvia a gravação.' : state.decision === 'applied' ? 'Resposta do PUT e GET subsequente coincidem em mapa, versão e metadados. O menu lateral real foi atualizado pela leitura autoritativa compartilhada.' : 'O rascunho e sua versão original foram preservados. Mapas iguais, sozinhos, não provam que esta tentativa causou a atualização.'}</p>
       {view ? <p>{view.title}. {view.description}{view.correlationId ? ` Diagnóstico: ${view.correlationId}` : ''}</p> : null}
       {state.readError ? <p role="alert">Leitura de confirmação indisponível. {describeVisibilityError(state.readError, 'load').title}. Repetir a leitura não repete o PUT.</p> : null}
       {state.readback ? <>

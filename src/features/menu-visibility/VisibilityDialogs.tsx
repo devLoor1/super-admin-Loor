@@ -174,7 +174,7 @@ export function VisibilityReviewDialog({
           <span>
             <strong>{canSave ? `Salvar configuração global a partir da versão ${reference.version}` : 'Salvar ainda não está habilitado'}</strong>
             {canSave ? 'Uma única solicitação será enviada, seguida de leitura autoritativa. Conflitos e resultados incertos exigem nova revisão; nunca há reenvio automático. ' : 'Gravações desativadas neste build. Nenhuma requisição de alteração é enviada. '}
-            O menu lateral real não muda. Auditoria é best-effort e o Backend ainda não oferece atualização atômica por versão.
+              O menu lateral real acompanha o GET de confirmação, nunca o rascunho. Auditoria é best-effort e o Backend ainda não oferece atualização atômica por versão.
             {protectedIssues.length ? ' Além disso, este mapa candidato não poderia ser salvo enquanto houver módulo protegido oculto.' : ''}
           </span>
         </p>

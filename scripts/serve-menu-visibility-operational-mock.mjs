@@ -18,6 +18,12 @@ const server=createServer(async(req,res)=>{
   if(req.method==='GET'&&url.pathname==='/__mock/reset'){reset();send(200,{reset:true});return}
   if(req.method==='GET'&&url.pathname==='/__mock/mode'){mode=url.searchParams.get('value')||'success';role=url.searchParams.get('role')||'SUPER_ADMIN';send(200,{mode,role});return}
   if(req.method==='GET'&&url.pathname==='/__mock/state'){send(200,{config,mode,requests});return}
+  // Stage C varied sidebar fixtures. Loopback-only controls; never a real API.
+  if(req.method==='GET'&&url.pathname==='/__mock/config'){
+    const hidden=(url.searchParams.get('hidden')||'').split(',')
+    config={...config,visibility:Object.fromEntries(ids.map(id=>[id,!hidden.includes(id)]))}
+    send(200,{configured:true});return
+  }
   if(req.method==='GET'&&url.pathname==='/__mock/release'){release?.();release=null;send(200,{released:true});return}
   requests.push({method:req.method,path:url.pathname})
   const operator={id:role==='OTHER_ADMIN'?'synthetic-other':'synthetic-operator',name:'Synthetic QA',email:'qa@example.invalid',roles:[role==='OTHER_ADMIN'?'SUPER_ADMIN':role]}
@@ -25,6 +31,10 @@ const server=createServer(async(req,res)=>{
   if(req.method==='GET'&&url.pathname==='/api/auth/me'){send(200,operator);return}
   if(url.pathname==='/api/homolog/menu-visibility'){
     if(req.method==='GET'){
+      if(mode==='get-pending') await new Promise(r=>release=r)
+      if(mode==='get-error'){send(500,{code:'SYNTHETIC_GET_FAILURE'});return}
+      if(mode==='get-forbidden'){send(403,{code:'FORBIDDEN'});return}
+      if(mode==='get-malformed'){send(200,{data:{scope:'global'}});return}
       if(mode==='read-failed'&&config.version){send(503,{code:'SYNTHETIC_GET_FAILURE'});return}
       send(200,{data:config});return
     }

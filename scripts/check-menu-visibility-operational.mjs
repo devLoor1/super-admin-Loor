@@ -198,7 +198,7 @@ await check('acknowledgement by a different operator never confirms our attempt'
 })
 await check('shared shell, auth, GET transport and unrelated business modules byte-identical to approved baseline',()=>{
   const changed=execFileSync('git',['diff','--name-only','c5ecb5a','--','src'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)
-  assert.ok(changed.every(p=>p.startsWith('src/features/menu-visibility/') || p==='src/lib/menuVisibilityWriteClient.ts'))
+  assert.ok(changed.every(p=>p.startsWith('src/features/menu-visibility/') || ['src/lib/menuVisibilityWriteClient.ts','src/components/shell/Sidebar.tsx','src/components/shell/Sidebar.module.css'].includes(p)))
 })
 await check('literal default OFF and narrow transport; no runtime activation/enforcement',async()=>{
   const source=await readFile(resolve(root,'src/lib/menuVisibilityWriteClient.ts'),'utf8')

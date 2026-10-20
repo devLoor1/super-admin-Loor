@@ -31,7 +31,7 @@ import styles from './MenuVisibility.module.css'
  * `#/settings/menu-visibility` — Configurações › Visibilidade dos módulos.
  *
  * MENU VISIBILITY — version-aware read + guarded Stage B transport (default OFF).
- * REAL SIDEBAR ENFORCEMENT: NOT ENABLED.
+ * STAGE C: real sidebar follows the shared authoritative GET, never the draft.
  *
  * The persisted configuration comes from `GET /api/homolog/menu-visibility`
  * (canonical authenticated client) and becomes the reference. A SUPER_ADMIN
@@ -40,9 +40,9 @@ import styles from './MenuVisibility.module.css'
  * Configurações, and the isolated preview uses the pure resolver
  * (visibilityResolver.ts). SUPPORT_ADMIN / READ_ONLY see the configuration
  * read-only; FINANCIAL_ADMIN / COMPLIANCE_ADMIN get the Backend's 403. Writes use
- * an identity-bound in-memory attempt ledger, never browser storage. The real sidebar, shortcuts,
- * routes and post-login landing keep reading `navigation.ts` and ignore
- * visibility. Visibility is sidebar presentation, not authorization.
+ * an identity-bound in-memory attempt ledger, never browser storage. Only the
+ * sidebar filters `navigation.ts`; shortcuts, routes and post-login landing
+ * remain unchanged. Visibility is sidebar presentation, not authorization.
  */
 export function MenuVisibilityPage({ previa }: { previa?: string }) {
   const { ignored } = useMemo(() => parseVisibilityRoute({ previa }), [previa])
@@ -64,12 +64,12 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
           </span>
           Vale para todo o ambiente de homologação — não por Whitelabel, operador, perfil, sessão ou dispositivo.
         </p>
-        <p className={styles.stage} data-visibility-stage={MENU_VISIBILITY_CONTRACT.stage} data-stage-b="prepared">
+        <p className={styles.stage} data-visibility-stage={MENU_VISIBILITY_CONTRACT.stage}>
           <DatabaseZap size={15} strokeWidth={1.8} aria-hidden="true" />
           <span>
-            <strong>Leitura integrada ao Control Plane; regras de Produto da Etapa B aplicadas nesta tela.</strong>{' '}
+            <strong>Etapa C: configuração do Control Plane aplicada ao menu lateral real.</strong>{' '}
             {MENU_VISIBILITY_WRITES_ENABLED ? 'Gravação global habilitada neste build; exige revisão e leitura de confirmação. ' : 'Salvar está desativado neste build: o rascunho fica em memória. '}
-            A aplicação ao menu lateral real não está habilitada.
+            O rascunho só muda o menu após salvamento e leitura autoritativa.
           </span>
         </p>
         <p className={styles.access} data-access-mode={mode} data-expected-access={access}>
@@ -112,7 +112,7 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
           </div>
           <div className={styles.legendItem} data-source="enforcement">
             <dt>Aplicação real</dt>
-            <dd>Pendente. Quando habilitada, afetará só o menu lateral: rotas diretas, atalhos e links internos continuam.</dd>
+            <dd>Ativa só no menu lateral: rotas diretas, atalhos e links internos continuam disponíveis.</dd>
           </div>
         </dl>
         {ignored.length ? (
@@ -123,6 +123,10 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
         ) : null}
       </div>
 
+      {source.refreshError ? <>
+        <p className={styles.panelNote} role="alert">A atualização falhou. A referência anterior foi mantida nesta tela; o menu usa navegação padrão até uma nova leitura. Nenhuma preferência foi inventada.</p>
+        <LoadError error={source.refreshError} onRetry={source.reload} />
+      </> : null}
       {source.state.status === 'success' ? (
         <VisibilityEditor key={`${sessionKey}:${mode}`} reference={source.state.data} mode={mode} />
       ) : source.state.status === 'error' ? (
@@ -186,7 +190,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
   // The authoritative reference is captured once per mount: no later answer can replace it under a draft.
   const { coordinator, state: save } = useVisibilitySave()
   const [localReference, setReference] = useState(() => save.reference ?? loaded)
-  const reference = save.decision === 'applied' && save.readback ? save.readback : localReference
+  const reference = mode === 'read' ? loaded : save.decision === 'applied' && save.readback ? save.readback : localReference
   const base = reference.map
   // The draft is an independent map: edits never touch the reference (both maps are frozen).
   const [draft, setDraft] = useState(() => save.candidate?.body.visibility ?? base)
@@ -342,11 +346,11 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
                 </div>
               </dl>
               {persistedHidden > 0 ? (
-                <p className={styles.panelNote} data-tone="warning" data-persisted-not-applied>
+                <p className={styles.panelNote} data-tone="warning" data-persisted-sidebar>
                   <Info size={14} strokeWidth={1.9} aria-hidden="true" />
                   <span>
-                    A configuração persistida tira {persistedHidden} {persistedHidden === 1 ? 'módulo' : 'módulos'} do menu lateral, mas o menu lateral
-                    real ainda não aplica esta configuração.
+                    A referência persistida tira {persistedHidden} {persistedHidden === 1 ? 'módulo' : 'módulos'} do menu lateral.
+                    O menu real acompanha a última leitura autoritativa bem-sucedida; falhas de leitura são sinalizadas separadamente.
                   </span>
                 </p>
               ) : null}
@@ -404,7 +408,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
                   <Clock3 size={15} strokeWidth={1.8} aria-hidden="true" />
                   <span>
                     <strong>{MENU_VISIBILITY_WRITES_ENABLED ? `Rascunho da versão ${reference.version}` : 'Salvar ainda não está habilitado'}</strong>
-                    {MENU_VISIBILITY_WRITES_ENABLED ? 'Salvar exige revisão. O resultado só é confirmado após GET; nunca há reenvio automático.' : 'Gravações desativadas neste build. Nada é enviado.'} Aplicação ao menu real permanece desativada.
+                    {MENU_VISIBILITY_WRITES_ENABLED ? 'Salvar exige revisão. O resultado só é confirmado após GET; nunca há reenvio automático.' : 'Gravações desativadas neste build. Nada é enviado.'} O rascunho não altera o menu real.
                   </span>
                 </p>
               </section>
@@ -418,7 +422,7 @@ function VisibilityEditor({ reference: loaded, mode }: { reference: MenuVisibili
       <InfoNote>
         <strong>Visibilidade não é permissão.</strong> Ocultar um módulo apenas o retira do menu lateral: o acesso pela URL direta, os atalhos do
         Dashboard e os links internos continuam funcionando, e o Backend continua aplicando suas próprias verificações de acesso (RBAC). Dashboard e
-        Configurações ficam sempre visíveis. Nesta etapa, nem a configuração persistida nem o rascunho são aplicados ao menu lateral real.
+        Configurações ficam sempre visíveis. O menu real usa a leitura autoritativa; o rascunho é apenas uma prévia até ser salvo e relido.
       </InfoNote>
 
       <p className="visually-hidden" aria-live="polite" data-visibility-announcement>

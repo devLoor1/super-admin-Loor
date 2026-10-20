@@ -21,8 +21,8 @@ export function VisibilityPreview({ draft, subject = 'rascunho' }: { draft: Visi
         Prévia do menu lateral
       </h2>
       <p className={fin.cardSubtitle}>
-        Resultado efetivo {subject === 'rascunho' ? 'do rascunho' : 'da configuração persistida'} no menu lateral. Apenas uma prévia: o menu
-        lateral real não muda, e rotas diretas, atalhos e links internos continuam disponíveis.
+        Resultado efetivo {subject === 'rascunho' ? 'do rascunho' : 'da configuração persistida'} no menu lateral. Esta prévia não altera o menu
+        real: ele usa apenas a leitura autoritativa. Rotas diretas, atalhos e links internos continuam disponíveis.
       </p>
       <div className={styles.previewBox} role="group" aria-label={`Prévia do menu com ${subject === 'rascunho' ? 'o rascunho' : 'a configuração persistida'}`}>
         <PreviewList nodes={resolution.sidebar.primary} label="Prévia: navegação principal" resolution={resolution} />

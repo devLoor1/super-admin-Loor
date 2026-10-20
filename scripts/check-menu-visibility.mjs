@@ -8,12 +8,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
 // Menu Visibility Integration V1 — Stage A checks + Stage B PREPARATION checks (synthetic fixtures, no real network).
-// STAGE B PRODUCT RULES: PREPARED. STAGE B LIVE WRITE: NOT ENABLED. REAL SIDEBAR ENFORCEMENT: NOT ENABLED.
+// Stage C adds authoritative sidebar presentation; draft isolation and default-off writes remain covered.
 // AUTHORITATIVE CONFIGURATION READ: INTEGRATED. GLOBAL CONFIGURATION UPDATE: NOT ENABLED.
 // REAL NAVIGATION ENFORCEMENT: NOT ENABLED.
 // These checks fail if the GET adapter accepts a payload it should refuse, if any
 // unguarded write request becomes possible, if the draft leaks, if the
-// real sidebar / routes start reading visibility, or if
+// routes start reading visibility, the sidebar bypasses the shared GET, or if
 // the prototype `?previa=` override comes back.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(pathToFileURL(resolve(root, 'package.json')))
@@ -124,8 +124,8 @@ check(Object.isFrozen(registry.MENU_ENTRIES) && registry.MENU_ENTRIES.every((ent
 
 /* ---------- contract flags ---------- */
 const C = contract.MENU_VISIBILITY_CONTRACT
-check(C.stage === 'B-operational' && C.readIntegrated === true, 'Stage A authoritative read retained in Stage B operational')
-check(C.updateEnabled === false && C.enforcementEnabled === false, 'Stage A: update and real enforcement NOT enabled')
+check(C.stage === 'C-sidebar' && C.readIntegrated === true, 'Stage C retains authoritative read')
+check(C.updateEnabled === false && C.enforcementEnabled === true, 'Stage C sidebar active, write transport remains separately guarded')
 check(C.scope === 'global' && C.environment === 'homolog' && C.getPath === '/homolog/menu-visibility', 'Global homolog scope; GET path for the canonical client')
 check(C.getEndpoint === 'GET /api/homolog/menu-visibility' && C.putEndpoint === 'PUT /api/homolog/menu-visibility', 'Endpoints recorded as documentation strings')
 
@@ -415,7 +415,7 @@ for (const name of featureFiles) {
   check(!/\bmethod\s*:/.test(code), `${name}: no request method override (GET only)`)
   check(name === 'menuVisibilityApi.ts' ? /authenticatedGet\(/.test(code) : !/authenticatedGet/.test(code), `${name}: only the API module uses the canonical GET`)
   check(!/localStorage|sessionStorage|indexedDB|document\.cookie|caches\.|navigator\.storage/.test(code), `${name}: no browser storage`)
-  check(!/createContext|\.Provider\b/.test(code) && (!/useSyncExternalStore/.test(code) || name === 'useVisibilitySave.ts'), `${name}: no global context / store for the configuration or draft`)
+  check(!/createContext|\.Provider\b/.test(code) && (!/useSyncExternalStore/.test(code) || ['useVisibilitySave.ts', 'useVisibilitySource.ts'].includes(name)), `${name}: shared authoritative resource only; no global draft context`)
   check(!/^(let|var)\s/m.test(code) || name === 'useVisibilitySave.ts', `${name}: no module-level mutable singleton`)
   check(!/operation-companies/.test(code), `${name}: no Companies menu ID`)
   check(!/prototypeVisibility|prototypeInitialMap|previewSaveError|PREVIEW_LABEL/.test(code), `${name}: no prototype source or preview override`)
@@ -445,6 +445,7 @@ const allowedMentions = new Set([
   // request-model key of the single read
   'src/features/menu-visibility/useVisibilitySource.ts',
   'src/components/shell/navigation.ts',
+  'src/components/shell/Sidebar.tsx',
   'src/app/App.tsx',
 ])
 for (const file of await walk(resolve(root, 'src'))) {
@@ -452,7 +453,7 @@ for (const file of await walk(resolve(root, 'src'))) {
   const code = codeOnly(await readFile(file, 'utf8'), file)
   if (/menu-visibility/.test(code)) check(allowedMentions.has(rel), `${rel}: may mention menu-visibility only as a route or documented endpoint`)
   if (/homolog\/menu-visibility/.test(code)) check(['src/features/menu-visibility/menuVisibilityContract.ts','src/features/menu-visibility/menuVisibilityUpdate.ts','src/lib/menuVisibilityWriteClient.ts'].includes(rel), `${rel}: endpoint string only in the contract module`)
-  if (!rel.startsWith('src/features/menu-visibility/') && rel !== 'src/app/App.tsx' && rel !== 'src/lib/menuVisibilityWriteClient.ts') {
+  if (!rel.startsWith('src/features/menu-visibility/') && !['src/app/App.tsx', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx'].includes(rel)) {
     check(!/from\s+['"][^'"]*menu-visibility\//.test(code), `${rel}: nothing outside the page route imports Menu Visibility state`)
   }
   check(!code.includes('operation-companies'), `${rel}: no operation-companies ID`)
@@ -460,7 +461,7 @@ for (const file of await walk(resolve(root, 'src'))) {
 const apiModule = codeOnly(await readFile(resolve(featureDir, 'menuVisibilityApi.ts'), 'utf8'), 'api.ts')
 check(/authenticatedGet\(MENU_VISIBILITY_CONTRACT\.getPath, \{ signal \}\)/.test(apiModule), 'GET through the canonical client with the caller signal and no query')
 const hook = codeOnly(await readFile(resolve(featureDir, 'useVisibilitySource.ts'), 'utf8'), 'hook.ts')
-check(hook.includes('useRemote(`menu-visibility:${sessionKey}`, fetchMenuVisibility)'), 'Source uses shared abortable request model keyed by canonical session identity, not a data override')
+check(hook.includes('createVisibilityResource(fetchMenuVisibility)') && hook.includes('subscribeSession') && hook.includes('menuVisibilitySessionKey()'), 'One abortable authoritative resource keyed by canonical session identity')
 
 // The real shell, routes, landing and shared clients are byte-identical to the baseline.
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
@@ -472,7 +473,7 @@ const statusOnlyApi = (await readFile(resolve(root, 'src/lib/api.ts'), 'utf8')).
 check(statusOnlyApi === git('show', BASELINE + ':src/lib/api.ts').replaceAll('\r\n', '\n'), 'Only the exact opt-in write success-status check may change the shared API transport')
 for (const path of ['src/components', 'src/lib', 'src/features/dashboard', 'src/app/useUnsavedChangesGuard.ts', 'src/app/prototypeNavigation.ts', 'src/app/routeQuery.ts', 'src/app/useUrlSearchDraft.ts']) {
   const changed = git('diff', '--name-only', BASELINE, '--', path).trim().split('\n').filter(Boolean)
-    .filter(file => !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts'].includes(file))
+    .filter(file => !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(file))
   check(changed.length === 0, `${path}: unchanged except the explicit Operational V1 write client and status verification; shell/auth/GET client stay protected`)
 }
 // Finance Read Integration V1 (a later, reviewed unit) changed ONLY the Finance Read route
@@ -646,7 +647,7 @@ const REVIEWED_OPERATION_READ_FILES = new Set([
   'shared/EntrepreneurViews.module.css', 'shared/EntrepreneurViews.tsx', 'shared/coreIds.ts', 'shared/readErrors.ts',
 ].map((path) => `src/features/operation/${path}`))
 const outsideMenuVisibility = (path) =>
-  !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path)
+  !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
 check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read and Opportunities + Companies Read source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)
@@ -739,7 +740,7 @@ const persistedControls = render(h(VisibilityControls, { base: saved.map, draft:
 const switchTag = (html, id) => (html.match(new RegExp(`<button[^>]*data-visibility-switch="${id}"[^>]*>`)) ?? [''])[0]
 check(switchTag(persistedControls, 'dashboard').includes('aria-checked="false"') && switchTag(persistedControls, 'contas').includes('aria-checked="true"'), 'Persisted dashboard=false renders unchecked; contas=true checked')
 check(!persistedControls.includes('data-changed'), 'Untouched draft equal to the persisted configuration shows no change')
-check(render(h(Sidebar, sidebarProps)) === sidebarBefore, 'A persisted configuration with hidden modules leaves the actual Sidebar identical (no enforcement)')
+check(render(h(Sidebar, sidebarProps)) === sidebarBefore, 'Unrelated map objects cannot bypass the shared authoritative resource')
 
 /* ---------- rendered page states (stubbed source; frame stubbed) ---------- */
 globalThis.__menuPageState = { state: { status: 'loading' }, reload() {} }
@@ -779,7 +780,7 @@ check(neverSaved.includes('data-saved="false"') && neverSaved.includes('Nunca sa
 check(neverSaved.includes('data-updated-by=""') || neverSaved.includes('—'), 'Never saved: no invented operator')
 const savedHtml = renderPage({ status: 'success', data: { ...saved, readAt: '2026-10-15T18:31:00.000Z' } })
 check(savedHtml.includes('data-saved="true"') && savedHtml.includes('dateTime="2026-10-15T18:30:12.345Z"') && savedHtml.includes('ckqaop00000000000000000001'), 'Saved: Backend metadata shown as returned')
-check(savedHtml.includes('data-persisted-not-applied') && savedHtml.includes('não aplica'), 'Persisted hidden modules are stated as not applied to the real sidebar')
+check(savedHtml.includes('data-persisted-sidebar') && savedHtml.includes('leitura autoritativa'), 'Persisted sidebar effect is explained separately from the draft')
 check((savedHtml.match(/role="switch"/g) ?? []).length === 23 && !savedHtml.includes('data-draft-bar'), 'Initial draft equals the persisted configuration (no change bar)')
 const driftHtml = renderPage({ status: 'success', data: { ...unknown, readAt: '2026-10-15T18:00:00.000Z' } })
 check(driftHtml.includes('data-unknown-ids="3"') && !driftHtml.includes('data-menu-id="operation-companies"'), 'Unknown IDs: drift notice, never rendered as items')
@@ -1003,8 +1004,8 @@ const editableReadOnly = await mutant('VisibilityControls.tsx', '{readOnly ? (',
 check(render(h(editableReadOnly.VisibilityControls, { base: live.map, reference: live, draft: live.map, readOnly: true, onChange() {} })).includes('role="switch"'), 'Mutation detected: read-only controls made editable')
 const sendableCandidate = await mutant('menuVisibilityUpdate.ts', 'sendable: false,', 'sendable: true,')
 check(sendableCandidate.buildUpdateCandidate(live, candidateDraft, 'edit').sendable !== false, 'Mutation detected: preparation candidate made sendable')
-const plantedSidebarImport = `import {resolveVisibility as resolveMenu} from '../../features/menu-visibility/visibilityResolver';\n${sidebarSource}\nexport const plantedResolver = resolveMenu;`
-check(/from\s+['"][^'"]*menu-visibility\//.test(codeOnly(plantedSidebarImport, 'Sidebar.tsx')), 'Mutation detected: resolver imported outside its isolated feature')
+const plantedSidebarImport = `import {authenticatedMenuVisibilityWrite as save} from '../../lib/menuVisibilityWriteClient';\n${sidebarSource}\nexport const plantedWrite = save;`
+check(/menuVisibilityWriteClient/.test(codeOnly(plantedSidebarImport, 'Sidebar.tsx')), 'Mutation detected: sidebar imported a write transport instead of shared read state')
 const unfocusableLocked = await mutant('VisibilityControls.tsx', 'aria-disabled="true"', 'disabled')
 const unfocusableHtml = render(h(unfocusableLocked.VisibilityControls, { base: live.map, reference: live, draft: live.map, onChange() {} }))
 check(/\sdisabled=""/.test(switchTag(unfocusableHtml, 'dashboard')), 'Mutation detected: locked explanation removed from keyboard focus order')
@@ -1154,4 +1155,4 @@ delete globalThis.__menuGuardTest
 check(allRequests.length > 0 && allRequests.every((request) => request.method === 'GET'), 'Every request made during the checks was a GET (zero PUT / PATCH / POST / DELETE)')
 check(allRequests.every((request) => request.url.endsWith('/homolog/menu-visibility')), 'Only the menu-visibility read was requested')
 
-console.log(`Menu Visibility — Stage A + Stage B Product regression: ${checks} passed (synthetic fixtures; GET only; mocked PUT outcomes; no storage; save and enforcement not enabled)`)
+console.log(`Menu Visibility — Stage A/B regression + Stage C boundary: ${checks} passed (synthetic fixtures; GET only; mocked PUT outcomes; no storage; default-off writes, sidebar read integration)`)

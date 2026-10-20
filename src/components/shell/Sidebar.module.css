@@ -78,6 +78,39 @@
   display: none;
 }
 
+.visibilityNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 8px;
+  color: var(--text-on-dark-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+.visibilityNotice > svg { flex: none; margin-top: 1px; }
+.visibilityText { min-width: 0; overflow-wrap: anywhere; }
+.visibilityRetry {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-on-dark);
+  cursor: pointer;
+}
+.visibilityRetry:focus-visible { outline: 2px solid var(--color-accent-glow); outline-offset: 2px; }
+@media (min-width: 768px) and (max-width: 1199px) {
+  .visibilityNotice { flex-wrap: wrap; justify-content: center; padding: 4px; }
+  .visibilityText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+
 @media (max-width: 1599px) {
   .brandText {
     letter-spacing: 0.2em;

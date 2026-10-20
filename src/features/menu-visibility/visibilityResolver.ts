@@ -3,16 +3,16 @@ import { effectiveState, type VisibilityMap } from './visibilityModel'
 import { isProtectedMenuId, policyViolations, VISIBILITY_SCOPE, type PolicyViolation } from './visibilityPolicy'
 
 /*
- * Menu Visibility — pure SIDEBAR visibility resolver (Stage B preparation).
+ * Menu Visibility — pure SIDEBAR visibility resolver (Stage B rules, Stage C integration).
  *
  * Input: a map of stored preferences (a persisted reference or a draft).
  * Output: per approved ID, the stored preference, whether it would appear in
  * the sidebar, why not, and protected-module policy violations.
  *
  * No API calls, routing, redirects, permission checks, browser storage or DOM
- * access. It is used by the management preview and the checks only: it is
- * NOT wired to the real sidebar, route resolver, login landing, dashboard
- * shortcuts or contextual links (VISIBILITY_SCOPE — rules 4 and 5).
+ * access. Used by the management preview and real sidebar, never by the route
+ * resolver, login landing, dashboard shortcuts or contextual links
+ * (VISIBILITY_SCOPE — rules 4 and 5).
  *
  * Rules applied:
  * - hierarchy comes from the real navigation (`menuRegistry` ← `navigation.ts`);

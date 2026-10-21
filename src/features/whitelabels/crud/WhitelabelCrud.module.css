@@ -379,6 +379,27 @@
 }
 
 /* ---------- Detail actions menu ---------- */
+.lifecycleConfirmation {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.lifecycleCheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.lifecycleCheck input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent-primary, #8b5cf6);
+}
 
 .menuRoot {
   position: relative;

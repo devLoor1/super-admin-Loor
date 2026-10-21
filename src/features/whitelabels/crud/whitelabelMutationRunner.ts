@@ -1,11 +1,12 @@
 import { ApiError } from '../../../lib/api'
 import type { WhitelabelRecord } from '../whitelabelApi'
-import type { WhitelabelCommand } from './whitelabelCommands'
+import { isLifecycleCommand, type WhitelabelCommand } from './whitelabelCommands'
 import {
   interpretMutationResult,
   isCommandStale,
   reconcileCreateReadback,
   reconcileNameReadback,
+  reconcileLifecycleReadback,
   type MutationOutcome,
   type MutationTransportResult,
   type ReadbackResult,
@@ -115,9 +116,14 @@ export function createWhitelabelMutationRunner(ports: Readonly<{ transport: Muta
     } catch (error) {
       result = { ok: false, error }
     }
+    if (!current(key, gen)) { if (inFlight === key) inFlight = null; return slot(key) }
+    const outcome = interpretMutationResult(command, result)
+    set(key, { phase: 'settled', attempt, command, outcome })
+    // Lifecycle never refreshes from the write response. Hold the shared lock through GET.
+    if (isLifecycleCommand(command) && (outcome.state === 'confirmed' || outcome.state === 'uncertain')) {
+      try { return await verify(key) } finally { if (inFlight === key) inFlight = null }
+    }
     if (inFlight === key) inFlight = null
-    if (!current(key, gen)) return slot(key)
-    set(key, { phase: 'settled', attempt, command, outcome: interpretMutationResult(command, result) })
     return slot(key)
   }
 
@@ -154,6 +160,36 @@ export function createWhitelabelMutationRunner(ports: Readonly<{ transport: Muta
     return send(key, gen, attempt, command)
   }
 
+    /**
+     * Authoritative read-back after an uncertain (or failed-check) outcome.
+     * A newer call supersedes an older one still running.
+     */
+    async function verify(key: SlotKey): Promise<SlotState> {
+      const state = slot(key)
+      const incomplete = state.phase === 'verified' && state.readback === 'inconclusive'
+      if (disposed || (!incomplete && state.phase !== 'settled' && state.phase !== 'verifying' && state.phase !== 'verify-failed')) return state
+      if (state.outcome.state !== 'uncertain' && !(isLifecycleCommand(state.command) && state.outcome.state === 'confirmed')) return state
+      const { attempt, command, outcome } = state
+      const gen = bump(key)
+      set(key, { phase: 'verifying', attempt, command, outcome })
+      try {
+        if (command.operation === 'create') {
+          const search = await ports.readback.findBySlug(command.body.slug)
+          if (!current(key, gen)) return slot(key)
+          const { result, record } = reconcileCreateReadback(command, search)
+          set(key, { phase: 'verified', attempt, command, outcome, readback: result, record })
+        } else {
+          const record = await ports.readback.getWhitelabel(command.targetId)
+          if (!current(key, gen)) return slot(key)
+          set(key, { phase: 'verified', attempt, command, outcome, readback: isLifecycleCommand(command) ? reconcileLifecycleReadback(command, record) : reconcileNameReadback(command, record), record })
+        }
+      } catch (error) {
+        if (!current(key, gen)) return slot(key)
+        set(key, { phase: 'verify-failed', attempt, command, outcome, error })
+      }
+      return slot(key)
+    }
+
   return {
     /** Starts one attempt, or refuses it. Never retries. */
     submit(command: WhitelabelCommand): SubmitResult {
@@ -168,36 +204,7 @@ export function createWhitelabelMutationRunner(ports: Readonly<{ transport: Muta
       const gen = bump(key)
       return Object.freeze({ accepted: true, attempt, slot: key, done: run(key, gen, attempt, command) })
     },
-
-    /**
-     * Authoritative read-back after an uncertain (or failed-check) outcome.
-     * A newer call supersedes an older one still running.
-     */
-    async verify(key: SlotKey): Promise<SlotState> {
-      const state = slot(key)
-      const incomplete = state.phase === 'verified' && state.readback === 'inconclusive'
-      if (disposed || (!incomplete && state.phase !== 'settled' && state.phase !== 'verifying' && state.phase !== 'verify-failed')) return state
-      if (state.outcome.state !== 'uncertain') return state
-      const { attempt, command, outcome } = state
-      const gen = bump(key)
-      set(key, { phase: 'verifying', attempt, command, outcome })
-      try {
-        if (command.operation === 'create') {
-          const search = await ports.readback.findBySlug(command.body.slug)
-          if (!current(key, gen)) return slot(key)
-          const { result, record } = reconcileCreateReadback(command, search)
-          set(key, { phase: 'verified', attempt, command, outcome, readback: result, record })
-        } else {
-          const record = await ports.readback.getWhitelabel(command.targetId)
-          if (!current(key, gen)) return slot(key)
-          set(key, { phase: 'verified', attempt, command, outcome, readback: reconcileNameReadback(command, record), record })
-        }
-      } catch (error) {
-        if (!current(key, gen)) return slot(key)
-        set(key, { phase: 'verify-failed', attempt, command, outcome, error })
-      }
-      return slot(key)
-    },
+    verify,
 
     /** A fresh review cannot erase uncertainty: verify first. Never reset an in-flight write. */
     reset(key: SlotKey) {

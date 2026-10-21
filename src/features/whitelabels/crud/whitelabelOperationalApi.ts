@@ -1,4 +1,5 @@
 import { getSessionVersion } from '../../../lib/authSession'
+import { ApiError } from '../../../lib/api'
 import { getWhitelabel, listWhitelabels, type WhitelabelRecord } from '../whitelabelApi'
 import { authenticatedWhitelabelWrite } from '../../../lib/whitelabelWriteClient'
 import { createWhitelabelMutationRunner } from './whitelabelMutationRunner'
@@ -34,7 +35,12 @@ export function getWhitelabelOperationalRunner() {
         try { return { ok: true, body: await authenticatedWhitelabelWrite(command, version) } }
         catch (error) { return { ok: false, error } }
       },
-      readback: { getWhitelabel, findBySlug: findWhitelabelBySlug },
+      readback: { getWhitelabel: async id => {
+        if (getSessionVersion() !== version) throw new ApiError(0, {}, { kind: 'network' })
+        const record = await getWhitelabel(id)
+        if (getSessionVersion() !== version) throw new ApiError(0, {}, { kind: 'network' })
+        return record
+      }, findBySlug: findWhitelabelBySlug },
     }) }
   }
   return coordinator.runner

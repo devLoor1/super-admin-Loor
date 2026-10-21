@@ -1,12 +1,12 @@
 import { ApiError, apiRequest } from './api'
 import { getAccessToken, getOperator, getSessionVersion, handleUnauthorized } from './authSession'
-import { WHITELABEL_WRITES_ENABLED, whitelabelWriteAccess } from '../features/whitelabels/crud/whitelabelMutationContract'
-import { buildCreateCommand, buildNameUpdateCommand, type WhitelabelCommand } from '../features/whitelabels/crud/whitelabelCommands'
+import { WHITELABEL_WRITES_ENABLED, WHITELABEL_LIFECYCLE_ENABLED, whitelabelWriteAccess } from '../features/whitelabels/crud/whitelabelMutationContract'
+import { buildCreateCommand, buildNameUpdateCommand, buildLifecycleCommand, isLifecycleCommand, type WhitelabelCommand } from '../features/whitelabels/crud/whitelabelCommands'
 
 /** Narrow write surface over the canonical transport/session. No arbitrary route or HTTP method. */
 export async function authenticatedWhitelabelWrite(command: WhitelabelCommand, expectedSessionVersion: number) {
   // This check precedes token access and every possible fetch, including direct/non-UI calls.
-  if (!WHITELABEL_WRITES_ENABLED) throw new ApiError(403, { code: 'WHITELABEL_WRITES_DISABLED' })
+  if (isLifecycleCommand(command) ? !WHITELABEL_LIFECYCLE_ENABLED : !WHITELABEL_WRITES_ENABLED) throw new ApiError(403, { code: 'WHITELABEL_WRITES_DISABLED' })
   const sessionVersion = getSessionVersion()
   const token = getAccessToken()
   if (!token || sessionVersion !== expectedSessionVersion) throw new ApiError(401, { code: 'NO_SESSION' })
@@ -20,13 +20,19 @@ export async function authenticatedWhitelabelWrite(command: WhitelabelCommand, e
           id: command.targetId, name: command.baseline.name, updatedAt: command.baseline.updatedAt,
           slug: command.baseline.slug, baseUrl: command.baseline.baseUrl,
         }, draft: command.body })
-      : null
+      : isLifecycleCommand(command)
+        ? buildLifecycleCommand({ selectedId: command.targetId, record: { ...command.baseline, id: command.targetId }, operation: command.operation })
+        : null
   if (!built?.ok) throw new ApiError(400, { code: 'INVALID_WHITELABEL_COMMAND' })
   const safe = built.command
+  const lifecycle = isLifecycleCommand(safe)
+  const path = safe.operation === 'create' ? '/whitelabels'
+    : lifecycle && safe.operation !== 'logical-delete' ? `/whitelabels/${encodeURIComponent(safe.targetId)}/${safe.operation}`
+      : `/whitelabels/${encodeURIComponent(safe.targetId)}`
   try {
-    const body = await apiRequest<unknown>(safe.operation === 'create' ? '/whitelabels' : `/whitelabels/${encodeURIComponent(safe.targetId)}`, {
-      method: safe.operation === 'create' ? 'POST' : 'PATCH',
-      body: safe.body,
+    const body = await apiRequest<unknown>(path, {
+      method: safe.operation === 'create' ? 'POST' : safe.operation === 'logical-delete' ? 'DELETE' : 'PATCH',
+      ...(!lifecycle ? { body: safe.body } : {}),
       token,
       timeoutMs: 20_000,
       successStatus: safe.operation === 'create' ? 201 : 200,

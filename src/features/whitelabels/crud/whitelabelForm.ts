@@ -213,7 +213,7 @@ export function readOnlyFacts(record: WhitelabelRecord): ReadOnlyFact[] {
       note: 'Somente leitura: alterar a URL base afeta a resolução do tenant e os links enviados; exige autorização separada',
       identity: true,
     },
-    { key: 'status', label: 'Status', value: record.status === 'active' ? 'Ativo' : 'Inativo', note: 'Ativação e desativação não estão disponíveis' },
+    { key: 'status', label: 'Status', value: record.status === 'active' ? 'Ativo' : 'Inativo', note: 'Ciclo de vida gerenciado separadamente; não enviado nesta edição' },
     { key: 'domain', label: 'Domínio', value: record.domain, note: 'Derivado pelo Control Plane' },
     { key: 'createdAt', label: 'Criado em', value: formatWhitelabelDate(record.createdAt, true), note: 'Imutável' },
     { key: 'updatedAt', label: 'Última atualização', value: formatWhitelabelDate(record.updatedAt, true), note: 'Definida pelo Backend' },

@@ -2,7 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { WhitelabelRecord } from '../whitelabelApi'
 import { getWhitelabelOperationalRunner } from './whitelabelOperationalApi'
 import { describeMutationOutcome, describeReadback } from './whitelabelMutationOutcome'
-import type { WhitelabelCommand } from './whitelabelCommands'
+import { isLifecycleCommand, type WhitelabelCommand } from './whitelabelCommands'
 import type { SlotKey } from './whitelabelMutationRunner'
 
 export function useWhitelabelMutation(key: SlotKey, onConfirmed?: (record: WhitelabelRecord) => void) {
@@ -10,7 +10,7 @@ export function useWhitelabelMutation(key: SlotKey, onConfirmed?: (record: White
   const state = useSyncExternalStore(runner.subscribe, () => runner.view(key), () => runner.view(key))
   const refreshed = useRef<number | null>(null)
   useEffect(() => {
-    const record = state.phase === 'settled' && state.outcome.state === 'confirmed' ? state.outcome.record
+    const record = state.phase === 'settled' && state.outcome.state === 'confirmed' && !isLifecycleCommand(state.command) ? state.outcome.record
       : state.phase === 'verified' && state.readback === 'applied' ? state.record : null
     if (record && 'attempt' in state && refreshed.current !== state.attempt) {
       refreshed.current = state.attempt

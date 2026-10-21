@@ -1,28 +1,30 @@
 /*
  * Whitelabel Operational V1 — contract and build-time activation boundary.
  *
- * Real Create/name-only transports are implemented behind a default-OFF guard.
- * Nest 88b7bf7 contract/controller/DTOs were inspected; only a live GET was
- * performed. No production write has been exercised or authorized here.
+ * Create/name-only and Lifecycle have independent, exact-true build guards.
+ * Backend SUPER_ADMIN guards remain authoritative. Lifecycle DELETE is the
+ * deactivation alias, not physical deletion or universal access revocation.
  *
  *   POST   /api/whitelabels                  { name, slug, baseUrl }   SUPER_ADMIN   → prepared (create review)
  *   PATCH  /api/whitelabels/:id              { name }                  SUPER_ADMIN   → prepared (name-only edit review)
- *   PATCH  /api/whitelabels/:id/activate     —                         SUPER_ADMIN   → NOT offered
- *   PATCH  /api/whitelabels/:id/deactivate   —                         SUPER_ADMIN   → NOT offered
- *   DELETE /api/whitelabels/:id              alias of deactivate       SUPER_ADMIN   → NOT offered
+ *   PATCH  /api/whitelabels/:id/activate     —                         SUPER_ADMIN   → lifecycle guard
+ *   PATCH  /api/whitelabels/:id/deactivate   —                         SUPER_ADMIN   → lifecycle guard
+ *   DELETE /api/whitelabels/:id              alias of deactivate       SUPER_ADMIN   → lifecycle guard
  *
  * Enabling a live write requires separate controlled activation authorization.
  */
 
-export type WhitelabelMutationOperation = 'create' | 'update-name'
-export type WhitelabelAction = WhitelabelMutationOperation | 'lifecycle'
+export type LifecycleOperation = 'activate' | 'deactivate' | 'logical-delete'
+export type WhitelabelMutationOperation = 'create' | 'update-name' | LifecycleOperation
+export type WhitelabelAction = 'create' | 'update-name' | 'lifecycle'
 
 export type MutationAvailability = Readonly<{ available: boolean; pendingLabel: string; reason: string }>
 
 /** Build-time only. Missing, false or any other value fails closed; no URL/storage override. */
 export const WHITELABEL_WRITES_ENABLED = import.meta.env.VITE_WHITELABEL_WRITES_ENABLED === 'true'
+export const WHITELABEL_LIFECYCLE_ENABLED = import.meta.env.VITE_WHITELABEL_LIFECYCLE_ENABLED === 'true'
 
-/** Default configuration disables every write, including for SUPER_ADMIN. Lifecycle stays off. */
+/** Default configuration disables every write, including for SUPER_ADMIN. */
 export const WHITELABEL_MUTATIONS: Readonly<Record<WhitelabelAction, MutationAvailability>> = Object.freeze({
   create: Object.freeze({
     available: WHITELABEL_WRITES_ENABLED,
@@ -35,10 +37,10 @@ export const WHITELABEL_MUTATIONS: Readonly<Record<WhitelabelAction, MutationAva
     reason: 'O envio da alteração de nome ainda não foi autorizado para o Control Plane.',
   }),
   lifecycle: Object.freeze({
-    available: false,
-    pendingLabel: 'Ativação e desativação indisponíveis.',
+    available: WHITELABEL_LIFECYCLE_ENABLED,
+    pendingLabel: 'Ciclo de vida aguardando liberação da integração.',
     reason:
-      'Os efeitos da desativação no tenant (cadastro, recuperação de senha e Whitelabel padrão) ainda exigem validação do ambiente e decisões de Produto.',
+      'Ativar, desativar e excluir logicamente exigem a liberação específica do ciclo de vida. Exclusão lógica apenas torna o registro inativo; não remove dados.',
   }),
 })
 

@@ -305,7 +305,7 @@ await check('edit: slug and URL base are read-only facts with the tenant-resolut
     assert.match(fact.note, /Somente leitura: alterar .* afeta a resolução do tenant/)
     assert.match(fact.note, /autorização separada/)
   }
-  assert.match(facts.find((item) => item.key === 'status').note, /não estão disponíveis/)
+  assert.match(facts.find((item) => item.key === 'status').note, /gerenciado separadamente; não enviado/)
 })
 
 /* ---------- availability, roles, blockers ---------- */
@@ -313,7 +313,7 @@ await check('every Whitelabel write is unavailable — for every role, SUPER_ADM
   for (const action of ['create', 'update-name', 'lifecycle']) assert.equal(contract.WHITELABEL_MUTATIONS[action].available, false, action)
   assert.equal(contract.WHITELABEL_MUTATIONS.create.pendingLabel, 'Criação aguardando liberação da integração.')
   assert.equal(contract.WHITELABEL_MUTATIONS['update-name'].pendingLabel, 'Edição aguardando liberação da integração.')
-  assert.match(contract.WHITELABEL_MUTATIONS.lifecycle.reason, /desativação/)
+  assert.match(contract.WHITELABEL_MUTATIONS.lifecycle.reason, /inativo/)
   assert.ok(Object.isFrozen(contract.WHITELABEL_MUTATIONS))
 })
 await check('role-aware presentation: only SUPER_ADMIN gets the review flows; unknown sessions get none', async () => {
@@ -423,8 +423,8 @@ await check('read-back reconciliation: applied / not-applied / diverged, exact s
 /* ---------- source boundaries: no request code, no production transport ---------- */
 const wlDir = resolve(root, 'src/features/whitelabels')
 const crudFiles = (await readdir(resolve(wlDir, 'crud'))).filter((name) => /\.tsx?$/.test(name)).sort()
-await check('crud module: the expected files only (lifecycle dialog and the shared create/edit form removed)', async () => {
-  assert.deepEqual(crudFiles, ['MutationStates.tsx', 'OperationalMutationState.tsx', 'WhitelabelActionsMenu.tsx', 'WhitelabelCreateDialog.tsx', 'WhitelabelNameEditDialog.tsx',
+await check('crud module: explicit reviewed files, including independently guarded lifecycle dialog', async () => {
+  assert.deepEqual(crudFiles, ['MutationStates.tsx', 'OperationalMutationState.tsx', 'WhitelabelActionsMenu.tsx', 'WhitelabelCreateDialog.tsx', 'WhitelabelLifecycleDialog.tsx', 'WhitelabelNameEditDialog.tsx',
     'useWhitelabelMutation.ts', 'whitelabelCommands.ts', 'whitelabelForm.ts', 'whitelabelMutationContract.ts', 'whitelabelMutationOutcome.ts', 'whitelabelMutationRunner.ts', 'whitelabelOperationalApi.ts'])
 })
 const crudSources = Object.fromEntries(await Promise.all(crudFiles.map(async (name) => [name, await readFile(resolve(wlDir, 'crud', name), 'utf8')])))
@@ -463,14 +463,14 @@ await check('final commit buttons are aria-disabled pending buttons, never submi
     assert.match(crudSources[name], /useWhitelabelMutation/)
   }
 })
-await check('lifecycle: activate / deactivate / DELETE have no dialog and no executable handler', async () => {
+await check('lifecycle: separate default-off flag and guarded menu/page handlers', async () => {
   const menu = crudSources['WhitelabelActionsMenu.tsx']
-  const lifecycle = menu.slice(menu.indexOf('data-menu-lifecycle') - 400, menu.indexOf('data-menu-lifecycle') + 200)
-  assert.match(lifecycle, /aria-disabled="true"/)
-  assert.equal(/onClick/.test(lifecycle), false)
-  assert.equal(/onLifecycle|onDeactivate|onActivate|onDelete/.test(menu), false)
+  assert.match(menu, /access === 'super-admin' && WHITELABEL_MUTATIONS.lifecycle.available && !!onLifecycle/)
+  assert.match(menu, /if \(lifecycleAllowed\)/)
+  assert.match(crudSources['whitelabelMutationContract.ts'], /VITE_WHITELABEL_LIFECYCLE_ENABLED === 'true'/)
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
-  assert.equal(/Lifecycle|lifecycle/.test(page), false)
+  assert.match(page, /if \(!WHITELABEL_LIFECYCLE_ENABLED \|\| writeAccess !== 'super-admin'\) return/)
+  assert.match(page, /<WhitelabelLifecycleDialog/)
 })
 await check('the Whitelabel read adapter/client stay GET-only; write methods are confined to login and the guarded client', async () => {
   const api = await readFile(resolve(wlDir, 'whitelabelApi.ts'), 'utf8')
@@ -486,7 +486,8 @@ await check('the Whitelabel read adapter/client stay GET-only; write methods are
       continue
     }
     if (file.replaceAll('\\', '/').endsWith('src/lib/whitelabelWriteClient.ts')) {
-      assert.match(source, /method: safe\.operation === 'create' \? 'POST' : 'PATCH'/)
+      assert.match(source, /method: safe\.operation === 'create' \? 'POST' : safe\.operation === 'logical-delete' \? 'DELETE' : 'PATCH'/)
+      assert.match(source, /isLifecycleCommand\(command\) \? !WHITELABEL_LIFECYCLE_ENABLED : !WHITELABEL_WRITES_ENABLED/)
       assert.equal(/method:\s*['"](PUT|DELETE)['"]/.test(source), false)
       continue
     }
@@ -507,8 +508,8 @@ await check('page wiring: dialogs get the selected authoritative record; no list
 })
 await check('page identity safety: switching selection discards the open edit; edits open only for the loaded selected ID', async () => {
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
-  assert.match(page, /if \(dialog\?\.kind === 'edit' && dialog\.record\.id !== selectedId\) \{\s*setDialog\(null\)/)
-  assert.match(page, /A edição do nome foi descartada porque outro Whitelabel foi selecionado/)
+  assert.match(page, /if \(dialog && dialog.kind !== 'create' && dialog\.record\.id !== selectedId\) \{\s*setDialog\(null\)/)
+  assert.match(page, /A revisão foi fechada porque outro Whitelabel foi selecionado/)
   assert.match(page, /if \(writeAccess !== 'super-admin'\) return\s+if \(record\.id !== selectedId \|\| loadedDetail\?\.id !== record\.id\) \{\s+notify\([^)]*\)\s+return/)
   assert.match(page, /setDialog\(\{ kind: 'edit', record: loadedDetail, sessionVersion: getSessionVersion\(\) \}\)/, 'the authoritative detail and session, not a transition copy')
 })
@@ -744,8 +745,8 @@ for (const access of ['super-admin', 'read-only', 'unknown']) {
     const tree = h.render()
     const lifecycle = findElement(tree, element => element.props?.['data-menu-lifecycle'])
     assert.equal(lifecycle.props['data-menu-lifecycle'], 'deactivate')
-    assert.equal(lifecycle.props['aria-disabled'], 'true')
-    assert.equal(lifecycle.props.onClick, undefined, 'no executable lifecycle handler')
+    assert.equal(lifecycle.props['aria-disabled'], true)
+    lifecycle.props.onClick() // no callback/flag: remains inert, including SUPER_ADMIN
     assert.match(textOf(lifecycle), /Desativar Whitelabel/)
     assert.equal(findElement(lifecycle, element => element.props?.id === lifecycle.props['aria-describedby'])?.props['aria-hidden'], 'true')
     const edit = findElement(tree, element => element.props?.['data-menu-edit'])

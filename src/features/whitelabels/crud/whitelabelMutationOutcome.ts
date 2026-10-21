@@ -1,6 +1,6 @@
 import { ApiError } from '../../../lib/api'
 import { parseWhitelabel, type WhitelabelRecord } from '../whitelabelApi'
-import type { CreateWhitelabelCommand, UpdateWhitelabelNameCommand, WhitelabelCommand } from './whitelabelCommands'
+import { isLifecycleCommand, type LifecycleCommand, type CreateWhitelabelCommand, type UpdateWhitelabelNameCommand, type WhitelabelCommand } from './whitelabelCommands'
 import { FIELD_LABELS, tidyName, type CreateFieldKey } from './whitelabelForm'
 import type { WhitelabelMutationOperation } from './whitelabelMutationContract'
 
@@ -47,7 +47,7 @@ const FIELD_IN_MESSAGE = /(?:^|, )(name|slug|baseUrl) /g
 function fieldsFrom(error: ApiError, operation: WhitelabelMutationOperation): CreateFieldKey[] {
   const found = new Set<CreateFieldKey>()
   for (const match of error.message.matchAll(FIELD_IN_MESSAGE)) found.add(match[1] as CreateFieldKey)
-  const allowed: readonly CreateFieldKey[] = operation === 'create' ? ['name', 'slug', 'baseUrl'] : ['name']
+  const allowed: readonly CreateFieldKey[] = operation === 'create' ? ['name', 'slug', 'baseUrl'] : operation === 'update-name' ? ['name'] : []
   return allowed.filter((key) => found.has(key))
 }
 
@@ -57,6 +57,8 @@ function identityMatches(command: WhitelabelCommand, record: WhitelabelRecord) {
   if (command.operation === 'create') {
     return record.slug === command.body.slug && tidyName(record.name) === command.body.name && record.baseUrl === command.body.baseUrl
   }
+  if (isLifecycleCommand(command)) return record.id === command.targetId && record.name === command.baseline.name
+    && record.slug === command.baseline.slug && record.baseUrl === command.baseline.baseUrl && record.status === command.expectedStatus
   return record.id === command.targetId && tidyName(record.name) === command.body.name
     && record.slug === command.baseline.slug && record.baseUrl === command.baseline.baseUrl
 }
@@ -80,7 +82,13 @@ export function interpretMutationResult(command: WhitelabelCommand, result: Muta
       && 'id' in result.body.data && Number.isSafeInteger(result.body.data.id) && Number(result.body.data.id) > 0
       && record?.status === 'active'
     )
-    if (record && identityMatches(command, record) && createStateValid) {
+    const lifecycleStateValid = !isLifecycleCommand(command) || (
+      typeof result.body === 'object' && result.body !== null && 'data' in result.body
+      && typeof result.body.data === 'object' && result.body.data !== null
+      && 'isActive' in result.body.data && result.body.data.isActive === (command.expectedStatus === 'active')
+      && 'status' in result.body.data && result.body.data.status === command.expectedStatus
+    )
+    if (record && identityMatches(command, record) && createStateValid && lifecycleStateValid) {
       return Object.freeze({ ...base, targetId: record.id, state: 'confirmed', record })
     }
     return Object.freeze({ ...base, state: 'uncertain', cause: 'unverified-response', status: 200, next: 'authoritative-readback' })
@@ -109,7 +117,7 @@ export function interpretMutationResult(command: WhitelabelCommand, result: Muta
     fields = fieldsFrom(error, command.operation)
   } else if (status === 401) reason = 'session'
   else if (status === 403) reason = 'forbidden'
-  else if (status === 404 && command.operation === 'update-name') reason = 'not-found'
+  else if (status === 404 && command.operation !== 'create') reason = 'not-found'
   else if ((status === 409 || status === 422) && command.operation === 'create' && code === 'E_SLUG_TAKEN') {
     reason = 'slug-taken'
     fields = ['slug']
@@ -156,9 +164,15 @@ export function reconcileNameReadback(command: UpdateWhitelabelNameCommand, reco
 }
 
 /** Pre-submit freshness: the authoritative record still matches what the edit started from. */
-export function isCommandStale(command: UpdateWhitelabelNameCommand, latest: WhitelabelRecord) {
+export function isCommandStale(command: UpdateWhitelabelNameCommand | LifecycleCommand, latest: WhitelabelRecord) {
   return latest.id !== command.targetId || latest.name !== command.baseline.name || latest.updatedAt !== command.baseline.updatedAt
     || latest.slug !== command.baseline.slug || latest.baseUrl !== command.baseline.baseUrl
+    || (isLifecycleCommand(command) && latest.status !== command.baseline.status)
+}
+
+export function reconcileLifecycleReadback(command: LifecycleCommand, record: WhitelabelRecord): ReadbackResult {
+  if (record.id !== command.targetId || record.name !== command.baseline.name || record.slug !== command.baseline.slug || record.baseUrl !== command.baseline.baseUrl) return 'diverged'
+  return record.status === command.expectedStatus ? 'applied' : record.status === command.baseline.status ? 'not-applied' : 'diverged'
 }
 
 /* ---------- presentation (safe copy only; raw Backend text is never shown) ---------- */
@@ -191,6 +205,18 @@ const UNCERTAIN_CAUSE: Record<UncertainCause, string> = {
 export function describeMutationOutcome(outcome: MutationOutcome): MutationOutcomeView {
   const create = outcome.operation === 'create'
   const common = { state: outcome.state, correlationId: outcome.correlationId, fields: [] as readonly CreateFieldKey[] }
+  if (outcome.operation !== 'create' && outcome.operation !== 'update-name') {
+    const action = outcome.operation === 'activate' ? 'Ativação' : outcome.operation === 'deactivate' ? 'Desativação' : 'Exclusão lógica'
+    return Object.freeze({ ...common, tone: outcome.state === 'rejected' ? 'danger' : 'warning',
+      title: outcome.state === 'confirmed' ? `${action}: resposta recebida; conferência necessária` : outcome.state === 'stale' ? 'Dados desatualizados — nada enviado' : outcome.state === 'rejected' ? `${action} recusada` : `${action}: resultado não confirmado`,
+      description: outcome.state === 'confirmed' ? 'A resposta corresponde ao registro solicitado. Aguarde o GET para confirmar o estado persistido.'
+        : outcome.state === 'uncertain' ? `${UNCERTAIN_CAUSE[outcome.cause]} O status pode ter mudado; não repita a ação.`
+          : outcome.state === 'stale' ? 'A identidade ou o estado mudou após a revisão. Feche e reabra a ação a partir dos dados atuais.'
+            : `Solicitação não aceita (HTTP ${outcome.status}). Nenhuma repetição automática será feita.`,
+      next: outcome.state === 'uncertain' || outcome.state === 'confirmed' ? 'Confira somente por leitura no Control Plane.' : 'Confira sessão, permissão e dados atuais antes de uma nova revisão.',
+      allowsResubmit: outcome.state === 'rejected' && ['validation', 'rate-limited'].includes(outcome.reason),
+    })
+  }
   switch (outcome.state) {
     case 'confirmed':
       return Object.freeze({
@@ -307,6 +333,16 @@ function rejectedCopy(outcome: Extract<MutationOutcome, { state: 'rejected' }>, 
 export type ReadbackView = Readonly<{ tone: OutcomeTone; title: string; description: string; allowsResubmit: boolean }>
 
 export function describeReadback(operation: WhitelabelMutationOperation, result: ReadbackResult): ReadbackView {
+  if (operation !== 'create' && operation !== 'update-name') {
+    return Object.freeze({ tone: result === 'applied' ? 'success' : result === 'diverged' ? 'danger' : 'warning',
+      title: result === 'applied' ? 'Estado solicitado confirmado por GET' : result === 'not-applied' ? 'Estado anterior encontrado por GET' : 'Conferência exige revisão',
+      description: result === 'applied'
+        ? 'A leitura autoritativa mostra o estado solicitado e a identidade preservada. Não reenvie. Após resposta incerta, o GET comprova o estado atual, não a autoria da alteração.'
+        : result === 'not-applied' ? 'O GET ainda mostra o estado anterior. Confira o registro e faça uma nova revisão explícita; não há repetição automática.'
+          : 'Não foi possível conciliar a identidade e o estado esperados. Não reenvie; confira o registro atual.',
+      allowsResubmit: result === 'not-applied',
+    })
+  }
   if (result === 'found') {
     return Object.freeze({
       tone: 'warning',

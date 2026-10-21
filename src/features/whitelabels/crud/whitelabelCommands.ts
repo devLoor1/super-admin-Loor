@@ -1,5 +1,6 @@
 import { isServerWhitelabelId, type WhitelabelRecord } from '../whitelabelApi'
 import { nameChange, nameError, normalizeCreateDraft, validateCreate, type CreateDraft, type CreateErrors, type NameDraft } from './whitelabelForm'
+import type { LifecycleOperation } from './whitelabelMutationContract'
 
 /*
  * Pure command builders for the two prepared Whitelabel writes.
@@ -33,7 +34,33 @@ export type UpdateWhitelabelNameCommand = Readonly<{
   body: UpdateWhitelabelNameBody
 }>
 
-export type WhitelabelCommand = CreateWhitelabelCommand | UpdateWhitelabelNameCommand
+export type LifecycleCommand = Readonly<{
+  operation: LifecycleOperation
+  route: string
+  targetId: string
+  baseline: Readonly<Pick<WhitelabelRecord, 'name' | 'slug' | 'baseUrl' | 'updatedAt' | 'status'>>
+  expectedStatus: WhitelabelRecord['status']
+}>
+
+export type WhitelabelCommand = CreateWhitelabelCommand | UpdateWhitelabelNameCommand | LifecycleCommand
+
+export const isLifecycleCommand = (command: WhitelabelCommand): command is LifecycleCommand =>
+  command.operation === 'activate' || command.operation === 'deactivate' || command.operation === 'logical-delete'
+
+/** No payload or caller-supplied route/method. DELETE is the Backend's deactivation alias. */
+export function buildLifecycleCommand(input: Readonly<{ selectedId: string | null; record: Pick<WhitelabelRecord, 'id' | 'name' | 'slug' | 'baseUrl' | 'updatedAt' | 'status'>; operation: LifecycleOperation }>):
+  Readonly<{ ok: true; command: LifecycleCommand }> | Readonly<{ ok: false; reason: 'invalid-target' | 'target-mismatch' | 'invalid-operation' | 'state-mismatch' }> {
+  const { record, selectedId, operation } = input
+  if (!/^[1-9]\d{0,17}$/.test(record.id)) return Object.freeze({ ok: false, reason: 'invalid-target' })
+  if (selectedId !== record.id) return Object.freeze({ ok: false, reason: 'target-mismatch' })
+  if (!['activate', 'deactivate', 'logical-delete'].includes(operation)) return Object.freeze({ ok: false, reason: 'invalid-operation' })
+  if (record.status !== (operation === 'activate' ? 'inactive' : 'active')) return Object.freeze({ ok: false, reason: 'state-mismatch' })
+  return Object.freeze({ ok: true, command: Object.freeze({ operation, targetId: record.id,
+    route: operation === 'logical-delete' ? `DELETE /api/whitelabels/${record.id}` : `PATCH /api/whitelabels/${record.id}/${operation}`,
+    baseline: Object.freeze({ name: record.name, slug: record.slug, baseUrl: record.baseUrl, updatedAt: record.updatedAt, status: record.status }),
+    expectedStatus: operation === 'activate' ? 'active' : 'inactive',
+  }) })
+}
 
 export type CreateCommandResult =
   | Readonly<{ ok: true; command: CreateWhitelabelCommand }>

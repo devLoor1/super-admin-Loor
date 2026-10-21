@@ -9,7 +9,7 @@ reset()
 const server=createServer(async(req,res)=>{
   res.setHeader('Access-Control-Allow-Origin','*')
   res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type, X-Correlation-ID')
-  res.setHeader('Access-Control-Allow-Methods','GET, POST, PATCH, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods','GET, POST, PATCH, DELETE, OPTIONS')
   res.setHeader('Content-Type','application/json')
   const url=new URL(req.url,'http://127.0.0.1:4319')
   const send=(status,body)=>{res.statusCode=status;res.end(JSON.stringify(body))}
@@ -18,6 +18,7 @@ const server=createServer(async(req,res)=>{
   if(url.pathname==='/__mock/mode') {mode=url.searchParams.get('value')||'success';roles=mode==='read-only'?['READ_ONLY']:['SUPER_ADMIN'];send(200,{mode});return}
   if(url.pathname==='/__mock/state'){send(200,{mode,requests,rows:rows.map(r=>({id:r.id,name:r.name,slug:r.slug,isActive:r.isActive}))});return}
   requests.push({method:req.method,path:url.pathname})
+  if(req.method==='POST'&&url.pathname==='/api/auth/login'){send(200,{accessToken:'synthetic-only',tokenType:'Bearer',operator:{id:'mock-operator',name:'Mock Operator',email:'qa@example.invalid',roles}});return}
   if(req.method==='GET'&&url.pathname==='/api/auth/me'){send(200,{id:'mock-operator',name:'Mock Operator',email:'qa@example.invalid',roles});return}
   if(req.method==='GET'&&url.pathname==='/api/whitelabels'){
     const search=url.searchParams.get('search')?.toLowerCase()||''
@@ -26,6 +27,17 @@ const server=createServer(async(req,res)=>{
     send(200,{data:filtered.slice((page-1)*perPage,page*perPage),meta:{page,perPage,total:filtered.length,lastPage:Math.max(1,Math.ceil(filtered.length/perPage))}});return
   }
   const detail=/^\/api\/whitelabels\/(\d+)$/.exec(url.pathname)
+  const lifecycle=/^\/api\/whitelabels\/(\d+)\/(activate|deactivate)$/.exec(url.pathname)
+  if((req.method==='PATCH'&&lifecycle)||(req.method==='DELETE'&&detail)){
+    let body='';for await(const chunk of req)body+=chunk
+    if(body){send(400,{code:'UNEXPECTED_BODY'});return}
+    if(!roles.includes('SUPER_ADMIN')||mode==='forbidden'){send(403,{code:'FORBIDDEN'});return}
+    const row=rows.find(r=>String(r.id)===(lifecycle?.[1]??detail[1]))
+    if(!row){send(404,{code:'E_WHITELABEL_NOT_FOUND'});return}
+    row.isActive=lifecycle?.[2]==='activate';row.status=row.isActive?'active':'inactive';row.updatedAt=new Date().toISOString()
+    if(mode==='uncertain'){send(503,{code:'MOCK_RESPONSE_LOST'});return}
+    send(200,{data:row});return
+  }
   if(req.method==='GET'&&detail){const row=rows.find(r=>String(r.id)===detail[1]);send(row?200:404,row||{code:'E_WHITELABEL_NOT_FOUND'});return}
   if((req.method==='POST'&&url.pathname==='/api/whitelabels')||(req.method==='PATCH'&&detail)){
     let text='';for await(const chunk of req)text+=chunk

@@ -10,7 +10,8 @@ import { describeApiError } from '../../lib/apiErrors'
 import { getSessionVersion, useSessionOperator } from '../../lib/authSession'
 import { WhitelabelCreateDialog } from './crud/WhitelabelCreateDialog'
 import { WhitelabelNameEditDialog } from './crud/WhitelabelNameEditDialog'
-import { WRITE_ACCESS_NOTE, whitelabelWriteAccess } from './crud/whitelabelMutationContract'
+import { WhitelabelLifecycleDialog } from './crud/WhitelabelLifecycleDialog'
+import { WRITE_ACCESS_NOTE, whitelabelWriteAccess, WHITELABEL_LIFECYCLE_ENABLED, type LifecycleOperation } from './crud/whitelabelMutationContract'
 import { WhitelabelDetailPanel, WhitelabelDetailStatus } from './WhitelabelDetailPanel'
 import { WhitelabelListPanel, type Sort } from './WhitelabelListPanel'
 import { DotMatrixBackground } from './visuals/DotMatrixBackground'
@@ -39,8 +40,8 @@ type WhitelabelsPageProps = {
  *
  * Operational V1 reuses the review dialogs for Create/name-only PATCH.
  * Real transport is default-OFF and SUPER_ADMIN-only; confirmed operations
- * refresh through GET, without optimistic list/detail changes. Activation,
- * deactivation, DELETE and tenant identity updates remain unavailable.
+ * refresh through GET, without optimistic list/detail changes. Lifecycle
+ * uses a separate guard; slug and base URL updates remain unavailable.
  */
 export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT, routeKey = '', ...params }: WhitelabelsPageProps) {
   return (
@@ -60,7 +61,7 @@ const SUMMARY: { id: string; label: string; icon: LucideIcon; tone: Tone }[] = [
 const MOBILE_QUERY = '(max-width: 767px)'
 
 /** The edit dialog keeps the authoritative record it opened with; its ID must stay the selected one. */
-type CrudDialog = ({ kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord }) & { sessionVersion: number } | null
+type CrudDialog = ({ kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord } | { kind: 'lifecycle'; record: WhitelabelRecord; operation: LifecycleOperation }) & { sessionVersion: number } | null
 const SEARCH_DEBOUNCE_MS = 400
 
 function sortRows(rows: WhitelabelRecord[], sort: Sort) {
@@ -201,9 +202,9 @@ function WhitelabelsContent({
   // selection moves (Back / Forward, a link), that draft is discarded during
   // this render — it is never carried over to, shown for, or submitted
   // against the newly selected record (React: adjusting state on a prop change).
-  if (dialog?.kind === 'edit' && dialog.record.id !== selectedId) {
+  if (dialog && dialog.kind !== 'create' && dialog.record.id !== selectedId) {
     setDialog(null)
-    setCrudAnnouncement('A edição do nome foi descartada porque outro Whitelabel foi selecionado.')
+    setCrudAnnouncement('A revisão foi fechada porque outro Whitelabel foi selecionado. Resultados de solicitações continuam vinculados ao alvo original.')
   }
 
   function openCreate() {
@@ -224,6 +225,12 @@ function WhitelabelsContent({
     }
     setCrudAnnouncement('')
     setDialog({ kind: 'edit', record: loadedDetail, sessionVersion: getSessionVersion() })
+  }
+  function openLifecycle(record: WhitelabelRecord, operation: LifecycleOperation) {
+    if (!WHITELABEL_LIFECYCLE_ENABLED || writeAccess !== 'super-admin') return
+    if (record.id !== selectedId || loadedDetail?.id !== record.id) return
+    setCrudAnnouncement('')
+    setDialog({ kind: 'lifecycle', record: loadedDetail, operation, sessionVersion: getSessionVersion() })
   }
   function mutationConfirmed(record: WhitelabelRecord) {
     list.reload()
@@ -261,7 +268,7 @@ function WhitelabelsContent({
   let detailAnnouncement: string
   if (detail.state.status === 'success') {
     detailPanel = (
-      <WhitelabelDetailPanel whitelabel={detail.state.data} access={writeAccess} onEditName={openEditName} onDisplay={onDetailDisplay} />
+      <WhitelabelDetailPanel whitelabel={detail.state.data} access={writeAccess} onEditName={openEditName} onLifecycle={openLifecycle} onDisplay={onDetailDisplay} />
     )
     detailAnnouncement = `Detalhes de ${detail.state.data.name} em exibição.`
   } else if (detailError?.notFound && selectedId) {
@@ -355,6 +362,9 @@ function WhitelabelsContent({
           onInspectRecord={mutationConfirmed}
           fallbackFocus={focusDetailActions}
         />
+      ) : writeAccess === 'super-admin' && WHITELABEL_LIFECYCLE_ENABLED && dialog?.kind === 'lifecycle' && dialog.record.id === selectedId ? (
+        <WhitelabelLifecycleDialog key={`${dialog.record.id}:${dialog.operation}`} record={dialog.record} selectedId={selectedId} operation={dialog.operation}
+          onClose={() => setDialog(null)} onConfirmed={mutationConfirmed} onInspectRecord={mutationConfirmed} fallbackFocus={focusDetailActions} />
       ) : null}
     </div>
   )

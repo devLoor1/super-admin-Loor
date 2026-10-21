@@ -27,7 +27,7 @@ import { EntityAvatar } from '../../components/ui/EntityAvatar'
 import { DetailTransition } from '../../components/ui/DetailTransition'
 import type { ApiErrorView } from '../../lib/apiErrors'
 import { WhitelabelActionsMenu } from './crud/WhitelabelActionsMenu'
-import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess } from './crud/whitelabelMutationContract'
+import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess, type LifecycleOperation } from './crud/whitelabelMutationContract'
 import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from './whitelabelApi'
 import styles from './WhitelabelDetailPanel.module.css'
 
@@ -72,25 +72,27 @@ const ID_PREFIX = 'wl-detail'
  * The accessible region stays mounted during selection transitions.
  *
  * Whitelabel CRUD Safe Preparation V1: "Editar nome" (SUPER_ADMIN) opens the
- * name-only review (`crud/`); activation / deactivation are shown disabled.
+ * name-only review (`crud/`); lifecycle has its own guarded confirmation.
  * The record shown here is never changed by those flows.
  */
 export function WhitelabelDetailPanel({
   whitelabel,
   access,
   onEditName,
+  onLifecycle,
   onDisplay,
 }: {
   whitelabel: WhitelabelRecord
   /** Role-aware presentation only; the Backend guard is the authority. */
   access: WhitelabelWriteAccess
   onEditName: (record: WhitelabelRecord) => void
+  onLifecycle?: (record: WhitelabelRecord, operation: LifecycleOperation) => void
   /** Called once a selected identity is displayed (focus handoff to its actions). */
   onDisplay?: (id: string) => void
 }) {
   return (
     <DetailTransition item={whitelabel} className={styles.panel} onDisplay={onDisplay}>
-      {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} access={access} onEditName={onEditName} />}
+      {(displayed) => <DetailContents key={displayed.id} whitelabel={displayed} access={access} onEditName={onEditName} onLifecycle={onLifecycle} />}
     </DetailTransition>
   )
 }
@@ -184,10 +186,12 @@ function DetailContents({
   whitelabel,
   access,
   onEditName,
+  onLifecycle,
 }: {
   whitelabel: WhitelabelRecord
   access: WhitelabelWriteAccess
   onEditName: (record: WhitelabelRecord) => void
+  onLifecycle?: (record: WhitelabelRecord, operation: LifecycleOperation) => void
 }) {
   const notify = usePrototypeNotice()
   const [tab, setTab] = useState<DetailTab>('overview')
@@ -226,6 +230,7 @@ function DetailContents({
           access={access}
           triggerClassName={styles.kebab}
           onEditName={() => onEditName(whitelabel)}
+          onLifecycle={onLifecycle ? operation => onLifecycle(whitelabel, operation) : undefined}
         />
       </header>
 

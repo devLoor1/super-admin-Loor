@@ -22,8 +22,9 @@ import styles from './DashboardPage.module.css'
  * Whitelabels and Investidores read `GET /dashboard` (Control Plane, global
  * scope); their meaning is proven in docs/dashboard-read-integration-v1.md.
  * Opportunities and Payments independently read validated, unfiltered list totals.
- * KYC and every other panel keep their data-ready state ("—", "Sem dados",
- * "Aguardando integração"): no metric, series, distribution, health or event
+ * Investor distribution reconciles the complete Whitelabel registry with the loaded overview.
+ * KYC and other panels keep their data-ready state ("—", "Sem dados",
+ * "Aguardando integração"): no series, health or event
  * is inferred, and nothing comes from prototype data.
  */
 export function DashboardPage() {
@@ -130,7 +131,7 @@ function DashboardContent() {
 
       <div className={styles.middle}>
         <ActivityPanel className={styles.activity} />
-        <WhitelabelDistributionPanel className={styles.distribution} />
+        <WhitelabelDistributionPanel className={styles.distribution} overview={overview.state} onReloadOverview={overview.reload} />
         <OperationalStatusPanel className={styles.status} />
       </div>
 

@@ -32,6 +32,8 @@ export type WhitelabelRecord = {
   status: WhitelabelStatus
   /** Backend `admins` (= counts.admins). */
   admins: number | null
+  /** Explicit Control Plane counts.investors; absent/invalid is never authoritative zero. */
+  investorCount?: number | null
   /** Always null today: Core exposes no applications aggregate. */
   applications: number | null
   /** Always null today: Core exposes no integrations aggregate. */
@@ -99,6 +101,8 @@ export function parseWhitelabel(value: unknown): WhitelabelRecord {
     domain: optionalString(value.domain),
     status,
     admins: optionalCount(value.admins),
+    ...(isRecord(value.counts) && Object.prototype.hasOwnProperty.call(value.counts, 'investors')
+      ? { investorCount: optionalCount(value.counts.investors) } : {}),
     applications: optionalCount(value.applications),
     integrations: optionalCount(value.integrations),
     createdAt: optionalDate(value.createdAt),
@@ -114,6 +118,8 @@ function count(value: unknown, minimum: number) {
 export function parseWhitelabelList(value: unknown): WhitelabelListResult {
   if (!isRecord(value) || !Array.isArray(value.data) || !isRecord(value.meta)) throw malformed()
   const { meta } = value
+  // Only an empty Core result may use lastPage=0; nonempty coverage cannot be normalized to complete.
+  if (meta.total !== 0 && meta.lastPage === 0) throw malformed()
   const result = {
     rows: value.data.map(parseWhitelabel),
     page: count(meta.page, 1),

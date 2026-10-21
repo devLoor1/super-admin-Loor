@@ -477,10 +477,12 @@ for (const path of ['src/components', 'src/lib', 'src/app/useUnsavedChangesGuard
   check(changed.length === 0, `${path}: unchanged except the explicit Operational V1 write client and status verification; shell/auth/GET client stay protected`)
 }
 check(!git('diff', '--name-only', BASELINE, 'cd59887', '--', 'src/features/dashboard').trim(), 'Menu Visibility/Operational releases left Dashboard unchanged')
-const dashboardRecoveryFiles = new Set(['src/features/dashboard/DashboardPage.tsx', 'src/features/dashboard/useDashboardOverview.ts', 'src/features/dashboard/dashboardCounts.ts'])
+const dashboardRecoveryFiles = new Set(['src/features/dashboard/DashboardPage.tsx', 'src/features/dashboard/useDashboardOverview.ts', 'src/features/dashboard/dashboardCounts.ts',
+  'src/features/dashboard/WhitelabelDistributionPanel.tsx', 'src/features/dashboard/WhitelabelDistributionPanel.module.css',
+  'src/features/dashboard/investorDistribution.ts', 'src/features/dashboard/useInvestorDistribution.ts'])
 const dashboardRecoveryChanges = [...git('diff', '--name-only', 'cd59887', '--', 'src/features/dashboard').trim().split('\n'),
   ...git('ls-files', '--others', '--exclude-standard', '--', 'src/features/dashboard').trim().split('\n')].filter(Boolean)
-check(dashboardRecoveryChanges.every(path => dashboardRecoveryFiles.has(path)), 'only explicitly authorized Dashboard Recovery V1 files changed; all other Dashboard files remain protected')
+check(dashboardRecoveryChanges.every(path => dashboardRecoveryFiles.has(path)), 'only exact authorized Dashboard Recovery V1 and Investor Distribution files changed; all other Dashboard files remain protected')
 // Finance Read Integration V1 (a later, reviewed unit) changed ONLY the Finance Read route
 // statements of App.tsx (URL params handed to the six Finance Read pages). Those statements
 // are located by syntax (never by line range) and must be EXACTLY the reviewed statements
@@ -617,6 +619,7 @@ for (const [label, mutate] of [
 // domain directory. New files, read adapters, routes, auth and shared code remain
 // protected. The exception does not exempt these files from the scans above/below.
 const REVIEWED_WHITELABEL_FILES = new Set([
+  'whitelabelApi.ts', // exact optional count projection independently byte-checked in check-investor-distribution
   'WhitelabelDetailPanel.module.css', 'WhitelabelDetailPanel.tsx',
   'WhitelabelListPanel.module.css', 'WhitelabelListPanel.tsx', 'WhitelabelsPage.tsx',
   'crud/MutationStates.tsx', 'crud/WhitelabelActionsMenu.tsx', 'crud/WhitelabelCrud.module.css',
@@ -657,7 +660,7 @@ const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
 check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read, Opportunities + Companies Read and Dashboard Recovery V1 source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)
 for (const path of [
-  'src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelApi.ts', 'src/features/whitelabels/useWhitelabelData.ts',
+  'src/features/whitelabels/crud/NewWriteClient.ts', 'src/features/whitelabels/whitelabelIdentity.ts', 'src/features/whitelabels/useWhitelabelData.ts',
   'src/components/shell/navigation.ts', 'src/lib/authSession.ts',
   'src/features/finance-core/shared/financeWrite.ts', 'src/features/finance-core/wallets/WalletTransfer.tsx', 'src/features/finance-gateways/FinanceGatewaysPage.tsx',
   'src/features/operation/opportunities/opportunityWrite.ts', 'src/features/operation/companies/companyWrite.ts', 'src/features/operation/entrepreneurs/entrepreneurApi.ts',

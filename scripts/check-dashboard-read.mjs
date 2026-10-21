@@ -335,11 +335,16 @@ await check('Dashboard sources: no storage/prototype/Audit/write paths; exactly 
   assert.match(sources['useDashboardOverview.ts'], /'dashboard-payment-count', getDashboardPaymentCount/)
   assert.match(sources['DashboardPage.tsx'], /onClick=\{reload\}/)
 })
-await check('pending panels stay data-ready (no series, shares, health or events)', async () => {
+await check('remaining pending panels stay data-ready (no series, health or events)', async () => {
   assert.match(sources['OperationalStatusPanel.tsx'], /Aguardando integração/)
   assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx'] + sources['ActivityPanel.tsx']
-    + sources['WhitelabelDistributionPanel.tsx'] + sources['RecentEventsPanel.tsx']), false)
+    + sources['RecentEventsPanel.tsx']), false)
   assert.match(sources['RecentEventsPanel.tsx'], /<tbody \/>/)
+})
+await check('approved Investor Distribution alone consumes the loaded global overview', () => {
+  assert.match(sources['DashboardPage.tsx'], /overview=\{overview.state\} onReloadOverview=\{overview.reload\}/)
+  assert.match(sources['investorDistribution.ts'], /import \{ listWhitelabelOptions \}/)
+  assert.doesNotMatch(sources['WhitelabelDistributionPanel.tsx'], /getDashboardOverview|useDashboardOverview/)
 })
 reset()
 console.log(`Dashboard read contracts: ${checks} passed (synthetic, no network)`)

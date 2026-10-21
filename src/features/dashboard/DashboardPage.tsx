@@ -12,7 +12,8 @@ import { QuickActionsPanel } from './QuickActionsPanel'
 import { RecentEventsPanel } from './RecentEventsPanel'
 import { WhitelabelDistributionPanel } from './WhitelabelDistributionPanel'
 import { formatKpi, freshnessLabel, type DashboardOverview } from './dashboardApi'
-import { useDashboardOverview } from './useDashboardOverview'
+import { dashboardCountReading } from './dashboardCounts'
+import { useDashboardOpportunityCount, useDashboardOverview, useDashboardPaymentCount } from './useDashboardOverview'
 import styles from './DashboardPage.module.css'
 
 /**
@@ -20,7 +21,8 @@ import styles from './DashboardPage.module.css'
  *
  * Whitelabels and Investidores read `GET /dashboard` (Control Plane, global
  * scope); their meaning is proven in docs/dashboard-read-integration-v1.md.
- * Every other panel keeps its data-ready state ("—", "Sem dados",
+ * Opportunities and Payments independently read validated, unfiltered list totals.
+ * KYC and every other panel keep their data-ready state ("—", "Sem dados",
  * "Aguardando integração"): no metric, series, distribution, health or event
  * is inferred, and nothing comes from prototype data.
  */
@@ -32,14 +34,13 @@ export function DashboardPage() {
   )
 }
 
-type KpiSource = keyof DashboardOverview['kpis']
+type KpiSource = keyof DashboardOverview['kpis'] | 'opportunities' | 'payments'
 
 const METRICS: { id: string; label: string; module: string; icon: LucideIcon; tone: Tone; source?: KpiSource }[] = [
   { id: 'whitelabels', label: 'Whitelabels', module: 'Plataformas', icon: Building, tone: 'blue', source: 'whitelabels' },
   { id: 'investidores', label: 'Investidores', module: 'Operação', icon: Users, tone: 'violet', source: 'investors' },
-  // No authoritative source in the Dashboard contract: these stay "Aguardando integração".
-  { id: 'oportunidades', label: 'Oportunidades', module: 'Operação', icon: ChartNoAxesColumnIncreasing, tone: 'teal' },
-  { id: 'pagamentos', label: 'Pagamentos', module: 'Financeiro', icon: CreditCard, tone: 'amber' },
+  { id: 'oportunidades', label: 'Oportunidades', module: 'Operação', icon: ChartNoAxesColumnIncreasing, tone: 'teal', source: 'opportunities' },
+  { id: 'pagamentos', label: 'Pagamentos', module: 'Financeiro', icon: CreditCard, tone: 'amber', source: 'payments' },
   { id: 'kyc', label: 'KYC', module: 'Compliance', icon: ShieldCheck, tone: 'indigo' },
 ]
 
@@ -56,10 +57,21 @@ const DESTINATIONS: Record<string, string> = {
 function DashboardContent() {
   const notify = usePrototypeNotice()
   const overview = useDashboardOverview()
-  const error = overview.state.status === 'error' ? describeApiError(overview.state.error, 'os indicadores do Dashboard') : null
+  const opportunities = useDashboardOpportunityCount()
+  const payments = useDashboardPaymentCount()
+  const errors = [
+    { id: 'overview', label: 'Whitelabels e Investidores', subject: 'os indicadores do Dashboard', resource: overview },
+    { id: 'opportunities', label: 'Oportunidades', subject: 'o total de oportunidades', resource: opportunities },
+    { id: 'payments', label: 'Pagamentos', subject: 'o total de cobranças PIX de investimentos', resource: payments },
+  ].flatMap(({ resource, ...source }) => resource.state.status === 'error'
+    ? [{ ...source, error: describeApiError(resource.state.error, source.subject), reload: resource.reload }]
+    : [])
+  const overviewError = errors.find(({ id }) => id === 'overview')?.error
 
   function reading(source: KpiSource | undefined): MetricReading | undefined {
     if (!source) return undefined
+    if (source === 'opportunities') return dashboardCountReading(opportunities.state)
+    if (source === 'payments') return dashboardCountReading(payments.state)
     if (overview.state.status === 'success') {
       const { kpis, freshness } = overview.state.data
       const value = kpis[source]
@@ -67,7 +79,7 @@ function DashboardContent() {
         ? { state: 'unavailable', status: 'Não informado pelo Control Plane' }
         : { state: 'ready', value: formatKpi(value), status: freshnessLabel(freshness) }
     }
-    if (error) return { state: 'unavailable', status: error.retryable ? 'Indisponível no momento' : error.title }
+    if (overviewError) return { state: 'unavailable', status: overviewError.retryable ? 'Indisponível no momento' : overviewError.title }
     return { state: 'loading' }
   }
 
@@ -92,11 +104,11 @@ function DashboardContent() {
             </li>
           ))}
         </ul>
-        {error ? (
-          <div className={styles.kpiError} role="alert" data-dashboard-error>
+        {errors.map(({ id, label, error, reload }) => (
+          <div key={id} className={styles.kpiError} role="alert" data-dashboard-error={id}>
             <CircleAlert size={16} strokeWidth={1.9} aria-hidden="true" />
             <p className={styles.kpiErrorText}>
-              <strong>{error.title}.</strong> {error.description}
+              <strong>{label}: {error.title}.</strong> {error.description}
               {error.correlationId ? (
                 <>
                   {' '}
@@ -105,13 +117,13 @@ function DashboardContent() {
               ) : null}
             </p>
             {error.retryable ? (
-              <OutlineButton onClick={overview.reload} className={styles.kpiRetry}>
+              <OutlineButton onClick={reload} className={styles.kpiRetry} aria-label={`Tentar novamente: ${label}`}>
                 <RotateCw size={14} strokeWidth={1.8} aria-hidden="true" />
                 Tentar novamente
               </OutlineButton>
             ) : null}
           </div>
-        ) : null}
+        ))}
       </section>
 
       <GlobalOverviewPanel />

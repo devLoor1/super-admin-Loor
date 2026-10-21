@@ -23,8 +23,9 @@ import styles from './DashboardPage.module.css'
  * scope); their meaning is proven in docs/dashboard-read-integration-v1.md.
  * Opportunities and Payments independently read validated, unfiltered list totals.
  * Investor distribution reconciles the complete Whitelabel registry with the loaded overview.
+ * Daily Opportunity creation uses its own complete list and São Paulo calendar.
  * KYC and other panels keep their data-ready state ("—", "Sem dados",
- * "Aguardando integração"): no series, health or event
+ * "Aguardando integração"): no health or event
  * is inferred, and nothing comes from prototype data.
  */
 export function DashboardPage() {

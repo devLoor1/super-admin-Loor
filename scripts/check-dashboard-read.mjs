@@ -335,11 +335,15 @@ await check('Dashboard sources: no storage/prototype/Audit/write paths; exactly 
   assert.match(sources['useDashboardOverview.ts'], /'dashboard-payment-count', getDashboardPaymentCount/)
   assert.match(sources['DashboardPage.tsx'], /onClick=\{reload\}/)
 })
-await check('remaining pending panels stay data-ready (no series, health or events)', async () => {
+await check('remaining pending panels stay data-ready (no health or events)', async () => {
   assert.match(sources['OperationalStatusPanel.tsx'], /Aguardando integração/)
-  assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx'] + sources['ActivityPanel.tsx']
+  assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx']
     + sources['RecentEventsPanel.tsx']), false)
   assert.match(sources['RecentEventsPanel.tsx'], /<tbody \/>/)
+})
+await check('Daily Opportunity series is independent of existing KPI sources', () => {
+  assert.match(sources['dailyOpportunities.ts'], /listOpportunities\(\{ page: 1, perPage: 100, search: '', sort: 'createdAt', order: 'desc' \}/)
+  assert.doesNotMatch(sources['ActivityPanel.tsx'], /useDashboardOverview|useDashboardOpportunityCount|dashboardCountReading/)
 })
 await check('approved Investor Distribution alone consumes the loaded global overview', () => {
   assert.match(sources['DashboardPage.tsx'], /overview=\{overview.state\} onReloadOverview=\{overview.reload\}/)

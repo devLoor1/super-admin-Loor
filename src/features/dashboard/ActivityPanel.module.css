@@ -2,6 +2,25 @@
  * Plot geometry follows the reference at 1:1: 456 × 154 plot, five horizontal
  * intervals, six date ticks (verticals end 14px before the plot's right edge).
  */
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.period {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
 .chart {
   flex: 1 1 auto;
   display: grid;
@@ -51,12 +70,51 @@
   stroke-dasharray: none;
 }
 
-.empty {
-  position: relative;
-  /* Narrow measure → the description breaks into two balanced lines, as in the reference. */
-  max-width: 262px;
-  padding: 8px 12px;
+.series {
+  fill: none;
+  stroke: #a69cff;
+  stroke-width: 2;
+  stroke-linejoin: round;
 }
+
+.message {
+  position: relative;
+  max-width: 330px;
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--text-on-dark-secondary);
+}
+
+.message p { margin: 6px 0; }
+.message code { font-size: 10px; }
+
+.caption {
+  margin-top: 14px;
+  font-size: 10.5px;
+  line-height: 15px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.dailyData {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.dailyData summary { cursor: pointer; width: fit-content; }
+.dailyData summary:focus-visible,
+.tableViewport:focus-visible { outline: 2px solid #a69cff; outline-offset: 3px; border-radius: 3px; }
+
+.tableViewport { max-height: 200px; overflow: auto; margin-top: 8px; }
+.tableViewport table { width: 100%; border-collapse: collapse; }
+.tableViewport caption { text-align: left; padding-bottom: 6px; }
+.tableViewport th, .tableViewport td { padding: 4px; text-align: left; border-bottom: 1px solid var(--surface-divider); }
 
 .xAxis {
   position: relative;

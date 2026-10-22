@@ -190,7 +190,11 @@ await check('protected source byte-identical to accepted Daily Opportunity basel
     'src/features/dashboard/dashboardApi.ts','src/features/dashboard/dashboardCounts.ts','src/features/dashboard/useDashboardOverview.ts',
     'src/features/dashboard/WhitelabelDistributionPanel.tsx','src/features/dashboard/WhitelabelDistributionPanel.module.css','src/features/dashboard/investorDistribution.ts','src/features/dashboard/useInvestorDistribution.ts',
     'src/features/dashboard/OperationalStatusPanel.tsx','src/features/dashboard/QuickActionsPanel.tsx','src/features/dashboard/DashboardPage.module.css','package.json','package-lock.json']) {
-    assert.equal(execFileSync('git',['diff','--name-only','e89840d','--',path],{cwd:root,encoding:'utf8'}).trim(),'',path)
+    const changed = execFileSync('git',['diff','--name-only','e89840d','--',path],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)
+    // Later KYC migration changes only unavailable-association copy in these
+    // profiles; check-kyc-read reverses the exact strings and byte-compares them.
+    const copyOnly = path === 'src/features/operation' ? ['src/features/operation/investors/InvestorDetailPage.tsx','src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx'] : []
+    assert.deepEqual(changed.filter(file => !copyOnly.includes(file)),[],path)
   }
 })
 auth.clearSession()

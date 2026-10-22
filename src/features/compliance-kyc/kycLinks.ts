@@ -1,25 +1,20 @@
 import { buildHash } from '../../app/routeQuery'
-import { KYC_LIST_PATH, kycCaseHref } from './kycModel'
-import { PROTOTYPE_KYC_CASES } from './prototypeKyc'
+import { KYC_LIST_PATH } from './kycModel'
 
 /*
- * Navigation INTO Compliance › KYC for other modules (e.g. Operação ›
- * Investidores / Empreendedores "Ver no Compliance"). Read-only lookup of the
- * case index — cases are never created or deleted in this prototype, so the
- * seeds are the complete index. Nothing here reads or changes case state.
+ * Navigation INTO authoritative KYC never resolves a participant through the
+ * historical prototype index. A real FaceMatch association must come from an API.
  */
 
 export const kycListHref = (params: { participant?: string; whitelabel?: string; status?: string } = {}) =>
   buildHash(KYC_LIST_PATH, params)
 
-export const kycCaseIdsOfParticipant = (participantId: string) =>
-  PROTOTYPE_KYC_CASES.filter((item) => item.participantId === participantId).map((item) => item.kycCaseId)
+export const kycCaseIdsOfParticipant = (_participantId: string): string[] => []
 
-/** One case → open it directly; none or several → the KYC list filtered by the participant. */
-export function kycDestinationForParticipant(participantId: string) {
-  const ids = kycCaseIdsOfParticipant(participantId)
+/** A profile id is not a FaceMatch case id. No authoritative association is loaded here. */
+export function kycDestinationForParticipant(_participantId: string) {
   return {
-    href: ids.length === 1 ? kycCaseHref(ids[0]) : kycListHref({ participant: participantId }),
-    caseCount: ids.length,
+    href: kycListHref(),
+    caseCount: null,
   }
 }

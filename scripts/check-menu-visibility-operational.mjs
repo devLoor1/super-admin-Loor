@@ -197,7 +197,9 @@ await check('acknowledgement by a different operator never confirms our attempt'
   assert.equal(update.reconcileReadback(candidate,base,contract.parseMenuVisibilityResponse(other),result),'not-confirmed')
 })
 await check('shared shell, auth, GET transport and unrelated domains preserved; explicit later Lifecycle unit only',()=>{
-  const changed=execFileSync('git',['diff','--name-only','c5ecb5a','--','src'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)
+  // Freeze the original Stage B scope assertion at its published commit. Later
+  // Dashboard/KYC units have their own exact-path + protected-source guards.
+  const changed=execFileSync('git',['diff','--name-only','c5ecb5a','91d6f98','--','src'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)
   const lifecycleFiles = ['WhitelabelDetailPanel.tsx','WhitelabelsPage.tsx','crud/OperationalMutationState.tsx','crud/WhitelabelActionsMenu.tsx','crud/WhitelabelCrud.module.css','crud/WhitelabelLifecycleDialog.tsx','crud/useWhitelabelMutation.ts','crud/whitelabelCommands.ts','crud/whitelabelForm.ts','crud/whitelabelMutationContract.ts','crud/whitelabelMutationOutcome.ts','crud/whitelabelMutationRunner.ts','crud/whitelabelOperationalApi.ts'].map(p=>'src/features/whitelabels/'+p)
   assert.ok(changed.every(p=>p.startsWith('src/features/menu-visibility/') || [...lifecycleFiles,'src/lib/whitelabelWriteClient.ts','src/lib/menuVisibilityWriteClient.ts','src/components/shell/Sidebar.tsx','src/components/shell/Sidebar.module.css'].includes(p)))
 })

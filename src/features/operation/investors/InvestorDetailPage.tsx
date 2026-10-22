@@ -36,7 +36,7 @@ const PENDING = {
   investments:
     'Financeiro › Investimentos ainda é um protótipo; investimentos deste investidor não estão integrados. Nenhuma navegação foi feita.',
   compliance:
-    'Compliance › KYC ainda é um protótipo; não há caso KYC do Control Plane vinculado a este investidor. Nenhuma navegação foi feita.',
+    'A associação deste investidor a um caso Face Match não foi carregada. Consulte a lista em Compliance › KYC; o ID do investidor não é um ID de caso. Nenhuma navegação foi feita.',
 }
 
 /**
@@ -175,7 +175,7 @@ function InvestorProfile({ investor, listHref }: { investor: InvestorDetail; lis
     {
       key: 'compliance',
       label: 'Ver no Compliance',
-      description: 'Compliance › KYC — ainda em protótipo, não integrado',
+      description: 'Compliance › KYC — vínculo a um caso ainda indisponível',
       icon: ShieldCheck,
       onSelect: () => pending('compliance', 'Navegação para Compliance › KYC indisponível'),
       pending: true,

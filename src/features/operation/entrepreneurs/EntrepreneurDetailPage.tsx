@@ -32,7 +32,7 @@ const PENDING = {
   opportunities:
     'O Control Plane não oferece consulta de oportunidades por empreendedor (Oportunidades não aceita esse filtro). Nenhuma navegação foi feita.',
   compliance:
-    'Compliance › KYC ainda é um protótipo; não há caso KYC do Control Plane vinculado a este empreendedor. Nenhuma navegação foi feita.',
+    'A lista KYC disponível cobre casos Face Match de investidores, não casos deste empreendedor. Nenhuma navegação foi feita.',
 }
 
 // Entrepreneur ids overlap numerically with Investor ids: session activity is keyed by domain + id.
@@ -180,7 +180,7 @@ function EntrepreneurProfile({ entrepreneur, listHref }: { entrepreneur: Entrepr
     {
       key: 'compliance',
       label: 'Ver no Compliance',
-      description: 'Compliance › KYC — ainda em protótipo, não integrado',
+      description: 'Compliance › KYC — caso de empreendedor indisponível neste contrato',
       icon: ShieldCheck,
       onSelect: () => pending('compliance', 'Navegação para Compliance › KYC indisponível'),
       pending: true,

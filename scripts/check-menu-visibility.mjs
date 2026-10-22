@@ -658,8 +658,15 @@ const REVIEWED_OPERATION_READ_FILES = new Set([
   'entrepreneurs/EntrepreneurDetailPage.tsx',
   'shared/EntrepreneurViews.module.css', 'shared/EntrepreneurViews.tsx', 'shared/coreIds.ts', 'shared/readErrors.ts',
 ].map((path) => `src/features/operation/${path}`))
+// Exact authorized KYC migration files. No entire-domain exception; canonical
+// transport and the two profile-copy-only changes are checked in check-kyc-read.
+const REVIEWED_KYC_READ_FILES = new Set([
+  'KycListPage.tsx', 'KycDetailPage.tsx', 'kycLinks.ts', 'kycReadApi.ts',
+  'useKycRead.ts', 'KycReadUi.tsx', 'KycRead.module.css', 'kycReadPresent.ts',
+].map(path => `src/features/compliance-kyc/${path}`))
+REVIEWED_KYC_READ_FILES.add('src/features/operation/investors/InvestorDetailPage.tsx')
 const outsideMenuVisibility = (path) =>
-  !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path) && !dashboardRecoveryFiles.has(path)
+  !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path) && !dashboardRecoveryFiles.has(path) && !REVIEWED_KYC_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
 check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read, Opportunities + Companies Read and Dashboard Recovery V1 source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)
@@ -668,7 +675,7 @@ for (const path of [
   'src/components/shell/navigation.ts', 'src/lib/authSession.ts',
   'src/features/finance-core/shared/financeWrite.ts', 'src/features/finance-core/wallets/WalletTransfer.tsx', 'src/features/finance-gateways/FinanceGatewaysPage.tsx',
   'src/features/operation/opportunities/opportunityWrite.ts', 'src/features/operation/companies/companyWrite.ts', 'src/features/operation/entrepreneurs/entrepreneurApi.ts',
-  'src/features/operation/investors/InvestorDetailPage.tsx', 'src/features/operation/shared/participants.ts',
+  'src/features/operation/investors/investorApi.ts', 'src/features/operation/shared/participants.ts',
   'src/features/dashboard/dashboardWrite.ts', 'src/features/dashboard/QuickActionsPanel.tsx', 'src/features/dashboard/dashboardApi.ts',
 ]) {
   check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
@@ -693,6 +700,12 @@ for (const file of await walk(resolve(root, 'src/features/finance-core'))) {
   const source = await readFile(file, 'utf8')
   check(!unsafeCapability(source, false, rel === 'src/features/finance-core/shared/financeApi.ts'), `${rel}: Finance Read exception grants no transport capability; only its canonical GET adapter is allowed`)
   check(!unsafeCapability(source, true), `${rel}: Finance Read exception grants no browser persistence capability`)
+}
+for (const rel of REVIEWED_KYC_READ_FILES) {
+  if (!/\.tsx?$/.test(rel)) continue
+  const source = await readFile(resolve(root, rel), 'utf8')
+  check(!unsafeCapability(source, false, rel.endsWith('/kycReadApi.ts')), `${rel}: KYC exception grants only canonical GET capability`)
+  check(!unsafeCapability(source, true), `${rel}: KYC exception grants no persistence capability`)
 }
 for (const source of ['window["fetch"]("/api/whitelabels", {method:"POST"})', 'const send = fetch; send("/api/whitelabels")', 'import {authenticatedPatch as save} from "../../../lib/apiClient"']) {
   check(unsafeCapability(source), 'Planted Whitelabel write capability rejected inside reviewed files')

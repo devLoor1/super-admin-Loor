@@ -5,9 +5,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
-// Canonical KYC/Audit boundary checks. KYC remains illustrative; Audit is an
-// independent server read. Deleted seed/period assertions are obsolete, not a
-// reason to retain a fake log. No network or real identities here.
+// Canonical KYC/Audit boundary checks. Historical KYC fixtures stay isolated;
+// authoritative KYC and Audit reads never resolve IDs through the prototype index.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(pathToFileURL(resolve(root, 'package.json')))
 const modules = new Map()
@@ -60,10 +59,10 @@ for (const value of [{ nested: { password: 'synthetic-sentinel' } }, [{ token: '
 check(JSON.stringify(present.sanitizedJson(present.sanitizeAuditData({ resourceUses: ['Modernização', 'Capital de Giro'] }))).includes('Capital de Giro'))
 check(present.sanitizeAuditData(false).text === 'Não')
 check(present.sanitizeAuditData(undefined).kind === 'empty')
-check(destination('inv_proto_001').href.endsWith('/kyc_proto_0001'))
-check(destination('inv_proto_002').caseCount === 2 && destination('inv_proto_002').href.includes('?participant='))
-check(destination('inv_proto_008').caseCount === 0 && destination('inv_proto_008').href.includes('?participant='))
-check(destination('emp_proto_004').href.endsWith('/kyc_proto_e004'))
+for (const participantId of ['inv_proto_001', 'inv_proto_002', 'inv_proto_008', 'emp_proto_004']) {
+  check(destination(participantId).href === '#/compliance/kyc')
+  check(destination(participantId).caseCount === null)
+}
 for (const item of cases) {
   const accountLink = participantAccountHref(item)
   const tenant = accountLink.match(/^#\/whitelabels\/([^/]+)\/accounts/)?.[1]

@@ -64,7 +64,7 @@ Live KYC gate: existing built-in session, `GET /auth/me` 200 / SUPER_ADMIN (corr
 
 ### SA-BE-006 — Detailed KYC read (this execution)
 
-- **FE route/component/state:** `#/compliance/kyc`, `/:id`; `compliance-kyc/{KycListPage,KycDetailPage,KycUi,kycModel,kycRefs,kycLinks,kycStore,prototypeKyc}`. Baseline **prototype/mock** list/detail and in-memory review/issues/decisions; migration gated and in progress. Dashboard KYC KPI remains unavailable, unchanged.
+- **FE route/component/state:** `#/compliance/kyc`, `/:id`; baseline `compliance-kyc/{KycListPage,KycDetailPage,KycUi,kycModel,kycRefs,kycLinks,kycStore,prototypeKyc}` was prototype/mock. **Now authoritative read integrated (F/U/G)** through dedicated `kycReadApi`, `useKycRead`, `KycReadUi`/presentation and rewritten list/detail. No operational mutations/local decisions. Dashboard KYC KPI remains unavailable, unchanged.
 - **API/ownership (S,R,G):** GET `/api/compliance/kyc?page=1&perPage=20`, GET `/:id`, CP proxy to Core KycQueryService. Both 200 this execution. **Numeric FaceMatch ID**, not Investor/Account ID or `kyc_proto_*`. List = FaceMatch-backed Investor cases, not Entrepreneur/all possible KYC checks. Source comment's `bureau:{investorId}` fallback is not implemented by query/detail; do not support it.
 - **Fields/query:** `{data:[id,status,investorId,investorName,whitelabelId,faceMatchStatus,updatedAt],meta:{page,perPage,total,lastPage}}`; live 20/1547/78. Detail `{data:{id,investor,whitelabel,status,personalDataValidation,document,ocr,bureau,faceMatch,manualReview,history}}`. Only page/perPage sent for V1; Core source search exists but not independently live-qualified. Core tenant filter is not in CP generic pagination DTO; do not expose it. sort/order accepted generically but Core forces ID-desc; no invented control.
 - **RBAC/context:** source SUPER_ADMIN/COMPLIANCE_ADMIN/READ_ONLY; direct G only SUPER_ADMIN. Other roles synthetic; no impersonation.
@@ -97,4 +97,4 @@ Live KYC gate: existing built-in session, `GET /auth/me` 200 / SUPER_ADMIN (corr
 
 ## Checkpoint
 
-Stage A source mapping complete; KYC Stage B list/detail gate passed (200, masks verified, actual case ID). No non-idempotent QA action occurred. Only KYC read implementation/tests/release may follow. Implementation/release outcome is maintained in the companion KYC document; other seven remain map-only.
+Stage A complete; KYC gate/implementation/review/tests and official homolog acceptance complete. Feature `860d6fcdc6215bcadb2309b50de05685251693fa`, published Netlify `6ad983c56e8a93b1f318f1d3`; authoritative case1547 and direct case1546 verified without personal payload export. All23 maintained suites /3352 checks pass. No non-idempotent QA action occurred. Final release evidence/limitations are in the companion KYC document. Other seven remain map-only, with no new persisted mutation proof.

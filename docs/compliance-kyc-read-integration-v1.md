@@ -40,6 +40,20 @@ CP source `73ccb918ae4e22be1e16d3ab6ab12a215d3f2916`; Core source `9e26c7c7e68ca
 
 ## Release checkpoint
 
-Local implementation/review gates passed. Canonical origin/dev rechecked at `6969a89`; protected branches unchanged. Publication and authenticated deployed-browser acceptance are still pending at the feature commit boundary; do not interpret synthetic tests as live UI-to-API E2E. Starting official deployment remains `6ad97260e55af5fb2e344ef8` until verified below.
+Feature commit `860d6fcdc6215bcadb2309b50de05685251693fa` reviewed, fast-forwarded from `6969a89` to canonical dev and normally pushed; feature preserved remotely. No merge/rebase/squash/force-push. Main and canonical handoff unchanged at the hashes recorded above. This follow-up changes evidence documentation only, not frontend source.
+
+### Official homolog acceptance — verified
+
+- Existing Git-connected Netlify site published deploy **`6ad983c56e8a93b1f318f1d3`**, bound to feature SHA `860d6fc`. Served index/JS HTTP200: **`index-B4S_XwRK.js`**, CSS **`index-Cgdh8dnd.css`**. JS SHA256 **`ffcf0770a0c5a93146dd41c64a20935abc575d70b7f8e30c20061dbfb78d2d1c`** exactly matches reviewed official-API production build; CSS SHA256 `92d65119b277e9974813a9ca3dc925c7bf6ff2c4e472951cd3225698a93576fb`.
+- Actual built-in authenticated SUPER_ADMIN UI → deployed list GET200, 20 rows / 1547 cases / 78 pages. All displayed IDs, names, Investor/tenant relationships and observed status fields compared privately with the captured authoritative response; only comparison booleans/counts retained. Page2 20 rows starts at case1527, survives reload.
+- List→case1547 detail GET200: case ID, actual Investor/tenant relationship, name, both safe document masks, composite pending vs FaceMatch approved, bureau unknown, OCR unavailable, one recorded FaceMatch update all match. No image/form/private payload or active write control. Detail reload successful. Direct link to actual returned case1546 successful. Browser Back restores page2 address. Prototype URL controlled invalid state with no detail request; numeric missing case returns proper 404. No case was created.
+- Initial post-deploy reads reached canonical timeout with session retained; bounded auth/me GET200 SUPER_ADMIN (`c4c119c7-fd32-42f5-98b1-794b5ec51140`), then **one explicit UI retry** succeeded. No login workaround/automatic loop. Render/Core startup latency is compatible with observation, not a proven server root cause.
+- Live regression: Dashboard KPIs 7 /4762 /78 /2116; Distribution/Daily/RecentAudit ready, preview8 rows, KYC KPI unchanged unavailable; Sidebar loaded. Audit list→selected detail loaded. Menu version5, saving-enabled build retained, draft0; Whitelabel Create/name-edit/Lifecycle controls still available. None submitted.
+- Captured API request ledger: **zero non-GET/OPTIONS requests**, zero runtime exceptions. Zero business/compliance/financial writes. No config/env/flag/auth/session/Backend/Core/Render/AWS changes. Main/handoff preserved. Only GETs and normal frontend Git/CD publication.
+- Privacy-safe evidence: session visualization directory `kyc-read-2026-10-22/{official-list.json,official-detail.json,official-release.json,published-deployment.png}`; no raw case responses, contact/biometric/document data or credentials written. Local synthetic tab closed and its exact task server PID stopped; official KYC and Netlify tabs retained.
+
+**Result: INTEGRATION MAP V1 COMPLETE + KYC READ V1 VERIFIED IN OFFICIAL HOMOLOG.**
+
+Remaining: seven map-only integrations; source-vs-running Backend/Core exact SHA observability; future Entrepreneur KYC coverage and Dashboard metric definition; conflicting overview/case KYC normalization; capped overview counts. These do not invalidate the directly verified read-only case contract. No wider read/write batch started.
 
 Mutation ledger: **zero KYC/business/compliance/financial writes**, zero case creation, no auth/config/Backend/Core changes. Other seven capabilities map-only.

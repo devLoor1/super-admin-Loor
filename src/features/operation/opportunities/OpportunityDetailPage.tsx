@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { readinessTabs } from '../../../app/presentationAvailability'
 import { CircleAlert, Database, ExternalLink, Info, LayoutGrid, RotateCw, SearchX, Target, UserRound } from 'lucide-react'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
@@ -195,7 +196,7 @@ function OpportunityContent({ opportunity, listHref }: { opportunity: Opportunit
       </section>
 
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label="Seções da oportunidade" tabs={TABS} value={tab} onChange={changeTab} />
+        <Tabs idPrefix={TAB_PREFIX} label="Seções da oportunidade" tabs={readinessTabs(TABS)} value={tab} onChange={changeTab} />
       </div>
 
       <TabPanel tab="overview" current={tab}>

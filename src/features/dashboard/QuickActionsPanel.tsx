@@ -7,7 +7,7 @@ import styles from './QuickActionsPanel.module.css'
 const ACTIONS: { id: string; title: string; description: string; module: string; icon: LucideIcon; tone: Tone }[] = [
   { id: 'whitelabels', title: 'Ver Whitelabels', description: 'Gerencie todas as plataformas', module: 'Plataformas', icon: Building, tone: 'blue' },
   { id: 'operacao', title: 'Abrir Operação', description: 'Acompanhe a operação global', module: 'Operação', icon: Box, tone: 'violet' },
-  { id: 'pagamentos', title: 'Consultar Pagamentos', description: 'Acesse transações e repasses', module: 'Financeiro', icon: CreditCard, tone: 'amber' },
+  { id: 'pagamentos', title: 'Consultar Pagamentos', description: 'Consulte cobranças PIX de investimentos', module: 'Financeiro', icon: CreditCard, tone: 'amber' },
   { id: 'auditoria', title: 'Acessar Auditoria', description: 'Consulte logs e histórico', module: 'Auditoria', icon: FileSearch, tone: 'plum' },
 ]
 

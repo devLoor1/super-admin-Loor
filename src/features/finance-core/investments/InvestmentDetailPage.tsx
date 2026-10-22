@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { readinessTabs } from '../../../app/presentationAvailability'
 import { ArrowLeftRight, ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
 import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
 import outline from '../../../components/ui/OutlineButton.module.css'
@@ -159,7 +160,7 @@ function InvestmentContent({ investment, back }: { investment: InvestmentDetail;
       />
 
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label={`Seções do investimento ${id}`} tabs={tabs} value={tab} onChange={changeTab} />
+        <Tabs idPrefix={TAB_PREFIX} label={`Seções do investimento ${id}`} tabs={readinessTabs(tabs)} value={tab} onChange={changeTab} />
       </div>
 
       <TabPanel prefix={TAB_PREFIX} tab="overview" current={tab}>

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { PROTOTYPE_PRESENTATION } from '../../../app/presentationAvailability'
 import type { OperationActivity } from '../../operation/shared/operationActivity'
 
 /*
@@ -33,6 +34,7 @@ export function useFinanceCoreActivity(recordId: string): FinanceCoreActivity[] 
 
 /** Newest first. Callers pass only ids and labels — never amounts typed by a user or secrets. */
 export function addFinanceCoreActivity(recordId: string, entry: Omit<FinanceCoreActivity, 'id' | 'at'>) {
+  if (!PROTOTYPE_PRESENTATION) return
   const list = state[recordId] ?? NONE
   const latest = list[0]
   const now = Date.now()

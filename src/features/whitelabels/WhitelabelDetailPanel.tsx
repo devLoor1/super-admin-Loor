@@ -30,6 +30,7 @@ import { WhitelabelActionsMenu } from './crud/WhitelabelActionsMenu'
 import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess, type LifecycleOperation } from './crud/whitelabelMutationContract'
 import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from './whitelabelApi'
 import styles from './WhitelabelDetailPanel.module.css'
+import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
 type DetailTab = 'overview' | 'admins' | 'applications' | 'integrations'
 
@@ -237,13 +238,13 @@ function DetailContents({
       <Tabs
         idPrefix={ID_PREFIX}
         label={`Seções de ${whitelabel.name}`}
-        tabs={TABS}
+        tabs={PROTOTYPE_PRESENTATION ? TABS : TABS.filter(item => item.value === 'overview')}
         value={tab}
         onChange={setTab}
         className={styles.tabs}
       />
 
-      <p className={styles.tabsHint}>Mais seções: deslize ou use as setas ← →</p>
+      {PROTOTYPE_PRESENTATION ? <p className={styles.tabsHint}>Mais seções: deslize ou use as setas ← →</p> : null}
 
       {TABS.map((item) => (
         <div
@@ -366,7 +367,7 @@ function Overview({
         ))}
       </ul>
 
-      <section className={styles.card} aria-labelledby="wl-actions-title" data-detail-stage="actions">
+      {PROTOTYPE_PRESENTATION ? <section className={styles.card} aria-labelledby="wl-actions-title" data-detail-stage="actions">
         <h3 id="wl-actions-title" className={styles.cardTitle}>
           Ações rápidas
         </h3>
@@ -391,7 +392,7 @@ function Overview({
             </li>
           ))}
         </ul>
-      </section>
+      </section> : null}
     </div>
   )
 }

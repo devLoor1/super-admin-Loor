@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { readinessTabs } from '../../../app/presentationAvailability'
 import { ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import primary from '../../../components/ui/PrimaryButton.module.css'
@@ -133,7 +134,7 @@ function PaymentContent({ payment, back }: { payment: PaymentDetail; back: strin
       />
 
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label={`Seções do pagamento ${id}`} tabs={tabs} value={tab} onChange={changeTab} />
+        <Tabs idPrefix={TAB_PREFIX} label={`Seções do pagamento ${id}`} tabs={readinessTabs(tabs)} value={tab} onChange={changeTab} />
       </div>
 
       <TabPanel prefix={TAB_PREFIX} tab="overview" current={tab}>

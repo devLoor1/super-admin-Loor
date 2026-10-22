@@ -22,6 +22,7 @@ import { whitelabelOf, type SortDirection } from './operationModel'
 import { formatActivityTime, type OperationActivity } from './operationActivity'
 import { takeQueuedNotice } from './queuedNotice'
 import styles from './Operation.module.css'
+import { PROTOTYPE_PRESENTATION } from '../../../app/presentationAvailability'
 
 export type OperationSection = 'opportunities' | 'investors' | 'entrepreneurs'
 
@@ -262,6 +263,8 @@ export type DomainNavItem = {
  * that owns each capability. Pending modules are labelled before activation.
  */
 export function DomainNavCard({ title, intro, items }: { title: string; intro: string; items: DomainNavItem[] }) {
+  const visibleItems = PROTOTYPE_PRESENTATION ? items : items.filter(item => item.href && !item.pending)
+  if (!visibleItems.length) return null
   return (
     <section className={fin.card} aria-labelledby="domain-nav-title">
       <h2 id="domain-nav-title" className={fin.cardTitleSm}>
@@ -269,7 +272,7 @@ export function DomainNavCard({ title, intro, items }: { title: string; intro: s
       </h2>
       <p className={fin.cardSubtitle}>{intro}</p>
       <ul className={styles.navList}>
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon
           const content = (
             <>
@@ -308,6 +311,7 @@ export function DomainNavCard({ title, intro, items }: { title: string; intro: s
 
 /** Session-only feedback for one record. Explicitly not an audit trail. */
 export function SessionActivityCard({ entries, emptyText }: { entries: OperationActivity[]; emptyText: string }) {
+  if (!PROTOTYPE_PRESENTATION) return null
   return (
     <section className={fin.card} aria-labelledby="op-activity-title">
       <h2 id="op-activity-title" className={fin.cardTitleSm}>

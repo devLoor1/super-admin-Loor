@@ -413,7 +413,7 @@ function ChooseWhitelabel({
       <EmptyState
         icon={Building2}
         title="Selecione um Whitelabel"
-        description={`“${requestedId.length > 32 ? `${requestedId.slice(0, 32)}…` : requestedId}” não é um Whitelabel do Control Plane. Escolha um Whitelabel para consultar as contas.`}
+        description={requestedId === 'select' ? 'Escolha um Whitelabel do Control Plane para consultar as contas.' : `“${requestedId.length > 32 ? `${requestedId.slice(0, 32)}…` : requestedId}” não é um Whitelabel do Control Plane. Escolha um Whitelabel para consultar as contas.`}
       />
       {status === 'loading' ? (
         <p className={styles.chooseStatus} role="status">

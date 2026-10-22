@@ -4,6 +4,7 @@ import { logout, useSessionOperator } from '../../lib/authSession'
 import { usePrototypeNotice } from './prototypeNotice'
 import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
+import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
 /** One step of the header trail; the last step is the current page. */
 export type Breadcrumb = { label: string; href?: string }
@@ -37,7 +38,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
   // Ctrl/⌘ + K focuses the search field, as hinted by the keyboard badge.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!navOpen && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (PROTOTYPE_PRESENTATION && !navOpen && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         searchRef.current?.focus()
       }
@@ -119,7 +120,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
         )}
       </div>
 
-      <div className={styles.controls}>
+      {PROTOTYPE_PRESENTATION ? <div className={styles.controls}>
         <button
           type="button"
           className={styles.context}
@@ -153,9 +154,10 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
             {IS_MAC ? '⌘' : 'Ctrl'} K
           </kbd>
         </form>
-      </div>
+      </div> : null}
 
       <div className={styles.actions}>
+        {PROTOTYPE_PRESENTATION ? <>
         <span className={styles.divider} aria-hidden="true" />
         <button
           type="button"
@@ -166,6 +168,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
           <Bell size={19} strokeWidth={1.7} aria-hidden="true" />
         </button>
         <span className={styles.divider} aria-hidden="true" />
+        </> : null}
         <div className={styles.userMenu} ref={userMenuRef}>
           <button
             type="button"

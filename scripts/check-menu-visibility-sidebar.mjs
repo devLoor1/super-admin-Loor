@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { outsideReviewed360, reviewed360 } from './reviewed-360-boundary.mjs'
 import { readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -110,7 +111,7 @@ check(notifications > 0, 'external-store notifications delivered')
 // Routing, tenant overrides, drawer focus and RBAC remain owned by unchanged code.
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 for (const path of ['src/app', 'src/lib/authSession.ts', 'src/components/shell/AppShell.tsx', 'src/components/shell/navigation.ts']) {
-  check(!git('diff', '--name-only', 'cc1ae35', '--', path).trim(), 'Stage C leaves routes/shortcuts/auth/focus shell unchanged: ' + path)
+  check(!outsideReviewed360(git('diff', '--name-only', 'cc1ae35', '--', path)).length, 'Stage C unchanged except exact later 360/readiness boundary: ' + path)
 }
 // Preserve the original historical Stage C Dashboard exclusion. Recovery V1 is
 // a later, explicitly authorized Dashboard-only unit, not a Stage C expansion.
@@ -124,7 +125,7 @@ const recoveryFiles = new Set(['src/features/dashboard/DashboardPage.tsx', 'src/
   'src/features/dashboard/recentAuditEvents.ts', 'src/features/dashboard/useRecentAuditEvents.ts'])
 const dashboardChanges = [...git('diff', '--name-only', 'cd59887', '--', 'src/features/dashboard').trim().split('\n'),
   ...git('ls-files', '--others', '--exclude-standard', '--', 'src/features/dashboard').trim().split('\n')].filter(Boolean)
-check(dashboardChanges.every(path => recoveryFiles.has(path)), 'only exact authorized Recovery, Distribution, Daily Opportunity and Recent Audit files change Dashboard; other panels/styles/shortcuts preserved')
+check(dashboardChanges.every(path => reviewed360(path) || recoveryFiles.has(path)), 'only exact authorized Recovery/360/readiness changes; other panels/styles/shortcuts preserved')
 const sidebar = await readFile(resolve(root, 'src/components/shell/Sidebar.tsx'), 'utf8')
 check(sidebar.includes('subNavHrefs?.[child.id] ?? child.href') && sidebar.includes('subNavHrefs?.[item.id] ?? item.href'), 'tenant-specific destinations preserved')
 check(sidebar.includes('aria-current={current') && sidebar.includes('currentType={childIsCurrent'), 'active states retained')

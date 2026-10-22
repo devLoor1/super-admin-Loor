@@ -87,9 +87,9 @@ for (const source of [list, detail]) {
   check(!/sessionStorage|localStorage|\bfetch\s*\(/.test(source), 'Screens must use canonical read/auth layer')
   check(source.includes('Validação do cadastro'), 'Registration validation is explicitly distinct from KYC')
 }
-check(detail.includes('Investimentos — aguardando integração') && detail.includes('Compliance / KYC — aguardando integração'), 'KYC/Finance panels remain unavailable')
-check(detail.includes('prototypeLink ? null : investorId'), 'Prototype links reach a controlled not-found state without a request')
-check(detail.includes('Nenhuma navegação foi feita'), 'Real Investor ids cannot enter prototype destinations')
+check(detail.includes('Resumo KYC da visão 360°') && detail.includes('Resumo financeiro'), 'Overview replaces obsolete unavailable KYC/Finance panels')
+check(detail.includes('valid={isPositiveCoreId(investorId)}'), 'Non-Core links reach controlled unavailable identity')
+check(!/PENDING|usePrototypeNotice/.test(detail), 'Real Investor ids cannot enter prototype destinations')
 check(!/\b(?:apiRequest|authenticatedPost|authenticatedPut|authenticatedPatch|authenticatedDelete)\s*\(/.test(api), 'Adapter is GET-only')
 check(app.includes('returnTo={route.returnTo}'), 'Detail return context survives a full document reload')
 await assert.rejects(access(resolve(root, 'src/features/operation/investors/prototypeInvestments.ts')))
@@ -100,14 +100,14 @@ for (const source of [entrepreneurList, entrepreneurDetail]) {
   check(!/from\s+['"][^'"]*(?:shared\/participants|prototypeKyc|opportunityStore|financeCoreRecords)['"]/.test(source), 'No prototype join in authoritative Entrepreneur screens')
   check(!/sessionStorage|localStorage|\bfetch\s*\(/.test(source), 'Entrepreneurs use canonical auth/read transport')
 }
-check(entrepreneurDetail.includes('`entrepreneur:${id}`'), 'Activity identity is namespaced against numeric Investor overlap')
+check(!entrepreneurDetail.includes('useOperationActivity'), 'No fabricated Entrepreneur session audit activity')
 // Opportunities + Companies Read V1: the Company is no longer "pending" — it is read from
 // GET /entrepreneurs/:id/company (0..1), tenant-scoped, and never fabricated (see check-opportunities-companies-read).
 const companyPanel = await readFile(resolve(root, 'src/features/operation/companies/EntrepreneurCompanyPanel.tsx'), 'utf8')
-check(entrepreneurDetail.includes('useEntrepreneurCompany(entrepreneur.id, entrepreneur.whitelabelId)'), 'Company is read authoritatively for this Entrepreneur and tenant, not fabricated')
+check(entrepreneurDetail.includes('useEntrepreneurOverview(entrepreneurId)'), 'Company is read authoritatively in overview without duplicate request')
 check(!entrepreneurDetail.includes('Aguardando integração da empresa') && companyPanel.includes('Sem empresa vinculada'), 'Company absence is the confirmed Backend state, not a pending placeholder')
-check(entrepreneurDetail.includes('prototypeLink ? null : entrepreneurId'), 'Prototype-origin Entrepreneur links do not reach Core')
-check(entrepreneurDetail.includes('Nenhuma navegação foi feita'), 'Real Entrepreneur ids do not enter prototype destinations')
+check(entrepreneurDetail.includes('valid={isPositiveCoreId(entrepreneurId)}'), 'Prototype-origin Entrepreneur links do not reach Core')
+check(!/PENDING|usePrototypeNotice/.test(entrepreneurDetail), 'Real Entrepreneur ids do not enter prototype destinations')
 for (const component of ['ParticipantList.tsx', 'ParticipantDetail.tsx']) {
   await assert.rejects(access(resolve(root, `src/features/operation/shared/${component}`)))
   checks += 1

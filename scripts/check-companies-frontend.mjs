@@ -653,9 +653,10 @@ await check('Entrepreneur list: no per-row Company read (no N+1); Entrepreneur p
   assert.ok(!/from\s+'[^']*companies\//.test(listSource))
   const profile = await readFile(resolve(root, 'src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx'), 'utf8')
   const imports = [...profile.matchAll(/import\s+\{([^}]*)\}\s+from\s+'(\.\.\/companies\/[^']+)'/g)].map((match) => `${match[2]}:${match[1].trim()}`).sort()
-  assert.deepEqual(imports, ['../companies/EntrepreneurCompanyPanel:CompanyRelationValue, EntrepreneurCompanyPanel', '../companies/useCompanyData:useEntrepreneurCompany'])
-  assert.equal((profile.match(/useEntrepreneurCompany\(/g) ?? []).length, 1)
-  assert.ok(profile.includes('useEntrepreneurCompany(entrepreneur.id, entrepreneur.whitelabelId)'))
+  assert.deepEqual(imports, ['../companies/companyRoute:companyHref'])
+  assert.equal((profile.match(/useEntrepreneurCompany\(/g) ?? []).length, 0)
+  assert.ok(profile.includes('useEntrepreneurOverview(entrepreneurId)'))
+  assert.ok(profile.includes('companyHref(c.id'))
 })
 const navigation = await readFile(resolve(root, 'src/components/shell/navigation.ts'), 'utf8')
 await check('navigation: no Companies entry in the shared navigation / menu configuration', () => {

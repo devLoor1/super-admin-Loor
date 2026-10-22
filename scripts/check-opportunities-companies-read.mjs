@@ -479,8 +479,9 @@ await check('Opportunity detail: the Company read is latched once its tab opens 
 })
 await check('Entrepreneur profile: Company read for THIS Entrepreneur and tenant; no pending placeholder; detail stays keyed by id', async () => {
   const detail = await code('src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx')
-  assert.ok(detail.includes('useEntrepreneurCompany(entrepreneur.id, entrepreneur.whitelabelId)'))
-  assert.ok(detail.includes('<EntrepreneurCompanyPanel remote={company} variant="entrepreneur" entrepreneurId={entrepreneur.id}'))
+  assert.ok(detail.includes('useEntrepreneurOverview(entrepreneurId)'))
+  assert.ok(detail.includes('companyHref(c.id'))
+  assert.equal(detail.includes('useEntrepreneurCompany('),false)
   assert.equal(detail.includes('Aguardando integração da empresa'), false)
   const app = await code('src/app/App.tsx')
   assert.match(app, /<EntrepreneurDetailPage key=\{route\.entrepreneurId\} entrepreneurId=\{route\.entrepreneurId\}/)

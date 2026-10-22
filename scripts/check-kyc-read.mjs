@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { outsideReviewed360, reviewed360 } from './reviewed-360-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
@@ -91,7 +92,7 @@ await check('hook session/abort lifecycle uses canonical read hook without lastD
 await check('no unsupported filters or global status counts',async()=>{const t=await read('src/features/compliance-kyc/KycListPage.tsx');assert.ok(!/<select|type="search"|\.filter\(|SummaryCards|PROTOTYPE_/.test(t))})
 await check('FaceMatch is detail section; no decisions/session activity',async()=>{const t=await read('src/features/compliance-kyc/KycDetailPage.tsx');assert.ok(t.includes('title="Face Match"'));assert.ok(!/onClick|Dialog|useState|SessionActivityCard/.test(t))})
 await check('Dashboard and auth implementations unchanged',async()=>{
-  for(const path of ['src/features/dashboard','src/features/governance-audit','src/lib/authSession.ts','src/lib/apiClient.ts','src/components/shell']) assert.equal(execFileSync('git',['diff','6969a89','--',path],{cwd:root,encoding:'utf8'}),'')
+  for(const path of ['src/features/dashboard','src/features/governance-audit','src/lib/authSession.ts','src/lib/apiClient.ts','src/components/shell']) assert.deepEqual(outsideReviewed360(execFileSync('git',['diff','--name-only','6969a89','--',path],{cwd:root,encoding:'utf8'})),[])
 })
 await check('participant profiles differ only by the exact obsolete KYC copy replacements', async()=>{
   for(const [kind, replacements] of [
@@ -103,7 +104,10 @@ await check('participant profiles differ only by the exact obsolete KYC copy rep
       ['Compliance › KYC — caso de empreendedor indisponível neste contrato','Compliance › KYC — ainda em protótipo, não integrado']]],
   ]){
     const path=`src/features/operation/${kind}/${kind==='investors'?'Investor':'Entrepreneur'}DetailPage.tsx`
-    let source=(await read(path)).replaceAll('\r\n','\n')
+    // Preserve the exact accepted KYC copy migration historically; the current
+    // profiles are replaced by the independently tested, exact-pinned 360 unit.
+    assert.equal(reviewed360(path),true)
+    let source=execFileSync('git',['show',`cf79cca5066771a2edd20ad404f1b0f59527ce29:${path}`],{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n')
     for(const [next,old] of replacements){assert.equal(source.split(next).length,2);source=source.replace(next,old)}
     assert.equal(source,execFileSync('git',['show',`6969a89:${path}`],{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n'))
   }

@@ -34,6 +34,8 @@ import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPa
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
+import { viewAvailable } from './presentationAvailability'
+import { ReadinessUnavailablePage } from './ReadinessUnavailablePage'
 
 type View =
   | 'login'
@@ -467,6 +469,7 @@ export function App() {
   }, [route.view, authed])
 
   if (!authed || route.view === 'login') return <LoginPage />
+  if (!viewAvailable(route.view)) return <ReadinessUnavailablePage />
   if (route.view === 'dashboard') return <DashboardPage />
   if (route.view === 'whitelabels') {
     return (

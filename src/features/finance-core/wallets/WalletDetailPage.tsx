@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
+import { PROTOTYPE_PRESENTATION, readinessTabs } from '../../../app/presentationAvailability'
 import { ArrowLeftRight, ChartColumn, Eye, Info, QrCode, SearchX, Building, X } from 'lucide-react'
 import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
 import { EmptyState } from '../../../components/ui/EmptyState'
@@ -99,7 +100,7 @@ function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetai
   const id = wallet.id
   const { aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo } = params
   const { state: route, ignored } = useMemo(
-    () => parseWalletDetailRoute({ aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo }),
+    () => parseWalletDetailRoute({ aba: !PROTOTYPE_PRESENTATION && aba === 'atividade' ? undefined : aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo }),
     [aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo],
   )
   const name = wallet.name ?? `Whitelabel #${wallet.whitelabelId}`
@@ -176,7 +177,7 @@ function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetai
       <IgnoredParams ignored={ignored} />
 
       <div className={`${fin.card} ${shared.tabsCard}`}>
-        <Tabs idPrefix={TAB_PREFIX} label={`Seções da wallet ${name}`} tabs={tabs} value={route.tab} onChange={changeTab} />
+        <Tabs idPrefix={TAB_PREFIX} label={`Seções da wallet ${name}`} tabs={readinessTabs(tabs)} value={route.tab} onChange={changeTab} />
       </div>
 
       <TabPanel prefix={TAB_PREFIX} tab="visao-geral" current={route.tab}>

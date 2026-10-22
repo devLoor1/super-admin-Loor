@@ -6,6 +6,7 @@ import { sidebarNavigation } from '../../features/menu-visibility/sidebarVisibil
 import { moduleUnavailable, usePrototypeNotice } from './prototypeNotice'
 import { GlassNavItem } from '../originkit/GlassNavItem'
 import styles from './Sidebar.module.css'
+import { readinessNavigation, readinessHref } from '../../app/presentationAvailability'
 
 type SidebarProps = {
   activeId: string
@@ -106,7 +107,7 @@ function NavList({
 
   return (
     <ul className={compact ? styles.listCompact : styles.list}>
-      {items.map((item) => {
+      {readinessNavigation(items).map((item) => {
         const Icon = item.icon
         const active = item.id === activeId
         // Nested screens are listed only while their domain is active; the
@@ -123,7 +124,7 @@ function NavList({
         return (
           <li key={item.id} data-sidebar-menu-id={item.id}>
             <GlassNavItem
-              href={subNavHrefs?.[item.id] ?? item.href}
+              href={readinessHref(item.id, subNavHrefs?.[item.id] ?? item.href)}
               active={active}
               currentType={childIsCurrent ? 'true' : 'page'}
               label={item.label}
@@ -140,7 +141,7 @@ function NavList({
                   return (
                     <li key={child.id} data-sidebar-menu-id={child.id}>
                       <a
-                        href={subNavHrefs?.[child.id] ?? child.href}
+                        href={readinessHref(child.id, subNavHrefs?.[child.id] ?? child.href)}
                         className={styles.subItem}
                         data-active={current || undefined}
                         data-tooltip={child.label}

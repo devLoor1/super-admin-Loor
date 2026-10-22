@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { PROTOTYPE_PRESENTATION } from '../../../app/presentationAvailability'
 
 /*
  * Session activity for Operation records (opportunity, investor or
@@ -36,6 +37,7 @@ export function useOperationActivity(subjectId: string): OperationActivity[] {
 
 /** Newest first. */
 export function addOperationActivity(subjectId: string, entry: Omit<OperationActivity, 'id' | 'at'>) {
+  if (!PROTOTYPE_PRESENTATION) return
   const list = state[subjectId] ?? NONE
   const latest = list[0]
   const now = Date.now()

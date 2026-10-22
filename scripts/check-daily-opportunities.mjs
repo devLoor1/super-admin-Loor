@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { outsideReviewed360 } from './reviewed-360-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -217,7 +218,7 @@ await check('protected KPIs/distribution/auth/routing/shared adapter/flags/depen
     'src/features/dashboard/investorDistribution.ts','src/features/dashboard/useInvestorDistribution.ts','src/features/dashboard/WhitelabelDistributionPanel.tsx','src/features/dashboard/WhitelabelDistributionPanel.module.css',
     'src/features/dashboard/OperationalStatusPanel.tsx','src/features/dashboard/DashboardPage.module.css',
     'src/lib','src/components','src/app','src/features/operation/opportunities/opportunityApi.ts','src/features/menu-visibility','src/features/whitelabels','package.json','package-lock.json']) {
-    assert.equal(execFileSync('git',['diff','--name-only','e4c7b5e','--',path],{cwd:root,encoding:'utf8'}).trim(),'',path)
+    assert.deepEqual(outsideReviewed360(execFileSync('git',['diff','--name-only','e4c7b5e','--',path],{cwd:root,encoding:'utf8'})),[],path)
   }
 })
 auth.clearSession()

@@ -22,6 +22,22 @@
   min-width: 0;
 }
 
+@media (min-width: 1200px) {
+  .dashboard[data-operational] .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dashboard[data-operational] .middle { grid-template-columns: minmax(0, 527fr) minmax(0, 422fr); }
+  .dashboard[data-operational] .activity { grid-column: auto; }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .dashboard[data-operational] .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard[data-operational] .kpiCell { grid-column: auto; }
+  .dashboard[data-operational] .distribution { grid-column: 1 / -1; }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .dashboard[data-operational] .kpiCell:last-child { grid-column: auto; }
+}
+
 /* `GET /dashboard` failed: the cards show "—"; this row explains why and offers a retry. */
 .kpiError {
   display: flex;

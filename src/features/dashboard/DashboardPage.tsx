@@ -15,6 +15,7 @@ import { formatKpi, freshnessLabel, type DashboardOverview } from './dashboardAp
 import { dashboardCountReading } from './dashboardCounts'
 import { useDashboardOpportunityCount, useDashboardOverview, useDashboardPaymentCount } from './useDashboardOverview'
 import styles from './DashboardPage.module.css'
+import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
 /**
  * Global Dashboard V1 — the Super Admin control plane overview.
@@ -86,13 +87,13 @@ function DashboardContent() {
   }
 
   return (
-    <div className={styles.dashboard}>
+    <div className={styles.dashboard} data-operational={!PROTOTYPE_PRESENTATION || undefined}>
       <section aria-labelledby="kpi-heading" data-dashboard-kpis>
         <h2 id="kpi-heading" className="visually-hidden">
           Indicadores globais
         </h2>
         <ul className={styles.kpis}>
-          {METRICS.map((metric) => (
+          {METRICS.filter(metric => PROTOTYPE_PRESENTATION || metric.source).map((metric) => (
             <li key={metric.id} className={styles.kpiCell} data-kpi={metric.id}>
               <MetricCard
                 label={metric.label}
@@ -133,7 +134,7 @@ function DashboardContent() {
       <div className={styles.middle}>
         <ActivityPanel className={styles.activity} />
         <WhitelabelDistributionPanel className={styles.distribution} overview={overview.state} onReloadOverview={overview.reload} />
-        <OperationalStatusPanel className={styles.status} />
+        {PROTOTYPE_PRESENTATION ? <OperationalStatusPanel className={styles.status} /> : null}
       </div>
 
       <div className={styles.bottom}>

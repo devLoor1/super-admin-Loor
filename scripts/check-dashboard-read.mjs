@@ -317,13 +317,33 @@ await check('count reading: independent loading and pt-BR formatting without agg
 const dashboardDir = resolve(root, 'src/features/dashboard')
 const sources = Object.fromEntries(await Promise.all((await readdir(dashboardDir)).filter((name) => /\.tsx?$/.test(name))
   .map(async (name) => [name, await readFile(resolve(dashboardDir, name), 'utf8')])))
-await check('Dashboard sources: no storage/prototype/Audit/write paths; exactly two approved list adapters', async () => {
+await check('Dashboard sources: no storage/prototype/write paths; exact approved Audit preview imports only', async () => {
   for (const [name, source] of Object.entries(sources)) {
     assert.equal(/sessionStorage|localStorage/.test(source), false, name)
     // `prototypeNotice` is the shell's notice helper, not prototype data.
-    const withoutApprovedAdapters = name === 'dashboardCounts.ts'
+    let withoutApprovedAdapters = name === 'dashboardCounts.ts'
       ? source.replace("import { listPayments } from '../finance-core/shared/financeApi'", '')
       : source
+    if (name === 'recentAuditEvents.ts') {
+      for (const statement of [
+        "import { AUDIT_PAGE_SIZE, listAuditEvents, type AuditListResult } from '../governance-audit/auditApi'",
+        "import { actionLabel, actorName, resourceText, resultMeta } from '../governance-audit/auditPresent'",
+      ]) {
+        assert.equal(source.split(statement).length, 2)
+        withoutApprovedAdapters = withoutApprovedAdapters.replace(statement, '')
+      }
+    }
+    const approvedPreviewWiring = {
+      'RecentEventsPanel.tsx': [
+        "import { recentAuditView, type RecentAuditView } from './recentAuditEvents'",
+        "import { useRecentAuditEvents } from './useRecentAuditEvents'",
+      ],
+      'useRecentAuditEvents.ts': ["import { getRecentAuditEvents } from './recentAuditEvents'"],
+    }
+    for (const statement of approvedPreviewWiring[name] ?? []) {
+      assert.equal(source.split(statement).length, 2)
+      withoutApprovedAdapters = withoutApprovedAdapters.replace(statement, '')
+    }
     assert.equal(/from ['"][^'"]*(prototype(?!Notice)|Seeds|participants|finance-core|compliance-kyc|governance|audit)/i.test(withoutApprovedAdapters), false, name)
     assert.equal(/authenticatedGet\(\s*['"`](?!\/dashboard['"`])/.test(source), false, name)
     assert.equal(/fetch\(|method:\s*['"](POST|PUT|PATCH|DELETE)/.test(source), false, name)
@@ -335,11 +355,12 @@ await check('Dashboard sources: no storage/prototype/Audit/write paths; exactly 
   assert.match(sources['useDashboardOverview.ts'], /'dashboard-payment-count', getDashboardPaymentCount/)
   assert.match(sources['DashboardPage.tsx'], /onClick=\{reload\}/)
 })
-await check('remaining pending panels stay data-ready (no health or events)', async () => {
+await check('health remains pending; historical Recent Events placeholder preserved before this authorized preview', async () => {
   assert.match(sources['OperationalStatusPanel.tsx'], /Aguardando integração/)
-  assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx']
-    + sources['RecentEventsPanel.tsx']), false)
-  assert.match(sources['RecentEventsPanel.tsx'], /<tbody \/>/)
+  assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx']), false)
+  assert.match(execFileSync('git', ['show', 'e89840d:src/features/dashboard/RecentEventsPanel.tsx'], { cwd: root, encoding: 'utf8' }), /<tbody \/>/)
+  assert.match(sources['RecentEventsPanel.tsx'], /useRecentAuditEvents\(\)/)
+  assert.doesNotMatch(sources['RecentEventsPanel.tsx'], /useDashboardOverview|dashboardApi|\.events/)
 })
 await check('Daily Opportunity series is independent of existing KPI sources', () => {
   assert.match(sources['dailyOpportunities.ts'], /listOpportunities\(\{ page: 1, perPage: 100, search: '', sort: 'createdAt', order: 'desc' \}/)

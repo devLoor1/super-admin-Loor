@@ -481,10 +481,12 @@ const dashboardRecoveryFiles = new Set(['src/features/dashboard/DashboardPage.ts
   'src/features/dashboard/WhitelabelDistributionPanel.tsx', 'src/features/dashboard/WhitelabelDistributionPanel.module.css',
   'src/features/dashboard/investorDistribution.ts', 'src/features/dashboard/useInvestorDistribution.ts',
   'src/features/dashboard/ActivityPanel.tsx', 'src/features/dashboard/ActivityPanel.module.css',
-  'src/features/dashboard/dailyOpportunities.ts', 'src/features/dashboard/useDailyOpportunities.ts'])
+  'src/features/dashboard/dailyOpportunities.ts', 'src/features/dashboard/useDailyOpportunities.ts',
+  'src/features/dashboard/RecentEventsPanel.tsx', 'src/features/dashboard/RecentEventsPanel.module.css',
+  'src/features/dashboard/recentAuditEvents.ts', 'src/features/dashboard/useRecentAuditEvents.ts'])
 const dashboardRecoveryChanges = [...git('diff', '--name-only', 'cd59887', '--', 'src/features/dashboard').trim().split('\n'),
   ...git('ls-files', '--others', '--exclude-standard', '--', 'src/features/dashboard').trim().split('\n')].filter(Boolean)
-check(dashboardRecoveryChanges.every(path => dashboardRecoveryFiles.has(path)), 'only exact authorized Recovery, Investor Distribution and Daily Opportunity files changed; all other Dashboard files remain protected')
+check(dashboardRecoveryChanges.every(path => dashboardRecoveryFiles.has(path)), 'only exact authorized Recovery, Distribution, Daily Opportunity and Recent Audit files changed; other Dashboard files remain protected')
 // Finance Read Integration V1 (a later, reviewed unit) changed ONLY the Finance Read route
 // statements of App.tsx (URL params handed to the six Finance Read pages). Those statements
 // are located by syntax (never by line range) and must be EXACTLY the reviewed statements

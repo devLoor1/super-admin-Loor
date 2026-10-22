@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { readdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
@@ -265,11 +266,22 @@ await check('Audit screens: no prototype events / ids, no storage, no writes, no
   }
   assert.deepEqual((await readdir(auditDir)).filter((name) => /\.tsx?$/.test(name)).sort(), screens.slice().sort())
 })
-await check('Dashboard stays independent of Audit (no recent-activity wiring)', async () => {
+await check('historical Dashboard had no Audit reads; current preview has only the exact approved adapter/presentation imports and call', async () => {
   const dashboardDir = resolve(root, 'src/features/dashboard')
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
+  for (const path of git('ls-tree', '-r', '--name-only', 'e89840d', '--', 'src/features/dashboard').trim().split('\n').filter(path => /\.tsx?$/.test(path))) {
+    assert.doesNotMatch(git('show', `e89840d:${path}`), /governance-audit|listAuditEvents|useAuditList|authenticatedGet\(\s*['"`]\/audit/)
+  }
   for (const name of (await readdir(dashboardDir)).filter((file) => /\.tsx?$/.test(file))) {
-    // Navigation links to #/audit are fine; reading audit events is not.
-    assert.equal(/governance-audit|listAuditEvents|useAuditList|authenticatedGet\(\s*['"`]\/audit/.test(await readFile(resolve(dashboardDir, name), 'utf8')), false, name)
+    let source = await readFile(resolve(dashboardDir, name), 'utf8')
+    if (name === 'recentAuditEvents.ts') {
+      for (const statement of [
+        "import { AUDIT_PAGE_SIZE, listAuditEvents, type AuditListResult } from '../governance-audit/auditApi'",
+        "import { actionLabel, actorName, resourceText, resultMeta } from '../governance-audit/auditPresent'",
+        "listAuditEvents({ page: 1, search: '', order: 'desc' }, signal)",
+      ]) { assert.equal(source.split(statement).length, 2); source = source.replace(statement, '') }
+    }
+    assert.doesNotMatch(source, /governance-audit|listAuditEvents|useAuditList|authenticatedGet\(\s*['"`]\/audit/, name)
   }
 })
 await check('detail makes list provenance visible across every tab; metadata uses protected text', async () => {

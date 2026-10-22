@@ -211,9 +211,11 @@ await check('session-keyed useRemote, no polling/storage/duplicate transport; pe
   assert.match(panel,/actions=\{<span/)
 })
 await check('protected KPIs/distribution/auth/routing/shared adapter/flags/dependencies byte-identical to accepted baseline', () => {
+  // Daily V1 did not change Recent Events. Its later authorized integration is separate.
+  assert.equal(execFileSync('git',['diff','--name-only','e4c7b5e','e89840d','--','src/features/dashboard/RecentEventsPanel.tsx'],{cwd:root,encoding:'utf8'}).trim(),'')
   for (const path of ['src/features/dashboard/dashboardApi.ts','src/features/dashboard/dashboardCounts.ts','src/features/dashboard/useDashboardOverview.ts',
     'src/features/dashboard/investorDistribution.ts','src/features/dashboard/useInvestorDistribution.ts','src/features/dashboard/WhitelabelDistributionPanel.tsx','src/features/dashboard/WhitelabelDistributionPanel.module.css',
-    'src/features/dashboard/RecentEventsPanel.tsx','src/features/dashboard/OperationalStatusPanel.tsx','src/features/dashboard/DashboardPage.module.css',
+    'src/features/dashboard/OperationalStatusPanel.tsx','src/features/dashboard/DashboardPage.module.css',
     'src/lib','src/components','src/app','src/features/operation/opportunities/opportunityApi.ts','src/features/menu-visibility','src/features/whitelabels','package.json','package-lock.json']) {
     assert.equal(execFileSync('git',['diff','--name-only','e4c7b5e','--',path],{cwd:root,encoding:'utf8'}).trim(),'',path)
   }

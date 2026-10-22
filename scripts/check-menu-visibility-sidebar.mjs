@@ -119,10 +119,12 @@ const recoveryFiles = new Set(['src/features/dashboard/DashboardPage.tsx', 'src/
   'src/features/dashboard/WhitelabelDistributionPanel.tsx', 'src/features/dashboard/WhitelabelDistributionPanel.module.css',
   'src/features/dashboard/investorDistribution.ts', 'src/features/dashboard/useInvestorDistribution.ts',
   'src/features/dashboard/ActivityPanel.tsx', 'src/features/dashboard/ActivityPanel.module.css',
-  'src/features/dashboard/dailyOpportunities.ts', 'src/features/dashboard/useDailyOpportunities.ts'])
+  'src/features/dashboard/dailyOpportunities.ts', 'src/features/dashboard/useDailyOpportunities.ts',
+  'src/features/dashboard/RecentEventsPanel.tsx', 'src/features/dashboard/RecentEventsPanel.module.css',
+  'src/features/dashboard/recentAuditEvents.ts', 'src/features/dashboard/useRecentAuditEvents.ts'])
 const dashboardChanges = [...git('diff', '--name-only', 'cd59887', '--', 'src/features/dashboard').trim().split('\n'),
   ...git('ls-files', '--others', '--exclude-standard', '--', 'src/features/dashboard').trim().split('\n')].filter(Boolean)
-check(dashboardChanges.every(path => recoveryFiles.has(path)), 'only exact authorized Recovery, Investor Distribution and Daily Opportunity files change Dashboard; other panels/styles/shortcuts preserved')
+check(dashboardChanges.every(path => recoveryFiles.has(path)), 'only exact authorized Recovery, Distribution, Daily Opportunity and Recent Audit files change Dashboard; other panels/styles/shortcuts preserved')
 const sidebar = await readFile(resolve(root, 'src/components/shell/Sidebar.tsx'), 'utf8')
 check(sidebar.includes('subNavHrefs?.[child.id] ?? child.href') && sidebar.includes('subNavHrefs?.[item.id] ?? item.href'), 'tenant-specific destinations preserved')
 check(sidebar.includes('aria-current={current') && sidebar.includes('currentType={childIsCurrent'), 'active states retained')

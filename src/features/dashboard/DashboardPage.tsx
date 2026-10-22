@@ -24,9 +24,9 @@ import styles from './DashboardPage.module.css'
  * Opportunities and Payments independently read validated, unfiltered list totals.
  * Investor distribution reconciles the complete Whitelabel registry with the loaded overview.
  * Daily Opportunity creation uses its own complete list and São Paulo calendar.
- * KYC and other panels keep their data-ready state ("—", "Sem dados",
- * "Aguardando integração"): no health or event
- * is inferred, and nothing comes from prototype data.
+ * Recent events independently preview the Control Plane Audit log, not Core activity.
+ * KYC and health keep their data-ready state ("—", "Sem dados",
+ * "Aguardando integração"): no operational signal is inferred or fabricated.
  */
 export function DashboardPage() {
   return (

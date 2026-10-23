@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedOperators } from './reviewed-operators-boundary.mjs'
 import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360, withoutReadinessGate } from './reviewed-360-boundary.mjs'
 import { readdir, readFile } from 'node:fs/promises'
@@ -453,7 +454,7 @@ const allowedMentions = new Set([
 for (const file of await walk(resolve(root, 'src'))) {
   const rel = relative(root, file).replaceAll('\\', '/')
   const code = codeOnly(await readFile(file, 'utf8'), file)
-  if (/menu-visibility/.test(code)) check(allowedMentions.has(rel), `${rel}: may mention menu-visibility only as a route or documented endpoint`)
+  if (/menu-visibility/.test(code)) check(allowedMentions.has(rel) || rel === 'src/features/control-plane-operators/OperatorUi.tsx' && reviewedOperators(rel), `${rel}: may mention menu-visibility only as a route or documented endpoint`)
   if (/homolog\/menu-visibility/.test(code)) check(['src/features/menu-visibility/menuVisibilityContract.ts','src/features/menu-visibility/menuVisibilityUpdate.ts','src/lib/menuVisibilityWriteClient.ts'].includes(rel), `${rel}: endpoint string only in the contract module`)
   if (!rel.startsWith('src/features/menu-visibility/') && !['src/app/App.tsx', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx'].includes(rel)) {
     check(!/from\s+['"][^'"]*menu-visibility\//.test(code), `${rel}: nothing outside the page route imports Menu Visibility state`)

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { withoutReadinessGate } from './reviewed-360-boundary.mjs'
+import { withoutOperatorsEntry } from './reviewed-operators-boundary.mjs'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
@@ -65,6 +66,6 @@ await check('Investor lazy extra read only',async()=>{const t=await read('src/fe
 await check('Entrepreneur no duplicate Company read or KYC route',async()=>{const t=await read('src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx');assert.ok(!/useEntrepreneurCompany|useEntrepreneurDetail|#\/compliance\/kyc\//.test(t))})
 await check('auth gate precedes readiness gate',async()=>{const t=await read('src/app/App.tsx');assert.ok(t.indexOf("if (!authed || route.view === 'login')")<t.indexOf('if (!viewAvailable(route.view))'))})
 await check('App differs from accepted baseline only by exact post-auth readiness gate',async()=>{const baseline=execFileSync('git',['show','cf79cca5066771a2edd20ad404f1b0f59527ce29:src/app/App.tsx'],{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n');assert.equal(withoutReadinessGate(await read('src/app/App.tsx')),baseline)})
-await check('canonical auth, menu registry/preferences/save and dependencies untouched',()=>{assert.equal(execFileSync('git',['diff','cf79cca5066771a2edd20ad404f1b0f59527ce29','--','src/lib','src/features/menu-visibility','src/components/shell/navigation.ts','package.json','package-lock.json'],{cwd:root,encoding:'utf8'}),'')})
+await check('canonical auth, menu registry/preferences/save and dependencies untouched',async()=>{assert.equal(execFileSync('git',['diff','cf79cca5066771a2edd20ad404f1b0f59527ce29','--','src/lib','src/features/menu-visibility','src/components/shell/navigation.ts','package.json','package-lock.json',':(exclude)src/features/menu-visibility/MenuVisibilityPage.tsx'],{cwd:root,encoding:'utf8'}),'');assert.equal(withoutOperatorsEntry(await read('src/features/menu-visibility/MenuVisibilityPage.tsx')),execFileSync('git',['show','cf79cca:src/features/menu-visibility/MenuVisibilityPage.tsx'],{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n'))})
 for(const f of ['src/features/operation/investors/investorOverviewApi.ts','src/features/operation/entrepreneurs/entrepreneurOverviewApi.ts','src/app/presentationAvailability.ts'])await check(`no writes or runtime bypass ${f}`,async()=>{assert.ok(!/authenticatedWrite|localStorage|sessionStorage|window.location|hostname|console\.|fetch\(|POST|PUT|PATCH|DELETE/.test(await read(f)))})
 console.log(`Overview 360 + readiness: ${checks} focused checks passed (synthetic only, no live network)`)

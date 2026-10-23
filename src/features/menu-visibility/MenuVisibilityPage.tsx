@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { useSessionOperator } from '../../lib/authSession'
+import { OperatorsEntry } from '../control-plane-operators/OperatorUi'
 import { MENU_VISIBILITY_WRITES_ENABLED } from '../../lib/menuVisibilityWriteClient'
 import fin from '../finance-gateways/sections/FinanceSections.module.css'
 import { InfoNote, PageIntro } from '../operation/shared/OperationUi'
@@ -55,6 +56,7 @@ export function MenuVisibilityPage({ previa }: { previa?: string }) {
 
   return (
     <SettingsShell>
+      <OperatorsEntry />
       <PageIntro text="Defina quais módulos existentes aparecem no menu lateral do Super Admin. Mostrar ou ocultar não cria, remove, renomeia nem reordena itens do menu." />
       <div className={styles.notices}>
         <p className={styles.scope} data-visibility-scope>

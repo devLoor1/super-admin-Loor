@@ -31,6 +31,8 @@ import { KycDetailPage } from '../features/compliance-kyc/KycDetailPage'
 import { AuditListPage } from '../features/governance-audit/AuditListPage'
 import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPage'
+import { OperatorsListPage } from '../features/control-plane-operators/OperatorsListPage'
+import { OperatorDetailPage } from '../features/control-plane-operators/OperatorDetailPage'
 import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribePrototypeNavigation } from './prototypeNavigation'
@@ -68,6 +70,8 @@ type View =
   | 'audit'
   | 'audit-event'
   | 'settings-menu-visibility'
+  | 'control-plane-operators'
+  | 'control-plane-operator'
 
 type Route =
   | { view: 'login' | 'dashboard' }
@@ -110,8 +114,12 @@ type Route =
     }
   | { view: 'audit-event'; auditEventId: string; returnTo?: string }
   | { view: 'settings-menu-visibility'; previa?: string }
+  | { view: 'control-plane-operators'; rawQuery: string }
+  | { view: 'control-plane-operator'; id: string; returnTo?: string; invalidQuery: boolean }
 
 const TITLES: Record<View, string> = {
+  'control-plane-operators': 'Super Admin · Operadores do Control Plane',
+  'control-plane-operator': 'Super Admin · Consulta do operador',
   login: 'Super Admin · Acesso administrativo',
   dashboard: 'Super Admin · Dashboard Global',
   whitelabels: 'Super Admin · Whitelabels',
@@ -146,6 +154,8 @@ const TITLES: Record<View, string> = {
 
 /** Views rendered inside the dark App Shell (require Control Plane session). */
 const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
+  'control-plane-operators',
+  'control-plane-operator',
   'dashboard',
   'whitelabels',
   'accounts',
@@ -417,6 +427,10 @@ function routeFromHash(): Route {
   const auditEvent = AUDIT_EVENT_PATH.exec(path)
   if (auditEvent) return { view: 'audit-event', auditEventId: decodeSegment(auditEvent[1]), returnTo: param('returnTo') }
   if (path === 'settings/menu-visibility') return { view: 'settings-menu-visibility', previa: param('previa') }
+  if (path === 'settings/operators') return { view: 'control-plane-operators', rawQuery: window.location.hash.split('?').slice(1).join('?') }
+  if (path.startsWith('settings/operators/')) {
+    return { view: 'control-plane-operator', id: decodeSegment(path.slice('settings/operators/'.length)), returnTo: param('returnTo'), invalidQuery: [...params.keys()].some(key => key !== 'returnTo' || params.getAll(key).length !== 1) }
+  }
   return { view: 'login' }
 }
 
@@ -567,5 +581,7 @@ export function App() {
     return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} returnTo={route.returnTo} />
   }
   if (route.view === 'settings-menu-visibility') return <MenuVisibilityPage previa={route.previa} />
+  if (route.view === 'control-plane-operators') return <OperatorsListPage rawQuery={route.rawQuery} />
+  if (route.view === 'control-plane-operator') return <OperatorDetailPage key={route.id} id={route.id} returnTo={route.returnTo} invalidQuery={route.invalidQuery} />
   return <LoginPage />
 }

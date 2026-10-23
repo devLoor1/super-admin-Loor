@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 import { reviewedAuditFilters, withoutAuditRawQuery } from './reviewed-audit-filters-boundary.mjs'
+import { withoutOperatorsEntry } from './reviewed-operators-boundary.mjs'
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'), modules=new Map(), require=createRequire(import.meta.url)
 async function moduleUrl(path){
@@ -104,7 +106,9 @@ await check('invalid URL hook null, session key, no stale footer',async()=>{cons
 await check('truthful summary, exact zero state, semantic controls and focus',async()=>{const s=await read('src/features/governance-audit/AuditListPage.tsx'),f=await read('src/features/governance-audit/AuditFilters.tsx'),css=await read('src/features/governance-audit/Audit.module.css');assert.doesNotMatch(s,/Com alterações|Últimos 7 dias|label: 'Hoje'/);assert.match(s,/Nenhum evento encontrado para os filtros selecionados\./);assert.match(s,/<summary>Filtros avançados/);assert.match(s,/role="status"/);assert.match(f,/<form onSubmit/);assert.match(f,/type="date"/);assert.match(css,/:focus-visible/);assert.match(f,/route\[key\].*day === auditLocalDate/)})
 await check('protected runtime source unchanged outside the exact Audit raw-query adaptations',()=>{
   const git=(...a)=>execFileSync('git',a,{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n')
-  assert.equal(git('diff','cd25769','--','src/features/dashboard','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility','src/components','src/lib','src/app/routeQuery.ts','src/app/useUrlSearchDraft.ts','src/app/presentationAvailability.ts','package.json','package-lock.json'),'')
+  assert.equal(git('diff','cd25769','--','src/features/dashboard','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility','src/components','src/lib','src/app/routeQuery.ts','src/app/useUrlSearchDraft.ts','src/app/presentationAvailability.ts','package.json','package-lock.json',':(exclude)src/features/menu-visibility/MenuVisibilityPage.tsx'),'')
+  const current=readFileSync(resolve(root,'src/features/menu-visibility/MenuVisibilityPage.tsx'),'utf8')
+  assert.equal(withoutOperatorsEntry(current),git('show','cd25769:src/features/menu-visibility/MenuVisibilityPage.tsx'))
 })
 await check('historical guard normalization rejects extra App changes and unrelated paths',async()=>{
   const source=await read('src/app/App.tsx')

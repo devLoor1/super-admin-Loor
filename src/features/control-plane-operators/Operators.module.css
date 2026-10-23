@@ -1,0 +1,15 @@
+.filters { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; }
+.filters label { display: flex; flex-direction: column; gap: 8px; color: var(--text-on-dark-secondary); font-size: 12px; flex: 1 1 220px; min-width: 0; }
+.filters input, .filters select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--surface-border); border-radius: 8px; background: var(--surface-control); color: var(--text-on-dark); font: inherit; }
+.scroll { width: 100%; max-width: 100%; overflow-x: auto; margin-block: 16px; }
+.scroll:focus-visible, .filters input:focus-visible, .filters select:focus-visible { outline: 2px solid var(--accent, #a78bfa); outline-offset: 3px; }
+.table { min-width: 1120px; table-layout: fixed; }
+.table th:nth-child(1) { width: 20%; }.table th:nth-child(2) { width: 21%; }.table th:nth-child(3) { width: 12%; }.table th:nth-child(4) { width: 16%; }
+.table td, .name, .roleDetails { overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+.table td:nth-child(3) > span { max-width: 100%; height: auto; min-height: 26px; white-space: normal; line-height: 1.4; padding-block: 5px; }
+.roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px; }
+.hint, .footer { color: var(--text-on-dark-secondary); font-size: 12px; line-height: 1.6; }
+.footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.roleDetails { list-style: none; padding: 0; display: grid; gap: 12px; }.roleDetails li { display: flex; flex-wrap: wrap; gap: 12px; }
+.name { margin-top: 0; font-size: 20px; }
+@media (max-width: 480px) { .filters label { flex-basis: 100%; } .footer { align-items: flex-start; } }

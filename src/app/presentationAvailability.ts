@@ -2,13 +2,14 @@ import type { NavItem } from '../components/shell/navigation'
 
 /** Presentation eligibility, never authorization or saved Menu Visibility configuration. */
 export const PROTOTYPE_PRESENTATION = import.meta.env.DEV
-export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['settings', 'emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new', 'operation-opportunity-edit'])
-const MOCK_MENU_IDS = new Set(['sistema', 'ajuda', 'whitelabel-settings', 'whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
+export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new', 'operation-opportunity-edit'])
+const MOCK_MENU_IDS = new Set(['sistema', 'ajuda', 'whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
 export function viewAvailable(view: string, development = PROTOTYPE_PRESENTATION) { return development || !MOCK_ONLY_VIEWS.has(view) }
 export function readinessHref(id: string, candidate?: string, development = PROTOTYPE_PRESENTATION) {
   if (development) return candidate
   if (id === 'financeiro') return '#/finance/investments'
   if (id === 'contas' && (!candidate || candidate.includes('_proto_'))) return '#/whitelabels/select/accounts'
+  if (id === 'whitelabel-settings' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/settings$/.test(candidate))) return '#/whitelabels/select/settings'
   return candidate?.includes('_proto_') ? undefined : candidate
 }
 /** Applied AFTER the existing persisted preference policy, including its error fallback. No registry edits. */

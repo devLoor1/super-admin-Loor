@@ -19,6 +19,7 @@ import { TermsSection } from './sections/TermsSection'
 import { SECTIONS, type SectionKey, type TermsRevision } from './settingsModel'
 import { updateWhitelabelSettings, useWhitelabelSettings } from './settingsStore'
 import styles from './WhitelabelSettingsPage.module.css'
+import { OperationalSettingsPage } from './OperationalSettingsPage'
 
 const settingsHref = (id: string) => `#/whitelabels/${id}/settings`
 
@@ -31,6 +32,11 @@ type TermsDialog = { kind: 'view'; revision: TermsRevision } | { kind: 'publish'
  * nothing is fetched, persisted or sent to a Backend.
  */
 export function WhitelabelSettingsPage({ whitelabelId }: { whitelabelId: string }) {
+  if (!import.meta.env.DEV || !whitelabelId.startsWith('wl_proto_')) return <OperationalSettingsPage whitelabelId={whitelabelId} />
+  return <PrototypeSettingsPage whitelabelId={whitelabelId} />
+}
+
+function PrototypeSettingsPage({ whitelabelId }: { whitelabelId: string }) {
   const whitelabel = PROTOTYPE_WHITELABELS.find((item) => item.id === whitelabelId)
   return (
     <AppShell

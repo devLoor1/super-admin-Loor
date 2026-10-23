@@ -16,6 +16,7 @@ type Props = {
   optionsStatus: 'loading' | 'error' | 'success'
   onRetryOptions: () => void
   onSelect: (id: string) => void
+  contextLabel?: string
 }
 
 /**
@@ -24,7 +25,7 @@ type Props = {
  * Choosing an option navigates to that Whitelabel's Accounts route; nothing
  * is written.
  */
-export function AccountsWhitelabelSelector({ current, pendingId, options, optionsStatus, onRetryOptions, onSelect }: Props) {
+export function AccountsWhitelabelSelector({ current, pendingId, options, optionsStatus, onRetryOptions, onSelect, contextLabel = 'as contas' }: Props) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -178,7 +179,7 @@ export function AccountsWhitelabelSelector({ current, pendingId, options, option
             )
           })}
         </ul>
-        <p className={styles.popoverNote}>Abre as contas do Whitelabel escolhido. Somente leitura.</p>
+        <p className={styles.popoverNote}>Abre {contextLabel} do Whitelabel escolhido. Somente leitura.</p>
       </div>
     </div>
   )

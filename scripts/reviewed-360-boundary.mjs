@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedSettings } from './reviewed-settings-boundary.mjs'
 import { reviewedOperators } from './reviewed-operators-boundary.mjs'
 import { reviewedAccountAccess } from './reviewed-account-access-boundary.mjs'
 import { withoutAuditRawQuery } from './reviewed-audit-filters-boundary.mjs'
@@ -39,6 +40,7 @@ const fingerprints={
   'src/features/operation/shared/useOverview.ts':'0ff48c4c59938558a0070fd6badd1d1a2c9d86bbe3133fb8c2c3afcf9a05b290',
 }
 export function reviewed360(path) {
+  if(reviewedSettings(path))return true
   if(reviewedAccountAccess(path))return true
   if(path!=='src/app/App.tsx' && reviewedOperators(path))return true
   if(!Object.hasOwn(fingerprints,path))return false

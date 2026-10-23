@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { withoutSettingsReadiness } from './reviewed-settings-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
@@ -106,7 +107,8 @@ await check('invalid URL hook null, session key, no stale footer',async()=>{cons
 await check('truthful summary, exact zero state, semantic controls and focus',async()=>{const s=await read('src/features/governance-audit/AuditListPage.tsx'),f=await read('src/features/governance-audit/AuditFilters.tsx'),css=await read('src/features/governance-audit/Audit.module.css');assert.doesNotMatch(s,/Com alterações|Últimos 7 dias|label: 'Hoje'/);assert.match(s,/Nenhum evento encontrado para os filtros selecionados\./);assert.match(s,/<summary>Filtros avançados/);assert.match(s,/role="status"/);assert.match(f,/<form onSubmit/);assert.match(f,/type="date"/);assert.match(css,/:focus-visible/);assert.match(f,/route\[key\].*day === auditLocalDate/)})
 await check('protected runtime source unchanged outside the exact Audit raw-query adaptations',()=>{
   const git=(...a)=>execFileSync('git',a,{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n')
-  assert.equal(git('diff','cd25769','--','src/features/dashboard','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility','src/components','src/lib','src/app/routeQuery.ts','src/app/useUrlSearchDraft.ts','src/app/presentationAvailability.ts','package.json','package-lock.json',':(exclude)src/features/menu-visibility/MenuVisibilityPage.tsx'),'')
+  assert.equal(git('diff','cd25769','--','src/features/dashboard','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility','src/components','src/lib','src/app/routeQuery.ts','src/app/useUrlSearchDraft.ts','package.json','package-lock.json',':(exclude)src/features/menu-visibility/MenuVisibilityPage.tsx'),'')
+  assert.equal(withoutSettingsReadiness(readFileSync(resolve(root,'src/app/presentationAvailability.ts'),'utf8')),git('show','cd25769:src/app/presentationAvailability.ts'))
   const current=readFileSync(resolve(root,'src/features/menu-visibility/MenuVisibilityPage.tsx'),'utf8')
   assert.equal(withoutOperatorsEntry(current),git('show','cd25769:src/features/menu-visibility/MenuVisibilityPage.tsx'))
 })

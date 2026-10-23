@@ -1,0 +1,11 @@
+.actions { display: grid; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--surface-border); border-radius: var(--radius-card, 14px); background: var(--surface); overflow-wrap: anywhere; }
+.actions h3 { margin: 0; font-size: 14px; }
+.actions p, .body p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-on-dark-secondary); }
+.actions > button { justify-self: start; max-width: 100%; white-space: normal; }
+.feedback, .body { display: grid; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
+.feedback code { word-break: break-all; }
+.body label { font-size: 13px; font-weight: 600; }
+.body textarea { box-sizing: border-box; min-width: 0; width: 100%; resize: vertical; border: 1px solid var(--surface-border); border-radius: 10px; padding: 12px; background: var(--surface); color: var(--text-on-dark); font: inherit; line-height: 1.5; }
+.body textarea:focus-visible { outline: 2px solid var(--color-accent-glow); outline-offset: 2px; }
+.body textarea[aria-invalid=true] { border-color: #e58a9a; }
+@media (max-width: 479px) { .actions { padding: 12px; } }

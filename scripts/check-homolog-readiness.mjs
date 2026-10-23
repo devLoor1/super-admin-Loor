@@ -32,6 +32,13 @@ for(const development of [false,true]){
   await check('actual rendered Dashboard placeholders/KPIs',()=>{const html=render(h(DashboardPage));assert.equal((html.match(/data-kpi=/g)||[]).length,development?5:4);assert.equal(html.includes('data-kpi="kyc"'),development);assert.equal(html.includes('Status operacional'),development)})
   const {OperatorsEntry,OperatorFeedback}=await load('src/features/control-plane-operators/OperatorUi.tsx'),{OperatorsListPage}=await load('src/features/control-plane-operators/OperatorsListPage.tsx'),{OperatorDetailPage}=await load('src/features/control-plane-operators/OperatorDetailPage.tsx')
   const api=await load('src/features/control-plane-operators/operatorApi.ts')
+  const {AccountAccessActions}=await load('src/features/whitelabel-accounts/access/AccountAccessActions.tsx')
+  for(const roles of [['SUPER_ADMIN'],['SUPPORT_ADMIN'],['READ_ONLY'],['COMPLIANCE_ADMIN']])for(const kind of ['investor','entrepreneur','admin'])await check('actual access action readiness, domain and role restrictions',()=>{
+    globalThis.__operatorRoles=roles
+    const detail={kind,record:{id:'3',whitelabelId:'4',accessState:'active'}},html=render(h(AccountAccessActions,{detail,tenantId:'4'}))
+    assert.equal(html.includes('Pausar acesso'),kind!=='admin'&&roles.some(r=>['SUPER_ADMIN','SUPPORT_ADMIN'].includes(r)))
+    assert.equal(render(h(AccountAccessActions,{detail,tenantId:'6'})),'')
+  })
   const row=api.parseOperator({id,name:'Synthetic QA',email:'qa@example.invalid',status:'FUTURE',roles:['SUPER_ADMIN','READ_ONLY'],roleDetails:[{slug:'SUPER_ADMIN',name:'Administrator'},{slug:'READ_ONLY',name:'Consulta'}],lastLoginAt:null,createdAt:'2026-10-23T12:00:00Z',updatedAt:'2026-10-23T12:00:00Z',passwordHash:'DO_NOT_RENDER'})
   for(const roles of [['SUPER_ADMIN'],['READ_ONLY'],['COMPLIANCE_ADMIN'],['FINANCIAL_ADMIN'],['SUPPORT_ADMIN'],[]])await check('role-aware rendered discovery and direct-route data denial',()=>{
     globalThis.__operatorRoles=roles;globalThis.__operatorRead={status:'success',data:{rows:[row],page:1,perPage:20,total:1,lastPage:1}}

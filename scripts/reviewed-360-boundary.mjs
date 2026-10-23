@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { reviewedOperators } from './reviewed-operators-boundary.mjs'
+import { reviewedAccountAccess } from './reviewed-account-access-boundary.mjs'
 import { withoutAuditRawQuery } from './reviewed-audit-filters-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -38,10 +39,20 @@ const fingerprints={
   'src/features/operation/shared/useOverview.ts':'0ff48c4c59938558a0070fd6badd1d1a2c9d86bbe3133fb8c2c3afcf9a05b290',
 }
 export function reviewed360(path) {
+  if(reviewedAccountAccess(path))return true
   if(path!=='src/app/App.tsx' && reviewedOperators(path))return true
   if(!Object.hasOwn(fingerprints,path))return false
   const raw=readFileSync(resolve(root,path),'utf8').replaceAll('\r\n','\n')
-  const source=path==='src/app/App.tsx'?withoutAuditRawQuery(raw):raw
+  let source=path==='src/app/App.tsx'?withoutAuditRawQuery(raw):raw
+  if(path==='src/features/whitelabel-accounts/WhitelabelAccountsPage.tsx'){
+    const current='          Consulte administradores, investidores e empreendedores do Whitelabel selecionado, com dados do Control Plane.\n          A gestão de acesso de investidores e empreendedores depende da permissão do operador.\n'
+    const previous='          Consulte administradores, investidores e empreendedores do Whitelabel selecionado. Somente leitura, com dados do\n          Control Plane.\n'
+    assert.equal(source.split(current).length,2,'Only the reviewed account-access description may change')
+    source=source.replace(current,previous)
+    const currentCrumb='    ? { label: whitelabel.name.length > 32 ? `${whitelabel.name.slice(0, 31).trimEnd()}…` : whitelabel.name, href: `#/whitelabels?id=${encodeURIComponent(whitelabel.id)}` }\n'
+    assert.equal(source.split(currentCrumb).length,2,'Only reviewed responsive breadcrumb clipping may change')
+    source=source.replace(currentCrumb,'    ? { label: whitelabel.name, href: `#/whitelabels?id=${encodeURIComponent(whitelabel.id)}` }\n')
+  }
   assert.equal(createHash('sha256').update(source).digest('hex'),fingerprints[path],`Unreviewed change in 360/readiness boundary: ${path}`)
   return true
 }

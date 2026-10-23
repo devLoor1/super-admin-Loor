@@ -16,13 +16,14 @@ import { BreakableEmail } from './AccountListPanel'
 import { accountDisplayName, kindMeta, rawTokenMeta, type AccountDetail, type AccountKind } from './accountsApi'
 import { BUSINESS_HEADING, accountInitials, businessView } from './accountsPresent'
 import styles from './AccountDetailPanel.module.css'
+import { AccountAccessActions } from './access/AccountAccessActions'
 
 /*
  * Selected account, read from `GET /whitelabels/:id/accounts/:accountId?tipo=…`.
  * Only fields of the real contract are shown (absent → "—"); tokens without a
  * defined meaning (admin `businessState`, `isSuperAdmin`) are shown as sent.
- * No KYC, Company, role or permission is inferred, and every account write
- * (pause, reactivate, change Whitelabel, invite, edit) stays unavailable.
+ * No KYC, Company, role or permission is inferred. The separate access action
+ * component qualifies Investor/Entrepreneur pause and reactivate only; Admin stays read-only.
  */
 
 type DisplayedAccount = { id: string; detail: AccountDetail }
@@ -32,12 +33,12 @@ export function AccountDetailPanel({ detail, whitelabel }: { detail: AccountDeta
   const item: DisplayedAccount = { id: `${detail.kind}:${detail.record.id}`, detail }
   return (
     <DetailTransition item={item} className={styles.panel} sectionId="account-detail" labelledBy="acc-detail-title">
-      {(displayed) => <DetailContents detail={displayed.detail} whitelabel={whitelabel} />}
+      {(displayed) => <DetailContents detail={displayed.detail} whitelabel={whitelabel} actionsCurrent={displayed.id === item.id} />}
     </DetailTransition>
   )
 }
 
-function DetailContents({ detail, whitelabel }: { detail: AccountDetail; whitelabel: WhitelabelRecord }) {
+function DetailContents({ detail, whitelabel, actionsCurrent }: { detail: AccountDetail; whitelabel: WhitelabelRecord; actionsCurrent: boolean }) {
   const { record } = detail
   const meta = kindMeta(detail.kind)
   const access = accessMeta(record.accessState)
@@ -110,6 +111,7 @@ function DetailContents({ detail, whitelabel }: { detail: AccountDetail; whitela
 
         <Links detail={detail} />
 
+        {detail.kind !== 'admin' ? <AccountAccessActions key={`${whitelabel.id}:${detail.kind}:${record.id}`} detail={detail} tenantId={whitelabel.id} current={actionsCurrent} /> : null}
         <section className={styles.card} aria-labelledby="acc-actions-title" data-detail-stage="actions" data-write-actions="disabled">
           <h3 id="acc-actions-title" className={styles.cardTitle}>
             Ações da conta
@@ -117,9 +119,9 @@ function DetailContents({ detail, whitelabel }: { detail: AccountDetail; whitela
           <div className={styles.note}>
             <Lock size={16} strokeWidth={1.8} aria-hidden="true" />
             <p>
-              <strong>Ações de acesso desativadas (somente leitura).</strong> Pausar, reativar, alterar Whitelabel,
+              <strong>{detail.kind === 'admin' ? 'Ações de acesso desativadas (somente leitura).' : 'Outras ações indisponíveis.'}</strong> {detail.kind === 'admin' ? 'Pausar, reativar, ' : ''}alterar Whitelabel,
               {detail.kind === 'admin' ? ' convidar, alterar função, ' : ' '}editar e redefinir senha não estão disponíveis nesta
-              integração. Nada é enviado ao Control Plane.
+              integração. {detail.kind === 'admin' ? 'Nada é enviado ao Control Plane.' : 'A gestão de acesso acima é independente destas ações.'}
             </p>
           </div>
         </section>

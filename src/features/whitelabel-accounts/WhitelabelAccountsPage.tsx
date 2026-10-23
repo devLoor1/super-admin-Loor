@@ -65,7 +65,7 @@ export function WhitelabelAccountsPage({ whitelabelId, routeKey = '', ...params 
   const recordError = record.state.status === 'error' ? describeApiError(record.state.error, 'o Whitelabel') : null
   // No tenant crumb while none is chosen (e.g. the prototype `wl_proto_01` default of the side menu).
   const tenantCrumb = whitelabel
-    ? { label: whitelabel.name, href: `#/whitelabels?id=${encodeURIComponent(whitelabel.id)}` }
+    ? { label: whitelabel.name.length > 32 ? `${whitelabel.name.slice(0, 31).trimEnd()}…` : whitelabel.name, href: `#/whitelabels?id=${encodeURIComponent(whitelabel.id)}` }
     : serverId
       ? { label: recordError?.notFound ? 'Whitelabel não encontrado' : `Whitelabel #${serverId}` }
       : null
@@ -236,8 +236,8 @@ function AccountsContent({
           Voltar para Whitelabels
         </a>
         <p className={styles.subtitle}>
-          Consulte administradores, investidores e empreendedores do Whitelabel selecionado. Somente leitura, com dados do
-          Control Plane.
+          Consulte administradores, investidores e empreendedores do Whitelabel selecionado, com dados do Control Plane.
+          A gestão de acesso de investidores e empreendedores depende da permissão do operador.
         </p>
       </div>
       {selector}

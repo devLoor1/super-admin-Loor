@@ -472,13 +472,18 @@ await check('lifecycle: separate default-off flag and guarded menu/page handlers
   assert.match(page, /if \(!WHITELABEL_LIFECYCLE_ENABLED \|\| writeAccess !== 'super-admin'\) return/)
   assert.match(page, /<WhitelabelLifecycleDialog/)
 })
-await check('the Whitelabel read adapter/client stay GET-only; write methods are confined to login and the guarded client', async () => {
+await check('Whitelabel reads remain GET-only; writes confined to exact reviewed transports', async () => {
   const api = await readFile(resolve(wlDir, 'whitelabelApi.ts'), 'utf8')
   assert.equal(/'POST'|'PATCH'|'PUT'|'DELETE'|apiRequest\(/.test(api), false)
   const walk = async (dir) => (await Promise.all((await readdir(dir, { withFileTypes: true })).map((entry) =>
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if(file.replaceAll('\\','/').endsWith('src/features/whitelabel-accounts/access/accountAccessClient.ts')){
+      const { reviewedAccountAccess }=await import('./reviewed-account-access-boundary.mjs')
+      assert.equal(reviewedAccountAccess('src/features/whitelabel-accounts/access/accountAccessClient.ts'),true)
+      continue
+    }
     if (file.replaceAll('\\', '/').endsWith('src/lib/menuVisibilityWriteClient.ts')) {
       assert.match(source, /method: 'PUT'/)
       assert.match(source, /VITE_MENU_VISIBILITY_WRITES_ENABLED === 'true'/)

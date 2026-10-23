@@ -263,13 +263,15 @@ await check('Accounts screens: no prototype data, no storage, no writes, no logg
     assert.equal(/console\.(log|info|debug|warn|error)/.test(source), false, name)
   }
 })
-await check('no write capability: no dialogs, actions or write endpoints are reachable', async () => {
+await check('no Admin lifecycle or unrelated writes; access is a separately tested Investor/Entrepreneur boundary', async () => {
   for (const [name, source] of Object.entries(sources)) {
     assert.equal(/dialogs\/|PauseAccessDialog|ReactivateAccessDialog|ChangeWhitelabelDialog|NewAdminDialog|accountListConfig/.test(source), false, name)
     assert.equal(/\/pause|\/reactivate|onPause|onReactivate|onTransfer|Novo administrador|data-access-action/.test(source), false, name)
   }
   assert.match(sources['AccountDetailPanel.tsx'], /Ações de acesso desativadas \(somente leitura\)/)
   assert.match(sources['AccountDetailPanel.tsx'], /data-write-actions="disabled"/)
+  assert.match(sources['AccountDetailPanel.tsx'], /detail.kind !== 'admin' \? <AccountAccessActions/)
+  assert.match(sources['AccountDetailPanel.tsx'], /current=\{actionsCurrent\}/)
 })
 await check('only accountsApi talks to the Control Plane, with GET reads and supported keys', async () => {
   for (const [name, source] of Object.entries(sources)) {

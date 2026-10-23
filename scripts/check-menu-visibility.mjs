@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360, withoutReadinessGate } from './reviewed-360-boundary.mjs'
 import { readdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
@@ -669,7 +670,7 @@ const REVIEWED_KYC_READ_FILES = new Set([
 ].map(path => `src/features/compliance-kyc/${path}`))
 REVIEWED_KYC_READ_FILES.add('src/features/operation/investors/InvestorDetailPage.tsx')
 const outsideMenuVisibility = (path) =>
-  !reviewed360(path) && !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path) && !dashboardRecoveryFiles.has(path) && !REVIEWED_KYC_READ_FILES.has(path)
+  !reviewed360(path) && !reviewedAuditFilters(path) && !['src/lib/api.ts', 'src/lib/whitelabelWriteClient.ts', 'src/lib/menuVisibilityWriteClient.ts', 'src/components/shell/Sidebar.tsx', 'src/components/shell/Sidebar.module.css'].includes(path) && !path.startsWith('src/features/menu-visibility/') && !REVIEWED_WHITELABEL_FILES.has(path) && !REVIEWED_FINANCE_READ_FILES.has(path) && !REVIEWED_OPERATION_READ_FILES.has(path) && !dashboardRecoveryFiles.has(path) && !REVIEWED_KYC_READ_FILES.has(path)
 const changedOutside = git('diff', '--name-only', BASELINE, '--', 'src').split('\n').filter(Boolean).filter((path) => outsideMenuVisibility(path) && path !== 'src/app/App.tsx')
 const untrackedOutside = git('ls-files', '--others', '--exclude-standard', '--', 'src').split('\n').filter(Boolean).filter(outsideMenuVisibility)
 check(changedOutside.length === 0 && untrackedOutside.length === 0, `Only explicitly reviewed Whitelabel, Finance Read, Opportunities + Companies Read and Dashboard Recovery V1 source files may change outside Menu Visibility; other domains and read adapters remain protected: ${[...changedOutside, ...untrackedOutside].join(', ')}`)

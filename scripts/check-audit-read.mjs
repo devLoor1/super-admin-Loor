@@ -111,7 +111,7 @@ await check('GET /audit sends only page / perPage / search / order (never sort o
     assert.equal(options.headers.Authorization, 'Bearer synthetic-unit-token-audit')
     assert.match(options.headers['X-Correlation-ID'], /^[0-9a-f-]{36}$/)
     seen.push(Object.fromEntries(parsed.searchParams))
-    return json({ data: [success], meta: meta() })
+    return json({ data: [success], meta: meta(parsed.searchParams.get('page') === '2' ? { page: 2, total: 9, lastPage: 2 } : {}) })
   }
   await api.listAuditEvents({ page: 1, search: '', order: 'desc' })
   await api.listAuditEvents({ page: 2, search: 'LOGIN', order: 'asc' })
@@ -151,11 +151,14 @@ await check('scalar metadata detects complete credentials before truncating its 
   assert.equal(record.correlationId, '••••••••')
   assert.equal(record.result, '••••••••')
 })
-await check('URL: supported params only; prototype context filters reported, not applied', async () => {
+await check('URL: SA-BE-008 exact filters supported; invalid restrictions block reads rather than broaden', async () => {
   const parsed = route.parseAuditRoute({ page: '0', order: 'sideways', search: ` ${'x'.repeat(200)} `, resourceType: 'kyc_case', resourceId: 'kyc_proto_0002',
     whitelabel: 'wl_proto_01', actor: 'USR-SA-01', action: 'auth.login_failed' })
-  assert.deepEqual(parsed.state, { page: 1, search: 'x'.repeat(80), order: 'desc' })
-  assert.equal(parsed.ignored.length, 7)
+  assert.equal(parsed.valid, false)
+  assert.equal(parsed.state.search, '')
+  assert.equal(parsed.issues.length, 5)
+  assert.equal(parsed.state.resourceType, 'kyc_case')
+  assert.equal(parsed.state.action, 'auth.login_failed')
   assert.equal(route.auditListHref({ search: 'LOGIN & X', order: 'asc', page: 3 }), '#/audit?search=LOGIN+%26+X&order=asc&page=3')
   assert.equal(route.auditListHref({ order: 'desc', page: 1 }), '#/audit')
 })
@@ -255,7 +258,7 @@ await check('labels: known tokens translated, unknown shown as sent, inherited n
 
 /* ---------- source boundaries ---------- */
 const auditDir = resolve(root, 'src/features/governance-audit')
-const screens = ['AuditListPage.tsx', 'AuditDetailPage.tsx', 'AuditUi.tsx', 'auditApi.ts', 'auditRoute.ts', 'auditPresent.ts', 'auditRefs.ts', 'useAuditData.ts']
+const screens = ['AuditListPage.tsx', 'AuditDetailPage.tsx', 'AuditUi.tsx', 'auditApi.ts', 'auditRoute.ts', 'auditPresent.ts', 'auditRefs.ts', 'useAuditData.ts', 'auditDates.ts', 'AuditFilters.tsx']
 const sources = Object.fromEntries(await Promise.all(screens.map(async (name) => [name, await readFile(resolve(auditDir, name), 'utf8')])))
 await check('Audit screens: no prototype events / ids, no storage, no writes, no logging', async () => {
   for (const [name, source] of Object.entries(sources)) {

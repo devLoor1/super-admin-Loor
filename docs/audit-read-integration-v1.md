@@ -1,5 +1,13 @@
 # Audit Read Integration V1
 
+> Current contract addendum — 2026-10-23: SA-BE-008 exact server filters and
+> correlation-ID search are now independently source/live-qualified. See
+> [Advanced Audit filters](audit-advanced-filters-read-v1.md) for the current
+> URL, validation, inclusive date and UI contract. The original delivery and
+> review evidence below is preserved historically: its unsupported-filter,
+> search-scope and summary-card limitations are superseded by that addendum.
+> The no-detail-endpoint limitation and privacy/RBAC boundaries remain.
+
 Fifth real-data unit of the Super Admin frontend, implemented by Cloud from
 `dev` `afe24bf` for Codex review. **Auditoria** now reads the Control Plane
 audit log through `GET /api/audit`.

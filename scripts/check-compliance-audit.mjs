@@ -74,9 +74,9 @@ for (const item of cases) {
   const parsed = route.parseAuditRoute(Object.fromEntries(params))
   check(params.get('resourceType') === 'kyc_case')
   check(params.get('resourceId') === item.kycCaseId)
-  check(parsed.ignored.length === 2)
+  check(parsed.valid && parsed.ignored.length === 0)
   check(parsed.state.search === '' && parsed.state.page === 1 && parsed.state.order === 'desc')
-  check(route.auditListHref(parsed.state) === '#/audit') // never fake a KYC-filtered Audit page
+  check(route.auditListHref(parsed.state) === auditHrefForCase(item.kycCaseId)) // exact server query, never a fabricated KYC event or cross-domain state
 }
 const auditApi = await readFile(resolve(root, 'src/features/governance-audit/auditApi.ts'), 'utf8')
 const auditDetail = await readFile(resolve(root, 'src/features/governance-audit/AuditDetailPage.tsx'), 'utf8')

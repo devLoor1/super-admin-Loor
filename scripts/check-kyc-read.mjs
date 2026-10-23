@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { outsideReviewed360, reviewed360 } from './reviewed-360-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
@@ -92,7 +93,7 @@ await check('hook session/abort lifecycle uses canonical read hook without lastD
 await check('no unsupported filters or global status counts',async()=>{const t=await read('src/features/compliance-kyc/KycListPage.tsx');assert.ok(!/<select|type="search"|\.filter\(|SummaryCards|PROTOTYPE_/.test(t))})
 await check('FaceMatch is detail section; no decisions/session activity',async()=>{const t=await read('src/features/compliance-kyc/KycDetailPage.tsx');assert.ok(t.includes('title="Face Match"'));assert.ok(!/onClick|Dialog|useState|SessionActivityCard/.test(t))})
 await check('Dashboard and auth implementations unchanged',async()=>{
-  for(const path of ['src/features/dashboard','src/features/governance-audit','src/lib/authSession.ts','src/lib/apiClient.ts','src/components/shell']) assert.deepEqual(outsideReviewed360(execFileSync('git',['diff','--name-only','6969a89','--',path],{cwd:root,encoding:'utf8'})),[])
+  for(const path of ['src/features/dashboard','src/features/governance-audit','src/lib/authSession.ts','src/lib/apiClient.ts','src/components/shell']) assert.deepEqual(outsideReviewed360(execFileSync('git',['diff','--name-only','6969a89','--',path],{cwd:root,encoding:'utf8'})).filter(file=>!reviewedAuditFilters(file)),[])
 })
 await check('participant profiles differ only by the exact obsolete KYC copy replacements', async()=>{
   for(const [kind, replacements] of [

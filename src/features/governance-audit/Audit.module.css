@@ -16,6 +16,27 @@
   overflow-wrap: anywhere;
 }
 
+.summary { display: flex; flex-direction: row; gap: 12px; align-items: center; padding: 18px 20px; }
+.summary h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.summary p { margin: 5px 0 0; font-size: 22px; font-weight: 600; }
+.summary p span { color: var(--text-on-dark-secondary); font-size: 12px; font-weight: 400; }
+.advanced { border-top: 1px solid var(--surface-border); padding: 14px 20px; min-width: 0; }
+.advanced summary { cursor: pointer; width: fit-content; font-size: 13px; color: var(--text-on-dark-primary); padding: 5px 0; }
+.advancedForm { padding-top: 10px; min-width: 0; }
+.filterHelp { color: var(--text-on-dark-secondary); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.filterGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.filterField { display: grid; gap: 7px; min-width: 0; color: var(--text-on-dark-secondary); font-size: 12px; }
+.filterField input, .filterField select { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 40px; border: 1px solid var(--surface-border-strong); border-radius: 8px; padding: 8px 10px; background: #151627; color: #edf0ff; font: inherit; color-scheme: dark; }
+.filterIssues { padding: 16px 20px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.filterIssues h3 { font-size: 14px; }
+.filterIssues ul { padding-left: 20px; }
+.filterIssues button { color: #d6cbff; background: none; border: 0; text-decoration: underline; cursor: pointer; font: inherit; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 20px 16px; min-width: 0; }
+.chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; border: 1px solid var(--surface-border-strong); background: #222036; color: #ddd7ff; border-radius: 8px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+.advanced summary:focus-visible, .filterField input:focus-visible, .filterField select:focus-visible, .chips button:focus-visible, .filterIssues button:focus-visible { outline: 2px solid #b9a4ff; outline-offset: 3px; }
+@media (max-width: 1100px) { .filterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 479px) { .filterGrid { grid-template-columns: minmax(0, 1fr); } .advanced, .filterIssues { padding-inline: 14px; } .chips { padding-inline: 14px; } .summary p span { display: block; margin-top: 4px; } }
+
 .moduleTag {
   display: inline-flex;
   align-items: center;

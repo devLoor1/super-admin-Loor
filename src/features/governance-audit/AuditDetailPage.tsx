@@ -85,9 +85,9 @@ function AuditEventContent({ record, listHref }: { record: AuditRecord; listHref
     {
       key: 'search-action',
       label: 'Buscar eventos com este código de ação',
-      description: `Busca do Control Plane por “${record.action}” (código da ação, tipo ou ID do recurso)`,
+      description: `Código exato registrado: “${record.action}”`,
       icon: Search,
-      href: auditListHref({ search: record.action }),
+      href: auditListHref({ action: record.action }),
     },
     { key: 'copy-event', label: 'Copiar ID do evento', description: record.id, icon: Copy, onSelect: () => void copy('ID do evento', record.id) },
     ...(copyableCorrelation

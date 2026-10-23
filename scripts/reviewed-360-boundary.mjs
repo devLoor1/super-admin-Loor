@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { withoutAuditRawQuery } from './reviewed-audit-filters-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -37,13 +38,14 @@ const fingerprints={
 }
 export function reviewed360(path) {
   if(!Object.hasOwn(fingerprints,path))return false
-  const source=readFileSync(resolve(root,path),'utf8').replaceAll('\r\n','\n')
+  const raw=readFileSync(resolve(root,path),'utf8').replaceAll('\r\n','\n')
+  const source=path==='src/app/App.tsx'?withoutAuditRawQuery(raw):raw
   assert.equal(createHash('sha256').update(source).digest('hex'),fingerprints[path],`Unreviewed change in 360/readiness boundary: ${path}`)
   return true
 }
 export const outsideReviewed360=output=>output.trim().split('\n').filter(Boolean).filter(path=>!reviewed360(path))
 export function withoutReadinessGate(source){
-  let code=source.replaceAll('\r\n','\n')
+  let code=withoutAuditRawQuery(source)
   for(const exact of ["import { viewAvailable } from './presentationAvailability'\n","import { ReadinessUnavailablePage } from './ReadinessUnavailablePage'\n",'  if (!viewAvailable(route.view)) return <ReadinessUnavailablePage />\n']){
     assert.equal(code.split(exact).length,2,'Readiness route adaptation must occur exactly once');code=code.replace(exact,'')
   }

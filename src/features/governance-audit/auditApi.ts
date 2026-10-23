@@ -9,11 +9,13 @@ import { isCredentialAuditText } from './auditPresent'
  * (2026-10-14, read-only GETs, structure and tokens only) and confirmed in
  * `backend-super-admin-Loor` `0177437` (`src/modules/audit/*`):
  *
- *   GET /audit?page&perPage(≤100)&search&order(asc|desc) → { data: AuditLog[], meta: { page, perPage, total, lastPage } }
+ *   SA-BE-008 (2026-10-23, CP 73ccb918): GET /audit also accepts exact
+ *   operatorId/action/resourceType/resourceId/whitelabelId/result and inclusive
+ *   from/to instants. Search includes correlationId (independently live-verified).
+ *   → { data: AuditLog[], meta: { page, perPage, total, lastPage } }
  *
- * - Unknown query keys → 400. `sort` is accepted but ignored (order is always
- *   `createdAt`), so it is never sent. `search` is a case-insensitive
- *   substring match on `action`, `resourceType` and `resourceId` only.
+ * - Unknown query keys → 400. Never send `sort`; order is always `createdAt`.
+ *   The 2026-10-14 observations below are historical, not current filter limits.
  * - There is NO detail endpoint (no `GET /audit/:id`): the list returns the
  *   complete stored row, which the detail screen presents for rows this
  *   session has loaded. Nothing is fetched by id.
@@ -154,9 +156,13 @@ export function parseAuditList(value: unknown): AuditListResult {
   return result
 }
 
-export type AuditListParams = { page: number; search: string; order: AuditOrder }
+export type AuditListParams = {
+  page: number; search: string; order: AuditOrder
+  operatorId?: string; action?: string; resourceType?: string; resourceId?: string
+  whitelabelId?: string; result?: string; from?: string; to?: string
+}
 
-/** `GET /audit` — only `page`, `perPage`, `search` and `order` (the supported keys). */
+/** GET-only exact whitelist. Dashboard callers still send only their default list params. */
 export async function listAuditEvents(params: AuditListParams, signal?: AbortSignal) {
   const body = await authenticatedGet('/audit', {
     signal,
@@ -165,9 +171,23 @@ export async function listAuditEvents(params: AuditListParams, signal?: AbortSig
       perPage: AUDIT_PAGE_SIZE,
       search: params.search || undefined,
       order: params.order === 'asc' ? 'asc' : undefined,
+      operatorId: params.operatorId || undefined,
+      action: params.action || undefined,
+      resourceType: params.resourceType || undefined,
+      resourceId: params.resourceId || undefined,
+      whitelabelId: params.whitelabelId || undefined,
+      result: params.result || undefined,
+      from: params.from || undefined,
+      to: params.to || undefined,
     },
   })
   const result = parseAuditList(body)
+  const wrongOrder = result.rows.some((row, i, rows) => {
+    if (i === 0) return false
+    const previous = Date.parse(rows[i - 1].createdAt), current = Date.parse(row.createdAt)
+    return params.order === 'asc' ? previous > current : previous < current
+  })
+  if (result.page !== params.page || result.perPage !== AUDIT_PAGE_SIZE || wrongOrder) throw malformed()
   rememberAuditRecords(result.rows)
   return result
 }

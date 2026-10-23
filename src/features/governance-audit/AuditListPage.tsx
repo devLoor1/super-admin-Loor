@@ -1,19 +1,20 @@
-import { useEffect, useMemo, type CSSProperties } from 'react'
-import { CalendarDays, ChartColumn, CircleAlert, Eye, FilePen, FileText, FilterX, Info, RotateCw, Search, SearchX } from 'lucide-react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { CircleAlert, Eye, FileText, FilterX, RotateCw, Search, SearchX } from 'lucide-react'
 import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../app/routeQuery'
 import { useUrlSearchDraft } from '../../app/useUrlSearchDraft'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { describeApiError } from '../../lib/apiErrors'
 import fin from '../finance-gateways/sections/FinanceSections.module.css'
-import { InfoNote, PageIntro, SummaryCards } from '../operation/shared/OperationUi'
+import { InfoNote, PageIntro } from '../operation/shared/OperationUi'
 import { formatDateTime } from '../operation/shared/operationModel'
 import shared from '../operation/shared/Operation.module.css'
 import states from '../operation/shared/ReadStates.module.css'
 import { WindowedPagination } from '../operation/shared/WindowedPagination'
 import type { AuditListResult, AuditOrder, AuditRecord } from './auditApi'
 import { actionLabel, actorName, resourceText } from './auditPresent'
-import { AUDIT_SEARCH_MAX_LENGTH, auditEventHref, auditListHref, parseAuditRoute, type AuditRouteParams, type AuditRouteState } from './auditRoute'
+import { AUDIT_SEARCH_MAX_LENGTH, AUDIT_FILTER_KEYS, AUDIT_FILTER_LABELS, auditHasFilters, auditEventHref, auditListHref, parseAuditRoute, removeAuditFilter, updateAuditQuery, type AuditRouteParams, type AuditRouteState } from './auditRoute'
+import { AuditFilters } from './AuditFilters'
 import { ActorCell, AuditShell, EventIcon, EventWhitelabel, ResultPill } from './AuditUi'
 import { useAuditList } from './useAuditData'
 import styles from './Audit.module.css'
@@ -23,9 +24,8 @@ const COUNT_FORMAT = new Intl.NumberFormat('pt-BR')
 
 /**
  * `#/audit` — Auditoria (Governança): the Control Plane audit log, READ-ONLY.
- * Server-side page, search (action / resource type / resource id) and date
- * order are the only supported operations; nothing is filtered or sorted on
- * the client. No edit, delete, revert, restore, replay, reprocess or export.
+ * Server-side investigation only; nothing is filtered or sorted on the client.
+ * No edit, delete, revert, restore, replay, reprocess or export.
  */
 export function AuditListPage(props: AuditRouteParams & { routeKey: string }) {
   return (
@@ -41,63 +41,58 @@ export function AuditListPage(props: AuditRouteParams & { routeKey: string }) {
   )
 }
 
-function AuditList({ routeKey, page, search: searchParam, order, resourceType, resourceId, whitelabel, actor, action }: AuditRouteParams & { routeKey: string }) {
+function AuditList({ routeKey, ...params }: AuditRouteParams & { routeKey: string }) {
   useRestoreReplacedScroll(routeKey)
-  const { state: route, ignored } = useMemo(
-    () => parseAuditRoute({ page, search: searchParam, order, resourceType, resourceId, whitelabel, actor, action }),
-    [page, searchParam, order, resourceType, resourceId, whitelabel, actor, action],
-  )
-  const list = useAuditList({ page: route.page, search: route.search, order: route.order })
+  const rawQuery = params.rawQuery ?? routeKey
+  const { state: route, issues, valid } = useMemo(() => parseAuditRoute({ rawQuery }), [rawQuery])
+  const list = useAuditList(valid ? route : null)
   const data = list.state.status === 'success' ? list.state.data : null
   const pageOutOfRange = data !== null && data.rows.length === 0 && data.total > 0
   const loading = list.state.status === 'loading' || list.state.status === 'idle' || pageOutOfRange
   const error = list.state.status === 'error' ? describeApiError(list.state.error, 'os eventos de auditoria') : null
+  const [searchError, setSearchError] = useState('')
+  const safeSearch = (next: string) => parseAuditRoute({ search: next }).valid
 
   const search = useUrlSearchDraft({
     urlSearch: route.search,
     urlKey: routeKey,
     maxLength: AUDIT_SEARCH_MAX_LENGTH,
-    commit: (next) => replaceRouteKeepingScroll(auditListHref({ order: route.order, search: next })),
+    commit: (next) => {
+      if (!safeSearch(next)) { setSearchError('Busca inválida. Não use credenciais ou dados pessoais; nada foi enviado à URL ou ao servidor.'); return }
+      setSearchError('')
+      replaceRouteKeepingScroll(updateAuditQuery(rawQuery, { search: next, page: 1 }))
+    },
   })
 
   function navigate(next: Partial<AuditRouteState>) {
-    replaceRouteKeepingScroll(auditListHref({ order: route.order, search: search.pendingSearch(), ...next }))
+    const pending = search.pendingSearch()
+    if (!safeSearch(pending)) { setSearchError('Corrija a busca antes de continuar.'); return }
+    replaceRouteKeepingScroll(updateAuditQuery(rawQuery, { search: pending, page: 1, ...next }))
   }
 
   // An out-of-range page is replaced by the last page the Control Plane reports.
   useEffect(() => {
     if (!data) return
     const target = data.total === 0 ? 1 : Math.min(route.page, data.lastPage)
-    if (target !== route.page) replaceRouteKeepingScroll(auditListHref({ order: route.order, search: route.search, page: target }))
-  }, [data, route.page, route.search, route.order])
+    if (target !== route.page) replaceRouteKeepingScroll(auditListHref({ ...route, page: target }))
+  }, [data, route])
 
-  const filtersActive = route.search !== '' || search.draft.trim() !== '' || route.order !== 'desc' || ignored.length > 0
+  const filtersActive = auditHasFilters(route) || search.draft.trim() !== '' || route.order !== 'desc' || issues.length > 0
   function clearFilters() {
+    setSearchError('')
     search.clear()
     replaceRouteKeepingScroll(auditListHref())
   }
 
   const listContext = auditListHref(route)
-  const pagerData = data ?? list.lastData
+  const pagerData = data
 
   return (
     <>
-      <SummaryCards
-        title="Resumo dos eventos de auditoria"
-        note="Total informado pelo Control Plane para a consulta atual. Os demais indicadores não têm contagem no Control Plane e aguardam integração; nenhum valor ilustrativo é exibido."
-        cards={[
-          {
-            label: 'Total de eventos',
-            value: data ? COUNT_FORMAT.format(data.total) : null,
-            detail: route.search ? 'Resultado da busca' : 'Registro do Control Plane',
-            icon: FileText,
-            tone: 'blue',
-          },
-          { label: 'Com alterações', value: null, detail: 'Sem contagem agregada no Control Plane', icon: FilePen, tone: 'amber' },
-          { label: 'Hoje', value: null, detail: 'Sem contagem agregada no Control Plane', icon: CalendarDays, tone: 'teal' },
-          { label: 'Últimos 7 dias', value: null, detail: 'Sem contagem agregada no Control Plane', icon: ChartColumn, tone: 'violet' },
-        ]}
-      />
+      <section className={`${fin.card} ${styles.summary}`} aria-label="Resumo dos eventos de auditoria">
+        <FileText size={20} aria-hidden="true" /><div><h2>Total de eventos{auditHasFilters(route) ? ' da consulta filtrada' : ''}</h2>
+        <p aria-live="polite">{data ? COUNT_FORMAT.format(data.total) : '—'} <span> · Total informado pelo Control Plane para a consulta atual</span></p></div>
+      </section>
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="audit-list-title" data-audit-list>
         <h2 id="audit-list-title" className="visually-hidden">
@@ -106,13 +101,13 @@ function AuditList({ routeKey, page, search: searchParam, order, resourceType, r
         <div className={shared.filters} style={{ '--filter-count': 2 } as CSSProperties}>
           <label className={fin.search}>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-            <span className="visually-hidden">Buscar por código da ação, tipo de recurso ou ID do recurso (busca feita pelo Control Plane)</span>
+            <span className="visually-hidden">Buscar por código da ação, tipo de recurso, ID do recurso ou Correlation ID (busca feita pelo Control Plane)</span>
             <input
               id="audit-search"
               type="search"
               value={search.draft}
               maxLength={AUDIT_SEARCH_MAX_LENGTH}
-              placeholder="Buscar por código da ação, tipo ou ID do recurso…"
+              placeholder="Buscar ação, recurso ou Correlation ID…"
               onChange={(event) => search.setDraft(event.target.value)}
             />
           </label>
@@ -131,14 +126,26 @@ function AuditList({ routeKey, page, search: searchParam, order, resourceType, r
           </OutlineButton>
         </div>
 
-        {ignored.length ? (
-          <p className={styles.ignoredNote} role="status" data-ignored-params>
-            <Info size={14} strokeWidth={1.8} aria-hidden="true" />
-            Filtro da URL não suportado pelo Control Plane e ignorado: {ignored.join(', ')}. A lista mostra todos os eventos da consulta.
-          </p>
-        ) : null}
+        <details className={styles.advanced}>
+          <summary>Filtros avançados</summary>
+          <AuditFilters key={routeKey} route={route} rawQuery={rawQuery} apply={hash => {
+            const pending = search.pendingSearch()
+            if (!safeSearch(pending)) { setSearchError('Corrija a busca antes de aplicar os filtros.'); return }
+            replaceRouteKeepingScroll(updateAuditQuery(hash.split('?')[1] ?? '', { search: pending, page: 1 }))
+          }} />
+        </details>
+        {searchError ? <p role="alert" className={styles.filterIssues}>{searchError}</p> : null}
+        {!valid ? <div role="alert" className={styles.filterIssues} data-invalid-filters>
+          <h3>Filtros da URL inválidos ou não suportados</h3><p>Nenhuma consulta foi enviada. Corrija ou remova os filtros para continuar.</p>
+          <ul>{issues.map((issue, index) => <li key={`${issue.key}-${index}`}>{issue.message} <button type="button" onClick={() => replaceRouteKeepingScroll(removeAuditFilter(rawQuery, issue.key))}>Remover restrição {index + 1}</button></li>)}</ul>
+        </div> : null}
+        {valid && filtersActive ? <div className={styles.chips} aria-label="Filtros aplicados" role="status">
+          {AUDIT_FILTER_KEYS.filter(key => key !== 'page' && !!route[key] && !(key === 'order' && route.order === 'desc')).map(key => <button type="button" key={key} onClick={() => { if (key === 'search') search.clear(); replaceRouteKeepingScroll(removeAuditFilter(rawQuery, key)) }} aria-label={`Remover ${AUDIT_FILTER_LABELS[key]}`}>
+            {AUDIT_FILTER_LABELS[key]}: {key === 'result' ? route.result === 'success' ? 'Sucesso' : 'Falha' : key === 'order' ? 'Mais antigos primeiro' : route[key]} <span aria-hidden="true">×</span>
+          </button>)}
+        </div> : null}
 
-        <div className={fin.tableArea}>
+        {valid ? <><div className={fin.tableArea}>
           {error ? (
             <div className={states.feedback} role="alert" data-list-error>
               <EmptyState icon={CircleAlert} title={error.title} description={error.description} />
@@ -212,20 +219,17 @@ function AuditList({ routeKey, page, search: searchParam, order, resourceType, r
 
           {!error && data && !loading && data.rows.length === 0 ? (
             <div className={states.feedback} data-list-empty>
-              {route.search ? (
+              {auditHasFilters(route) ? (
                 <>
                   <EmptyState
                     icon={SearchX}
-                    title="Nenhum evento encontrado"
-                    description="O Control Plane não encontrou eventos cujo código da ação, tipo ou ID do recurso contenha esta busca."
+                    title="Nenhum evento encontrado para os filtros selecionados."
+                    description="Altere ou limpe os filtros para consultar outros eventos."
                   />
                   <OutlineButton
-                    onClick={() => {
-                      search.clear()
-                      replaceRouteKeepingScroll(auditListHref({ order: route.order }))
-                    }}
+                    onClick={clearFilters}
                   >
-                    Limpar busca
+                    Limpar filtros
                   </OutlineButton>
                 </>
               ) : (
@@ -255,7 +259,7 @@ function AuditList({ routeKey, page, search: searchParam, order, resourceType, r
               />
             ) : null}
           </div>
-        )}
+        )}</> : null}
       </section>
     </>
   )

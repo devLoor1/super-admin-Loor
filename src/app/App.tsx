@@ -411,7 +411,7 @@ function routeFromHash(): Route {
       whitelabel: param('whitelabel'),
       actor: param('actor'),
       action: param('action'),
-      search,
+      search: window.location.hash.includes('?') ? window.location.hash.slice(window.location.hash.indexOf('?') + 1) : '',
     }
   }
   const auditEvent = AUDIT_EVENT_PATH.exec(path)
@@ -550,6 +550,7 @@ export function App() {
   if (route.view === 'audit') {
     return (
       <AuditListPage
+        rawQuery={route.search}
         page={route.page}
         search={route.query}
         order={route.order}

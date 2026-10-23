@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360 } from './reviewed-360-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -195,7 +196,7 @@ await check('protected source byte-identical to accepted Daily Opportunity basel
     // Later KYC migration changes only unavailable-association copy in these
     // profiles; check-kyc-read reverses the exact strings and byte-compares them.
     const copyOnly = path === 'src/features/operation' ? ['src/features/operation/investors/InvestorDetailPage.tsx','src/features/operation/entrepreneurs/EntrepreneurDetailPage.tsx'] : []
-    assert.deepEqual(changed.filter(file => !reviewed360(file) && !copyOnly.includes(file)),[],path)
+    assert.deepEqual(changed.filter(file => !reviewed360(file) && !reviewedAuditFilters(file) && !copyOnly.includes(file)),[],path)
   }
 })
 auth.clearSession()

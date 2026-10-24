@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { opportunityWriteExclusions } from './reviewed-opportunity-write-boundary.mjs'
 import { withoutSettingsReadiness } from './reviewed-settings-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
@@ -17,8 +18,8 @@ const overrides={
   'src/features/control-plane-operators/useOperators.ts':`export const useOperators=()=>({state:globalThis.__operatorRead,allowed:globalThis.__operatorRoles.includes('SUPER_ADMIN'),reload(){}});export const useOperatorDetail=useOperators;`,
 }
 let checks=0;async function check(name,fn){try{await fn();checks++}catch(cause){throw Error(name,{cause})}}
-const realViews=['settings','dashboard','whitelabels','accounts','operation-investors','operation-investor','operation-entrepreneurs','operation-entrepreneur','operation-opportunities','operation-opportunity','operation-company-list','operation-company','finance-investments','finance-investment','finance-payments','finance-payment','finance-wallets','finance-wallet','compliance-kyc','compliance-kyc-case','audit','audit-event','settings-menu-visibility','control-plane-operators','control-plane-operator']
-const mockViews=['emails','finance','finance-modalities','finance-catalogs','operation-opportunity-new','operation-opportunity-edit']
+const realViews=['settings','dashboard','whitelabels','accounts','operation-investors','operation-investor','operation-entrepreneurs','operation-entrepreneur','operation-opportunities','operation-opportunity','operation-opportunity-edit','operation-company-list','operation-company','finance-investments','finance-investment','finance-payments','finance-payment','finance-wallets','finance-wallet','compliance-kyc','compliance-kyc-case','audit','audit-event','settings-menu-visibility','control-plane-operators','control-plane-operator']
+const mockViews=['emails','finance','finance-modalities','finance-catalogs','operation-opportunity-new']
 const id='c'+'a'.repeat(24)
 for(const development of [false,true]){
   const load=moduleLoader({development,overrides}),p=await load('src/app/presentationAvailability.ts')
@@ -61,7 +62,7 @@ await check('exact later-delivery guards retain previous runtime byte-for-byte',
   assert.throws(()=>withoutOperators(app.replace("import { OperatorsListPage }","import { OperatorsListPage, Extra }")))
   assert.throws(()=>withoutOperatorsEntry(menu+'\n// unrelated'))
   assert.equal(reviewedOperators('src/features/control-plane-operators/Unknown.ts'),false);assert.equal(reviewedOperators('src/lib/apiClient.ts'),false)
-  for(const path of ['src/lib','src/components','src/features/dashboard','src/features/governance-audit','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility/menuRegistry.ts','src/features/menu-visibility/visibilityPolicy.ts','src/features/menu-visibility/visibilityResolver.ts','src/features/menu-visibility/menuVisibilityApi.ts','package.json','package-lock.json','netlify.toml','docs/homolog-readiness-hygiene-v1.md'])assert.equal(git('diff','9f4d696','--',path),'',path)
+  for(const path of ['src/lib','src/components','src/features/dashboard','src/features/governance-audit','src/features/compliance-kyc','src/features/operation','src/features/finance-core','src/features/menu-visibility/menuRegistry.ts','src/features/menu-visibility/visibilityPolicy.ts','src/features/menu-visibility/visibilityResolver.ts','src/features/menu-visibility/menuVisibilityApi.ts','package.json','package-lock.json','netlify.toml','docs/homolog-readiness-hygiene-v1.md'])assert.equal(git('diff','9f4d696','--',path,...opportunityWriteExclusions()),'',path)
   assert.equal(withoutSettingsReadiness(await readFile(resolve(root,'src/app/presentationAvailability.ts'),'utf8')),git('show','9f4d696:src/app/presentationAvailability.ts'))
 })
 await check('durable actionable policy and instructions',async()=>{const policy=await readFile(resolve(root,'docs/homolog-readiness-policy.md'),'utf8'),agents=await readFile(resolve(root,'AGENTS.md'),'utf8');assert.match(agents,/homolog-readiness-policy.md/);assert.match(policy,/check-homolog-readiness.mjs/);assert.match(policy,/no automatic CI release-blocking gate/);assert.match(policy,/privacy|Privacy/);assert.match(agents,/Block promotion/)})

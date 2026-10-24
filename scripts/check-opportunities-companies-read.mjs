@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { access, readdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
@@ -438,7 +439,8 @@ for (const file of domainFiles) {
   const source = await readFile(file, 'utf8')
   const found = capabilities(source)
   await check(`${rel}: no write method, transport alias, approval path or browser persistence`, () => {
-    if (rel.endsWith('/opportunityApi.ts') || rel.endsWith('/companyApi.ts')) assert.deepEqual([...found], ['authenticatedGet'])
+    if (rel.includes('/opportunities/write/')) assert.equal(reviewedOpportunityWrite(rel), true)
+    else if (rel.endsWith('/opportunityApi.ts') || rel.endsWith('/companyApi.ts')) assert.deepEqual([...found], ['authenticatedGet'])
     else assert.deepEqual([...found], [])
   })
   await check(`${rel}: no prototype source, fixture or fabricated record`, () => {
@@ -496,9 +498,10 @@ await check('list pages clamp a page past the end once (strictly smaller target)
     assert.ok(source.includes("const resetPage = !('page' in next) || pendingSearch !== route.search;"), path)
   }
 })
-await check('write routes stay but are read-only: no form, store or save in the Opportunity form route', async () => {
+await check('create stays unavailable; edit delegates only to the reviewed editorial unit', async () => {
   const form = await code('src/features/operation/opportunities/OpportunityFormPage.tsx')
   assert.ok(form.includes('indisponível') && !/useState|onSubmit|<form|save|store/i.test(form))
+  assert.ok(form.includes("if (mode === 'edit') return <OpportunityEditorialPage"))
 })
 await check('no Companies menu id or sidebar entry anywhere', async () => {
   for (const file of await walk(resolve(root, 'src'))) assert.equal((await code(relative(root, file))).includes("'operation-companies'"), false, relative(root, file))

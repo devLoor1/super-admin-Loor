@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { opportunityWriteExclusions } from './reviewed-opportunity-write-boundary.mjs'
 import { withoutSettingsReadiness } from './reviewed-settings-boundary.mjs'
 import { readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
@@ -101,7 +102,7 @@ for(const development of [false,true])for(const roles of [['SUPER_ADMIN'],['SUPP
 })
 await check('protected source and narrowed domain boundaries remain intact',async()=>{
  const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim()
- for(const path of ['src/lib','src/app','src/components','src/features/operation','src/features/control-plane-operators','src/features/menu-visibility','package.json','package-lock.json','netlify.toml'])assert.equal(git('diff','b1dc5f1','--',path,':(exclude)src/app/presentationAvailability.ts'),'',path)
+ for(const path of ['src/lib','src/app','src/components','src/features/operation','src/features/control-plane-operators','src/features/menu-visibility','package.json','package-lock.json','netlify.toml'])assert.equal(git('diff','b1dc5f1','--',path,':(exclude)src/app/presentationAvailability.ts',...opportunityWriteExclusions()),'',path)
  assert.equal(withoutSettingsReadiness(await readFile(resolve(root,'src/app/presentationAvailability.ts'),'utf8')).trim(),git('show','b1dc5f1:src/app/presentationAvailability.ts'))
  for(const name of ['accountAccessContract.ts','accountAccessClient.ts','accountAccessRefresh.ts','AccountAccessActions.tsx']){
   const source=await readFile(resolve(root,'src/features/whitelabel-accounts/access',name),'utf8');assert.doesNotMatch(source,/console\.|sessionStorage|localStorage|\/admins|\/operators|prototypeAccounts/)

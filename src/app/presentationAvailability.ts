@@ -2,7 +2,10 @@ import type { NavItem } from '../components/shell/navigation'
 
 /** Presentation eligibility, never authorization or saved Menu Visibility configuration. */
 export const PROTOTYPE_PRESENTATION = import.meta.env.DEV
-export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new', 'operation-opportunity-edit'])
+export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new'])
+/** SA-BE-001 accepted subset. Backend authorization and fresh state checks still apply. */
+export const opportunityEditorialAvailable = (status: string, roles: readonly string[]) => status === 'review' && roles.includes('SUPER_ADMIN')
+export const opportunityActionAvailable = (action: string, development = PROTOTYPE_PRESENTATION) => development || action === 'patch' || action === 'archive'
 const MOCK_MENU_IDS = new Set(['sistema', 'ajuda', 'whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
 export function viewAvailable(view: string, development = PROTOTYPE_PRESENTATION) { return development || !MOCK_ONLY_VIEWS.has(view) }
 export function readinessHref(id: string, candidate?: string, development = PROTOTYPE_PRESENTATION) {

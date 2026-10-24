@@ -108,7 +108,8 @@ export async function apiRequest<T>(
     Accept: 'application/json',
     'X-Correlation-ID': requestId,
   }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  const multipart = typeof FormData !== 'undefined' && options.body instanceof FormData
+  if (options.body !== undefined && !multipart) headers['Content-Type'] = 'application/json'
   if (options.token) headers.Authorization = `Bearer ${options.token}`
 
   const controller = new AbortController()
@@ -130,7 +131,7 @@ export async function apiRequest<T>(
     response = await fetch(`${API_BASE}${path.startsWith('/') ? path : `/${path}`}${queryString(options.query)}`, {
       method: options.method || 'GET',
       headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body: multipart ? options.body as FormData : options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     })
     text = await response.text()

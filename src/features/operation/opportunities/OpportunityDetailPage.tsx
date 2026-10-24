@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { readinessTabs } from '../../../app/presentationAvailability'
+import { opportunityEditorialAvailable, readinessTabs } from '../../../app/presentationAvailability'
+import { useSessionOperator } from '../../../lib/authSession'
 import { CircleAlert, Database, ExternalLink, Info, LayoutGrid, RotateCw, SearchX, Target, UserRound } from 'lucide-react'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
@@ -40,7 +41,7 @@ const activityKey = (id: string) => `opportunity:${id}`
  * `#/operation/opportunities/:opportunityId` — read-only Opportunity from
  * `GET /opportunities/:id`. Only fields the Control Plane returns are shown
  * (no money, investments, investor counts or fundraising progress exist in
- * the contract). No approval, publication, edit or status change.
+ * the read contract). A contextual entry exposes the separately scoped editorial controls.
  */
 export function OpportunityDetailPage({ opportunityId, returnTo }: { opportunityId: string; returnTo?: string }) {
   const detail = useOpportunityDetail(opportunityId)
@@ -122,6 +123,7 @@ export function OpportunityDetailPage({ opportunityId, returnTo }: { opportunity
 }
 
 function OpportunityContent({ opportunity, listHref }: { opportunity: OpportunityDetail; listHref: string }) {
+  const editorial = opportunityEditorialAvailable(opportunity.status, useSessionOperator()?.roles ?? [])
   const key = activityKey(opportunity.id)
   const activity = useOperationActivity(key)
   const [tab, setTab] = useState<Tab>('overview')
@@ -184,6 +186,7 @@ function OpportunityContent({ opportunity, listHref }: { opportunity: Opportunit
           </div>
         </div>
         <div className={shared.heroActions}>
+          {editorial && <a href={`#/operation/opportunities/${opportunity.id}/edit`} className={`${outline.button} ${shared.secondaryButton}`} data-hero="opportunity-editorial">Editar Sobre / arquivar</a>}
           <a href={entrepreneurHref(opportunity.entrepreneurId)} className={`${outline.button} ${shared.secondaryButton}`} data-hero="entrepreneur">
             <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
             Ver empreendedor
@@ -249,7 +252,7 @@ function OpportunityContent({ opportunity, listHref }: { opportunity: Opportunit
           />
         </section>
         <InfoNote>
-          <strong>Somente leitura.</strong> Aprovação, publicação, edição e mudança de status não fazem parte desta integração. O contrato de
+          <strong>Consulta autoritativa.</strong> Somente SUPER_ADMIN pode editar Sobre ou arquivar uma oportunidade em revisão, na tela específica. Criação, aprovação e operações de provedor permanecem indisponíveis. O contrato de
           Oportunidades não traz valores, investimentos, investidores ou progresso de captação — nada disso é exibido ou calculado.
         </InfoNote>
       </TabPanel>

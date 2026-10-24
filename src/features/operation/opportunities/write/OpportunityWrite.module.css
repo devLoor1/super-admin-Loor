@@ -1,0 +1,18 @@
+.editor { display:grid; gap:14px; min-width:0; }
+.card { min-width:0; padding:18px; border:1px solid var(--surface-border); border-radius:var(--radius-panel); background:#131a28; margin-bottom:14px; }
+.card h2 { font-size:17px; line-height:1.5; color:var(--text-on-dark); margin-bottom:14px; }
+.grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; min-width:0; }
+.field { display:grid; align-content:start; gap:6px; min-width:0; color:var(--text-on-dark-secondary); font-size:13px; line-height:1.5; }
+.field input,.field select,.field textarea { width:100%; min-width:0; min-height:40px; padding:9px 10px; border:1px solid #3c4761; border-radius:8px; background:#0e1522; color:#edf0ff; font:inherit; }
+.field textarea { min-height:110px; resize:vertical; }
+.field input[type=checkbox] { width:20px; height:20px; min-height:20px; }
+.field input[type=file] { white-space:normal; overflow:hidden; }
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible { outline:2px solid #b9b4ff; outline-offset:2px; }
+.field :disabled { opacity:.65; }
+.editor fieldset { min-width:0; padding:0; margin:0; border:0; }
+.notice,.feedback { padding:12px 14px; border:1px solid #665e9e; border-radius:9px; background:#1b2034; color:#dedcf5; overflow-wrap:anywhere; line-height:1.6; }
+.notice p,.notice a { margin-top:8px; }
+.hint,.context { font-size:12.5px; line-height:1.6; color:var(--text-on-dark-secondary); overflow-wrap:anywhere; }
+.grid>.hint,.grid>.notice { grid-column:1/-1; }
+.actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+@media(max-width:767px){.grid{grid-template-columns:minmax(0,1fr)}.card{padding:14px}}

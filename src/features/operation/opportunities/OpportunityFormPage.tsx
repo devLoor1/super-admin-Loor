@@ -1,19 +1,19 @@
 import { Lock } from 'lucide-react'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { isPositiveCoreId } from '../shared/coreIds'
 import { OperationShell } from '../shared/OperationUi'
 import shared from '../shared/Operation.module.css'
-import { opportunityHref } from './opportunityRoute'
+import { OpportunityWritePage } from './write/OpportunityWritePage'
+import { OpportunityEditorialPage } from './write/OpportunityEditorialPage'
 
 /**
  * `#/operation/opportunities/new` and `#/operation/opportunities/:id/edit`
  * (existing routes, kept so direct links and bookmarks land on a clear state).
- * Opportunities Read V1 is READ-ONLY: creating or editing an Opportunity is
- * not available, nothing is saved locally and nothing is sent. The former
- * prototype form and its in-memory store were removed.
+ * DEV retains the complete candidate. Official homolog releases only the
+ * accepted review/about/archive subset; creation remains unavailable.
  */
 export function OpportunityFormPage({ mode, opportunityId }: { mode: 'create' | 'edit'; opportunityId?: string; focusClassification?: boolean }) {
-  const detailHref = mode === 'edit' && isPositiveCoreId(opportunityId) ? opportunityHref(opportunityId) : null
+  if (import.meta.env.DEV) return <OpportunityWritePage mode={mode} opportunityId={opportunityId} />
+  if (mode === 'edit') return <OpportunityEditorialPage opportunityId={opportunityId} />
   return (
     <OperationShell section="opportunities" title="Oportunidades" trail={[mode === 'create' ? 'Nova oportunidade' : 'Editar']}>
       <div className={shared.notFound} data-opportunity-write="unavailable">
@@ -22,16 +22,10 @@ export function OpportunityFormPage({ mode, opportunityId }: { mode: 'create' | 
           title={mode === 'create' ? 'Criação de oportunidades indisponível' : 'Edição de oportunidades indisponível'}
           description={
             <>
-              A integração de Oportunidades com o Control Plane é somente leitura: nenhuma oportunidade é criada, editada ou salva nesta tela.{' '}
-              {detailHref ? (
-                <a href={detailHref} className={shared.inlineLink}>
-                  Ver a oportunidade
-                </a>
-              ) : (
-                <a href="#/operation/opportunities" className={shared.inlineLink}>
-                  Voltar para Oportunidades
-                </a>
-              )}
+              A criação ainda não está disponível nesta integração. Nenhuma oportunidade é criada ou enviada por esta tela.{' '}
+              <a href="#/operation/opportunities" className={shared.inlineLink}>
+                Voltar para Oportunidades
+              </a>
             </>
           }
         />

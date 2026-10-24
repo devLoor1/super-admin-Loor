@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { readdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
@@ -479,6 +480,10 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if(file.replaceAll('\\','/').endsWith('src/features/operation/opportunities/write/opportunityWriteClient.ts')){
+      assert.equal(reviewedOpportunityWrite('src/features/operation/opportunities/write/opportunityWriteClient.ts'),true)
+      continue
+    }
     if(file.replaceAll('\\','/').endsWith('src/features/whitelabel-accounts/access/accountAccessClient.ts')){
       const { reviewedAccountAccess }=await import('./reviewed-account-access-boundary.mjs')
       assert.equal(reviewedAccountAccess('src/features/whitelabel-accounts/access/accountAccessClient.ts'),true)

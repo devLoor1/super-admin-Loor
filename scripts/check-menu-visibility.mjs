@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedOpportunityWrite, withoutOpportunityMultipart } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedOperators } from './reviewed-operators-boundary.mjs'
 import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360, withoutReadinessGate } from './reviewed-360-boundary.mjs'
@@ -470,7 +471,7 @@ check(hook.includes('createVisibilityResource(fetchMenuVisibility)') && hook.inc
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 // Operational V1's only shared transport change is opt-in success-status checking. Compare
 // every other byte, so exempting the file cannot hide an auth/read/route change.
-const statusOnlyApi = (await readFile(resolve(root, 'src/lib/api.ts'), 'utf8')).replaceAll('\r\n', '\n')
+const statusOnlyApi = withoutOpportunityMultipart(await readFile(resolve(root, 'src/lib/api.ts'), 'utf8'))
   .replace('    /** A write must receive its documented success status, otherwise its result is uncertain. */\n    successStatus?: number\n', '')
   .replace("  if (!parsed || (options.successStatus !== undefined && response.status !== options.successStatus)) {\n    throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })\n  }", "  if (!parsed) throw new ApiError(response.status, {}, { kind: 'malformed', correlationId: echoedId })")
 check(statusOnlyApi === git('show', BASELINE + ':src/lib/api.ts').replaceAll('\r\n', '\n'), 'Only the exact opt-in write success-status check may change the shared API transport')
@@ -696,7 +697,7 @@ for (const dir of ['src/features/operation/opportunities', 'src/features/operati
     const rel = relative(root, file).replaceAll('\\', '/')
     const source = await readFile(file, 'utf8')
     const adapter = rel.endsWith('/opportunityApi.ts') || rel.endsWith('/companyApi.ts')
-    check(!unsafeCapability(source, false, adapter), `${rel}: Opportunities + Companies Read exception grants no transport capability; only its canonical GET adapters are allowed`)
+    check(rel.includes('/opportunities/write/') ? reviewedOpportunityWrite(rel) : !unsafeCapability(source, false, adapter), `${rel}: only exact reviewed pre-acceptance write code or canonical GET adapters have transport capability`)
     check(!unsafeCapability(source, true), `${rel}: Opportunities + Companies Read exception grants no browser persistence capability`)
   }
 }

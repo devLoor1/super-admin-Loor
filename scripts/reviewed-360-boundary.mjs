@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedSettings } from './reviewed-settings-boundary.mjs'
 import { reviewedOperators } from './reviewed-operators-boundary.mjs'
@@ -41,6 +42,7 @@ const fingerprints={
   'src/features/operation/shared/useOverview.ts':'0ff48c4c59938558a0070fd6badd1d1a2c9d86bbe3133fb8c2c3afcf9a05b290',
 }
 export function reviewed360(path) {
+  if(reviewedAdminLifecycle(path))return true
   if(reviewedOpportunityWrite(path))return true
   if(reviewedSettings(path))return true
   if(reviewedAccountAccess(path))return true

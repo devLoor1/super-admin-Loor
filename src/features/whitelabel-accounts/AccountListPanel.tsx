@@ -102,7 +102,7 @@ export function AccountListPanel({
           <span className={styles.legendSquare} aria-hidden="true" />
           <span>
             <strong>{BUSINESS_HEADING[kind]}</strong>:{' '}
-            {kind === 'admin' ? 'situação do convite do administrador' : 'estado do cadastro, independente do acesso — não é KYC'}
+            {kind === 'admin' ? 'derivada do acesso, sem fluxo de convite' : 'estado do cadastro, independente do acesso — não é KYC'}
           </span>
         </span>
       </p>

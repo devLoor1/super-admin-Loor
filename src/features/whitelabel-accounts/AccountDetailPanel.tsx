@@ -17,6 +17,7 @@ import { accountDisplayName, kindMeta, rawTokenMeta, type AccountDetail, type Ac
 import { BUSINESS_HEADING, accountInitials, businessView } from './accountsPresent'
 import styles from './AccountDetailPanel.module.css'
 import { AccountAccessActions } from './access/AccountAccessActions'
+import { AdminLifecycleActions } from './admin/AdminLifecycleActions'
 
 /*
  * Selected account, read from `GET /whitelabels/:id/accounts/:accountId?tipo=…`.
@@ -112,6 +113,7 @@ function DetailContents({ detail, whitelabel, actionsCurrent }: { detail: Accoun
         <Links detail={detail} />
 
         {detail.kind !== 'admin' ? <AccountAccessActions key={`${whitelabel.id}:${detail.kind}:${record.id}`} detail={detail} tenantId={whitelabel.id} current={actionsCurrent} /> : null}
+        {detail.kind === 'admin' && <AdminLifecycleActions record={detail.record} tenantId={whitelabel.id} current={actionsCurrent} />}
         <section className={styles.card} aria-labelledby="acc-actions-title" data-detail-stage="actions" data-write-actions="disabled">
           <h3 id="acc-actions-title" className={styles.cardTitle}>
             Ações da conta
@@ -119,9 +121,8 @@ function DetailContents({ detail, whitelabel, actionsCurrent }: { detail: Accoun
           <div className={styles.note}>
             <Lock size={16} strokeWidth={1.8} aria-hidden="true" />
             <p>
-              <strong>{detail.kind === 'admin' ? 'Ações de acesso desativadas (somente leitura).' : 'Outras ações indisponíveis.'}</strong> {detail.kind === 'admin' ? 'Pausar, reativar, ' : ''}alterar Whitelabel,
-              {detail.kind === 'admin' ? ' convidar, alterar função, ' : ' '}editar e redefinir senha não estão disponíveis nesta
-              integração. {detail.kind === 'admin' ? 'Nada é enviado ao Control Plane.' : 'A gestão de acesso acima é independente destas ações.'}
+              <strong>Outras ações indisponíveis.</strong> Alterar Whitelabel, convidar, alterar função e redefinir senha não estão disponíveis nesta integração.
+              {detail.kind !== 'admin' && ' Editar cadastro também está indisponível. A gestão de acesso acima é independente destas ações.'}
             </p>
           </div>
         </section>
@@ -197,8 +198,7 @@ function AdminData({ detail }: { detail: Extract<AccountDetail, { kind: 'admin' 
         </Field>
       </dl>
       <p className={styles.cardFootnote}>
-        O contrato não define o significado de “Situação” nem do sinalizador isSuperAdmin: os valores aparecem como enviados e
-        não indicam função ou permissões no Super Admin. Funções e permissões não são expostas.
+        Nome completo é o alias fullName do nome persistido. Ausência de campo não comprova nome vazio. Situação active/disabled deriva do acesso; não representa convite. isSuperAdmin não atribui funções do Control Plane; permissões não são expostas.
       </p>
     </section>
   )

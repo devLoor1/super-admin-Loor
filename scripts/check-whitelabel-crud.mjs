@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { readdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
@@ -445,6 +446,10 @@ await check('only the narrow operational adapter/hook import the runner; nothing
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if(file.replaceAll('\\','/').endsWith('src/features/whitelabel-accounts/admin/adminLifecycleClient.ts')){
+      assert.equal(reviewedAdminLifecycle('src/features/whitelabel-accounts/admin/adminLifecycleClient.ts'),true)
+      continue
+    }
     if (!['whitelabelMutationRunner.ts', 'whitelabelOperationalApi.ts', 'useWhitelabelMutation.ts'].some(name => file.endsWith(name))) assert.equal(/whitelabelMutationRunner/.test(source), false, file)
     assert.equal(/(from|import)\s*\(?\s*['"][^'"]*(scripts\/|fixtures\/|whitelabel-mutation-mocks)/.test(source), false, file)
     assert.equal(/createMockTransport|MockTransport|createMockReadback/.test(stripComments(source)), false, file)

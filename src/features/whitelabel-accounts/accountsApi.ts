@@ -48,6 +48,9 @@ export type AdminRecord = {
   id: string
   whitelabelId: string
   email: string | null
+  /** Persisted Core name; missing legacy projections are not a known empty name. */
+  name: string | null
+  nameReadbackAvailable: boolean
   fullName: string | null
   accessState: string | null
   /** Token as sent (observed: `active`); meaning not defined by the contract. */
@@ -89,10 +92,15 @@ export function parseAdmin(value: unknown): AdminRecord {
   const id = numericId(value.id)
   const whitelabelId = numericId(value.whitelabelId)
   if (!id || !whitelabelId || value.type !== 'admin') throw malformed()
+  const hasName = Object.hasOwn(value, 'name'), hasFullName = Object.hasOwn(value, 'fullName')
+  if (hasName && value.name !== null && typeof value.name !== 'string' || hasFullName && value.fullName !== null && typeof value.fullName !== 'string') throw malformed()
+  if (hasName && hasFullName && value.name !== value.fullName) throw malformed()
   return {
     id,
     whitelabelId,
     email: text(value.email),
+    name: hasName ? text(value.name) : null,
+    nameReadbackAvailable: hasName && hasFullName,
     fullName: text(value.fullName),
     accessState: token(value.accessState),
     businessState: token(value.businessState),
@@ -218,7 +226,7 @@ export function invitationMeta(value: string | null): { label: string; tone: Bus
 export const rawTokenMeta = (value: string | null): { label: string; tone: BusinessTone } | null =>
   value ? { label: value, tone: 'neutral' } : null
 
-/** Display name: the recorded full name, else the e-mail (admins have no name), else a neutral fallback. */
+/** Recorded full name/alias, else e-mail as an explicitly labelled fallback. */
 export function accountDisplayName(row: AccountRow | AccountDetail) {
   return row.record.fullName ?? row.record.email ?? 'Nome não informado'
 }

@@ -77,7 +77,7 @@ await check('investor / entrepreneur rows reuse the Operation projections (same 
 })
 await check('admin rows: strict identity, display fields as sent (no name, raw tokens, raw flag)', async () => {
   const row = api.parseAdmin(admin)
-  assert.deepEqual(row, { id: '3', whitelabelId: '4', email: 'admin@example.invalid', fullName: null, accessState: 'active', businessState: 'active',
+  assert.deepEqual(row, { id: '3', whitelabelId: '4', email: 'admin@example.invalid', name:null, nameReadbackAvailable:false, fullName: null, accessState: 'active', businessState: 'active',
     invitation: 'accepted', isSuperAdmin: false, createdAt: admin.createdAt, updatedAt: admin.updatedAt })
   assert.equal(api.parseAdmin({ ...admin, isSuperAdmin: 'false', invitation: '<b>' }).isSuperAdmin, null)
   assert.equal(api.parseAdmin({ ...admin, invitation: '<b>' }).invitation, null)
@@ -235,10 +235,10 @@ await check('registration states keep their own vocabulary; never KYC, never Com
   assert.deepEqual(present.businessView(row('investor', { businessState: 'approved' })), { label: 'Aprovada', tone: 'positive' })
   assert.deepEqual(present.businessView(row('investor', { businessState: 'waiting' })), { label: 'Aguardando', tone: 'pending' })
   assert.deepEqual(present.businessView(row('entrepreneur', { businessState: 'incomplete' })), { label: 'Cadastro incompleto', tone: 'pending' })
-  assert.deepEqual(present.businessView(row('admin', { invitation: 'accepted' })), { label: 'Convite aceito', tone: 'positive' })
-  assert.deepEqual(present.businessView(row('admin', { invitation: 'expired' })), { label: 'expired', tone: 'neutral' })
+  assert.deepEqual(present.businessView(row('admin', { businessState: 'active', invitation: 'accepted' })), { label: 'active', tone: 'neutral' })
+  assert.deepEqual(present.businessView(row('admin', { businessState: 'future', invitation: 'expired' })), { label: 'future', tone: 'neutral' })
   assert.deepEqual(present.businessView(row('investor', { businessState: 'constructor' })), { label: 'constructor', tone: 'neutral' })
-  assert.equal(present.businessView(row('admin', { invitation: null })), null)
+  assert.equal(present.businessView(row('admin', { businessState: null, invitation: 'accepted' })), null)
   for (const heading of Object.values(present.BUSINESS_HEADING)) assert.equal(/kyc|empresa|company/i.test(heading), false, heading)
   assert.deepEqual(api.rawTokenMeta('active'), { label: 'active', tone: 'neutral' })
 })
@@ -268,7 +268,7 @@ await check('no Admin lifecycle or unrelated writes; access is a separately test
     assert.equal(/dialogs\/|PauseAccessDialog|ReactivateAccessDialog|ChangeWhitelabelDialog|NewAdminDialog|accountListConfig/.test(source), false, name)
     assert.equal(/\/pause|\/reactivate|onPause|onReactivate|onTransfer|Novo administrador|data-access-action/.test(source), false, name)
   }
-  assert.match(sources['AccountDetailPanel.tsx'], /Ações de acesso desativadas \(somente leitura\)/)
+  assert.match(sources['AccountDetailPanel.tsx'], /detail.kind === 'admin' && <AdminLifecycleActions/)
   assert.match(sources['AccountDetailPanel.tsx'], /data-write-actions="disabled"/)
   assert.match(sources['AccountDetailPanel.tsx'], /detail.kind !== 'admin' \? <AccountAccessActions/)
   assert.match(sources['AccountDetailPanel.tsx'], /current=\{actionsCurrent\}/)

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { withoutAdminReadiness } from './reviewed-admin-lifecycle-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -20,7 +21,7 @@ const pins = {
 const normalized = source => source.replaceAll('\r\n', '\n')
 export function verifyOpportunityWriteSource(path, source) {
   if (!Object.hasOwn(pins, path)) return false
-  assert.equal(createHash('sha256').update(normalized(source)).digest('hex'), pins[path], `Unreviewed Opportunity write source: ${path}`)
+  assert.equal(createHash('sha256').update(path==='src/app/presentationAvailability.ts'?withoutAdminReadiness(source):normalized(source)).digest('hex'), pins[path], `Unreviewed Opportunity write source: ${path}`)
   return true
 }
 export function reviewedOpportunityWrite(path) {
@@ -38,7 +39,7 @@ export function withoutOpportunityMultipart(source) {
 }
 export function withoutOpportunityReadiness(source) {
   verifyOpportunityWriteSource('src/app/presentationAvailability.ts', source)
-  return normalized(source)
+  return withoutAdminReadiness(source)
     .replace("'operation-opportunity-new'])", "'operation-opportunity-new', 'operation-opportunity-edit'])")
     .split('\n').filter(line => !line.startsWith('/** SA-BE-001 accepted subset.') && !line.startsWith('export const opportunityEditorialAvailable') && !line.startsWith('export const opportunityActionAvailable')).join('\n')
 }

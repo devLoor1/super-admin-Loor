@@ -20,6 +20,7 @@ import { TYPE_TABS_ID, scopedErrorView } from './accountsPresent'
 import { ACCOUNT_SEARCH_MAX_LENGTH, accountsPageHref, parseAccountsRoute, type AccountsRouteState } from './accountsRoute'
 import { useAccountDetail, useAccountList, useWhitelabelOptions, useWhitelabelRecord } from './useAccountsData'
 import styles from './WhitelabelAccountsPage.module.css'
+import { AdminCreateAction } from './admin/AdminLifecycleActions'
 
 const MOBILE_QUERY = '(max-width: 767px)'
 const STACKED_TABS_QUERY = '(max-width: 479px)'
@@ -357,11 +358,12 @@ function AccountsContent({
           />
           <p className={styles.readOnly} data-read-only-note>
             <Info size={14} strokeWidth={1.9} aria-hidden="true" />
-            Somente leitura
+            {route.kind === 'admin' ? 'Consulta e gestão de administradores' : 'Somente leitura'}
           </p>
         </div>
 
         <div className={styles.list}>
+          {route.kind === 'admin' && whitelabel && <div><AdminCreateAction key={whitelabel.id} whitelabel={whitelabel} /></div>}
           <AccountListPanel
             kind={route.kind}
             whitelabelName={whitelabelName}

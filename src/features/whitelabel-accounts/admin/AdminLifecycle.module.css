@@ -1,0 +1,9 @@
+.panel { display:grid; gap:10px; min-width:0; padding:14px; border:1px solid var(--surface-border); border-radius:var(--radius-tile); background:#141b2a; color:var(--text-on-dark-secondary); font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.panel h3 { color:var(--text-on-dark); font-size:14px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; }
+.form { display:grid; gap:12px; min-width:0; }
+.field { display:grid; gap:6px; min-width:0; }
+.field input { width:100%; min-width:0; min-height:42px; padding:9px 10px; border:1px solid #46516a; border-radius:8px; background:#0e1522; color:#edf0ff; font:inherit; }
+.field input:focus-visible { outline:2px solid #b9b4ff; outline-offset:2px; }
+.feedback { padding:10px; border:1px solid var(--surface-border); border-radius:8px; overflow-wrap:anywhere; }
+.create { margin-bottom:12px; }

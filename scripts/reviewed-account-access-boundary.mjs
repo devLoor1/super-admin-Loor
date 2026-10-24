@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { verifyAdminLifecycleSource } from './reviewed-admin-lifecycle-boundary.mjs'
 import {createHash} from 'node:crypto'
 import {readFileSync} from 'node:fs'
 import {dirname,resolve} from 'node:path'
@@ -15,6 +16,7 @@ const pins={
 }
 // Seven exact reviewed files, not an Accounts/domain/directory exemption.
 export function verifyAccountAccessSource(path,source){
+ if(path==='src/features/whitelabel-accounts/AccountDetailPanel.tsx'&&verifyAdminLifecycleSource(path,source))return true
  if(!Object.hasOwn(pins,path))return false
  assert.equal(createHash('sha256').update(source.replaceAll('\r\n','\n')).digest('hex'),pins[path],`Unreviewed account-access source: ${path}`)
  return true

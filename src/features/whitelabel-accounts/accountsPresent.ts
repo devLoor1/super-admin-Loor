@@ -3,7 +3,7 @@ import type { ApiErrorView } from '../../lib/apiErrors'
 import { profileMeta } from '../operation/entrepreneurs/entrepreneurApi'
 import { validationMeta } from '../operation/investors/investorApi'
 import { initials } from './accountModel'
-import { invitationMeta, type AccountDetail, type AccountKind, type AccountRow } from './accountsApi'
+import { rawTokenMeta, type AccountDetail, type AccountKind, type AccountRow } from './accountsApi'
 
 /*
  * Accounts presentation helpers (no data, no requests). Registration states
@@ -16,14 +16,14 @@ export const TYPE_TABS_ID = 'acc-type'
 export const BUSINESS_HEADING: Record<AccountKind, string> = {
   investor: 'Validação do cadastro',
   entrepreneur: 'Situação do cadastro',
-  admin: 'Convite',
+  admin: 'Situação do acesso',
 }
 
 /** Registration / invitation state of an account (tokens outside the known vocabulary are shown as sent). */
 export function businessView(row: AccountRow | AccountDetail) {
   if (row.kind === 'investor') return validationMeta(row.record.businessState)
   if (row.kind === 'entrepreneur') return profileMeta(row.record.businessState)
-  return invitationMeta(row.record.invitation)
+  return rawTokenMeta(row.record.businessState)
 }
 
 /** Avatar monogram: name initials, else the e-mail's first letter, else "?". Decorative. */

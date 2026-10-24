@@ -6,6 +6,8 @@ export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance'
 /** SA-BE-001 accepted subset. Backend authorization and fresh state checks still apply. */
 export const opportunityEditorialAvailable = (status: string, roles: readonly string[]) => status === 'review' && roles.includes('SUPER_ADMIN')
 export const opportunityActionAvailable = (action: string, development = PROTOTYPE_PRESENTATION) => development || action === 'patch' || action === 'archive'
+/** Candidate lifecycle commands still require their release gates and authoritative Backend RBAC. */
+export const administratorLifecycleAvailable = (roles: readonly string[]) => roles.includes('SUPER_ADMIN')
 const MOCK_MENU_IDS = new Set(['sistema', 'ajuda', 'whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
 export function viewAvailable(view: string, development = PROTOTYPE_PRESENTATION) { return development || !MOCK_ONLY_VIEWS.has(view) }
 export function readinessHref(id: string, candidate?: string, development = PROTOTYPE_PRESENTATION) {

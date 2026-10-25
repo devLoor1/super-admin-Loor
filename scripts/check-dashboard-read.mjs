@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
 import { existsSync } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -356,8 +357,8 @@ await check('Dashboard sources: no storage/prototype/write paths; exact approved
   assert.match(sources['DashboardPage.tsx'], /onClick=\{reload\}/)
 })
 await check('health remains pending; historical Recent Events placeholder preserved before this authorized preview', async () => {
-  assert.match(sources['OperationalStatusPanel.tsx'], /Aguardando integração/)
-  assert.equal(/useDashboardOverview|dashboardApi/.test(sources['OperationalStatusPanel.tsx']), false)
+  assert.equal(sources['OperationalStatusPanel.tsx'], undefined)
+  assert.doesNotMatch(sources['DashboardPage.tsx'], /OperationalStatusPanel|data-kpi="kyc"/)
   assert.match(execFileSync('git', ['show', 'e89840d:src/features/dashboard/RecentEventsPanel.tsx'], { cwd: root, encoding: 'utf8' }), /<tbody \/>/)
   assert.match(sources['RecentEventsPanel.tsx'], /useRecentAuditEvents\(\)/)
   assert.doesNotMatch(sources['RecentEventsPanel.tsx'], /useDashboardOverview|dashboardApi|\.events/)

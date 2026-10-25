@@ -1,0 +1,608 @@
+{
+  "capturedAt": "2026-10-25",
+  "baseline": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+  "origin": "https://github.com/devLoor1/super-admin-Loor",
+  "initialBranch": "dev",
+  "initialHead": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+  "branches": [
+    {
+      "name": "dev",
+      "local": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "remote": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "behindDev": 0,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/super-admin-Loor"
+      ],
+      "classification": "permanent"
+    },
+    {
+      "name": "docs/backend-handoff-v1",
+      "local": "89a3b5058f52f981b3a1b06756d7f33a2a043f27",
+      "remote": "89a3b5058f52f981b3a1b06756d7f33a2a043f27",
+      "behindDev": 48,
+      "uniqueCommits": 11,
+      "worktrees": [],
+      "classification": "archive unique handoff before removing remote/local ref"
+    },
+    {
+      "name": "feature/account-access-pause-reactivate-v1",
+      "local": "108b0bc7bc2c8faaa9f54a7d304618a6ea5a8525",
+      "remote": null,
+      "behindDev": 4,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-account-access-pause-reactivate-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/accounts-read-integration-v1",
+      "local": "38a9a02da09272f1ef7244742b62299f8f69ef84",
+      "remote": "38a9a02da09272f1ef7244742b62299f8f69ef84",
+      "behindDev": 27,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/audit-advanced-filters-read-v1",
+      "local": "9f4d69634254af00eb5e95ff553930aa722e5eed",
+      "remote": null,
+      "behindDev": 6,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-audit-advanced-filters-read-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/audit-read-integration-v1",
+      "local": "1005a0d4a6a37bb29e2033fb39a674e3d1788bc2",
+      "remote": "1005a0d4a6a37bb29e2033fb39a674e3d1788bc2",
+      "behindDev": 28,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/companies-frontend-v1",
+      "local": "91cd26a7f8ae70846b13f582ec957864cd016883",
+      "remote": "91cd26a7f8ae70846b13f582ec957864cd016883",
+      "behindDev": 25,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/dashboard-daily-opportunities-v1",
+      "local": "e89840d80fff61f8529021c651c737ba854d8bd5",
+      "remote": "e89840d80fff61f8529021c651c737ba854d8bd5",
+      "behindDev": 11,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-daily-opportunities-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/dashboard-data-recovery-v1",
+      "local": "d4097840b011087527451b725fb37f257a9eeebc",
+      "remote": "d4097840b011087527451b725fb37f257a9eeebc",
+      "behindDev": 13,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-data-recovery-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/dashboard-investor-distribution-v1",
+      "local": "e4c7b5e4302691485ae588ad67800e5fe2c6def8",
+      "remote": "e4c7b5e4302691485ae588ad67800e5fe2c6def8",
+      "behindDev": 12,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-investor-distribution-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/dashboard-read-integration-v1",
+      "local": "afe24bfefc9dfe7eb985084f7d32e3b4ba27cced",
+      "remote": "afe24bfefc9dfe7eb985084f7d32e3b4ba27cced",
+      "behindDev": 29,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/dashboard-recent-audit-events-v1",
+      "local": "6969a89d545f31edc84eaf95a013e1d8d99cd6e6",
+      "remote": "6969a89d545f31edc84eaf95a013e1d8d99cd6e6",
+      "behindDev": 10,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-recent-audit-events-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/entrepreneur-read-integration-v1",
+      "local": "692f3acbbb0e2dcc9d5abf0d44abc5c799aa0a1d",
+      "remote": "692f3acbbb0e2dcc9d5abf0d44abc5c799aa0a1d",
+      "behindDev": 30,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/finance-read-integration-v1",
+      "local": "3e727b95f9cd9a6fce51de7c13f359d38b2838d9",
+      "remote": "3e727b95f9cd9a6fce51de7c13f359d38b2838d9",
+      "behindDev": 20,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-finance-read-integration-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/investor-read-integration-v1",
+      "local": "e8e97f0abec51cdb1ede42849961991a6caae85e",
+      "remote": "e8e97f0abec51cdb1ede42849961991a6caae85e",
+      "behindDev": 31,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/menu-visibility-frontend-v1",
+      "local": "bb9bef0d563964637cd8d8306a13755ce6ca5545",
+      "remote": "bb9bef0d563964637cd8d8306a13755ce6ca5545",
+      "behindDev": 24,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/menu-visibility-read-integration-v1",
+      "local": "627b1e040e48a4326a9a83439f3cbfbabc5a33b8",
+      "remote": "627b1e040e48a4326a9a83439f3cbfbabc5a33b8",
+      "behindDev": 23,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-operational-v1",
+      "local": "91d6f9815fa2748bd081a4fbf40b05fbbf1f5d70",
+      "remote": "91d6f9815fa2748bd081a4fbf40b05fbbf1f5d70",
+      "behindDev": 17,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-b-operational-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-preparation",
+      "local": "e7c8683e760f552e4c69bf2ceebdae474ac3b8cd",
+      "remote": "e7c8683e760f552e4c69bf2ceebdae474ac3b8cd",
+      "behindDev": 22,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-b-preparation"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/menu-visibility-stage-c-sidebar",
+      "local": "cc94466ba08212a2533cca96d304adf3ee291e37",
+      "remote": "cc94466ba08212a2533cca96d304adf3ee291e37",
+      "behindDev": 15,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-c-sidebar"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/operation-360-read-homolog-hygiene-v1",
+      "local": "cd25769f84a837db0127e68dbd9a12644348c177",
+      "remote": null,
+      "behindDev": 7,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-operation-360-read-homolog-hygiene-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/operators-read-permanent-homolog-policy-v1",
+      "local": "b1dc5f1b6b5f52fe83737790609441af730b463c",
+      "remote": null,
+      "behindDev": 5,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-operators-read-permanent-homolog-policy-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/opportunities-companies-read-integration-v1",
+      "local": "89872608bc965c584b33920df6bcbbea8e2b2ada",
+      "remote": "89872608bc965c584b33920df6bcbbea8e2b2ada",
+      "behindDev": 19,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-opportunities-companies-read-integration-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/opportunities-write-integration-v1",
+      "local": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "remote": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "behindDev": 0,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-opportunities-write-integration-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/sa-be-integration-map-kyc-read-v1",
+      "local": "cf79cca5066771a2edd20ad404f1b0f59527ce29",
+      "remote": "cf79cca5066771a2edd20ad404f1b0f59527ce29",
+      "behindDev": 8,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-sa-be-integration-map-kyc-read-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-compliance-audit-v1",
+      "local": "d2a51753047d447983fe12145d53d9f42334e547",
+      "remote": "d2a51753047d447983fe12145d53d9f42334e547",
+      "behindDev": 33,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-dashboard-v1",
+      "local": "c07bcb7d6f32d374466377eb0ef96ee0294d1dc9",
+      "remote": "c07bcb7d6f32d374466377eb0ef96ee0294d1dc9",
+      "behindDev": 51,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-finance-core-v1",
+      "local": "9f8abc6d55410e63a2edaf6d8efeafcd217b7a30",
+      "remote": "9f8abc6d55410e63a2edaf6d8efeafcd217b7a30",
+      "behindDev": 34,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-finance-gateways-v1",
+      "local": "6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9",
+      "remote": "6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9",
+      "behindDev": 43,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-finance-modalities-rules-v1",
+      "local": "4098158b1aa8f58ea20692f0e9bb177b36a49e97",
+      "remote": "4098158b1aa8f58ea20692f0e9bb177b36a49e97",
+      "behindDev": 41,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-finance-segments-resource-uses-v1",
+      "local": "ec86b475e0126667e2fbece490730bdecc271584",
+      "remote": "ec86b475e0126667e2fbece490730bdecc271584",
+      "behindDev": 40,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-login-v1",
+      "local": "b54329cccebb3e7a6018bfdb5aadd41609fa97bf",
+      "remote": "b54329cccebb3e7a6018bfdb5aadd41609fa97bf",
+      "behindDev": 56,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-operation-v1",
+      "local": "400c1dceeafb47f7d8308af7f797f7b42aa30929",
+      "remote": "400c1dceeafb47f7d8308af7f797f7b42aa30929",
+      "behindDev": 35,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-accounts-v1",
+      "local": "cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a",
+      "remote": "cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a",
+      "behindDev": 47,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-emails-v1",
+      "local": "5f438035dbac1ec49df68fc3d9799c3fb5078c4a",
+      "remote": "5f438035dbac1ec49df68fc3d9799c3fb5078c4a",
+      "behindDev": 44,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-settings-v1",
+      "local": "df87de8e5d3ded2da3915c5de602620c282ab5ba",
+      "remote": "df87de8e5d3ded2da3915c5de602620c282ab5ba",
+      "behindDev": 46,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/super-admin-whitelabels-v1",
+      "local": "f903f98357ee7d44516c67475a498fc609ca772f",
+      "remote": "f903f98357ee7d44516c67475a498fc609ca772f",
+      "behindDev": 48,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-admin-lifecycle-v1",
+      "local": "4cf129a5fda9eae0d777a06d3f7e1444936fb100",
+      "remote": "4cf129a5fda9eae0d777a06d3f7e1444936fb100",
+      "behindDev": 1,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-admin-lifecycle-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-crud-frontend-v1",
+      "local": "075809e5aa1b086eef4da8e45d26b1687aa0ad48",
+      "remote": "075809e5aa1b086eef4da8e45d26b1687aa0ad48",
+      "behindDev": 26,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-crud-operational-v1",
+      "local": null,
+      "remote": "c5ecb5addf6772bf9ca68c41099e0491ee953fe2",
+      "behindDev": 18,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-crud-safe-preparation-v1",
+      "local": "874ff9320fadc4e6a081fda9dd50359bcdfd4f89",
+      "remote": "874ff9320fadc4e6a081fda9dd50359bcdfd4f89",
+      "behindDev": 21,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-crud-safe-preparation-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-lifecycle-v1",
+      "local": "cd598874ac98daa5da6c92d9ed5afab83853d140",
+      "remote": "cd598874ac98daa5da6c92d9ed5afab83853d140",
+      "behindDev": 14,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-lifecycle-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-read-integration-v1",
+      "local": "74f003ff1dbd067c60bda366dcdc8e39e8a3c5bf",
+      "remote": "74f003ff1dbd067c60bda366dcdc8e39e8a3c5bf",
+      "behindDev": 32,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "feature/whitelabel-settings-read-integration-v1",
+      "local": "c935f46d3f3c2318737246cd081960c95aafdafc",
+      "remote": null,
+      "behindDev": 3,
+      "uniqueCommits": 0,
+      "worktrees": [
+        "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-settings-read-integration-v1"
+      ],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "fix/capital-de-giro-taxonomy",
+      "local": "25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181",
+      "remote": "25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181",
+      "behindDev": 42,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "history incorporated in dev; retain local ref when attached, obsolete remote ref"
+    },
+    {
+      "name": "main",
+      "local": "c2235ac5d0d65408e9d39bf836a1a717da3d95ae",
+      "remote": "c2235ac5d0d65408e9d39bf836a1a717da3d95ae",
+      "behindDev": 59,
+      "uniqueCommits": 0,
+      "worktrees": [],
+      "classification": "permanent"
+    }
+  ],
+  "worktrees": [
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/super-admin-Loor",
+      "HEAD": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "branch": "refs/heads/dev",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-account-access-pause-reactivate-v1",
+      "HEAD": "108b0bc7bc2c8faaa9f54a7d304618a6ea5a8525",
+      "branch": "refs/heads/feature/account-access-pause-reactivate-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-audit-advanced-filters-read-v1",
+      "HEAD": "9f4d69634254af00eb5e95ff553930aa722e5eed",
+      "branch": "refs/heads/feature/audit-advanced-filters-read-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-daily-opportunities-v1",
+      "HEAD": "e89840d80fff61f8529021c651c737ba854d8bd5",
+      "branch": "refs/heads/feature/dashboard-daily-opportunities-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-data-recovery-v1",
+      "HEAD": "d4097840b011087527451b725fb37f257a9eeebc",
+      "branch": "refs/heads/feature/dashboard-data-recovery-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-investor-distribution-v1",
+      "HEAD": "e4c7b5e4302691485ae588ad67800e5fe2c6def8",
+      "branch": "refs/heads/feature/dashboard-investor-distribution-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-dashboard-recent-audit-events-v1",
+      "HEAD": "6969a89d545f31edc84eaf95a013e1d8d99cd6e6",
+      "branch": "refs/heads/feature/dashboard-recent-audit-events-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-finance-read-integration-v1",
+      "HEAD": "3e727b95f9cd9a6fce51de7c13f359d38b2838d9",
+      "branch": "refs/heads/feature/finance-read-integration-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-b-operational-v1",
+      "HEAD": "91d6f9815fa2748bd081a4fbf40b05fbbf1f5d70",
+      "branch": "refs/heads/feature/menu-visibility-stage-b-operational-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-b-preparation",
+      "HEAD": "e7c8683e760f552e4c69bf2ceebdae474ac3b8cd",
+      "branch": "refs/heads/feature/menu-visibility-stage-b-preparation",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-menu-visibility-stage-c-sidebar",
+      "HEAD": "cc94466ba08212a2533cca96d304adf3ee291e37",
+      "branch": "refs/heads/feature/menu-visibility-stage-c-sidebar",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-operation-360-read-homolog-hygiene-v1",
+      "HEAD": "cd25769f84a837db0127e68dbd9a12644348c177",
+      "branch": "refs/heads/feature/operation-360-read-homolog-hygiene-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-operators-read-permanent-homolog-policy-v1",
+      "HEAD": "b1dc5f1b6b5f52fe83737790609441af730b463c",
+      "branch": "refs/heads/feature/operators-read-permanent-homolog-policy-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-opportunities-companies-read-integration-v1",
+      "HEAD": "89872608bc965c584b33920df6bcbbea8e2b2ada",
+      "branch": "refs/heads/feature/opportunities-companies-read-integration-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-opportunities-write-integration-v1",
+      "HEAD": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "branch": "refs/heads/feature/opportunities-write-integration-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-sa-be-integration-map-kyc-read-v1",
+      "HEAD": "cf79cca5066771a2edd20ad404f1b0f59527ce29",
+      "branch": "refs/heads/feature/sa-be-integration-map-kyc-read-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-admin-lifecycle-v1",
+      "HEAD": "4cf129a5fda9eae0d777a06d3f7e1444936fb100",
+      "branch": "refs/heads/feature/whitelabel-admin-lifecycle-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-crud-safe-preparation-v1",
+      "HEAD": "874ff9320fadc4e6a081fda9dd50359bcdfd4f89",
+      "branch": "refs/heads/feature/whitelabel-crud-safe-preparation-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-lifecycle-v1",
+      "HEAD": "cd598874ac98daa5da6c92d9ed5afab83853d140",
+      "branch": "refs/heads/feature/whitelabel-lifecycle-v1",
+      "status": ""
+    },
+    {
+      "worktree": "C:/Users/User/Desktop/Loor/worktrees/super-admin-whitelabel-settings-read-integration-v1",
+      "HEAD": "c935f46d3f3c2318737246cd081960c95aafdafc",
+      "branch": "refs/heads/feature/whitelabel-settings-read-integration-v1",
+      "status": ""
+    }
+  ],
+  "tagsBefore": [],
+  "notesBefore": [],
+  "stashBefore": [],
+  "handoffUniqueCommits": [
+    "bbda57265f27724b540fd16546228523fbc0ba7d docs: add initial super admin backend handoff",
+    "b14f4d115d0ee5b1dfe5ae55ca60aee7f399e07c docs: update handoff for account control prototype",
+    "200346fda03da7a8aea8311077fa7ad4288b7aa5 docs: update handoff for whitelabel settings prototype",
+    "be8ed42eaedcee5f7d34ef7e32f3def504d34853 docs: update handoff for whitelabel emails prototype",
+    "7b0e75520469274fc954a4234113d004664cd869 docs: update handoff for finance gateways prototype",
+    "24d01d6917c4f6d5c7c91715743d53584683dff8 docs: correct capital de giro taxonomy",
+    "970c676f54d7df8cc2e7a9229aab3218c66ae93e docs: update handoff for modalities rules prototype",
+    "777e354e1bb4fa2c3e90f84ed765fd04d8df6182 docs: update handoff for segment resource use catalogs",
+    "9f1f781785162bc509d96e953c5fefdd5bcbdb44 docs: update handoff for operation v1",
+    "ea42d49a1b3965abcee65317765ec24d9bb2fe5b docs: update handoff for finance core v1",
+    "89a3b5058f52f981b3a1b06756d7f33a2a043f27 docs: update handoff for compliance and audit v1"
+  ],
+  "initialPublishedDeployment": {
+    "site": "loor-super-admin",
+    "deployId": "6ade39892e68eb5238bc87cb",
+    "commit": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+    "js": "index-BGXJYtxp.js",
+    "css": "index-DseH0T1a.css"
+  }
+}

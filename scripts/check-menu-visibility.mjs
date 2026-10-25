@@ -1,11 +1,13 @@
+import { beforeConsolidation, reviewedConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { reviewedOpportunityWrite, withoutOpportunityMultipart } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedOperators } from './reviewed-operators-boundary.mjs'
 import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360, withoutReadinessGate } from './reviewed-360-boundary.mjs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
-import { execFileSync } from 'node:child_process'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
 import { existsSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -684,7 +686,11 @@ for (const path of [
   'src/features/operation/investors/investorApi.ts', 'src/features/operation/shared/participants.ts',
   'src/features/dashboard/dashboardWrite.ts', 'src/features/dashboard/UnreviewedQuickActionsPanel.tsx', 'src/features/dashboard/dashboardApi.ts',
 ]) {
-  check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
+  if (reviewedConsolidation(path)) {
+    const current = await readFile(resolve(root,path),'utf8')
+    assert.throws(() => beforeConsolidation(path,current+'\n// unreviewed'))
+    check(true, `Exact consolidation path rejects extra bytes: ${path}`)
+  } else check(outsideMenuVisibility(path), `Planted unreviewed path rejected: ${path}`)
 }
 for (const file of await walk(resolve(root, 'src/features/whitelabels'))) {
   const rel = relative(root, file).replaceAll('\\', '/')
@@ -1145,9 +1151,9 @@ export const useState=v=>{const i=r.cursor++;if(!(i in r.slots))r.slots[i]=v;ret
 export const useCallback=f=>{r.cursor++;return f};
 export const useEffect=(f,deps)=>{const i=r.cursor++;const old=r.slots[i];if(!old||!deps||deps.some((x,j)=>!Object.is(x,old.deps[j])))r.effects.push(()=>{old?.cleanup?.();r.slots[i]={deps,cleanup:f()}})};
 `)
-const guardNavigation = dataModule('const r=globalThis.__menuGuardTest;export const registerPrototypeNavigationGuard=fn=>{r.guard=fn;return()=>{r.guard=null}}')
+const guardNavigation = dataModule('const r=globalThis.__menuGuardTest;export const registerNavigationGuard=fn=>{r.guard=fn;return()=>{r.guard=null}}')
 const guardPath = 'src/app/useUnsavedChangesGuard.ts'
-const guardCode = (await readFile(resolve(root, guardPath), 'utf8')).replace("from 'react'", `from '${guardReact}'`).replace("from './prototypeNavigation'", `from '${guardNavigation}'`)
+const guardCode = (await readFile(resolve(root, guardPath), 'utf8')).replace("from 'react'", `from '${guardReact}'`).replace("from './navigationGuard'", `from '${guardNavigation}'`)
 globalThis.document = { addEventListener: (k, v) => runtime.documentListeners.set(k, v), removeEventListener: (k, v) => { if (runtime.documentListeners.get(k) === v) runtime.documentListeners.delete(k) } }
 globalThis.window = { location: { hash: '#/settings/menu-visibility' }, addEventListener: (k, v) => runtime.windowListeners.set(k, v), removeEventListener: (k, v) => { if (runtime.windowListeners.get(k) === v) runtime.windowListeners.delete(k) } }
 const guardModule = await load(guardPath, guardCode)

@@ -2,6 +2,7 @@ import { ApiError } from '../../lib/api'
 import { authenticatedGet } from '../../lib/apiClient'
 import { isPositiveCoreId } from '../operation/shared/coreIds'
 import type { StatusTone } from '../../components/ui/StatusPill'
+import { businessText } from '../operation/shared/businessPresentation'
 
 /** FaceMatch-backed Investor cases, not a global inventory of every KYC validation. GET only. */
 export const KYC_READ_PAGE_SIZE = 20
@@ -35,11 +36,9 @@ const token = (v: unknown) => typeof v === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0
 const requiredToken = (v: unknown) => token(v) ?? fail()
 const boolean = (v: unknown) => typeof v === 'boolean' ? v : null
 
-/** Names only; no contacts, free-form provider text or raw identifier passthrough. */
+/** Explicit name fields only; credentials and unsupported provider payloads are excluded. */
 export function kycReadName(v: unknown) {
-  if (typeof v !== 'string' || !v.trim() || v.length > 512) return null
-  return v.trim().replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b|\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '[documento oculto]')
-    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[contato oculto]')
+  return businessText(v)
 }
 export function kycReadMask(v: unknown) {
   if (v == null) return null

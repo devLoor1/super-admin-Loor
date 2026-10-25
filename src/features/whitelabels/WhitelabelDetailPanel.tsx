@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import {
   Building,
-  ChartColumnIncreasing,
-  ChevronRight,
   CircleAlert,
   Copy,
   LayoutGrid,
@@ -11,12 +9,10 @@ import {
   Pencil,
   RotateCw,
   SearchX,
-  Settings,
   Users,
-  UsersRound,
   type LucideIcon,
 } from 'lucide-react'
-import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { useNotice } from '../../components/shell/notice'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { IconTile, type Tone } from '../../components/ui/IconTile'
 import { OutlineButton } from '../../components/ui/OutlineButton'
@@ -30,35 +26,11 @@ import { WhitelabelActionsMenu } from './crud/WhitelabelActionsMenu'
 import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess, type LifecycleOperation } from './crud/whitelabelMutationContract'
 import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from './whitelabelApi'
 import styles from './WhitelabelDetailPanel.module.css'
-import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
-type DetailTab = 'overview' | 'admins' | 'applications' | 'integrations'
+type DetailTab = 'overview'
 
 const TABS: { value: DetailTab; label: string; icon: LucideIcon }[] = [
   { value: 'overview', label: 'Visão geral', icon: LayoutGrid },
-  { value: 'admins', label: 'Administradores', icon: Users },
-  { value: 'applications', label: 'Aplicações', icon: LayoutGrid },
-  { value: 'integrations', label: 'Integrações', icon: Link },
-]
-
-const TAB_PLACEHOLDERS: Record<Exclude<DetailTab, 'overview'>, string> = {
-  admins: 'A lista de administradores ainda não está integrada ao Control Plane nesta tela. A visão geral mostra apenas a contagem informada pelo Control Plane.',
-  applications: 'Conceito visual: o significado de Aplicações ainda precisa de definição de Produto. O Control Plane não fornece este dado.',
-  integrations: 'Destino previsto na arquitetura, ainda não integrado. O Control Plane não fornece dados de integrações.',
-}
-
-/**
- * Quick actions. The tenant modules (Configurações, Contas, Administradores…)
- * are still prototypes keyed by prototype ids, so they are not linked from a
- * Backend Whitelabel: no prototype id is ever mapped onto a real record.
- */
-const QUICK_ACTIONS: { title: string; description: string; icon: LucideIcon; tone: Tone }[] = [
-  { title: 'Configurações', description: 'Identidade, textos e Termos de Uso', icon: Settings, tone: 'indigo' },
-  { title: 'Administradores', description: 'Gerenciar usuários e permissões', icon: Users, tone: 'violet' },
-  { title: 'Aplicações', description: 'Conceito visual — escopo a definir', icon: LayoutGrid, tone: 'indigo' },
-  { title: 'Integrações', description: 'Gateway e SMTP — destinos futuros', icon: Link, tone: 'violet' },
-  { title: 'Indicadores', description: 'Acessar métricas e relatórios', icon: ChartColumnIncreasing, tone: 'blue' },
-  { title: 'Contas', description: 'Controle de acesso das contas', icon: UsersRound, tone: 'blue' },
 ]
 
 const ID_PREFIX = 'wl-detail'
@@ -194,7 +166,7 @@ function DetailContents({
   onEditName: (record: WhitelabelRecord) => void
   onLifecycle?: (record: WhitelabelRecord, operation: LifecycleOperation) => void
 }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   const [tab, setTab] = useState<DetailTab>('overview')
   const avatar = whitelabelAvatar(whitelabel)
 
@@ -238,13 +210,12 @@ function DetailContents({
       <Tabs
         idPrefix={ID_PREFIX}
         label={`Seções de ${whitelabel.name}`}
-        tabs={PROTOTYPE_PRESENTATION ? TABS : TABS.filter(item => item.value === 'overview')}
+        tabs={TABS}
         value={tab}
         onChange={setTab}
         className={styles.tabs}
       />
 
-      {PROTOTYPE_PRESENTATION ? <p className={styles.tabsHint}>Mais seções: deslize ou use as setas ← →</p> : null}
 
       {TABS.map((item) => (
         <div
@@ -256,12 +227,8 @@ function DetailContents({
           tabIndex={0}
           className={styles.tabPanel}
         >
-          {tab !== item.value ? null : item.value === 'overview' ? (
+          {tab !== item.value ? null : (
             <Overview whitelabel={whitelabel} onCopy={copy} onNotify={notify} access={access} onEditName={() => onEditName(whitelabel)} />
-          ) : (
-            <div className={styles.placeholder}>
-              <EmptyState icon={item.icon} title={item.label} description={TAB_PLACEHOLDERS[item.value]} />
-            </div>
           )}
         </div>
       ))}
@@ -367,32 +334,6 @@ function Overview({
         ))}
       </ul>
 
-      {PROTOTYPE_PRESENTATION ? <section className={styles.card} aria-labelledby="wl-actions-title" data-detail-stage="actions">
-        <h3 id="wl-actions-title" className={styles.cardTitle}>
-          Ações rápidas
-        </h3>
-        <p className={styles.cardSubtitle}>Os módulos do Whitelabel ainda não estão integrados ao Control Plane.</p>
-        <ul className={styles.actions}>
-          {QUICK_ACTIONS.map((action) => (
-            <li key={action.title}>
-              <button
-                type="button"
-                className={styles.action}
-                onClick={() =>
-                  onNotify(`A área "${action.title}" de ${whitelabel.name} ainda não está integrada ao Control Plane.`)
-                }
-              >
-                <IconTile icon={action.icon} tone={action.tone} size="md" />
-                <span className={styles.actionText}>
-                  <span className={styles.actionTitle}>{action.title}</span>
-                  <span className={styles.actionDescription}>{action.description}</span>
-                </span>
-                <ChevronRight className={styles.actionChevron} size={16} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section> : null}
     </div>
   )
 }

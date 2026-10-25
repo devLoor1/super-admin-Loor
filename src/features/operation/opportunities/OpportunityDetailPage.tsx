@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { opportunityEditorialAvailable, readinessTabs } from '../../../app/presentationAvailability'
 import { useSessionOperator } from '../../../lib/authSession'
 import { CircleAlert, Database, ExternalLink, Info, LayoutGrid, RotateCw, SearchX, Target, UserRound } from 'lucide-react'
@@ -11,9 +11,8 @@ import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import { EntrepreneurCompanyPanel } from '../companies/EntrepreneurCompanyPanel'
 import { useEntrepreneurCompany } from '../companies/useCompanyData'
 import { entrepreneurHref } from '../entrepreneurs/entrepreneurRoute'
-import { addOperationActivity, useOperationActivity } from '../shared/operationActivity'
 import { crumbLabel } from '../shared/operationModel'
-import { BackLink, DetailList, InfoNote, OperationShell, SessionActivityCard } from '../shared/OperationUi'
+import { BackLink, DetailList, InfoNote, OperationShell } from '../shared/OperationUi'
 import { operationReadErrorView } from '../shared/readErrors'
 import { useWhitelabelRecord } from '../shared/whitelabelContext'
 import shared from '../shared/Operation.module.css'
@@ -25,17 +24,14 @@ import { ModalityChip, OpportunityStatusPill, TenantName } from './OpportunityPa
 import { useOpportunityDetail } from './useOpportunityData'
 import styles from './Opportunities.module.css'
 
-type Tab = 'overview' | 'classification' | 'company' | 'activity'
+type Tab = 'overview' | 'classification' | 'company'
 const TABS: { value: Tab; label: string }[] = [
   { value: 'overview', label: 'Visão geral' },
   { value: 'classification', label: 'Classificação' },
   { value: 'company', label: 'Empreendedor e empresa' },
-  { value: 'activity', label: 'Atividade da sessão' },
 ]
 const TAB_PREFIX = 'opp-detail'
 
-// Opportunity ids overlap numerically with other domains: session activity is keyed by domain + id.
-const activityKey = (id: string) => `opportunity:${id}`
 
 /**
  * `#/operation/opportunities/:opportunityId` — read-only Opportunity from
@@ -124,8 +120,6 @@ export function OpportunityDetailPage({ opportunityId, returnTo }: { opportunity
 
 function OpportunityContent({ opportunity, listHref }: { opportunity: OpportunityDetail; listHref: string }) {
   const editorial = opportunityEditorialAvailable(opportunity.status, useSessionOperator()?.roles ?? [])
-  const key = activityKey(opportunity.id)
-  const activity = useOperationActivity(key)
   const [tab, setTab] = useState<Tab>('overview')
   // Latched once the tab is first opened: switching tabs never re-enters the same read key
   // (which would re-display the settled answer as current while a duplicate request runs).
@@ -137,14 +131,10 @@ function OpportunityContent({ opportunity, listHref }: { opportunity: Opportunit
   const name = opportunityName(opportunity)
   const date = (value: string | null) => opportunityDate(value, true) ?? 'Não informado'
 
-  useEffect(() => {
-    addOperationActivity(key, { title: 'Oportunidade consultada', detail: 'Dados do Control Plane (somente leitura)' })
-  }, [key])
 
   function changeTab(next: Tab) {
     setTab(next)
     if (next === 'company') setCompanyRequested(true)
-    if (next === 'company') addOperationActivity(key, { title: 'Empreendedor e empresa consultados', detail: `Empreendedor #${opportunity.entrepreneurId}` })
   }
 
   const entrepreneurLink = (
@@ -311,9 +301,6 @@ function OpportunityContent({ opportunity, listHref }: { opportunity: Opportunit
         </div>
       </TabPanel>
 
-      <TabPanel tab="activity" current={tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para esta oportunidade." />
-      </TabPanel>
     </>
   )
 }

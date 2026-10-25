@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
-import { access, readdir, readFile } from 'node:fs/promises'
+import { access, readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -498,9 +499,10 @@ await check('list pages clamp a page past the end once (strictly smaller target)
     assert.ok(source.includes("const resetPage = !('page' in next) || pendingSearch !== route.search;"), path)
   }
 })
-await check('create delegates to the reviewed create unit; production edit stays editorial', async () => {
+await check('create delegates to the reviewed create unit; edit stays editorial in every operational build', async () => {
   const form = await code('src/features/operation/opportunities/OpportunityFormPage.tsx')
-  assert.ok(form.includes("import.meta.env.DEV || mode === 'create'") && form.includes('return <OpportunityWritePage'))
+  assert.ok(form.includes("mode === 'create'") && form.includes('return <OpportunityWritePage'))
+  assert.equal(form.includes('import.meta.env.DEV'), false, 'operational local review must not regain the mock write surface')
   assert.ok(!/useState|onSubmit|<form|save|store/i.test(form))
   assert.ok(form.includes('return <OpportunityEditorialPage'))
 })

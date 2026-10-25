@@ -1,0 +1,615 @@
+{
+  "baseline": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+  "files": {
+    "src/app/App.tsx": {
+      "before": "30e757061923410ff345a6344afcc32b07eb1f83c54be03b694128a0267b8e11",
+      "after": "a2eeecdb61b372165d6801b7ade60d65c070a2164f1120ce5be8fde52378061f"
+    },
+    "src/app/ReadinessUnavailablePage.tsx": {
+      "before": "d4105e7cea6b759020a724f5611bf29498b66bf361b7640dee8265f9e5ee0efe",
+      "after": "48c81dcbd53c624b9613a7d6e729bfe98cfaf874d69f1a53551be7984c475559"
+    },
+    "src/app/navigationGuard.ts": {
+      "before": null,
+      "after": "a60e870d8dce30cf76363002338c6026c6acb204c7e633432e6a4a82cdd3ea70"
+    },
+    "src/app/presentationAvailability.ts": {
+      "before": "c3b5fce5a41efc430e86eeef5c01608f2af0659a3dcad2866f81c0a3a232c111",
+      "after": "63cf7b075eaadd78c2b8e2e57536f5c42cf1f4a7cc191429a2fc6c916d990cfa"
+    },
+    "src/app/prototypeNavigation.ts": {
+      "before": "733cc1c37667a991ddb7a4441a317df24c2e171ff2d8feca1412c91f32a33cdc",
+      "after": null,
+      "fixture": "tests/prototypes/src/app/prototypeNavigation.ts"
+    },
+    "src/app/useUnsavedChangesGuard.ts": {
+      "before": "0578508d605170bc3b06443d7a78011dc74a402649c778b6e453daf0867c1d76",
+      "after": "7e8435f68f13264c50f9977ecee75fa54913fe3c70e8743cb174d296154527a7"
+    },
+    "src/components/shell/AppShell.tsx": {
+      "before": "c82b82fb01488de31110a2e2c09b90516e6e62bf0221bf78641cf64105f9944c",
+      "after": "19b20017abb3a88a94c08534e07aac8ccd41ba82f7548bdae46de41c98608044"
+    },
+    "src/components/shell/NoticeProvider.module.css": {
+      "before": null,
+      "after": "186ed0eb1f3db626449b97826e2e688fa2f0eed232dea722d18bceb898190c22"
+    },
+    "src/components/shell/NoticeProvider.tsx": {
+      "before": null,
+      "after": "8b2ffe720b075d083f23f2425dd155e5df65ef2c951cbeeec3b4e2adf0f4ea55"
+    },
+    "src/components/shell/PrototypeNoticeProvider.module.css": {
+      "before": "186ed0eb1f3db626449b97826e2e688fa2f0eed232dea722d18bceb898190c22",
+      "after": null,
+      "fixture": "tests/prototypes/src/components/shell/PrototypeNoticeProvider.module.css"
+    },
+    "src/components/shell/PrototypeNoticeProvider.tsx": {
+      "before": "03d9eb1e857217a9833d521911ccf80971b75d3c434b639aef42e7939ae242af",
+      "after": null,
+      "fixture": "tests/prototypes/src/components/shell/PrototypeNoticeProvider.tsx"
+    },
+    "src/components/shell/Sidebar.tsx": {
+      "before": "c3b4eb2bee92d4fd2f9557b68be75e4908a14843911ec83653ffc14b9c3a99cc",
+      "after": "38907b91d5577be18dfc66bbc88736f46b70a910d0c1d49b17341b0c68f1db22"
+    },
+    "src/components/shell/TopHeader.tsx": {
+      "before": "94ae6eb7e085c45b45247827ab9d4f903918a2b6edc3385d2ef1a3d854ff5b7c",
+      "after": "a4f4bf2b041d91124b4dae36c7ac58a6f008aa25e8ee11629cc0d626c1e2d224"
+    },
+    "src/components/shell/navigation.ts": {
+      "before": "621e0e1a1863086fab9873bb40346d2ca124f702d8a8b24f9ff890b6813a83b8",
+      "after": "5330b9d404d69b8e3f49f88eac3d2063bafb2dc4ee741a2e5319a8431416104e"
+    },
+    "src/components/shell/notice.ts": {
+      "before": null,
+      "after": "7df799edc38e79f69ef012848fd63795a517f9c65472694a14d703f90aa9b37c"
+    },
+    "src/components/shell/prototypeNotice.ts": {
+      "before": "41a8da4667b999ccaecea2cd8e6d0baf3378c7508bf4b25d84c64127894e2ca5",
+      "after": null,
+      "fixture": "tests/prototypes/src/components/shell/prototypeNotice.ts"
+    },
+    "src/features/compliance-kyc/Kyc.module.css": {
+      "before": "eae00ccbe41b49e6cd5c410ab34e07ffef4727c0af5abafff024e2d47198fc3e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/Kyc.module.css"
+    },
+    "src/features/compliance-kyc/KycDialogs.tsx": {
+      "before": "f1f8c29f66254fe332a5f95c76be03c5027bb1875b050f8df1d9550fae52fb74",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/KycDialogs.tsx"
+    },
+    "src/features/compliance-kyc/KycUi.tsx": {
+      "before": "e56f87b4a40eb085155791c12132f87a65dabc6f981538c3d719033039344721",
+      "after": "e892db7b46d1a89b67489aaad1f9a2a4fe121f7219d71838bab426465e368bec"
+    },
+    "src/features/compliance-kyc/kycLinks.ts": {
+      "before": "0e828e62e62a1bff91d964ce451fa600232dee6c76acc0437f0e7bf9348c1973",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/kycLinks.ts"
+    },
+    "src/features/compliance-kyc/kycModel.ts": {
+      "before": "ecf202493b434256855978bea0d39bf92c84bdad67807dc05e513af8f3bd10d0",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/kycModel.ts"
+    },
+    "src/features/compliance-kyc/kycReadApi.ts": {
+      "before": "f6f75ad41aa9e33d7973d311e0ab378e957a3bb535a9cf81d2897169f93ae5c4",
+      "after": "ecbe7a53b56b826332d09f0c6b1ff221808a4882c4cb2e88ac9f7033606845dc"
+    },
+    "src/features/compliance-kyc/kycRefs.ts": {
+      "before": "e68563a5f7b0f07de87459e05e6529a52b97338c3c183b8b2fb4a2c3625f10f3",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/kycRefs.ts"
+    },
+    "src/features/compliance-kyc/kycStore.ts": {
+      "before": "b1e7fc39fb89abb78eaf28c6bda41c96b132b9b147e2199835f3dc13bca0d439",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/kycStore.ts"
+    },
+    "src/features/compliance-kyc/prototypeKyc.ts": {
+      "before": "d8ef9ab99c68c04f6d827390a2204183682f2f61208d5cf71d45d718639592e9",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/compliance-kyc/prototypeKyc.ts"
+    },
+    "src/features/control-plane-operators/OperatorDetailPage.tsx": {
+      "before": "d62f11ff49af148bafc08d7e1e9dffc3892a4e43ea7d43cca6782a053ab5a05f",
+      "after": "55f7d49aad7da466d88617ae85b6c0aa7176e7ae98158d2343fac7e1fcc28300"
+    },
+    "src/features/control-plane-operators/OperatorsListPage.tsx": {
+      "before": "a0db24c6e130b5c79eab126add39cab53e05662301e087fafbfd8e4150de01e0",
+      "after": "b6f544f77496b04aa56a5f714b872a71daf25865327e56c3755de5d71ee499f3"
+    },
+    "src/features/control-plane-operators/operatorApi.ts": {
+      "before": "2301262d978c952cbc1c625ab5f52ea2c4a3b9f17cb579826822fe5a57e01285",
+      "after": "4a319f2b0a005147b25968ad4c1721193cc3170bfc4813c358f7f333f2fa0207"
+    },
+    "src/features/dashboard/DashboardPage.tsx": {
+      "before": "eec56641294fa6bf92107320b83c5daaa28c44c5218db848c92aa2e79da22b99",
+      "after": "3f8c03cc40fe40edbdaafe1ca109caa81fd4e2f7b2f34ae5033ddb05d3b75a9b"
+    },
+    "src/features/dashboard/OperationalStatusPanel.module.css": {
+      "before": "5ba3ceafd58dea76b5d78925850d0699bf2f4cfa6846bf138bda887e74ad97e4",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/dashboard/OperationalStatusPanel.module.css"
+    },
+    "src/features/dashboard/OperationalStatusPanel.tsx": {
+      "before": "b86d38efddf7f186038e013f66450a32da0881a4bb95adb9a6d890bff173d332",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/dashboard/OperationalStatusPanel.tsx"
+    },
+    "src/features/dashboard/QuickActionsPanel.tsx": {
+      "before": "9da88261b562f4a724be5eae272bfaba541a6e80862f214dbb299e0beb3397ae",
+      "after": "34fc1ca937040a7c831d133824d06125d6cbf97e2dd3d77449ac718c11016793"
+    },
+    "src/features/finance-catalogs/FinanceCatalogsPage.module.css": {
+      "before": "257619e6868d764a19659e1f42553202e1963e39c64b316a3f73b9b94ba9ecfc",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/FinanceCatalogsPage.module.css"
+    },
+    "src/features/finance-catalogs/FinanceCatalogsPage.tsx": {
+      "before": "08101a87013e166fd85e641a8b929e364d773ccdcc28fb47800923e9dc3aa41b",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/FinanceCatalogsPage.tsx"
+    },
+    "src/features/finance-catalogs/catalogModel.ts": {
+      "before": "e02374c72bc19896a6d3b036be8a05be14f9d9d62e93cbfb67970ad6e8936ad5",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/catalogModel.ts"
+    },
+    "src/features/finance-catalogs/catalogStore.ts": {
+      "before": "7d18d993acd7bf67e2d93f70bb492c6f2a90a2623184ae3bc590aa71aa17a2f7",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/catalogStore.ts"
+    },
+    "src/features/finance-catalogs/dialogs/CatalogDialogs.module.css": {
+      "before": "b29598ccf7d36f719ecffddcfbb5ddcd55133a8565ba8c388067d4f15f0923fb",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/dialogs/CatalogDialogs.module.css"
+    },
+    "src/features/finance-catalogs/dialogs/CatalogDialogs.tsx": {
+      "before": "d68c107383e3d22282fab415275e45e7b9c5f612cbcfb5826e96a8f31972567c",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/dialogs/CatalogDialogs.tsx"
+    },
+    "src/features/finance-catalogs/prototypeCatalogs.ts": {
+      "before": "a7b8a088523e1146c0c418180a83cbfb6d9f3775e11b0883ff96e2434534a144",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/prototypeCatalogs.ts"
+    },
+    "src/features/finance-catalogs/sections/CatalogPanel.tsx": {
+      "before": "3623c9ce1c4a68c4f42540d4a71365c371da9e69f5b6dd4b64b914c1f9cfe273",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/sections/CatalogPanel.tsx"
+    },
+    "src/features/finance-catalogs/sections/CatalogSections.module.css": {
+      "before": "13bd943b11a743f083a64177d2c5ddd9025e53098e90cd5631d1b2ad8f59b557",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/sections/CatalogSections.module.css"
+    },
+    "src/features/finance-catalogs/sections/CatalogSummary.tsx": {
+      "before": "175e1941eb767946fd41817d5c9f89c5263ed5a0babe16b0c71eaab10b030d82",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-catalogs/sections/CatalogSummary.tsx"
+    },
+    "src/features/finance-core/investments/InvestmentDetailPage.tsx": {
+      "before": "1f861c80cc0b6bdca9ad3724c71ea144d36c37a430a177bafbf1397c27d32647",
+      "after": "27bbf745d76fb23d85f11593b4cdaf85d1c253133805142772e6ade0b37c661f"
+    },
+    "src/features/finance-core/payments/PaymentDetailPage.tsx": {
+      "before": "84a33e6c6c51a4ed1b4b87d81e8c8abf8435e25fe39865260925752bf2da991b",
+      "after": "c42776615e286dd0d39be565c31d02e2d452a9a504548699f873bfdbc181b488"
+    },
+    "src/features/finance-core/shared/financeCoreActivity.ts": {
+      "before": "780db07c28342a57f930b25f8d3719097baa42a18377514b83f0591c91ca0f81",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-core/shared/financeCoreActivity.ts"
+    },
+    "src/features/finance-core/shared/financePresentation.ts": {
+      "before": "585916d7284143c01dc547743ee220cf6c23ca6be5d5c96b631e7c2ce3660867",
+      "after": "fcce3f97e2fc52d91a295767cabbfbe6ad96f6fc95234d7cc96234dbce1e0fcf"
+    },
+    "src/features/finance-core/wallets/WalletDetailPage.tsx": {
+      "before": "fcb847e5ccbf100d8156c0d9165db3b1984de2c7379980615be6da272e60d0c6",
+      "after": "1677d6e5c939c2d2dcffb3b4275ea7e6f43eec3522ab7936058c058e19b40504"
+    },
+    "src/features/finance-gateways/FinanceGatewaysPage.module.css": {
+      "before": "9e462b24e9075f772967a952687ddd60aad9b8ac356df71b3d5d0c8a7a6df025",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/FinanceGatewaysPage.module.css"
+    },
+    "src/features/finance-gateways/FinanceGatewaysPage.tsx": {
+      "before": "cec111b1b84f44c9bda8d4a687ee129d1461e7ba1b45b84ee4d194b74f55d552",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/FinanceGatewaysPage.tsx"
+    },
+    "src/features/finance-gateways/dialogs/BankAccountDialogs.tsx": {
+      "before": "96f72bad6f15f9fe0a6ad8494249736fe916d37728989f576af97c38aa1b7773",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/dialogs/BankAccountDialogs.tsx"
+    },
+    "src/features/finance-gateways/dialogs/FinanceDialogs.module.css": {
+      "before": "2413492f60c16a57673f3791c5d03f824229036da2a1f285ac57544a0a6f7e13",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/dialogs/FinanceDialogs.module.css"
+    },
+    "src/features/finance-gateways/dialogs/GatewayDialogs.tsx": {
+      "before": "4682ea3824353ba3b5923312933151efc2640fa295e5417e41f7550002ccf061",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/dialogs/GatewayDialogs.tsx"
+    },
+    "src/features/finance-gateways/financeModel.ts": {
+      "before": "e32459682713a76ac66095a4a202ac6235477ee39886d838c146b6aee602e7e6",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/financeModel.ts"
+    },
+    "src/features/finance-gateways/financeStore.ts": {
+      "before": "c008d8c636ef6abc851bf0378b9911085dcdfbae0975d15709e6b7662dfc9504",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/financeStore.ts"
+    },
+    "src/features/finance-gateways/prototypeFinance.ts": {
+      "before": "3aaea236e9c86e8706fa81769ce22a604a393f379ece467519004450f61f4ce9",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/prototypeFinance.ts"
+    },
+    "src/features/finance-gateways/sections/BankAccounts.tsx": {
+      "before": "2d288192f729f3166fe6e39b7989fc8578a6fce7ebba2879b979e01ddd1e0773",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/BankAccounts.tsx"
+    },
+    "src/features/finance-gateways/sections/GatewayDetail.tsx": {
+      "before": "c2e1165739750401400b7d133f5abe1d57682cde0bbd8c17ba97dbf903e52fb1",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/GatewayDetail.tsx"
+    },
+    "src/features/finance-gateways/sections/GatewayList.tsx": {
+      "before": "55ba9bae6438f7c1fe917881cc4a4b7e3df8a6461b9d1af505e35cc091a1074d",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/GatewayList.tsx"
+    },
+    "src/features/finance-gateways/sections/GatewayPanels.tsx": {
+      "before": "d1b148d24aa2a6aa49b610d5d4ec6060006606a1a2bfa88c436dabd98cbcc359",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/GatewayPanels.tsx"
+    },
+    "src/features/finance-gateways/sections/SideSummary.tsx": {
+      "before": "d1a3bccc4447d77385762203dc7a8534b3b8fcbc17dd4def572340d5bfcdc0a9",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/SideSummary.tsx"
+    },
+    "src/features/finance-gateways/sections/SummaryCards.tsx": {
+      "before": "dae9d198f450b8d7c718f2f29d68d7f22ab333989b6b2d447357f1bd2add5f7e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-gateways/sections/SummaryCards.tsx"
+    },
+    "src/features/finance-modalities/FinanceModalitiesPage.module.css": {
+      "before": "601544a0e7b06862da7bfc9cdf1437f70781ac2d3c97c74a2aa2895195a5ba23",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/FinanceModalitiesPage.module.css"
+    },
+    "src/features/finance-modalities/FinanceModalitiesPage.tsx": {
+      "before": "4b258e6251e680984f9569242be46e6eaaf43f565e70457dd3874e56fb24ab85",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/FinanceModalitiesPage.tsx"
+    },
+    "src/features/finance-modalities/dialogs/DisableModalityDialog.tsx": {
+      "before": "b2a52f057011c16f924bb1467b0ee15a487aa99a3206daf5166261596a975402",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/dialogs/DisableModalityDialog.tsx"
+    },
+    "src/features/finance-modalities/dialogs/ModalityDialogs.module.css": {
+      "before": "b49d3d09d6a54221a802b79e3239afa585a7aa45b28789de0f3b9bd425c078b3",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/dialogs/ModalityDialogs.module.css"
+    },
+    "src/features/finance-modalities/modalitiesModel.ts": {
+      "before": "2e744f058fd6fdc403322245b3b9ac5383894144747d07a3e13aa2385bae9060",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/modalitiesModel.ts"
+    },
+    "src/features/finance-modalities/modalitiesStore.ts": {
+      "before": "6ac6811e8858b32e951916509dc4ae00465ac59c1e757bf9109599e89aafc06c",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/modalitiesStore.ts"
+    },
+    "src/features/finance-modalities/prototypeModalities.ts": {
+      "before": "c5829eab568f5d473dd35c5282eddb0ec169e579ff825d4d05bbef2187616528",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/prototypeModalities.ts"
+    },
+    "src/features/finance-modalities/sections/GeneralRules.tsx": {
+      "before": "d5949346f941513436d8a293c04cc48204c9b7fbc50a4917abde0cf8857488da",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/GeneralRules.tsx"
+    },
+    "src/features/finance-modalities/sections/ModalityDetail.tsx": {
+      "before": "c65ffdd89ee41234fd2943fcee1272cecfae169c28ed0f59cf5b5c2a7e610e9d",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalityDetail.tsx"
+    },
+    "src/features/finance-modalities/sections/ModalityList.tsx": {
+      "before": "47b63a18d60ce3d18ed83d83bb82945ca9d1b5a62751b1308b2c476c0900595c",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalityList.tsx"
+    },
+    "src/features/finance-modalities/sections/ModalityPanels.tsx": {
+      "before": "d751317396c533addf6edb22f390054d1f831ef7513586ebb37a7de2398bc96e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalityPanels.tsx"
+    },
+    "src/features/finance-modalities/sections/ModalitySections.module.css": {
+      "before": "0f92071670b837fc79129198a950800922022430e81666312cd898567d7d01ee",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalitySections.module.css"
+    },
+    "src/features/finance-modalities/sections/ModalitySide.tsx": {
+      "before": "e1cf234fbde406e249ff351e53ed5ef3d489cc9f124584e787bf73c5faefedfd",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalitySide.tsx"
+    },
+    "src/features/finance-modalities/sections/ModalitySummaryCards.tsx": {
+      "before": "75970b73d6012337bb42279cb56da1fabd72f5c4b7cab58a1cb3415daf3e1824",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/finance-modalities/sections/ModalitySummaryCards.tsx"
+    },
+    "src/features/governance-audit/AuditDetailPage.tsx": {
+      "before": "f7abcf74299b1b17735182ef422475dfcc6f9ece6bda11a6cb9acbd541d13ffc",
+      "after": "fa46be555cf7056ae2f487cbd1332b1366bcef0e177790c21be0681b115e120b"
+    },
+    "src/features/governance-audit/auditPresent.ts": {
+      "before": "cc4b9bd55e7d4e4c499bbd0956edf872a8b26d4f4ee58bc22360e34fb6972a7a",
+      "after": "665d11198efd8bbf839e388b6cbac93e8166175e4df277d891f9b7724b879f34"
+    },
+    "src/features/operation/companies/CompanyDetailPage.tsx": {
+      "before": "ded3200de4f139ecc58ad60652495b4d2432be11ed09ab943dea9ef61ec360b1",
+      "after": "0dde90fd6e55f510edd624c6a2a49674b6cd059a629d61b9733cff0a1321b23f"
+    },
+    "src/features/operation/entrepreneurs/entrepreneurApi.ts": {
+      "before": "df174c6d3478f376c5f8d1d692cc762bef084770f89a7bd2db66a66251c5b58e",
+      "after": "4e5646b12eaca141175ee9715765bdb639b8a7792bc6c4eb9d71f04d9bc7d13c"
+    },
+    "src/features/operation/investors/investorApi.ts": {
+      "before": "21e0d337559f921c07f57df161af894d0c5af958877d847d5c6dd74d2df13862",
+      "after": "51d53f819662509b615d1e64287601495f384725e881b80507c919f28076e39a"
+    },
+    "src/features/operation/opportunities/OpportunityDetailPage.tsx": {
+      "before": "4b9ac79fc953f00af9b770a3c87a286980f969963200fbd0db62c69e7b024c4f",
+      "after": "314d7a9a7cf87e5e81d35387b15a1cb7e909895366d8b6fb8073bf9fe606f4fa"
+    },
+    "src/features/operation/opportunities/OpportunityFormPage.tsx": {
+      "before": "e9f9051705fc2e70e0887f07e752f1f7d2983c2e091ced965d36581e5bde2d59",
+      "after": "7ee7400eb0718fc4424600c450dafc2689b3025281607256b50cc309546d8d36"
+    },
+    "src/features/operation/opportunities/write/OpportunityWritePage.tsx": {
+      "before": "f4690683f191942fa2944e3c7a1fcfc21699cb930bfb2c55f5cd9e887a263183",
+      "after": "7d4208a228542d7d1ad606e5743afe51fdcf0e0b4d7903f18bedfb7a61702e55"
+    },
+    "src/features/operation/opportunities/write/opportunityWriteClient.ts": {
+      "before": "159348f9bf4ceabfe23c2c2921b1fe1181394c55f4620d3eebecd98f861f86b6",
+      "after": "34fd477bf4b280f057170d438ddbbc6e3e7f4e9b1a59f82cdefd9588494d3729"
+    },
+    "src/features/operation/shared/DiscardChangesDialog.tsx": {
+      "before": "9589abcf3ad6e38edaa7d5c0787607bc2b7ac755478470a9b85ca307c081ea20",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/operation/shared/DiscardChangesDialog.tsx"
+    },
+    "src/features/operation/shared/OperationUi.tsx": {
+      "before": "f8a34eb3562014860780e3aef4503ebbe05481e248a3855cd608c243b8a4c47f",
+      "after": "17a2b809714fd970652133093885204fb0f514a0ee704e41bc406798894b74b5"
+    },
+    "src/features/operation/shared/businessPresentation.ts": {
+      "before": null,
+      "after": "8b9d93738af963a9829346ed008083cf827b072214612f9da3bf2ab2d41d70ed"
+    },
+    "src/features/operation/shared/operationActivity.ts": {
+      "before": "070e130256f58863acd232da659e05e7742e1b59447a69ab80b7b4e6c01e8dac",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/operation/shared/operationActivity.ts"
+    },
+    "src/features/operation/shared/operationModel.ts": {
+      "before": "52b1898e5c3697d04751a86b3469e4836f5517f96a058b65f4846045ad82b1df",
+      "after": "63533b46546a0a294b44c342e4aaf889b4b97765a18259c394a4d4f35bc67458"
+    },
+    "src/features/operation/shared/participants.ts": {
+      "before": "94ebb15d58ea911d4c139e78f4bfc2411a13ce72e0b18ea0cdeab95c48b6fd37",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/operation/shared/participants.ts"
+    },
+    "src/features/whitelabel-accounts/AccountDetailPanel.tsx": {
+      "before": "d3f7127c97156791a49daa74614886ffa89cd87f26d822b221073317e10a62cf",
+      "after": "5968faa14263bf901c346492b155cf2bd9107f6625f2e4309bc6fcd45cc9ff7b"
+    },
+    "src/features/whitelabel-accounts/WhitelabelContextSelector.tsx": {
+      "before": "053a5f503a6b1409ee19aa8d9a43ae87865d0ee1386b06e7868caca78a6b55d3",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-accounts/WhitelabelContextSelector.tsx"
+    },
+    "src/features/whitelabel-accounts/prototypeAccounts.ts": {
+      "before": "1b860c0ca434e8f356da26f9c578c3c6565a7f911e77b4f83f7568302dc25ccf",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-accounts/prototypeAccounts.ts"
+    },
+    "src/features/whitelabel-emails/WhitelabelEmailsPage.module.css": {
+      "before": "1d846956183a6b492263a7a4976c5b1e6cf2274a22f4563fee7fc62b6844db28",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/WhitelabelEmailsPage.module.css"
+    },
+    "src/features/whitelabel-emails/WhitelabelEmailsPage.tsx": {
+      "before": "3db08b0652564555f479e5c7a63c8e09754c45092529b32da0d71a959aa94da6",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/WhitelabelEmailsPage.tsx"
+    },
+    "src/features/whitelabel-emails/dialogs/TestEmailDialog.module.css": {
+      "before": "5c1b3d6f1a8f07c209bf6f1cbe0ff605f613b847b4a9081842fd097147a4f51a",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/dialogs/TestEmailDialog.module.css"
+    },
+    "src/features/whitelabel-emails/dialogs/TestEmailDialog.tsx": {
+      "before": "2d7828522bb96c20cfa40396a1b2de8d6393eb39a67a4f265eba3a2518710621",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/dialogs/TestEmailDialog.tsx"
+    },
+    "src/features/whitelabel-emails/emailModel.ts": {
+      "before": "e22092c7e9c8dad0f6a849ddec28fcbaa1563cc6e337e2f35e4e143e9bf2ac30",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/emailModel.ts"
+    },
+    "src/features/whitelabel-emails/emailStore.ts": {
+      "before": "22173e86e7cffb8f451f01c8623725f618c87f00b1f561b4426683cca0b4a4df",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/emailStore.ts"
+    },
+    "src/features/whitelabel-emails/prototypeEmails.ts": {
+      "before": "994f1d464d7fab253416febbb07a2201aed9e022c34680ca2f412c832aab29f0",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/prototypeEmails.ts"
+    },
+    "src/features/whitelabel-emails/sections/EmailSections.module.css": {
+      "before": "21d16b2ad8fbbd3cc8c8f24da9a4d7167f513cd5b5b49609fcb179deb5bb0c73",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/sections/EmailSections.module.css"
+    },
+    "src/features/whitelabel-emails/sections/EventsSection.tsx": {
+      "before": "b5ecf16b43321dfbdaf5d6609a3a810c81e7a8404e9326dba79f3a46019fc5c4",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/sections/EventsSection.tsx"
+    },
+    "src/features/whitelabel-emails/sections/SessionActivity.tsx": {
+      "before": "b7696bdf185e374a335e107c092311a4faefbc2b6bba1f60c01072ced1c2f885",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/sections/SessionActivity.tsx"
+    },
+    "src/features/whitelabel-emails/sections/SmtpSection.tsx": {
+      "before": "5c1cd1e5f81bc346f8db8e1a434c26e20cf17787f053abed7588560205e01986",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/sections/SmtpSection.tsx"
+    },
+    "src/features/whitelabel-emails/sections/TemplatesSummary.tsx": {
+      "before": "0b665a1d3f85ffe79f0a063ced472c68dbe3cf6d73fee4f6e21f33f307e1a89b",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/sections/TemplatesSummary.tsx"
+    },
+    "src/features/whitelabel-emails/visuals/OrbitBorderFrame.module.css": {
+      "before": "7fd1a0f5837c23a7a72e116c7bdff0cb38e959a3ebcb4d65348c943ff3a47dad",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/visuals/OrbitBorderFrame.module.css"
+    },
+    "src/features/whitelabel-emails/visuals/OrbitBorderFrame.tsx": {
+      "before": "0d73fe4d2e869c7bcf9e45e9e6939b8566732fb8f18f8d700e81aeea8cc54029",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-emails/visuals/OrbitBorderFrame.tsx"
+    },
+    "src/features/whitelabel-settings/SettingsSection.tsx": {
+      "before": "1a99cc83780792c1a65204ffe2f0c5f90d949caddfb85dca02bc3ca9361e78c9",
+      "after": "2f23e6ec1afe2eabaafc72d32b78b1c9bea05700ffd46413a6a0eadc1086f11f"
+    },
+    "src/features/whitelabel-settings/WhitelabelSettingsPage.tsx": {
+      "before": "706007e0f84ddf2377ccda8789dbee78f2ba04da84be99d0503b203edb2ac7df",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/WhitelabelSettingsPage.tsx"
+    },
+    "src/features/whitelabel-settings/dialogs/TermsDialogs.tsx": {
+      "before": "d2c462d679cfcc58ff8fc979ba10156f99a24d33ea86a389e48d528512a347b2",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/dialogs/TermsDialogs.tsx"
+    },
+    "src/features/whitelabel-settings/dialogs/UnsavedChangesDialog.tsx": {
+      "before": "77d6d69c7ba177bceb883a3b5017d7d5a95464ff2fb3e6179d1322e44601ebb0",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/dialogs/UnsavedChangesDialog.tsx"
+    },
+    "src/features/whitelabel-settings/prototypeSettings.ts": {
+      "before": "f6cb7ab8967624ff74762c0ce83c2f99f2c514a813784eda0e9f4f25af119a2a",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/prototypeSettings.ts"
+    },
+    "src/features/whitelabel-settings/sections/ExperienceSection.tsx": {
+      "before": "bf6a086d0b51a1fa65c75462ab6837e660394ad68f0afadda3426a0026548899",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/ExperienceSection.tsx"
+    },
+    "src/features/whitelabel-settings/sections/FeaturesSection.module.css": {
+      "before": "d82502b4856114dab9f3c46b2d5ad00076463e6f91c3058c0029b141dd34100e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/FeaturesSection.module.css"
+    },
+    "src/features/whitelabel-settings/sections/FeaturesSection.tsx": {
+      "before": "d5061d6726d9e0af944594979be8244e9a90480c54ca5df691e65777f1a51abc",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/FeaturesSection.tsx"
+    },
+    "src/features/whitelabel-settings/sections/GeneralSection.tsx": {
+      "before": "757035a3b77dddf96a42b4b934580b7614ebd7377d05eb931895c7d4d9875bad",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/GeneralSection.tsx"
+    },
+    "src/features/whitelabel-settings/sections/IdentitySection.module.css": {
+      "before": "c38d6d0d5fd8a8b20e6ac32fff841428c9698cd0e1f6276d86d9f9bdb249f897",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/IdentitySection.module.css"
+    },
+    "src/features/whitelabel-settings/sections/IdentitySection.tsx": {
+      "before": "8f086f1311896a7bb0a79605120608e489dc74df7a0cbb4ef13d0b85bde46a10",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/IdentitySection.tsx"
+    },
+    "src/features/whitelabel-settings/sections/SmtpSummary.module.css": {
+      "before": "5a61e4986d52496eac9bf8104134c2fa568ff725fd9fdecaeccb0d0a3748788f",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/SmtpSummary.module.css"
+    },
+    "src/features/whitelabel-settings/sections/SmtpSummary.tsx": {
+      "before": "9ae8f78e68bfec44bd9ef8db07fa261dc975938af889983cc267d3c2097d2662",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/SmtpSummary.tsx"
+    },
+    "src/features/whitelabel-settings/sections/TermsSection.module.css": {
+      "before": "e78de4b53947963cbd4c19a9ff7ab6e6fa9fd9aa3ffc5a076ed902163cd3730e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/TermsSection.module.css"
+    },
+    "src/features/whitelabel-settings/sections/TermsSection.tsx": {
+      "before": "31a927ca5b36ed92380188bff10bfec1d4ea7e197a0527f0da2771af01faa117",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/TermsSection.tsx"
+    },
+    "src/features/whitelabel-settings/sections/fields.module.css": {
+      "before": "d778bb848e138ff8422d61c6dcbc0371e5bd7816eab957705927cb314e2c1f5e",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/sections/fields.module.css"
+    },
+    "src/features/whitelabel-settings/settingsModel.ts": {
+      "before": "dea6515297b2ffa10a1bbe29be78690410e05a541edaa994e724407dad18c137",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/settingsModel.ts"
+    },
+    "src/features/whitelabel-settings/settingsStore.ts": {
+      "before": "1cf8d6ace4e7052ff690560d0a36a3a484ca1be8cd89dd4cbf435774a6a684e9",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/settingsStore.ts"
+    },
+    "src/features/whitelabel-settings/useSectionEditor.ts": {
+      "before": "ae963b9f59a75b05308bf26eb8b2c9995ef059f823dca3c5f96b150fa60f9796",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabel-settings/useSectionEditor.ts"
+    },
+    "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
+      "before": "2958656626a8ca662e996f41527fdfe7a5cde1ae04357eebf42ed977a686750a",
+      "after": "e9202ce0930ae82f9f0bd3b5a887a3ede39aac03fdc8e64e286a1780ccad9a5b"
+    },
+    "src/features/whitelabels/WhitelabelsPage.tsx": {
+      "before": "6e092d283ed86679df1377f314bab6f131ec53b07556fc749d2ffa7baa2d39d1",
+      "after": "a30ee8bbab9d9bcc2bfd22c4040621ebefda05307d09953d06de2b5a699ad3b5"
+    },
+    "src/features/whitelabels/prototypeWhitelabels.ts": {
+      "before": "d9534095545495698fd3414e7334473d128664bae298f535d1edaee686507927",
+      "after": null,
+      "fixture": "tests/prototypes/src/features/whitelabels/prototypeWhitelabels.ts"
+    },
+    "src/features/menu-visibility/VisibilityControls.tsx": {
+      "before": "57d3b35e700220d2a9047d79ffcc0d1e01749835cfbbf206bc359ad2a6bb4ec9",
+      "after": "0f4fcd5717f97d987859d7e831e77678a6d7905ea18b44ca6bcf4d19e90367ef"
+    }
+  }
+}

@@ -6,9 +6,9 @@ import { OutlineButton } from '../../components/ui/OutlineButton'
 import { StatusPill } from '../../components/ui/StatusPill'
 import type { ApiErrorView } from '../../lib/apiErrors'
 import { formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from '../whitelabels/whitelabelApi'
-import { maskPhone as maskEntrepreneurPhone } from '../operation/entrepreneurs/entrepreneurApi'
+import { formatPhone } from '../operation/shared/businessPresentation'
 import { entrepreneurHref } from '../operation/entrepreneurs/entrepreneurRoute'
-import { accessMeta, investorTypeLabel, maskPhone as maskInvestorPhone } from '../operation/investors/investorApi'
+import { accessMeta, investorTypeLabel } from '../operation/investors/investorApi'
 import { investorHref } from '../operation/investors/investorRoute'
 import states from '../operation/shared/ReadStates.module.css'
 import { AccountAvatar, BusinessBadge } from './AccountBadges'
@@ -133,7 +133,7 @@ function DetailContents({ detail, whitelabel, actionsCurrent }: { detail: Accoun
 
 function RegistrationData({ detail }: { detail: Extract<AccountDetail, { kind: 'investor' | 'entrepreneur' }> }) {
   const { record } = detail
-  const phone = detail.kind === 'investor' ? maskInvestorPhone(record.phone) : maskEntrepreneurPhone(record.phone)
+  const phone = formatPhone(record.phone)
   return (
     <section className={styles.card} aria-labelledby="acc-data-title" data-detail-stage="data">
       <h3 id="acc-data-title" className={styles.cardTitle}>
@@ -173,7 +173,7 @@ function RegistrationData({ detail }: { detail: Extract<AccountDetail, { kind: '
           </>
         ) : null}
       </dl>
-      <p className={styles.cardFootnote}>Telefone parcialmente mascarado. Documentos (CPF/CNPJ) não fazem parte deste contrato.</p>
+      <p className={styles.cardFootnote}>Telefone informado pelo Control Plane. Documentos (CPF/CNPJ) não fazem parte deste contrato.</p>
     </section>
   )
 }

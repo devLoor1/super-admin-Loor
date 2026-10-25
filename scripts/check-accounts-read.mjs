@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -293,12 +294,12 @@ await check('KYC and Company are never mapped: pending notes only, proven cross-
   assert.match(detail, /investorHref\(record\.id\)/); assert.match(detail, /entrepreneurHref\(record\.id\)/)
   assert.equal(/accountsHref|#\/compliance|#\/finance/.test(detail), false)
 })
-await check('only proven-dead dialog/config files are removed; shared model and fixtures remain', async () => {
+await check('operational files retained; prototype fixtures isolated outside runtime', async () => {
   for (const name of ['accountListConfig.ts', 'dialogs/AccessDialogs.tsx', 'dialogs/ChangeWhitelabelDialog.tsx', 'dialogs/NewAdminDialog.tsx', 'dialogs/AccountDialogs.module.css']) {
     await assert.rejects(readFile(resolve(accountsDir, name), 'utf8'), { code: 'ENOENT' }, name)
   }
   const files = (await readdir(accountsDir)).filter((name) => /\.tsx?$/.test(name)).sort()
-  assert.deepEqual(files, [...screens, 'AccountBadges.tsx', 'WhitelabelContextSelector.tsx', 'accountModel.ts', 'prototypeAccounts.ts'].sort())
+  assert.deepEqual(files, [...screens, 'AccountBadges.tsx', 'accountModel.ts'].sort())
 })
 await check('Dashboard stays independent of the Accounts screen', async () => {
   const dashboardDir = resolve(root, 'src/features/dashboard')

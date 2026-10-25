@@ -6,23 +6,20 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  History,
   Info,
   SearchX,
   type LucideIcon,
 } from 'lucide-react'
 import { AppShell } from '../../../components/shell/AppShell'
-import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
+import { useNotice } from '../../../components/shell/notice'
 import type { Breadcrumb } from '../../../components/shell/TopHeader'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { IconTile, type Tone } from '../../../components/ui/IconTile'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import { DotMatrixBackground } from '../../whitelabels/visuals/DotMatrixBackground'
-import { whitelabelOf, type SortDirection } from './operationModel'
-import { formatActivityTime, type OperationActivity } from './operationActivity'
+import type { SortDirection } from './operationModel'
 import { takeQueuedNotice } from './queuedNotice'
 import styles from './Operation.module.css'
-import { PROTOTYPE_PRESENTATION } from '../../../app/presentationAvailability'
 
 export type OperationSection = 'opportunities' | 'investors' | 'entrepreneurs'
 
@@ -74,7 +71,7 @@ export function OperationShell({
 
 /** Shows a notice queued by the previous page right before navigating here. */
 function QueuedNotice() {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   useEffect(() => {
     const message = takeQueuedNotice()
     if (message) notify(message)
@@ -209,19 +206,6 @@ export function NoResults({ title, description }: { title: string; description: 
   )
 }
 
-/** Whitelabel monogram + name (decorative mark, the name carries the meaning). */
-export function WhitelabelTag({ whitelabelId }: { whitelabelId: string }) {
-  const whitelabel = whitelabelOf(whitelabelId)
-  return (
-    <span className={styles.wlCell}>
-      <span className={styles.wlMark} data-tone={whitelabel?.avatarTone ?? 'neutral'} aria-hidden="true">
-        {whitelabel?.initial ?? '·'}
-      </span>
-      {whitelabel?.name ?? 'Whitelabel não encontrado'}
-    </span>
-  )
-}
-
 export function DetailList({ rows }: { rows: { label: string; value: ReactNode; wide?: boolean }[] }) {
   return (
     <dl className={styles.dl}>
@@ -263,7 +247,7 @@ export type DomainNavItem = {
  * that owns each capability. Pending modules are labelled before activation.
  */
 export function DomainNavCard({ title, intro, items }: { title: string; intro: string; items: DomainNavItem[] }) {
-  const visibleItems = PROTOTYPE_PRESENTATION ? items : items.filter(item => item.href && !item.pending)
+  const visibleItems = items.filter(item => item.href && !item.pending)
   if (!visibleItems.length) return null
   return (
     <section className={fin.card} aria-labelledby="domain-nav-title">
@@ -305,41 +289,6 @@ export function DomainNavCard({ title, intro, items }: { title: string; intro: s
           )
         })}
       </ul>
-    </section>
-  )
-}
-
-/** Session-only feedback for one record. Explicitly not an audit trail. */
-export function SessionActivityCard({ entries, emptyText }: { entries: OperationActivity[]; emptyText: string }) {
-  if (!PROTOTYPE_PRESENTATION) return null
-  return (
-    <section className={fin.card} aria-labelledby="op-activity-title">
-      <h2 id="op-activity-title" className={fin.cardTitleSm}>
-        Atividade da sessão
-      </h2>
-      <p className={fin.activityIntro}>
-        Somente ações locais desta sessão do navegador. Não representa trilha de auditoria e nada é enviado ao Backend.
-      </p>
-      {entries.length ? (
-        <ol className={fin.activityList}>
-          {entries.map((entry) => (
-            <li key={entry.id} className={fin.activityItem}>
-              <div>
-                <p className={fin.activityTitle}>{entry.title}</p>
-                {entry.detail ? <p className={fin.activityDetail}>{entry.detail}</p> : null}
-              </div>
-              <time className={fin.activityTime} dateTime={entry.at}>
-                {formatActivityTime(entry.at)}
-              </time>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className={fin.activityEmpty}>
-          <History size={15} strokeWidth={1.8} aria-hidden="true" />
-          {emptyText}
-        </p>
-      )}
     </section>
   )
 }

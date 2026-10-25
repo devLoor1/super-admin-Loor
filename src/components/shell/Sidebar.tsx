@@ -3,7 +3,7 @@ import { CircleAlert, Layers, LoaderCircle, RotateCw, X } from 'lucide-react'
 import type { NavItem } from './navigation'
 import { useMenuVisibilityResource } from '../../features/menu-visibility/useVisibilitySource'
 import { sidebarNavigation } from '../../features/menu-visibility/sidebarVisibility'
-import { moduleUnavailable, usePrototypeNotice } from './prototypeNotice'
+import { moduleUnavailable, useNotice } from './notice'
 import { GlassNavItem } from '../originkit/GlassNavItem'
 import styles from './Sidebar.module.css'
 import { readinessNavigation, readinessHref } from '../../app/presentationAvailability'
@@ -103,7 +103,7 @@ function NavList({
   onNavigate: () => void
   compact?: boolean
 }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
 
   return (
     <ul className={compact ? styles.listCompact : styles.list}>

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { execFileSync } from 'node:child_process'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
 import ts from 'typescript'
 
 // Synthetic only. All fetches intercepted, no credential/service/database access.

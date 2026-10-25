@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -153,9 +153,9 @@ await check('investor 401 ends the session centrally; 403 / 502 keep it', async 
   await assert.rejects(inv.listInvestors({ page: 1, search: '' }), (error) => error.status === 401)
   assert.equal(auth.getAccessToken(), null); assert.equal(auth.peekAuthNotice(), 'session_expired')
 })
-await check('phone is masked (area code + last 4), full number never rendered', async () => {
-  assert.equal(inv.maskPhone('11912345678'), '(11) •••••-5678'); assert.equal(inv.maskPhone('1132345678'), '(11) ••••-5678')
-  assert.ok(!inv.maskPhone('5511912345678').includes('91234')); assert.equal(inv.maskPhone(null), null)
+await check('authorized phone presentation preserves every digit and adds only formatting', async () => {
+  assert.equal(inv.formatPhone('11912345678'), '(11) 91234-5678'); assert.equal(inv.formatPhone('1132345678'), '(11) 3234-5678')
+  assert.equal(inv.formatPhone('5511912345678'), '+55 (11) 91234-5678'); assert.equal(inv.formatPhone(null), null)
 })
 await check('labels: known tokens translated, unknown shown as sent, no KYC vocabulary', async () => {
   assert.equal(inv.validationMeta('approved').label, 'Aprovada'); assert.equal(inv.validationMeta('waiting').label, 'Aguardando')

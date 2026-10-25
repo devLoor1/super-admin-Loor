@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { readinessTabs } from '../../../app/presentationAvailability'
 import { ArrowLeftRight, ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
-import { usePrototypeNotice } from '../../../components/shell/prototypeNotice'
+import { useNotice } from '../../../components/shell/notice'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import primary from '../../../components/ui/PrimaryButton.module.css'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
+import { BackLink, DomainNavCard, InfoNote, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
-import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
 import type { InvestmentDetail } from '../shared/financeApi'
 import { STATUS_INDEPENDENCE_NOTE, dateText, financeErrorView, providerLabel, tenantNames } from '../shared/financePresentation'
 import {
@@ -33,7 +32,7 @@ import {
 import { useFinanceTenants, useInvestmentDetail } from '../shared/useFinanceData'
 import styles from '../shared/FinanceCore.module.css'
 
-type Tab = 'overview' | 'payment' | 'wallet' | 'activity'
+type Tab = 'overview' | 'payment' | 'wallet'
 const TAB_PREFIX = 'investment-detail'
 
 /** `#/finance/investments/:investmentId` — read-only investment from `GET /investments/:id`. */
@@ -54,29 +53,21 @@ export function InvestmentDetailPage({ investmentId, returnTo }: { investmentId:
 }
 
 function InvestmentContent({ investment, back }: { investment: InvestmentDetail; back: string }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   const tenants = useFinanceTenants()
   const tenant = tenantNames(tenants.state.status === 'success' ? tenants.state.data : null)(investment.whitelabelId)
   const id = investment.id
-  const activity = useFinanceCoreActivity(`investment:${id}`)
   const [tab, setTab] = useState<Tab>('overview')
   const investorLabel = investment.investor?.fullName ?? `Investidor #${investment.investorId}`
   const opportunityLabel = investment.opportunity?.name ?? `Oportunidade #${investment.opportunityId}`
   const payment = investment.payment
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(`investment:${id}`, { title, detail })
 
-  useEffect(() => {
-    addFinanceCoreActivity(`investment:${id}`, { title: 'Investimento consultado', detail: 'Leitura do Control Plane (somente leitura)' })
-  }, [id])
 
   function changeTab(next: Tab) {
     setTab(next)
-    if (next === 'payment') log('Pagamento consultado', payment ? `Pagamento ${payment.id}` : 'Nenhum pagamento registrado')
-    if (next === 'wallet') log('Wallet do Whitelabel consultada', `Whitelabel ${investment.whitelabelId}`)
   }
 
   const noPayment = () => {
-    log('Pagamento sem destino', 'Nenhum pagamento registrado — nenhuma navegação feita')
     notify('O Control Plane não registra pagamento para este investimento. Nenhuma navegação foi feita.')
   }
 
@@ -109,7 +100,6 @@ function InvestmentContent({ investment, back }: { investment: InvestmentDetail;
     { value: 'overview', label: 'Visão geral' },
     { value: 'payment', label: 'Pagamento / PIX' },
     { value: 'wallet', label: 'Wallet do Whitelabel' },
-    { value: 'activity', label: 'Atividade da sessão' },
   ]
 
   return (
@@ -270,9 +260,6 @@ function InvestmentContent({ investment, back }: { investment: InvestmentDetail;
         </InfoNote>
       </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="activity" current={tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para este investimento." />
-      </TabPanel>
     </>
   )
 }

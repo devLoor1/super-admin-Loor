@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { ArrowLeft, Copy, FileSearch, Info, Link2, Lock, Search } from 'lucide-react'
-import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { useNotice } from '../../components/shell/notice'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { Tabs } from '../../components/ui/Tabs'
@@ -66,7 +66,7 @@ function AuditDetailUnavailable({ id, listHref }: { id: string; listHref: string
 }
 
 function AuditEventContent({ record, listHref }: { record: AuditRecord; listHref: string }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   const [tab, setTab] = useState<Tab>('overview')
   const before = sanitizeAuditData(record.beforeData)
   const after = sanitizeAuditData(record.afterData)
@@ -199,7 +199,7 @@ function AuditEventContent({ record, listHref }: { record: AuditRecord; listHref
             )}
             <details className={styles.raw} data-raw-view>
               <summary>Ver registro sanitizado (JSON)</summary>
-              <p className={styles.rawNote}>Visão técnica secundária. Valores sensíveis aparecem como “[oculto]”; e-mails, parcialmente.</p>
+              <p className={styles.rawNote}>Visão técnica secundária. Valores sensíveis aparecem como “[oculto]”; campos de e-mail válidos são exibidos como registrados.</p>
               <pre className={styles.rawPre} tabIndex={0} aria-label={`Registro sanitizado do evento ${record.id}`}>
                 {JSON.stringify({ beforeData: sanitizedJson(before), afterData: sanitizedJson(after) }, null, 2)}
               </pre>
@@ -213,8 +213,8 @@ function AuditEventContent({ record, listHref }: { record: AuditRecord; listHref
               <Lock size={15} strokeWidth={1.8} aria-hidden="true" />
               <span>
                 Senhas, tokens, chaves, segredos, credenciais, cabeçalhos de autorização, dados de cartão e conta, documentos e payloads
-                <strong> reconhecidos como sensíveis são ocultos</strong>; valores que o Control Plane já ocultou aparecem como “[redacted]”. E-mails aparecem
-                parcialmente. Esta proteção é adicional: o Control Plane continua responsável pelo armazenamento e pela redação na origem.
+                <strong> reconhecidos como sensíveis são ocultos</strong>; valores que o Control Plane já ocultou aparecem como “[redacted]”. Campos de e-mail válidos aparecem
+                como registrados; contatos em texto livre continuam protegidos. Esta proteção é adicional: o Control Plane continua responsável pelo armazenamento e pela redação na origem.
               </span>
             </p>
             <p className={`${shared.callout} ${styles.calloutSpaced}`}>
@@ -317,7 +317,7 @@ function DataNode({ node }: { node: SanitizedNode }) {
           <Lock size={12} strokeWidth={2} aria-hidden="true" />
           <span aria-hidden={node.reason === 'email' ? undefined : 'true'}>{node.text}</span>
           {node.reason === 'email' ? (
-            <span className="visually-hidden"> (e-mail parcialmente oculto)</span>
+            <span className="visually-hidden"> (contato protegido)</span>
           ) : (
             <span className="visually-hidden">
               {node.reason === 'redacted-by-backend' ? 'Valor ocultado pelo Control Plane' : 'Valor sensível oculto'}

@@ -1,6 +1,7 @@
+import { beforeConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { root } from './operators-test-harness.mjs'
 // Exact reviewed SA-BE-002 paths only. Independent tests cover tenant/RBAC,
@@ -18,6 +19,7 @@ const pins = {
   'src/features/whitelabel-accounts/admin/AdminLifecycle.module.css': 'acd4668fbc36057adda92b878c8abe23711bba1937e6319cd5d55470151ebbc7',
 }
 export function verifyAdminLifecycleSource(path, source) {
+  source=beforeConsolidation(path,source)
   if (!Object.hasOwn(pins, path)) return false
   assert.equal(createHash('sha256').update(source.replaceAll('\r\n', '\n')).digest('hex'), pins[path], `Unreviewed Admin lifecycle source: ${path}`)
   return true
@@ -25,6 +27,7 @@ export function verifyAdminLifecycleSource(path, source) {
 export const reviewedAdminLifecycle = path => Object.hasOwn(pins, path) && verifyAdminLifecycleSource(path, readFileSync(resolve(root, path), 'utf8'))
 export const adminLifecycleExclusions = () => Object.keys(pins).map(path => { assert.equal(reviewedAdminLifecycle(path), true); return `:(exclude)${path}` })
 export function withoutAdminReadiness(source) {
+  source=beforeConsolidation('src/app/presentationAvailability.ts',source)
   verifyAdminLifecycleSource('src/app/presentationAvailability.ts', source)
   return source.replaceAll('\r\n', '\n').replace("/** Candidate lifecycle commands still require their release gates and authoritative Backend RBAC. */\nexport const administratorLifecycleAvailable = (roles: readonly string[]) => roles.includes('SUPER_ADMIN')\n", '')
 }

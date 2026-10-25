@@ -9,9 +9,9 @@ Normative LOØR frontend release rule, applicable to this and every future deliv
 
 Neither safeguard replaces the other. Readiness is presentation policy, not authorization: Backend RBAC remains authoritative.
 
-## Local development
+## Operational development and the shared prototype
 
-Local Vite DEV retains approved prototypes, illustrative fixtures and mock routes/controls for UX exploration. Do not delete these assets merely to clean homolog. Operational read pages must never fall back to prototypes, even locally.
+The `dev` branch uses the same operational presentation policy in Vite development and production builds. Approved prototypes, illustrative fixtures and simulated interactions belong to the independently runnable `mock` branch. Necessary historical regression fixtures may remain outside `src`, reachable only by test harnesses. They must not enter the operational import graph or built assets. A Backend failure must never substitute prototype records, even locally.
 
 ## Production-built official homolog
 
@@ -27,8 +27,8 @@ For **every** changed user-facing feature:
 
 1. Inspect its supported Backend contract and privacy/authorization boundaries.
 2. Extend focused maintained checks for newly introduced navigation, controls and direct routes. Assert actual navigation/rendered behavior, not only document/source-string presence.
-3. Run `node scripts/check-homolog-readiness.mjs` (local DEV and production semantics), all maintained `scripts/check-*.mjs`, `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check`.
-4. Review the new/changed surface in local DEV and a production build; preserve historical prototypes, real reads, valid errors/empty states and Menu Visibility contracts.
+3. Run `node scripts/check-homolog-readiness.mjs` (operational development and production semantics), all maintained `scripts/check-*.mjs`, `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check`.
+4. Review the new/changed surface in local development and a production build; preserve historical prototypes on `mock`, real reads, valid errors/empty states and Menu Visibility contracts.
 5. After authorized publication, verify the actual official bundle and changed authenticated runtime surfaces. Separate synthetic/local evidence from deployed live E2E.
 
 Any **new mock-only or inoperant production surface blocks promotion**. Record exceptions explicitly with scope, owner and acceptance; do not turn a legitimate Backend error/zero into a fake success to satisfy a gate. New features extend focused tests; this is not a demand to repeat an unbounded historical UX audit.
@@ -37,4 +37,4 @@ Any **new mock-only or inoperant production surface blocks promotion**. Record e
 
 ## Current scope and deliberate limitations
 
-Operators list/detail are real GET-only Control Plane views, SUPER_ADMIN-only, under Configurações. No lifecycle, roles, invitations, password or financial actions are exposed. Local prototype preservation does not authorize publishing prototypes, making business writes or changing Backend/Core.
+Operators list/detail are real GET-only Control Plane views, SUPER_ADMIN-only, under Configurações. No lifecycle, roles, invitations, password or financial actions are exposed. Prototype preservation does not authorize publishing simulated records to official homolog, making business writes or changing Backend/Core. Complete authorized business values may be displayed from explicit supported API projections; Backend-masked fields remain partial. Credential, audit and unsafe Finance-response protections remain independent safeguards.

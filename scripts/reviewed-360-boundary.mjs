@@ -1,3 +1,4 @@
+import { beforeConsolidation, reviewedConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
@@ -6,7 +7,7 @@ import { reviewedOperators } from './reviewed-operators-boundary.mjs'
 import { reviewedAccountAccess } from './reviewed-account-access-boundary.mjs'
 import { withoutAuditRawQuery } from './reviewed-audit-filters-boundary.mjs'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -42,13 +43,14 @@ const fingerprints={
   'src/features/operation/shared/useOverview.ts':'0ff48c4c59938558a0070fd6badd1d1a2c9d86bbe3133fb8c2c3afcf9a05b290',
 }
 export function reviewed360(path) {
+  if(reviewedConsolidation(path))return true
   if(reviewedAdminLifecycle(path))return true
   if(reviewedOpportunityWrite(path))return true
   if(reviewedSettings(path))return true
   if(reviewedAccountAccess(path))return true
   if(path!=='src/app/App.tsx' && reviewedOperators(path))return true
   if(!Object.hasOwn(fingerprints,path))return false
-  const raw=readFileSync(resolve(root,path),'utf8').replaceAll('\r\n','\n')
+  const raw=beforeConsolidation(path,readFileSync(resolve(root,path),'utf8')).replaceAll('\r\n','\n')
   let source=path==='src/app/App.tsx'?withoutAuditRawQuery(raw):raw
   if(path==='src/features/whitelabel-accounts/WhitelabelAccountsPage.tsx'){
     const current='          Consulte administradores, investidores e empreendedores do Whitelabel selecionado, com dados do Control Plane.\n          A gestão de acesso de investidores e empreendedores depende da permissão do operador.\n'
@@ -64,6 +66,7 @@ export function reviewed360(path) {
 }
 export const outsideReviewed360=output=>output.trim().split('\n').filter(Boolean).filter(path=>!reviewed360(path))
 export function withoutReadinessGate(source){
+  source=beforeConsolidation('src/app/App.tsx',source)
   let code=withoutAuditRawQuery(source)
   for(const exact of ["import { viewAvailable } from './presentationAvailability'\n","import { ReadinessUnavailablePage } from './ReadinessUnavailablePage'\n",'  if (!viewAvailable(route.view)) return <ReadinessUnavailablePage />\n']){
     assert.equal(code.split(exact).length,2,'Readiness route adaptation must occur exactly once');code=code.replace(exact,'')

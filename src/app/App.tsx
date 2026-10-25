@@ -3,11 +3,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { LoginPage } from '../features/login/LoginPage'
 import { WhitelabelsPage } from '../features/whitelabels/WhitelabelsPage'
 import { WhitelabelAccountsPage } from '../features/whitelabel-accounts/WhitelabelAccountsPage'
-import { WhitelabelSettingsPage } from '../features/whitelabel-settings/WhitelabelSettingsPage'
-import { WhitelabelEmailsPage } from '../features/whitelabel-emails/WhitelabelEmailsPage'
-import { FinanceGatewaysPage } from '../features/finance-gateways/FinanceGatewaysPage'
-import { FinanceModalitiesPage } from '../features/finance-modalities/FinanceModalitiesPage'
-import { FinanceCatalogsPage } from '../features/finance-catalogs/FinanceCatalogsPage'
+import { OperationalSettingsPage } from '../features/whitelabel-settings/OperationalSettingsPage'
 import { OpportunitiesPage } from '../features/operation/opportunities/OpportunitiesPage'
 import { OpportunityDetailPage } from '../features/operation/opportunities/OpportunityDetailPage'
 import { OpportunityFormPage } from '../features/operation/opportunities/OpportunityFormPage'
@@ -33,9 +29,8 @@ import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPage'
 import { OperatorsListPage } from '../features/control-plane-operators/OperatorsListPage'
 import { OperatorDetailPage } from '../features/control-plane-operators/OperatorDetailPage'
-import { emailsSectionFromParam, type EmailsSection } from '../features/whitelabel-emails/emailModel'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
-import { subscribePrototypeNavigation } from './prototypeNavigation'
+import { subscribeNavigation } from './navigationGuard'
 import { viewAvailable } from './presentationAvailability'
 import { ReadinessUnavailablePage } from './ReadinessUnavailablePage'
 
@@ -78,7 +73,7 @@ type Route =
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
   | { view: 'settings'; whitelabelId: string }
-  | { view: 'emails'; whitelabelId: string; section?: EmailsSection }
+  | { view: 'emails'; whitelabelId: string }
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
   | { view: 'finance-catalogs'; whitelabelId: string }
@@ -299,7 +294,6 @@ function routeFromHash(): Route {
     return {
       view: 'emails',
       whitelabelId: emails[1],
-      section: emailsSectionFromParam(new URLSearchParams(search).get('section')),
     }
   }
   const finance = FINANCE_GATEWAYS_PATH.exec(path)
@@ -447,7 +441,7 @@ export function App() {
       setRoute(routeFromHash())
       window.scrollTo(0, 0)
     }
-    const unsubscribe = subscribePrototypeNavigation(onHashChange)
+    const unsubscribe = subscribeNavigation(onHashChange)
     return () => {
       window.removeEventListener('hashchange', refreshAuthentication)
       unsubscribe()
@@ -508,13 +502,7 @@ export function App() {
       />
     )
   }
-  if (route.view === 'settings') return <WhitelabelSettingsPage whitelabelId={route.whitelabelId} />
-  if (route.view === 'emails') {
-    return <WhitelabelEmailsPage whitelabelId={route.whitelabelId} section={route.section} />
-  }
-  if (route.view === 'finance') return <FinanceGatewaysPage whitelabelId={route.whitelabelId} />
-  if (route.view === 'finance-modalities') return <FinanceModalitiesPage whitelabelId={route.whitelabelId} />
-  if (route.view === 'finance-catalogs') return <FinanceCatalogsPage whitelabelId={route.whitelabelId} />
+  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} />
   if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params} />
   if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />
   if (route.view === 'operation-opportunity-edit') {

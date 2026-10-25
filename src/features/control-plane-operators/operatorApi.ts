@@ -1,12 +1,13 @@
 import { ApiError } from '../../lib/api'
 import { authenticatedGet } from '../../lib/apiClient'
 import { getOperator } from '../../lib/authSession'
+import { businessText } from '../operation/shared/businessPresentation'
 
 export const OPERATOR_PAGE_SIZE = 20
 export type OperatorOrder = 'asc' | 'desc'
 export type OperatorQuery = { page: number; search: string; order: OperatorOrder }
 export type ControlPlaneOperator = {
-  id: string; name: string; emailMasked: string; status: string; roles: string[]
+  id: string; name: string; email: string; status: string; roles: string[]
   roleDetails: { slug: string; name: string }[]
   lastLoginAt: string | null; createdAt: string; updatedAt: string
 }
@@ -21,13 +22,11 @@ const integer = (v: unknown, min: number) => typeof v === 'number' && Number.isS
 const token = (v: unknown) => typeof v === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(v) ? v : fail()
 function text(v: unknown) {
   if (typeof v !== 'string' || !v.trim() || v.length > 512 || operatorHasControl(v)) return fail()
-  return v.trim().replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[contato oculto]')
-    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b|\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '[documento oculto]')
+  return businessText(v) ?? fail()
 }
-function maskedEmail(v: unknown) {
+function email(v: unknown) {
   if (typeof v !== 'string' || v.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return fail()
-  // Drop the raw contact before it reaches component state. Do not retain the domain.
-  return '••••@••••'
+  return businessText(v, 254) ?? fail()
 }
 export function operatorDate(v: unknown): string {
   if (typeof v !== 'string') return fail()
@@ -44,7 +43,7 @@ export function parseOperator(value: unknown): ControlPlaneOperator {
   const roleDetails = r.roleDetails.map(v => { const role = object(v); return { slug: token(role.slug), name: text(role.name) } })
   if (new Set(roles).size !== roles.length || new Set(roleDetails.map(r => r.slug)).size !== roles.length || roleDetails.some(r => !roles.includes(r.slug))) return fail()
   // Explicit allow-list projection: never spread Backend records or credential fields.
-  return { id: r.id, name: text(r.name), emailMasked: maskedEmail(r.email), status: token(r.status), roles, roleDetails,
+  return { id: r.id, name: text(r.name), email: email(r.email), status: token(r.status), roles, roleDetails,
     lastLoginAt: r.lastLoginAt === null ? null : operatorDate(r.lastLoginAt), createdAt: operatorDate(r.createdAt), updatedAt: operatorDate(r.updatedAt) }
 }
 export function parseOperatorPage(value: unknown, query: OperatorQuery): OperatorPage {

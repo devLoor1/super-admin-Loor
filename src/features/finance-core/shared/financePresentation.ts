@@ -3,6 +3,7 @@ import { ApiError } from '../../../lib/api'
 import { describeApiError, type ApiErrorView } from '../../../lib/apiErrors'
 import { formatDateTime } from '../../operation/shared/operationModel'
 import type { PagedResult, WalletRecord } from './financeApi'
+import { businessText } from '../../operation/shared/businessPresentation'
 
 /*
  * Finance Read V1 — presentation of Backend values. Display-only: nothing
@@ -105,12 +106,20 @@ export function partialReference(value: string | number | null | undefined) {
   return '••••'
 }
 
-/** Transaction references and anything that could carry a payment key or document are never shown in full. */
+/** Known transaction identifiers are operational references, not provider credentials. */
+const TRANSACTION_REFERENCE_KEYS = /^(txid|end_to_end|end_to_end_id|external_end_to_end_id|externalendtoendid|endtoendid|e2e|e2e_id)$/i
+
+export function transactionReference(value: string | number | null | undefined) {
+  return value === null || value === undefined ? null : businessText(String(value), 32_768)
+}
+
+/** Unknown key-like values remain partial; API document/privacy rejection is unchanged. */
 const SENSITIVE_REFERENCE_KEYS = /txid|end_to_end|endtoend|e2e|pix|key|qr|emv|copy|paste|document|cpf|cnpj|tax/i
 
-/** A movement reference entry for display: ids as sent, transaction references partial. */
+/** A movement reference entry: full authorized transaction ids, protected key/document hints. */
 export function referenceEntry(key: string, value: string | number | null) {
   const label = key.replace(/_/g, ' ')
+  if (TRANSACTION_REFERENCE_KEYS.test(key)) return { key, label, value: transactionReference(value) ?? '—', partial: false }
   const shown = SENSITIVE_REFERENCE_KEYS.test(key) ? partialReference(value) : value === null ? null : String(value)
   return { key, label, value: shown ?? '—', partial: SENSITIVE_REFERENCE_KEYS.test(key) && shown !== null && shown !== String(value) }
 }

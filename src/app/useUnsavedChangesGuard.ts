@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { registerPrototypeNavigationGuard } from './prototypeNavigation'
+import { registerNavigationGuard } from './navigationGuard'
 
 export type PendingNavigation = { hash: string; destination: string; resume?: () => void }
 
 /**
  * Shared unsaved-change protection for tenant pages with local drafts
- * (Config. do Whitelabel, E-mails). While `hasUnsaved` is true it asks before:
+ * (for example, opportunity drafts). While `hasUnsaved` is true it asks before:
  * in-app links (capture-phase click on `a[href^="#/"]`), browser Back/Forward
- * (prototype hash switch guard), and programmatic switches made through
+ * (hash navigation guard), and programmatic switches made through
  * `requestNavigation` (e.g. the Whitelabel selector). Reload / tab close use the
  * browser's own prompt. The page renders the confirmation for `pending`.
  */
@@ -26,7 +26,7 @@ export function useUnsavedChangesGuard(hasUnsaved: boolean, onDiscard: () => voi
 
   useEffect(() => {
     if (!hasUnsaved) return
-    return registerPrototypeNavigationGuard(({ hash, resume }) => {
+    return registerNavigationGuard(({ hash, resume }) => {
       if (!hasUnsavedRef.current) return true
       setPending({ hash, resume, destination: 'sair desta página pelo histórico do navegador' })
       return false

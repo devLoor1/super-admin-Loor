@@ -29,7 +29,7 @@ export type NavItem = {
   id: string
   label: string
   icon: LucideIcon
-  /** Only screens that exist in the prototype have a destination. */
+  /** Only supported operational screens have a destination. */
   href?: string
   /** Screens inside this domain. Shown under the parent while the domain is active. */
   children?: NavItem[]
@@ -39,7 +39,7 @@ export type NavItem = {
  * Top-level domains shown in the approved shell. The architecture proposal
  * groups modules under these domains (e.g. Plataformas → Whitelabels,
  * Administradores, Configurações/Plataforma, SMTP); only screens that exist in
- * the prototype are exposed as nested entries.
+ * the operational application are exposed as nested entries.
  */
 export const PRIMARY_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: House, href: '#/dashboard' },
@@ -52,10 +52,10 @@ export const PRIMARY_NAV: NavItem[] = [
     children: [
       { id: 'whitelabels', label: 'Whitelabels', icon: Building2, href: '#/whitelabels' },
       // Contas, Config. do Whitelabel and E-mails are tenant-first: by default they open the first
-      // illustrative Whitelabel; pages pass `subNavHrefs` for the current one.
-      { id: 'contas', label: 'Contas', icon: UsersRound, href: '#/whitelabels/wl_proto_01/accounts' },
-      { id: 'whitelabel-settings', label: 'Config. do Whitelabel', icon: SlidersHorizontal, href: '#/whitelabels/wl_proto_01/settings' },
-      { id: 'whitelabel-emails', label: 'E-mails', icon: Mail, href: '#/whitelabels/wl_proto_01/emails' },
+      // tenant selector; pages pass `subNavHrefs` for the current one.
+      { id: 'contas', label: 'Contas', icon: UsersRound, href: '#/whitelabels/select/accounts' },
+      { id: 'whitelabel-settings', label: 'Config. do Whitelabel', icon: SlidersHorizontal, href: '#/whitelabels/select/settings' },
+      { id: 'whitelabel-emails', label: 'E-mails', icon: Mail },
     ],
   },
   {
@@ -75,16 +75,15 @@ export const PRIMARY_NAV: NavItem[] = [
     label: 'Financeiro',
     icon: ChartColumnIncreasing,
     // Tenant-first like the Plataformas screens: pages pass `subNavHrefs` (parent included).
-    href: '#/whitelabels/wl_proto_01/finance/gateways',
+    href: '#/finance/investments',
     children: [
-      { id: 'finance-gateways', label: 'Gateways e contas', icon: Link2, href: '#/whitelabels/wl_proto_01/finance/gateways' },
-      { id: 'finance-modalities', label: 'Modalidades e regras', icon: ListChecks, href: '#/whitelabels/wl_proto_01/finance/modalities' },
+      { id: 'finance-gateways', label: 'Gateways e contas', icon: Link2 },
+      { id: 'finance-modalities', label: 'Modalidades e regras', icon: ListChecks },
       // One entry for the combined screen: Segments and Resource Uses stay independent catalogs.
       {
         id: 'finance-catalogs',
         label: 'Segmentos e usos dos recursos',
         icon: Shapes,
-        href: '#/whitelabels/wl_proto_01/finance/segments-resource-uses',
       },
       // Finance Core: global (not tenant-first) supervision lists of three independent record types.
       { id: 'finance-investments', label: 'Investimentos', icon: ChartColumn, href: '#/finance/investments' },
@@ -106,7 +105,7 @@ export const PRIMARY_NAV: NavItem[] = [
 ]
 
 export const UTILITY_NAV: NavItem[] = [
-  // Configurações › Visibilidade dos módulos (non-persisting prototype; no new menu ID).
+  // Configurações › Visibilidade dos módulos (existing registry entry).
   { id: 'configuracoes', label: 'Configurações', icon: Cog, href: '#/settings/menu-visibility' },
   { id: 'ajuda', label: 'Ajuda', icon: CircleHelp },
 ]

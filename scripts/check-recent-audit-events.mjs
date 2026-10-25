@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { reviewed360 } from './reviewed-360-boundary.mjs'
-import { execFileSync } from 'node:child_process'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
 import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -104,12 +104,13 @@ await check('safe labels, missing actor/resource/tenant and known/unknown result
   assert.equal(data.rows[1].whitelabel, 'Whitelabel ID 6'); assert.equal(data.rows[1].operator, 'Synthetic Operator')
   assert.deepEqual(data.rows[2].result, { label: 'pending', tone: 'muted' }); assert.equal(data.rows[2].event, 'FUTURE_ACTION')
 })
-await check('projection retains only approved fields and uses existing masking, never attempted login/email as actor', () => {
+await check('projection retains only approved fields, never substitutes attempted login as actor, and hides credentials', () => {
   const data = preview(wire(1, {}, [row(0, { superAdminId: null, superAdmin: null })]))
   assert.deepEqual(Object.keys(data.rows[0]).sort(), ['id','event','resource','whitelabel','operator','result','createdAt','dateTime'].sort())
   assert.doesNotMatch(JSON.stringify(data), /PRIVATE_|198\.51\.100|private-actor|attempt@example/)
   const masked = preview(wire(1, {}, [row(0, { superAdmin: { id: 'synthetic-actor', name: 'name@example.invalid' }, result: 'Bearer synthetic-secret' })]))
-  assert.doesNotMatch(JSON.stringify(masked), /name@example|synthetic-secret/)
+  assert.equal(masked.rows[0].operator, 'name@example.invalid')
+  assert.doesNotMatch(JSON.stringify(masked), /synthetic-secret/)
 })
 await check('SSR six approved columns / eight rows / scope / timezone / zero sensitive values / no detail routes', () => {
   const html = render(model.recentAuditView({ status: 'success', data: preview(wire(123)) }))

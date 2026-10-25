@@ -1,10 +1,8 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, LogOut, Menu, Search } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type Ref } from 'react'
+import { ChevronDown, ChevronRight, House, Layers, LogOut, Menu } from 'lucide-react'
 import { logout, useSessionOperator } from '../../lib/authSession'
-import { usePrototypeNotice } from './prototypeNotice'
 import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
-import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
 /** One step of the header trail; the last step is the current page. */
 export type Breadcrumb = { label: string; href?: string }
@@ -20,28 +18,21 @@ type TopHeaderProps = {
   menuButtonRef?: Ref<HTMLButtonElement>
 }
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /**
  * Application header: page title + location, global/whitelabel context
  * selector, search, notifications and user area.
  */
 export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, menuButtonRef }: TopHeaderProps) {
-  const notify = usePrototypeNotice()
-  const searchRef = useRef<HTMLInputElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuId = useId()
   const operator = useSessionOperator()
   const operatorLabel = operator?.name?.trim() || 'Super Admin'
 
-  // Ctrl/⌘ + K focuses the search field, as hinted by the keyboard badge.
+  // Escape closes the authenticated operator menu.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (PROTOTYPE_PRESENTATION && !navOpen && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault()
-        searchRef.current?.focus()
-      }
       if (event.key === 'Escape') setUserMenuOpen(false)
     }
     window.addEventListener('keydown', onKeyDown)
@@ -57,10 +48,6 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
     return () => document.removeEventListener('mousedown', onPointerDown)
   }, [userMenuOpen])
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    notify('Protótipo visual: a busca global ficará disponível após a integração.')
-  }
 
   return (
     <header className={styles.header}>
@@ -120,55 +107,8 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
         )}
       </div>
 
-      {PROTOTYPE_PRESENTATION ? <div className={styles.controls}>
-        <button
-          type="button"
-          className={styles.context}
-          onClick={() =>
-            notify('Protótipo visual: a troca entre visão global e whitelabels ficará disponível após a integração.')
-          }
-        >
-          <Globe className={styles.controlIcon} size={16} strokeWidth={1.7} aria-hidden="true" />
-          <span className={styles.contextLabel}>
-            <span className="visually-hidden">Contexto: </span>
-            Visão global
-          </span>
-          <ChevronDown className={styles.chevron} size={16} strokeWidth={1.8} aria-hidden="true" />
-        </button>
-
-        <form className={styles.search} role="search" onSubmit={handleSearch}>
-          <Search className={styles.controlIcon} size={17} strokeWidth={1.7} aria-hidden="true" />
-          <label htmlFor="global-search" className="visually-hidden">
-            Buscar no sistema
-          </label>
-          <input
-            ref={searchRef}
-            id="global-search"
-            className={styles.searchInput}
-            type="search"
-            placeholder="Buscar no sistema..."
-            autoComplete="off"
-            aria-keyshortcuts={IS_MAC ? 'Meta+K' : 'Control+K'}
-          />
-          <kbd className={styles.kbd} aria-hidden="true">
-            {IS_MAC ? '⌘' : 'Ctrl'} K
-          </kbd>
-        </form>
-      </div> : null}
 
       <div className={styles.actions}>
-        {PROTOTYPE_PRESENTATION ? <>
-        <span className={styles.divider} aria-hidden="true" />
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={() => notify('Protótipo visual: as notificações ficarão disponíveis após a integração.')}
-          aria-label="Notificações"
-        >
-          <Bell size={19} strokeWidth={1.7} aria-hidden="true" />
-        </button>
-        <span className={styles.divider} aria-hidden="true" />
-        </> : null}
         <div className={styles.userMenu} ref={userMenuRef}>
           <button
             type="button"

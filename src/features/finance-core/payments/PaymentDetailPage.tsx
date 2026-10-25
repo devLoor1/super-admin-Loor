@@ -1,19 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { readinessTabs } from '../../../app/presentationAvailability'
 import { ChartColumn, ExternalLink, Info, QrCode, Target, UserRound, Wallet as WalletIcon } from 'lucide-react'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import primary from '../../../components/ui/PrimaryButton.module.css'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
+import { BackLink, DomainNavCard, InfoNote, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
-import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
 import type { PaymentDetail } from '../shared/financeApi'
 import {
   STATUS_INDEPENDENCE_NOTE,
   dateText,
   financeErrorView,
-  partialReference,
+  transactionReference,
   paymentMethodLabel,
   paymentTypeLabel,
   providerLabel,
@@ -35,7 +34,7 @@ import { useFinanceTenants, usePaymentDetail } from '../shared/useFinanceData'
 import styles from '../shared/FinanceCore.module.css'
 import local from './Payments.module.css'
 
-type Tab = 'overview' | 'pix' | 'relations' | 'activity'
+type Tab = 'overview' | 'pix' | 'relations'
 const TAB_PREFIX = 'payment-detail'
 
 /** `#/finance/payments/:paymentId` — read-only investment PIX charge from `GET /payments/:id`. */
@@ -55,13 +54,12 @@ export function PaymentDetailPage({ paymentId, returnTo }: { paymentId: string; 
   )
 }
 
-function PartialReference({ value }: { value: string | null }) {
-  const shown = partialReference(value)
+function TransactionReference({ value }: { value: string | null }) {
+  const shown = transactionReference(value)
   if (!shown) return <span className={shared.muted}>Não informado</span>
   return (
     <span>
       <span className={styles.mono}>{shown}</span>
-      {shown !== value ? <span className={styles.partialTag}>(parcial)</span> : null}
     </span>
   )
 }
@@ -70,18 +68,11 @@ function PaymentContent({ payment, back }: { payment: PaymentDetail; back: strin
   const tenants = useFinanceTenants()
   const tenant = tenantNames(tenants.state.status === 'success' ? tenants.state.data : null)(payment.whitelabelId)
   const id = payment.id
-  const activity = useFinanceCoreActivity(`payment:${id}`)
   const [tab, setTab] = useState<Tab>('overview')
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(`payment:${id}`, { title, detail })
 
-  useEffect(() => {
-    addFinanceCoreActivity(`payment:${id}`, { title: 'Pagamento consultado', detail: 'Leitura do Control Plane (somente leitura)' })
-  }, [id])
 
   function changeTab(next: Tab) {
     setTab(next)
-    if (next === 'pix') log('Dados do PIX consultados', 'Referências exibidas parcialmente')
-    if (next === 'relations') log('Relações consultadas', `Investimento ${payment.investmentId}`)
   }
 
   const navItems: DomainNavItem[] = [
@@ -101,7 +92,6 @@ function PaymentContent({ payment, back }: { payment: PaymentDetail; back: strin
     { value: 'overview', label: 'Visão geral' },
     { value: 'pix', label: 'PIX' },
     { value: 'relations', label: 'Relações' },
-    { value: 'activity', label: 'Atividade da sessão' },
   ]
 
   return (
@@ -175,11 +165,11 @@ function PaymentContent({ payment, back }: { payment: PaymentDetail; back: strin
             <h3 id="pay-pix-title" className={fin.cardTitleSm}>
               Dados do PIX
             </h3>
-            <p className={fin.cardSubtitle}>Referências de transação exibidas parcialmente. Não há QR Code, chave PIX ou código copia-e-cola nesta tela.</p>
+            <p className={fin.cardSubtitle}>Referências de transação informadas pelo Control Plane. Não há QR Code, chave PIX ou código copia-e-cola nesta tela.</p>
             <KeyValueList
               rows={[
-                { label: 'TxID', value: <PartialReference value={payment.txid} /> },
-                { label: 'End-to-end ID', value: <PartialReference value={payment.externalEndToEndId} /> },
+                { label: 'TxID', value: <TransactionReference value={payment.txid} /> },
+                { label: 'End-to-end ID', value: <TransactionReference value={payment.externalEndToEndId} /> },
                 { label: 'Expira em', value: payment.expirationAt ? dateText(payment.expirationAt) : 'Não informado' },
                 { label: 'Pago em', value: payment.paymentAt ? dateText(payment.paymentAt) : 'Sem data de pagamento' },
                 { label: 'Liquidado em', value: payment.liquidationAt ? dateText(payment.liquidationAt) : 'Sem data de liquidação' },
@@ -241,9 +231,6 @@ function PaymentContent({ payment, back }: { payment: PaymentDetail; back: strin
         </section>
       </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="activity" current={tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para este pagamento." />
-      </TabPanel>
     </>
   )
 }

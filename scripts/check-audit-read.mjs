@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { readdir, readFile } from 'node:fs/promises'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -195,12 +196,13 @@ await check('Control Plane "[REDACTED]" marker, JWT / Bearer / PEM values are ma
   assert.equal(node.entries[0].node.reason, 'sensitive-key')
   assert.equal(present.sanitizeAuditData({ value: '[REDACTED]' }).entries[0].node.reason, 'redacted-by-backend')
 })
-await check('e-mails (observed: failed-login attempts) are partially masked; non-addresses fully', async () => {
-  assert.equal(present.maskEmail('attempt@example.invalid'), 'a•••@example.invalid')
-  assert.equal(present.maskEmail('not an email'), '••••••••')
+await check('authorized recorded e-mails are complete; malformed values remain hidden', async () => {
+  assert.equal(present.auditEmail('attempt@example.invalid'), 'attempt@example.invalid')
+  assert.equal(present.auditEmail('not an email'), '••••••••')
   const node = present.sanitizeAuditData({ email: 'attempt@example.invalid' })
-  assert.equal(node.entries[0].node.text, 'a•••@example.invalid'); assert.equal(allText(node).includes('attempt@'), false)
-  assert.equal(present.actorEmail({ actor: { id: 'x', name: null, email: 'operator@example.invalid' } }), 'o•••@example.invalid')
+  assert.equal(node.entries[0].node.text, 'attempt@example.invalid'); assert.equal(node.entries[0].node.kind, 'text')
+  assert.equal(present.actorEmail({ actor: { id: 'x', name: null, email: 'operator@example.invalid' } }), 'operator@example.invalid')
+  assert.equal(present.auditEmail('Bearer synthetic-only'), '••••••••')
 })
 await check('structure preserved; nested / array sensitive values masked; depth and size bounded', async () => {
   const node = present.sanitizeAuditData({ nested: { apiKey: SENTINEL, label: 'ok' }, list: ['a', { token: SENTINEL }],
@@ -220,10 +222,13 @@ for (const value of ['prefix Bearer synthetic-value suffix', 'prefix eyJhbGciOiJ
     assert.equal(present.safeAuditText(value), '••••••••')
   })
 }
-await check('e-mails in arrays or free text are partially masked without needing an email key', async () => {
+await check('unqualified free-text contacts remain minimized; only explicit recorded email fields are complete', async () => {
   const node = present.sanitizeAuditData(['attempt@example.invalid', { note: 'Attempt by attempt@example.invalid' }])
-  assert.equal(allText(node).includes('attempt@'), false)
+  assert.equal(allText(node).includes('attempt@example.invalid'), false)
   assert.ok(allText(node).includes('a•••@example.invalid'))
+  for (const key of ['email', 'e_mail', 'e-mail']) assert.equal(present.sanitizeAuditData({ [key]: 'attempt@example.invalid' }).entries[0].node.text, 'attempt@example.invalid')
+  const secret = present.sanitizeAuditData({ password: 'attempt@example.invalid', clientSecret: 'attempt@example.invalid' })
+  assert.equal(allText(secret).includes('attempt@example.invalid'), false)
 })
 await check('global node and character budgets bound wide nested presentation trees', async () => {
   const node = present.sanitizeAuditData(Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => 'L'.repeat(300))))

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -94,6 +95,7 @@ async function loadPageContent() {
     `)
     else if (['./crud/whitelabelMutationContract', './whitelabelRoute', './whitelabelApi'].includes(specifier)) url = await moduleUrl(resolve(dirname(path), `${specifier}.ts`))
     else if (specifier.endsWith('/prototypeNotice')) url = dataModule('export const usePrototypeNotice = () => () => {};')
+    else if (specifier.endsWith('/notice')) url = dataModule('export const useNotice = () => message => { (globalThis.__wlCrudPage.notices ??= []).push(message); };')
     else {
       const names = clause.replace(/[{}]/g, '').split(',').map(value => value.trim()).filter(Boolean)
       url = dataModule(names.map(name => `export const ${name} = function ${name}() { return null; };`).join('\n'))

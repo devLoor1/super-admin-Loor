@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
-import { PROTOTYPE_PRESENTATION, readinessTabs } from '../../../app/presentationAvailability'
+import { readinessTabs } from '../../../app/presentationAvailability'
 import { ArrowLeftRight, ChartColumn, Eye, Info, QrCode, SearchX, Building, X } from 'lucide-react'
 import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
 import { EmptyState } from '../../../components/ui/EmptyState'
@@ -7,9 +7,8 @@ import outline from '../../../components/ui/OutlineButton.module.css'
 import { StatusPill } from '../../../components/ui/StatusPill'
 import { Tabs } from '../../../components/ui/Tabs'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { BackLink, DomainNavCard, InfoNote, SessionActivityCard, type DomainNavItem } from '../../operation/shared/OperationUi'
+import { BackLink, DomainNavCard, InfoNote, type DomainNavItem } from '../../operation/shared/OperationUi'
 import shared from '../../operation/shared/Operation.module.css'
-import { addFinanceCoreActivity, useFinanceCoreActivity } from '../shared/financeCoreActivity'
 import {
   INVESTMENT_STATUSES,
   MOVEMENT_CATEGORIES,
@@ -100,16 +99,11 @@ function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetai
   const id = wallet.id
   const { aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo } = params
   const { state: route, ignored } = useMemo(
-    () => parseWalletDetailRoute({ aba: !PROTOTYPE_PRESENTATION && aba === 'atividade' ? undefined : aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo }),
+    () => parseWalletDetailRoute({ aba: aba === 'atividade' ? undefined : aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo }),
     [aba, mpage, tipo, categoria, oportunidade, ipage, istatus, movimento, returnTo],
   )
   const name = wallet.name ?? `Whitelabel #${wallet.whitelabelId}`
-  const activity = useFinanceCoreActivity(`wallet:${id}`)
-  const log = (title: string, detail?: string) => addFinanceCoreActivity(`wallet:${id}`, { title, detail })
 
-  useEffect(() => {
-    addFinanceCoreActivity(`wallet:${id}`, { title: 'Wallet consultada', detail: 'Leitura do Control Plane (somente leitura)' })
-  }, [id])
 
   function navigate(next: Partial<WalletDetailRoute>) {
     replaceRouteKeepingScroll(walletHref(id, { ...route, ...next }))
@@ -117,8 +111,6 @@ function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetai
 
   function changeTab(next: WalletTab) {
     navigate({ tab: next, movementId: undefined })
-    if (next === 'movimentacoes') log('Movimentações consultadas', 'Histórico do ledger (paginado pelo Control Plane)')
-    if (next === 'investimentos') log('Investimentos do Whitelabel consultados', `Whitelabel ${wallet.whitelabelId}`)
   }
 
   const summary = wallet.summary
@@ -255,16 +247,13 @@ function WalletContent({ wallet, back, params, routeKey }: { wallet: WalletDetai
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="movimentacoes" current={route.tab}>
-        <MovementsPanel walletId={id} route={route} navigate={navigate} log={log} />
+        <MovementsPanel walletId={id} route={route} navigate={navigate} />
       </TabPanel>
 
       <TabPanel prefix={TAB_PREFIX} tab="investimentos" current={route.tab}>
         <WalletInvestmentsPanel walletId={id} whitelabelId={wallet.whitelabelId} route={route} navigate={navigate} />
       </TabPanel>
 
-      <TabPanel prefix={TAB_PREFIX} tab="atividade" current={route.tab}>
-        <SessionActivityCard entries={activity} emptyText="Nenhuma ação local registrada para esta wallet." />
-      </TabPanel>
     </>
   )
 }
@@ -275,12 +264,10 @@ function MovementsPanel({
   walletId,
   route,
   navigate,
-  log,
 }: {
   walletId: string
   route: WalletDetailRoute
   navigate: (next: Partial<WalletDetailRoute>) => void
-  log: (title: string, detail?: string) => void
 }) {
   const movements = useWalletMovements(walletId, { page: route.movementPage, kind: route.kind, category: route.category, opportunityId: route.opportunityId })
   const data = movements.state.status === 'success' ? movements.state.data : null
@@ -309,7 +296,6 @@ function MovementsPanel({
 
   function open(movement: MovementRecord) {
     navigate({ movementId: movement.id })
-    log('Movimentação aberta', movement.id)
   }
 
   function close() {

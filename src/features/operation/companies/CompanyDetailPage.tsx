@@ -1,13 +1,12 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Building2, CircleAlert, Info, Link2, RotateCw, ScanFace, SearchX, Target, UserRound, Wallet, type LucideIcon } from 'lucide-react'
 import type { Breadcrumb } from '../../../components/shell/TopHeader'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import outline from '../../../components/ui/OutlineButton.module.css'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
-import { maskPhone } from '../entrepreneurs/entrepreneurApi'
+import { formatPhone } from '../shared/businessPresentation'
 import { entrepreneurHref } from '../entrepreneurs/entrepreneurRoute'
-import { addOperationActivity } from '../shared/operationActivity'
 import { crumbLabel } from '../shared/operationModel'
 import { BackLink, DetailList, InfoNote, OperationShell } from '../shared/OperationUi'
 import { operationReadErrorView } from '../shared/readErrors'
@@ -119,8 +118,6 @@ export function CompanyDetailPage({ companyId, returnTo, previa }: { companyId: 
   )
 }
 
-// Company ids overlap numerically with other domains: session activity is keyed by domain + id.
-const activityKey = (id: string) => `company:${id}`
 
 function CompanyProfile({ company }: { company: CompanyDetail }) {
   const whitelabel = useWhitelabelRecord(company.whitelabelId)
@@ -129,9 +126,6 @@ function CompanyProfile({ company }: { company: CompanyDetail }) {
   const name = companyDisplayName(company)
   const cnpj = formatCnpj(company.cnpj)
 
-  useEffect(() => {
-    addOperationActivity(activityKey(company.id), { title: 'Empresa consultada', detail: 'Dados do Control Plane (somente leitura)' })
-  }, [company.id])
 
   const entrepreneurLink = (
     <a href={entrepreneurHref(company.entrepreneurId)} className={shared.inlineLink} data-relation="entrepreneur">
@@ -201,11 +195,11 @@ function CompanyProfile({ company }: { company: CompanyDetail }) {
           <h3 id="company-section-contact" className={fin.cardTitleSm}>
             Contato
           </h3>
-          <p className={fin.cardSubtitle}>Contato da empresa informado pelo Control Plane. O telefone é exibido mascarado.</p>
+          <p className={fin.cardSubtitle}>Contato da empresa informado pelo Control Plane.</p>
           <DetailList
             rows={[
               { label: 'E-mail', value: company.email ?? 'Não informado' },
-              { label: 'Telefone', value: maskPhone(company.phone) ?? 'Não informado' },
+              { label: 'Telefone', value: formatPhone(company.phone) ?? 'Não informado' },
             ]}
           />
         </section>

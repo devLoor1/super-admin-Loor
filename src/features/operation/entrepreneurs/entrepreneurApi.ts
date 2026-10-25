@@ -181,25 +181,7 @@ export function profileMeta(state: string | null): { label: string; tone: Busine
   return Object.hasOwn(PROFILE_META, state) ? PROFILE_META[state] : { label: state, tone: 'neutral' }
 }
 
-/**
- * Masked like the approved design: area code + last 4 digits only. A "+55"
- * or "55" country prefix on 12–13 digits is dropped first. International or
- * irregular lengths use a generic mask, not an invented Brazilian area code.
- * Malformed text is mask-only; the full number is never rendered.
- */
-export function maskPhone(value: string | null) {
-  if (typeof value !== 'string' || !value.trim()) return null
-  const input = value.trim()
-  if (!/^\+?[\d\s().-]+$/.test(input)) return '••••'
-  let digits = input.replace(/\D/g, '')
-  const brazilPrefix = (digits.length === 12 || digits.length === 13) && digits.startsWith('55')
-  const brazilFormat = brazilPrefix || (!input.startsWith('+') && (digits.length === 10 || digits.length === 11))
-  if (brazilPrefix) digits = digits.slice(2)
-  if (digits.length < 6) return '••••'
-  const last = digits.slice(-4)
-  if (brazilFormat) return `(${digits.slice(0, 2)}) ${'•'.repeat(digits.length - 6)}-${last}`
-  return `${'•'.repeat(Math.min(digits.length - 4, 9))}-${last}`
-}
+export { formatPhone } from '../shared/businessPresentation'
 
 const COUNT_FORMAT = new Intl.NumberFormat('pt-BR')
 export const formatCount = (value: number) => COUNT_FORMAT.format(value)

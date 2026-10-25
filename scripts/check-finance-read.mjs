@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { access, readdir, readFile } from 'node:fs/promises'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { access, readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -458,15 +459,19 @@ await check('status labels: known tokens translated; unknown / inherited keys sh
   assert.equal(view.movementStatusLabel(null), 'Não informado')
   assert.deepEqual(view.MOVEMENT_KIND_LABEL, { in: 'Entrada', out: 'Saída' })
 })
-await check('transaction references are shown partially (first 8 … last 4)', () => {
+await check('authorized transaction ids are full; unknown key/document hints remain partial', () => {
   assert.equal(view.partialReference('SYNTHTXID0000000000000000000ABCD'), 'SYNTHTXI…ABCD')
   assert.equal(view.partialReference('SHORT-REF'), 'SH…EF'); assert.equal(view.partialReference('ABC'), '••••'); assert.equal(view.partialReference(null), null)
   assert.equal(view.referenceEntry('pix_key', 'synthetic-key@example.invalid').value, 'syntheti…alid')
   assert.equal(view.referenceEntry('document', '***.***.***-00').partial, true)
   const entry = view.referenceEntry('txid', 'SYNTHTXID0000000000000000000ABCD')
-  assert.equal(entry.value, 'SYNTHTXI…ABCD'); assert.equal(entry.partial, true)
-  assert.equal(view.referenceEntry('end_to_end_id', 'E00000000SYNTHETIC0000000000WXYZ').value, 'E0000000…WXYZ')
+  assert.equal(entry.value, 'SYNTHTXID0000000000000000000ABCD'); assert.equal(entry.partial, false)
+  assert.equal(view.referenceEntry('end_to_end_id', 'E00000000SYNTHETIC0000000000WXYZ').value, 'E00000000SYNTHETIC0000000000WXYZ')
   assert.equal(view.referenceEntry('investment_id', 9001).value, '9001')
+  assert.equal(view.transactionReference('SHORT-REF'), 'SHORT-REF'); assert.equal(view.transactionReference('ABC'), 'ABC')
+  assert.equal(view.transactionReference(null), null)
+  assert.equal(view.transactionReference('Bearer synthetic-only'), null)
+  assert.equal(view.referenceEntry('pix_txid_key', 'synthetic-key@example.invalid').partial, true)
 })
 await check('tenant names come from the wallet projection; fallback is "Whitelabel #ID", never a prototype name', () => {
   const tenants = { rows: [api.parseWallet(fx.walletRow)], page: 1, perPage: 100, total: 1, lastPage: 1 }
@@ -652,7 +657,7 @@ for (const file of ['financeCoreRecords.ts', 'prototypeFinanceCore.ts', 'finance
 }
 await check('Gateways, Modalities and Catalogs remain prototype screens (not reclassified as authoritative)', async () => {
   for (const dir of ['finance-gateways', 'finance-modalities', 'finance-catalogs']) {
-    for (const file of await walk(resolve(root, 'src/features', dir))) {
+    for (const file of await walk(resolve(root, 'tests/prototypes/src/features', dir))) {
       assert.equal(/financeApi|authenticatedGet|useFinanceData/.test(await readFile(file, 'utf8')), false, relative(root, file))
     }
   }

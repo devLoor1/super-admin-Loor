@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Building, ChartNoAxesColumnIncreasing, Link, type LucideIcon } from 'lucide-react'
 import { pushRouteKeepingScroll, replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../app/routeQuery'
 import { AppShell } from '../../components/shell/AppShell'
-import { usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { useNotice } from '../../components/shell/notice'
 import type { Tone } from '../../components/ui/IconTile'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -92,7 +92,7 @@ function WhitelabelsContent({
   routeKey: string
   params: { whitelabelId?: string; page?: string; search?: string; status?: string }
 }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   useRestoreReplacedScroll(routeKey)
 
   const { whitelabelId, page: pageParam, search: searchParam, status: statusParam } = params

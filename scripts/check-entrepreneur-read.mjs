@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -171,13 +171,12 @@ await check('entrepreneur 401 ends the session centrally; 403 / 502 / network ke
   await assert.rejects(ent.listEntrepreneurs({ whitelabelId: '4', page: 1, search: '' }), (error) => error.status === 401)
   assert.equal(auth.getAccessToken(), null); assert.equal(auth.peekAuthNotice(), 'session_expired')
 })
-await check('phone is masked (area code + last 4); full number never rendered', async () => {
-  assert.equal(ent.maskPhone('11912345678'), '(11) •••••-5678'); assert.equal(ent.maskPhone('1132345678'), '(11) ••••-5678')
-  assert.equal(ent.maskPhone('+5511912345678'), '(11) •••••-5678'); assert.equal(ent.maskPhone('551132345678'), '(11) ••••-5678')
-  assert.equal(ent.maskPhone('5511912345678'), '(11) •••••-5678')
-  const long = ent.maskPhone('123456789012345678')
-  assert.ok(long.endsWith('-5678') && !long.includes('1234567')); assert.equal(ent.maskPhone('123'), '••••')
-  assert.equal(ent.maskPhone(null), null)
+await check('authorized phone presentation retains every supplied digit, including country prefix', async () => {
+  assert.equal(ent.formatPhone('11912345678'), '(11) 91234-5678'); assert.equal(ent.formatPhone('1132345678'), '(11) 3234-5678')
+  assert.equal(ent.formatPhone('+5511912345678'), '+55 (11) 91234-5678'); assert.equal(ent.formatPhone('551132345678'), '+55 (11) 3234-5678')
+  assert.equal(ent.formatPhone('5511912345678'), '+55 (11) 91234-5678')
+  assert.equal(ent.formatPhone('123456789012345678'), '123456789012345678'); assert.equal(ent.formatPhone('123'), '123')
+  assert.equal(ent.formatPhone(null), null)
 })
 await check('labels: profile completeness (not KYC); unknown tokens shown as sent', async () => {
   assert.deepEqual(ent.profileMeta('profile_complete'), { label: 'Cadastro completo', tone: 'positive' })
@@ -187,15 +186,15 @@ await check('labels: profile completeness (not KYC); unknown tokens shown as sen
   assert.deepEqual(ent.accessMeta('blocked'), { label: 'blocked', tone: 'muted' })
   for (const value of ['Cadastro completo', 'Cadastro incompleto']) assert.equal(/kyc|aprovad|empresa/i.test(value), false)
 })
-await check('malformed and international phones never invent a Brazilian area code', async () => {
+await check('irregular and international phones stay as supplied, without fabricated digits or area code', async () => {
   for (const value of ['abc11912345678', '11912345678 ext 99', '++5511912345678', 'qa123@example.invalid']) {
-    assert.equal(ent.maskPhone(value), '••••')
+    assert.equal(ent.formatPhone(value), value)
   }
-  assert.equal(ent.maskPhone('+12125550123'), '•••••••-0123')
-  assert.equal(ent.maskPhone('+442079460123'), '••••••••-0123')
-  assert.equal(ent.maskPhone('(11) 91234-5678'), '(11) •••••-5678')
-  assert.equal(ent.maskPhone(42), null)
-  assert.equal(ent.maskPhone(' '), null)
+  assert.equal(ent.formatPhone('+12125550123'), '+12125550123')
+  assert.equal(ent.formatPhone('+442079460123'), '+442079460123')
+  assert.equal(ent.formatPhone('(11) 91234-5678'), '(11) 91234-5678')
+  assert.equal(ent.formatPhone(42), null)
+  assert.equal(ent.formatPhone(' '), null)
 })
 for (const state of ['constructor', 'toString', 'hasOwnProperty']) {
   await check('unknown profile tokens cannot resolve inherited object properties', async () =>

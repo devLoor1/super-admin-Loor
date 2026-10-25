@@ -1,6 +1,7 @@
+import { beforeConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { root } from './operators-test-harness.mjs'
 import { withoutOpportunityReadiness } from './reviewed-opportunity-write-boundary.mjs'
@@ -16,12 +17,14 @@ const pins={
 }
 const hash=s=>createHash('sha256').update(s.replaceAll('\r\n','\n')).digest('hex')
 export function verifySettingsSource(path,source){
+  source=beforeConsolidation(path,source)
   if(!Object.hasOwn(pins,path))return false
   assert.equal(hash(path==='src/app/presentationAvailability.ts'?withoutOpportunityReadiness(source):source),pins[path],`Unreviewed Settings source: ${path}`)
   return true
 }
 export function reviewedSettings(path){return Object.hasOwn(pins,path)&&verifySettingsSource(path,readFileSync(resolve(root,path),'utf8'))}
 export function withoutSettingsReadiness(source){
+  source=beforeConsolidation('src/app/presentationAvailability.ts',source)
   verifySettingsSource('src/app/presentationAvailability.ts',source)
   return withoutOpportunityReadiness(source).replaceAll('\r\n','\n')
     .replace("new Set(['emails',", "new Set(['settings', 'emails',")

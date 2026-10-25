@@ -1,6 +1,7 @@
+import { beforeConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { root } from './operators-test-harness.mjs'
 
@@ -21,7 +22,7 @@ const fingerprints = {
 const hash = s => createHash('sha256').update(s.replaceAll('\r\n','\n')).digest('hex')
 export function reviewedOperators(path) {
   if (!Object.hasOwn(fingerprints,path)) return false
-  assert.equal(hash(readFileSync(resolve(root,path),'utf8')),fingerprints[path],`Unreviewed Operators boundary: ${path}`)
+  assert.equal(hash(beforeConsolidation(path,readFileSync(resolve(root,path),'utf8'))),fingerprints[path],`Unreviewed Operators boundary: ${path}`)
   return true
 }
 const additions = [
@@ -35,6 +36,7 @@ const additions = [
   "  if (route.view === 'control-plane-operators') return <OperatorsListPage rawQuery={route.rawQuery} />\n  if (route.view === 'control-plane-operator') return <OperatorDetailPage key={route.id} id={route.id} returnTo={route.returnTo} invalidQuery={route.invalidQuery} />\n",
 ]
 export function withoutOperators(source) {
+  source=beforeConsolidation('src/app/App.tsx',source)
   let code=source.replaceAll('\r\n','\n')
   if (!code.includes("import { OperatorsListPage }")) { assert.ok(!code.includes('control-plane-operators'),'Unreviewed partial Operators adaptation'); return code }
   assert.equal(hash(code),fingerprints['src/app/App.tsx'],'Only exact reviewed Operators App additions can be normalized')
@@ -42,6 +44,7 @@ export function withoutOperators(source) {
   return code
 }
 export function withoutOperatorsEntry(source) {
+  source=beforeConsolidation('src/features/menu-visibility/MenuVisibilityPage.tsx',source)
   let code=source.replaceAll('\r\n','\n')
   assert.equal(hash(code),fingerprints['src/features/menu-visibility/MenuVisibilityPage.tsx'])
   for(const exact of ["import { OperatorsEntry } from '../control-plane-operators/OperatorUi'\n",'      <OperatorsEntry />\n']) {assert.equal(code.split(exact).length,2);code=code.replace(exact,'')}

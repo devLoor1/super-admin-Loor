@@ -1,0 +1,409 @@
+{
+  "remoteBranchesRemoved": [
+    {
+      "name": "docs/backend-handoff-v1",
+      "sha": "89a3b5058f52f981b3a1b06756d7f33a2a043f27",
+      "preservedBy": "archive/2026-10-25/backend-handoff-v1"
+    },
+    {
+      "name": "feature/accounts-read-integration-v1",
+      "sha": "38a9a02da09272f1ef7244742b62299f8f69ef84",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/audit-read-integration-v1",
+      "sha": "1005a0d4a6a37bb29e2033fb39a674e3d1788bc2",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/companies-frontend-v1",
+      "sha": "91cd26a7f8ae70846b13f582ec957864cd016883",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/dashboard-daily-opportunities-v1",
+      "sha": "e89840d80fff61f8529021c651c737ba854d8bd5",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/dashboard-data-recovery-v1",
+      "sha": "d4097840b011087527451b725fb37f257a9eeebc",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/dashboard-investor-distribution-v1",
+      "sha": "e4c7b5e4302691485ae588ad67800e5fe2c6def8",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/dashboard-read-integration-v1",
+      "sha": "afe24bfefc9dfe7eb985084f7d32e3b4ba27cced",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/dashboard-recent-audit-events-v1",
+      "sha": "6969a89d545f31edc84eaf95a013e1d8d99cd6e6",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/entrepreneur-read-integration-v1",
+      "sha": "692f3acbbb0e2dcc9d5abf0d44abc5c799aa0a1d",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/finance-read-integration-v1",
+      "sha": "3e727b95f9cd9a6fce51de7c13f359d38b2838d9",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/investor-read-integration-v1",
+      "sha": "e8e97f0abec51cdb1ede42849961991a6caae85e",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/menu-visibility-frontend-v1",
+      "sha": "bb9bef0d563964637cd8d8306a13755ce6ca5545",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/menu-visibility-read-integration-v1",
+      "sha": "627b1e040e48a4326a9a83439f3cbfbabc5a33b8",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-operational-v1",
+      "sha": "91d6f9815fa2748bd081a4fbf40b05fbbf1f5d70",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-preparation",
+      "sha": "e7c8683e760f552e4c69bf2ceebdae474ac3b8cd",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/menu-visibility-stage-c-sidebar",
+      "sha": "cc94466ba08212a2533cca96d304adf3ee291e37",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/opportunities-companies-read-integration-v1",
+      "sha": "89872608bc965c584b33920df6bcbbea8e2b2ada",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/opportunities-write-integration-v1",
+      "sha": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/sa-be-integration-map-kyc-read-v1",
+      "sha": "cf79cca5066771a2edd20ad404f1b0f59527ce29",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-compliance-audit-v1",
+      "sha": "d2a51753047d447983fe12145d53d9f42334e547",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-dashboard-v1",
+      "sha": "c07bcb7d6f32d374466377eb0ef96ee0294d1dc9",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-finance-core-v1",
+      "sha": "9f8abc6d55410e63a2edaf6d8efeafcd217b7a30",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-finance-gateways-v1",
+      "sha": "6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-finance-modalities-rules-v1",
+      "sha": "4098158b1aa8f58ea20692f0e9bb177b36a49e97",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-finance-segments-resource-uses-v1",
+      "sha": "ec86b475e0126667e2fbece490730bdecc271584",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-login-v1",
+      "sha": "b54329cccebb3e7a6018bfdb5aadd41609fa97bf",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-operation-v1",
+      "sha": "400c1dceeafb47f7d8308af7f797f7b42aa30929",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-accounts-v1",
+      "sha": "cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-emails-v1",
+      "sha": "5f438035dbac1ec49df68fc3d9799c3fb5078c4a",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-settings-v1",
+      "sha": "df87de8e5d3ded2da3915c5de602620c282ab5ba",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/super-admin-whitelabels-v1",
+      "sha": "f903f98357ee7d44516c67475a498fc609ca772f",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-admin-lifecycle-v1",
+      "sha": "4cf129a5fda9eae0d777a06d3f7e1444936fb100",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-crud-frontend-v1",
+      "sha": "075809e5aa1b086eef4da8e45d26b1687aa0ad48",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-crud-operational-v1",
+      "sha": "c5ecb5addf6772bf9ca68c41099e0491ee953fe2",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-crud-safe-preparation-v1",
+      "sha": "874ff9320fadc4e6a081fda9dd50359bcdfd4f89",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-lifecycle-v1",
+      "sha": "cd598874ac98daa5da6c92d9ed5afab83853d140",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "feature/whitelabel-read-integration-v1",
+      "sha": "74f003ff1dbd067c60bda366dcdc8e39e8a3c5bf",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    },
+    {
+      "name": "fix/capital-de-giro-taxonomy",
+      "sha": "25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181",
+      "preservedBy": "archive/2026-10-25/pre-consolidation-dev; complete dev ancestry"
+    }
+  ],
+  "localBranchesRemoved": [
+    {
+      "name": "docs/backend-handoff-v1",
+      "sha": "89a3b5058f52f981b3a1b06756d7f33a2a043f27"
+    },
+    {
+      "name": "feature/accounts-read-integration-v1",
+      "sha": "38a9a02da09272f1ef7244742b62299f8f69ef84"
+    },
+    {
+      "name": "feature/audit-read-integration-v1",
+      "sha": "1005a0d4a6a37bb29e2033fb39a674e3d1788bc2"
+    },
+    {
+      "name": "feature/companies-frontend-v1",
+      "sha": "91cd26a7f8ae70846b13f582ec957864cd016883"
+    },
+    {
+      "name": "feature/dashboard-read-integration-v1",
+      "sha": "afe24bfefc9dfe7eb985084f7d32e3b4ba27cced"
+    },
+    {
+      "name": "feature/entrepreneur-read-integration-v1",
+      "sha": "692f3acbbb0e2dcc9d5abf0d44abc5c799aa0a1d"
+    },
+    {
+      "name": "feature/investor-read-integration-v1",
+      "sha": "e8e97f0abec51cdb1ede42849961991a6caae85e"
+    },
+    {
+      "name": "feature/menu-visibility-frontend-v1",
+      "sha": "bb9bef0d563964637cd8d8306a13755ce6ca5545"
+    },
+    {
+      "name": "feature/menu-visibility-read-integration-v1",
+      "sha": "627b1e040e48a4326a9a83439f3cbfbabc5a33b8"
+    },
+    {
+      "name": "feature/super-admin-compliance-audit-v1",
+      "sha": "d2a51753047d447983fe12145d53d9f42334e547"
+    },
+    {
+      "name": "feature/super-admin-dashboard-v1",
+      "sha": "c07bcb7d6f32d374466377eb0ef96ee0294d1dc9"
+    },
+    {
+      "name": "feature/super-admin-finance-core-v1",
+      "sha": "9f8abc6d55410e63a2edaf6d8efeafcd217b7a30"
+    },
+    {
+      "name": "feature/super-admin-finance-gateways-v1",
+      "sha": "6b46d570262dc5f6a66737bd88eb1cedb7b6a8d9"
+    },
+    {
+      "name": "feature/super-admin-finance-modalities-rules-v1",
+      "sha": "4098158b1aa8f58ea20692f0e9bb177b36a49e97"
+    },
+    {
+      "name": "feature/super-admin-finance-segments-resource-uses-v1",
+      "sha": "ec86b475e0126667e2fbece490730bdecc271584"
+    },
+    {
+      "name": "feature/super-admin-login-v1",
+      "sha": "b54329cccebb3e7a6018bfdb5aadd41609fa97bf"
+    },
+    {
+      "name": "feature/super-admin-operation-v1",
+      "sha": "400c1dceeafb47f7d8308af7f797f7b42aa30929"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-accounts-v1",
+      "sha": "cc28f3c26e6a9ec0e905ca04c4a1f49c468e0d7a"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-emails-v1",
+      "sha": "5f438035dbac1ec49df68fc3d9799c3fb5078c4a"
+    },
+    {
+      "name": "feature/super-admin-whitelabel-settings-v1",
+      "sha": "df87de8e5d3ded2da3915c5de602620c282ab5ba"
+    },
+    {
+      "name": "feature/super-admin-whitelabels-v1",
+      "sha": "f903f98357ee7d44516c67475a498fc609ca772f"
+    },
+    {
+      "name": "feature/whitelabel-crud-frontend-v1",
+      "sha": "075809e5aa1b086eef4da8e45d26b1687aa0ad48"
+    },
+    {
+      "name": "feature/whitelabel-read-integration-v1",
+      "sha": "74f003ff1dbd067c60bda366dcdc8e39e8a3c5bf"
+    },
+    {
+      "name": "fix/capital-de-giro-taxonomy",
+      "sha": "25b5e65d374d9bf49f4aa1db4a55bdd6d6b21181"
+    }
+  ],
+  "localBranchesRetainedForWorktrees": [
+    {
+      "name": "feature/account-access-pause-reactivate-v1",
+      "sha": "108b0bc7bc2c8faaa9f54a7d304618a6ea5a8525",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/audit-advanced-filters-read-v1",
+      "sha": "9f4d69634254af00eb5e95ff553930aa722e5eed",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/dashboard-daily-opportunities-v1",
+      "sha": "e89840d80fff61f8529021c651c737ba854d8bd5",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/dashboard-data-recovery-v1",
+      "sha": "d4097840b011087527451b725fb37f257a9eeebc",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/dashboard-investor-distribution-v1",
+      "sha": "e4c7b5e4302691485ae588ad67800e5fe2c6def8",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/dashboard-recent-audit-events-v1",
+      "sha": "6969a89d545f31edc84eaf95a013e1d8d99cd6e6",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/finance-read-integration-v1",
+      "sha": "3e727b95f9cd9a6fce51de7c13f359d38b2838d9",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-operational-v1",
+      "sha": "91d6f9815fa2748bd081a4fbf40b05fbbf1f5d70",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/menu-visibility-stage-b-preparation",
+      "sha": "e7c8683e760f552e4c69bf2ceebdae474ac3b8cd",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/menu-visibility-stage-c-sidebar",
+      "sha": "cc94466ba08212a2533cca96d304adf3ee291e37",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/operation-360-read-homolog-hygiene-v1",
+      "sha": "cd25769f84a837db0127e68dbd9a12644348c177",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/operators-read-permanent-homolog-policy-v1",
+      "sha": "b1dc5f1b6b5f52fe83737790609441af730b463c",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/opportunities-companies-read-integration-v1",
+      "sha": "89872608bc965c584b33920df6bcbbea8e2b2ada",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/opportunities-write-integration-v1",
+      "sha": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/sa-be-integration-map-kyc-read-v1",
+      "sha": "cf79cca5066771a2edd20ad404f1b0f59527ce29",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/whitelabel-admin-lifecycle-v1",
+      "sha": "4cf129a5fda9eae0d777a06d3f7e1444936fb100",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/whitelabel-crud-safe-preparation-v1",
+      "sha": "874ff9320fadc4e6a081fda9dd50359bcdfd4f89",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/whitelabel-lifecycle-v1",
+      "sha": "cd598874ac98daa5da6c92d9ed5afab83853d140",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    },
+    {
+      "name": "feature/whitelabel-settings-read-integration-v1",
+      "sha": "c935f46d3f3c2318737246cd081960c95aafdafc",
+      "reason": "Original clean worktree remains attached; preserve its checkpoint and branch."
+    }
+  ],
+  "finalLiveRemoteRefsBeforeOperationalRelease": {
+    "dev": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464",
+    "main": "c2235ac5d0d65408e9d39bf836a1a717da3d95ae",
+    "mock": "ed69b1f36ba4a084e55269979cf3e0d758419f0f"
+  },
+  "archiveTags": {
+    "refs/tags/archive/2026-10-25/backend-handoff-v1": "4b1d0db7b04e63a05ada75792daa9bfa686f60e2",
+    "refs/tags/archive/2026-10-25/backend-handoff-v1^{}": "89a3b5058f52f981b3a1b06756d7f33a2a043f27",
+    "refs/tags/archive/2026-10-25/pre-consolidation-dev": "969a84a4e092f4f22233d07f91e71e2d810a4f81",
+    "refs/tags/archive/2026-10-25/pre-consolidation-dev^{}": "450b9d5a5a1eabb6f986222bf2e08e0b18a71464"
+  },
+  "forcePush": false,
+  "worktreesRemoved": 0,
+  "mainModified": false,
+  "backendCoreModified": false
+}

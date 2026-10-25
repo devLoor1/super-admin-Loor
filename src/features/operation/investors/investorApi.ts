@@ -215,18 +215,7 @@ export function investorTypeLabel(value: string | null) {
   return value === 'pessoa_fisica' ? 'Pessoa física' : value
 }
 
-/**
- * Masked like the approved Accounts / Investors design: area code + last 4
- * digits only — "(11) •••••-5678". The full number is never rendered.
- */
-export function maskPhone(value: string | null) {
-  if (!value) return null
-  const digits = value.replace(/\D/g, '')
-  if (digits.length < 6) return '••••'
-  const last = digits.slice(-4)
-  if (digits.length === 11 || digits.length === 10) return `(${digits.slice(0, 2)}) ${'•'.repeat(digits.length - 6)}-${last}`
-  return `${'•'.repeat(Math.min(digits.length - 4, 9))}-${last}`
-}
+export { formatPhone } from '../shared/businessPresentation'
 
 const COUNT_FORMAT = new Intl.NumberFormat('pt-BR')
 export const formatCount = (value: number) => COUNT_FORMAT.format(value)

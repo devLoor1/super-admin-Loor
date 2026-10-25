@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { access, readdir, readFile } from 'node:fs/promises'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { access, readdir } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -583,7 +584,7 @@ await check('Companies module: exactly the reviewed authoritative files (prototy
   assert.deepEqual(files, ['CompaniesPage.tsx', 'CompanyDetailPage.tsx', 'CompanyParts.tsx', 'EntrepreneurCompanyPanel.tsx', 'companyApi.ts', 'companyPresent.ts', 'companyRelation.ts', 'companyRoute.ts', 'useCompanyData.ts'])
 })
 const ALLOWED_EXTERNAL = {
-  '../entrepreneurs/entrepreneurApi': ['maskPhone'],
+  '../shared/businessPresentation': ['formatPhone'],
   '../entrepreneurs/entrepreneurRoute': ['entrepreneurHref'],
   '../../whitelabels/whitelabelApi': ['formatWhitelabelDate', 'WhitelabelRecord'],
   '../../whitelabel-accounts/accountModel': ['BusinessTone'],
@@ -638,8 +639,8 @@ await check('screens: failure is never empty — the empty states render only on
   assert.ok(code.includes("data-list-empty={filtersActive ? 'filtered' : 'list'}"))
   assert.ok(code.includes('{listError ? ( <div className={states.feedback} role="alert" data-list-error>'))
 })
-await check('detail: contact is minimised (phone masked), CNPJ only formatted, relationships linked by the Company’s own fields', () => {
-  assert.ok(detailPage.includes('maskPhone(company.phone)'))
+await check('detail: authorized phone is formatted in full, CNPJ only formatted, relationships linked by the Company’s own fields', () => {
+  assert.ok(detailPage.includes('formatPhone(company.phone)'))
   assert.ok(detailPage.includes('formatCnpj(company.cnpj)'))
   assert.ok(detailPage.includes('entrepreneurHref(company.entrepreneurId)'))
   assert.ok(!/entrepreneurHref\(company\.id\)|whitelabels\?id=\$\{[^}]*company\.id/.test(detailPage), 'Company id is never used as another entity id')

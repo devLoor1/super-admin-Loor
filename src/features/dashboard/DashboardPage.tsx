@@ -1,13 +1,12 @@
 import { Building, ChartNoAxesColumnIncreasing, CircleAlert, CreditCard, RotateCw, ShieldCheck, Users, type LucideIcon } from 'lucide-react'
 import { AppShell } from '../../components/shell/AppShell'
-import { moduleUnavailable, usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { moduleUnavailable, useNotice } from '../../components/shell/notice'
 import type { Tone } from '../../components/ui/IconTile'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { describeApiError } from '../../lib/apiErrors'
 import { ActivityPanel } from './ActivityPanel'
 import { GlobalOverviewPanel } from './GlobalOverviewPanel'
 import { MetricCard, type MetricReading } from '../../components/ui/MetricCard'
-import { OperationalStatusPanel } from './OperationalStatusPanel'
 import { QuickActionsPanel } from './QuickActionsPanel'
 import { RecentEventsPanel } from './RecentEventsPanel'
 import { WhitelabelDistributionPanel } from './WhitelabelDistributionPanel'
@@ -15,7 +14,6 @@ import { formatKpi, freshnessLabel, type DashboardOverview } from './dashboardAp
 import { dashboardCountReading } from './dashboardCounts'
 import { useDashboardOpportunityCount, useDashboardOverview, useDashboardPaymentCount } from './useDashboardOverview'
 import styles from './DashboardPage.module.css'
-import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
 /**
  * Global Dashboard V1 — the Super Admin control plane overview.
@@ -58,7 +56,7 @@ const DESTINATIONS: Record<string, string> = {
 }
 
 function DashboardContent() {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
   const overview = useDashboardOverview()
   const opportunities = useDashboardOpportunityCount()
   const payments = useDashboardPaymentCount()
@@ -87,13 +85,13 @@ function DashboardContent() {
   }
 
   return (
-    <div className={styles.dashboard} data-operational={!PROTOTYPE_PRESENTATION || undefined}>
+    <div className={styles.dashboard} data-operational>
       <section aria-labelledby="kpi-heading" data-dashboard-kpis>
         <h2 id="kpi-heading" className="visually-hidden">
           Indicadores globais
         </h2>
         <ul className={styles.kpis}>
-          {METRICS.filter(metric => PROTOTYPE_PRESENTATION || metric.source).map((metric) => (
+          {METRICS.filter(metric => metric.source).map((metric) => (
             <li key={metric.id} className={styles.kpiCell} data-kpi={metric.id}>
               <MetricCard
                 label={metric.label}
@@ -134,7 +132,6 @@ function DashboardContent() {
       <div className={styles.middle}>
         <ActivityPanel className={styles.activity} />
         <WhitelabelDistributionPanel className={styles.distribution} overview={overview.state} onReloadOverview={overview.reload} />
-        {PROTOTYPE_PRESENTATION ? <OperationalStatusPanel className={styles.status} /> : null}
       </div>
 
       <div className={styles.bottom}>

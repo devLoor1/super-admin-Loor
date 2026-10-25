@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { reviewedAuditFilters } from './reviewed-audit-filters-boundary.mjs'
 import { outsideReviewed360, reviewed360 } from './reviewed-360-boundary.mjs'
-import { execFileSync } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -62,7 +62,8 @@ await check('allowlist discards all private payloads and manual decision', () =>
 })
 for (const mask of ['12345678901','123.456.789-01','*12345678901','PRIVATE_SECRET','<img>']) await check('unsafe mask hidden',()=>assert.equal(api.kycReadMask(mask),null))
 await check('mask preserves already masked source',()=>assert.equal(api.kycReadMask('***.***.***-00'),'***.***.***-00'))
-await check('embedded personal identifiers redacted',()=>{assert.ok(!api.kycReadName('QA 123.456.789-01 qa@example.invalid').includes('123.456'));assert.ok(!api.kycReadName('QA 12.345.678/0001-90').includes('12.345'))})
+await check('explicit authorized name values are not rewritten by contact/document regexes',()=>{assert.equal(api.kycReadName('QA 123.456.789-01 qa@example.invalid'),'QA 123.456.789-01 qa@example.invalid');assert.equal(api.kycReadName('QA 12.345.678/0001-90'),'QA 12.345.678/0001-90')})
+await check('credential-like names are unavailable, not rendered',()=>{for(const value of ['Bearer synthetic-only','eyJsynthetic.payload.signature','-----BEGIN PRIVATE KEY-----'])assert.equal(api.kycReadName(value),null)})
 for (const date of ['bad','2026-02-30T12:00:00Z','2026-10-22T25:00:00Z','2026-10-22T12:00:00','2026-10-22T12:00:00+25:00']) await check('bad timestamp unavailable',()=>assert.equal(api.kycReadDate(date),null))
 await check('explicit Brasilia date',()=>assert.equal(present.kycReadDateText('2026-10-22T03:00:00Z'),'22/10/2026 00:00'))
 await check('unknown tokens remain neutral, not approval',()=>{assert.equal(api.kycReadStatus('FUTURE').tone,'muted');assert.equal(api.kycReadStatus('__proto__').tone,'muted');assert.equal(api.kycReadStatus(null).label,'Não informado')})

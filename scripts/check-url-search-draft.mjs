@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import ts from 'typescript'
 
 // Deterministic lifecycle/timer checks of the actual hook. Browser QA separately

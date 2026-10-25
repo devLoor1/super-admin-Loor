@@ -1,7 +1,7 @@
 import { Box, Building, ChevronRight, CreditCard, FileSearch, type LucideIcon } from 'lucide-react'
 import { Panel } from '../../components/ui/Panel'
 import { IconTile, type Tone } from '../../components/ui/IconTile'
-import { moduleUnavailable, usePrototypeNotice } from '../../components/shell/prototypeNotice'
+import { moduleUnavailable, useNotice } from '../../components/shell/notice'
 import styles from './QuickActionsPanel.module.css'
 
 const ACTIONS: { id: string; title: string; description: string; module: string; icon: LucideIcon; tone: Tone }[] = [
@@ -20,7 +20,7 @@ const DESTINATIONS: Record<string, string> = {
 }
 
 export function QuickActionsPanel({ className }: { className?: string }) {
-  const notify = usePrototypeNotice()
+  const notify = useNotice()
 
   return (
     <Panel className={className} title="Ações rápidas" subtitle="Acesse as principais áreas do sistema.">

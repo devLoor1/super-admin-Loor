@@ -1,7 +1,8 @@
+import { beforeConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { withoutAdminReadiness } from './reviewed-admin-lifecycle-boundary.mjs'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { root } from './operators-test-harness.mjs'
 
@@ -21,6 +22,7 @@ const pins = {
 }
 const normalized = source => source.replaceAll('\r\n', '\n')
 export function verifyOpportunityWriteSource(path, source) {
+  source=beforeConsolidation(path,source)
   if (!Object.hasOwn(pins, path)) return false
   assert.equal(createHash('sha256').update(path==='src/app/presentationAvailability.ts'?withoutAdminReadiness(source):normalized(source)).digest('hex'), pins[path], `Unreviewed Opportunity write source: ${path}`)
   return true
@@ -32,6 +34,7 @@ export function opportunityWriteExclusions() {
   return Object.keys(pins).map(path => { assert.equal(reviewedOpportunityWrite(path), true); return `:(exclude)${path}` })
 }
 export function withoutOpportunityMultipart(source) {
+  source=beforeConsolidation('src/lib/api.ts',source)
   verifyOpportunityWriteSource('src/lib/api.ts', source)
   return normalized(source)
     .replace("  const multipart = typeof FormData !== 'undefined' && options.body instanceof FormData\n", '')
@@ -40,12 +43,14 @@ export function withoutOpportunityMultipart(source) {
 }
 /** Exact readiness delta relative to the prior editorial release, for its inherited freeze. */
 export function withoutOpportunityCreationReadiness(source) {
+  source=beforeConsolidation('src/app/presentationAvailability.ts',source)
   verifyOpportunityWriteSource('src/app/presentationAvailability.ts', source)
   return withoutAdminReadiness(source)
     .replace("new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs'])", "new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new'])")
     .replace("development || ['create', 'image', 'patch', 'archive'].includes(action)", "development || action === 'patch' || action === 'archive'")
 }
 export function withoutOpportunityReadiness(source) {
+  source=beforeConsolidation('src/app/presentationAvailability.ts',source)
   verifyOpportunityWriteSource('src/app/presentationAvailability.ts', source)
   return withoutAdminReadiness(source)
     .replace("new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs'])", "new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new', 'operation-opportunity-edit'])")

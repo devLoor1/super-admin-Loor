@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { moduleLoader, root } from './operators-test-harness.mjs'
 const load = moduleLoader()
@@ -16,7 +16,8 @@ const json=(b,s=200)=>new Response(JSON.stringify(b),{status:s})
 const session=(roles=['SUPER_ADMIN'])=>auth.persistSession({accessToken:'synthetic-only',tokenType:'Bearer',operator:{id,name:'Synthetic',email:'qa@example.invalid',roles}})
 let checks=0;async function check(name,fn){try{await fn();checks++}catch(cause){throw Error(name,{cause})}}
 const malformed=e=>e.kind==='malformed'
-await check('projection drops credentials and raw contact; all roles remain',()=>{const r=api.parseOperator(row);assert.deepEqual(r.roles,row.roles);assert.equal(r.lastLoginAt,null);assert.equal(r.emailMasked,'••••@••••');assert.doesNotMatch(JSON.stringify(r),/SENSITIVE_SENTINEL|qa@|example.invalid|password|accessToken/)})
+await check('authorized operator email stays complete; credentials are discarded and all roles remain',()=>{const r=api.parseOperator(row);assert.deepEqual(r.roles,row.roles);assert.equal(r.lastLoginAt,null);assert.equal(r.email,'qa@example.invalid');assert.doesNotMatch(JSON.stringify(r),/SENSITIVE_SENTINEL|password|accessToken/)})
+await check('explicit business names are not rewritten and credential-like text is rejected',()=>{assert.equal(api.parseOperator({...row,name:'qa@example.invalid'}).name,'qa@example.invalid');for(const field of ['name','email'])assert.throws(()=>api.parseOperator({...row,[field]:'Bearer synthetic-only'}),malformed)})
 for(const v of ['c'+'a'.repeat(24),'c'+'123456789012345678901234'])await check('CUID accepted',()=>assert.equal(api.isOperatorId(v),true))
 for(const v of ['1','c1','op_proto_1','C'+'A'.repeat(24),id+'/roles','%2F',null])await check('non CP ID rejected',()=>assert.equal(api.isOperatorId(v),false))
 for(const b of [null,[],{}, {data:[]},page([row],{perPage:100}),page([row],{page:2}),page([row],{lastPage:9}),page([row],{total:-1}),page([row],{total:22,lastPage:2}),page([row,row]),page([{...row,id:'1'}]),page([{...row,roles:['READ_ONLY','READ_ONLY']}]),page([{...row,roleDetails:[]}]),page([{...row,lastLoginAt:undefined}]),page([{...row,createdAt:'2026-02-30T00:00:00Z'}])])await check('malformed envelope/meta/identity/roles/time',()=>assert.throws(()=>api.parseOperatorPage(b,query),malformed))

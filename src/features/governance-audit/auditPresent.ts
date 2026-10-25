@@ -1,5 +1,6 @@
 import type { StatusTone } from '../../components/ui/StatusPill'
 import type { AuditRecord } from './auditApi'
+import { businessText } from '../operation/shared/businessPresentation'
 
 /*
  * Presentation of real Control Plane audit rows. Pure functions, no state, no
@@ -105,8 +106,8 @@ const SENSITIVE_KEY = new RegExp(
   'i',
 )
 
-/** Keys holding an e-mail address: shown partially (first character + domain). */
-const EMAIL_KEY = /e-?mail/i
+/** Explicit recorded e-mail fields remain subject to validation and credential detection. */
+const EMAIL_KEY = /^(email|e_mail|e-mail)$/i
 
 const REDACTED_MARKERS = new Set(['[REDACTED]', '[redacted]'])
 const TOKEN_LIKE = /\bbearer\s+\S+|(?:^|[^\w-])eyJ[\w-]+\.[\w-]+\.[\w-]*|-----BEGIN [A-Z0-9 ]+-----/i
@@ -131,7 +132,13 @@ export type SanitizedNode =
   | { kind: 'array'; items: SanitizedNode[]; omitted: number }
   | { kind: 'too-deep' }
 
-/** "a•••@dominio.com"; anything that is not a plain address is fully masked. */
+/** Full recorded business e-mail; malformed or credential-like values stay hidden. */
+export function auditEmail(value: string) {
+  if (value.length > 254 || TOKEN_LIKE.test(value)) return '••••••••'
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) ? value.trim() : '••••••••'
+}
+
+/** Keep incidental contacts in unqualified free-form metadata minimized. */
 export function maskEmail(value: string) {
   if (value.length > 254 || TOKEN_LIKE.test(value)) return '••••••••'
   const match = /^([^\s@])[^\s@]*@([^\s@]+\.[^\s@]+)$/.exec(value.trim())
@@ -158,7 +165,7 @@ function walkData(value: unknown, key: string, depth: number, budget: { nodes: n
     if (value.length > MAX_INPUT_TEXT) return { kind: 'masked', reason: 'unsupported', text: '••••••••' }
     if (REDACTED_MARKERS.has(value.trim())) return { kind: 'masked', reason: 'redacted-by-backend', text: '[redacted]' }
     if (TOKEN_LIKE.test(value.trim())) return { kind: 'masked', reason: 'token-like', text: '••••••••' }
-    const maskedEmail = key && EMAIL_KEY.test(key) ? maskEmail(value) : value.replace(EMAIL_IN_TEXT, maskEmail)
+    const maskedEmail = key && EMAIL_KEY.test(key) ? auditEmail(value) : value.replace(EMAIL_IN_TEXT, maskEmail)
     const limit = Math.min(MAX_TEXT, budget.characters)
     budget.characters -= Math.min(maskedEmail.length, limit)
     const rendered = maskedEmail.slice(0, limit)
@@ -245,10 +252,10 @@ export function sanitizedJson(node: SanitizedNode): unknown {
 /* ---------- actor / resource text ---------- */
 
 export const actorName = (record: Pick<AuditRecord, 'actorId' | 'actor'>) =>
-  record.actorId ? safeAuditText(record.actor?.name ?? null) ?? 'Operador sem nome' : 'Não identificado'
+  record.actorId ? businessText(record.actor?.name, 160) ?? 'Operador sem nome' : 'Não identificado'
 
-/** Operator e-mail, partially masked (data minimisation; the name and id identify the operator). */
-export const actorEmail = (record: Pick<AuditRecord, 'actor'>) => (record.actor?.email ? maskEmail(record.actor.email) : null)
+/** Authorized operator contact exactly as recorded; no independent actor enrichment. */
+export const actorEmail = (record: Pick<AuditRecord, 'actor'>) => (record.actor?.email ? auditEmail(record.actor.email) : null)
 
 /** "Whitelabel · 4" from the recorded tokens; null when the event records no resource. */
 export const resourceText = (record: Pick<AuditRecord, 'resourceType' | 'resourceId'>) =>

@@ -1,7 +1,8 @@
+import { beforeConsolidation } from './reviewed-consolidation-boundary.mjs'
 import assert from 'node:assert/strict'
 import { withoutOperators } from './reviewed-operators-boundary.mjs'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from './reviewed-consolidation-boundary.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // Exact later-delivery pins, not an Audit-directory exemption. Historical
@@ -21,11 +22,12 @@ const fingerprints={
 const hash=s=>createHash('sha256').update(s.replaceAll('\r\n','\n')).digest('hex')
 export function reviewedAuditFilters(path){
  if(!Object.hasOwn(fingerprints,path))return false
- const source=readFileSync(resolve(root,path),'utf8')
+ const source=beforeConsolidation(path,readFileSync(resolve(root,path),'utf8'))
  assert.equal(hash(path==='src/app/App.tsx'?withoutOperators(source):source),fingerprints[path],`Unreviewed Audit delivery change: ${path}`)
  return true
 }
 export function withoutAuditRawQuery(source){
+  source=beforeConsolidation('src/app/App.tsx',source)
  const code=withoutOperators(source).replaceAll('\r\n','\n'), line='        rawQuery={route.search}\n'
  if(!code.includes(line))return code
  assert.equal(hash(code),fingerprints['src/app/App.tsx'],'Only the exact authorized Audit raw-query adaptations may be normalized')

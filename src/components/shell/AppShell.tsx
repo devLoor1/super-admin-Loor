@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { PrototypeNoticeProvider } from './PrototypeNoticeProvider'
+import { NoticeProvider } from './NoticeProvider'
 import { Sidebar } from './Sidebar'
 import { TopHeader, type Breadcrumb } from './TopHeader'
 import styles from './AppShell.module.css'
@@ -93,7 +93,7 @@ export function AppShell({ activeNav, activeSubNav, subNavHrefs, title, location
   }, [])
 
   return (
-    <PrototypeNoticeProvider interactionBlocked={navOpen}>
+    <NoticeProvider interactionBlocked={navOpen}>
       <div className={styles.shell}>
         <a
           className={styles.skipLink}
@@ -139,7 +139,7 @@ export function AppShell({ activeNav, activeSubNav, subNavHrefs, title, location
           <main id="app-content" tabIndex={-1} className={styles.main}>{children}</main>
         </div>
       </div>
-    </PrototypeNoticeProvider>
+    </NoticeProvider>
   )
 }
 

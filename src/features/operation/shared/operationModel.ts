@@ -1,5 +1,4 @@
 import type { BusinessTone } from '../../whitelabel-accounts/accountModel'
-import { PROTOTYPE_WHITELABELS, type Whitelabel } from '../../whitelabels/prototypeWhitelabels'
 
 /*
  * Operation V1 — shared prototype vocabulary for Oportunidades, Investidores
@@ -12,8 +11,6 @@ export { formatDateTime, initials, normalize } from '../../whitelabel-accounts/a
 /** Rows per page in the Operation lists (presentation choice only). */
 export const PAGE_SIZE = 8
 
-export const whitelabelOf = (id: string): Whitelabel | undefined => PROTOTYPE_WHITELABELS.find((item) => item.id === id)
-export const whitelabelName = (id: string) => whitelabelOf(id)?.name ?? 'Whitelabel não encontrado'
 
 /* ---------- KYC summary (owned by Compliance, shown read-only) ---------- */
 

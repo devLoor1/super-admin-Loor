@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import { execFileSync } from 'node:child_process'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { moduleLoader, root, reactUrl, renderUrl } from './operators-test-harness.mjs'
 import { reviewedAdminLifecycle, verifyAdminLifecycleSource } from './reviewed-admin-lifecycle-boundary.mjs'

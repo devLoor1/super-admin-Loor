@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { opportunityWriteExclusions } from './reviewed-opportunity-write-boundary.mjs'
 import { withoutSettingsReadiness } from './reviewed-settings-boundary.mjs'
-import { execFileSync } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { resolve } from 'node:path'
 import { moduleLoader, root, reactUrl, renderUrl } from './operators-test-harness.mjs'
 import { reviewedOperators, withoutOperators, withoutOperatorsEntry } from './reviewed-operators-boundary.mjs'
@@ -24,14 +24,14 @@ const id='c'+'a'.repeat(24)
 for(const development of [false,true]){
   const load=moduleLoader({development,overrides}),p=await load('src/app/presentationAvailability.ts')
   for(const view of realViews)await check(`${development?'DEV':'production'} real route ${view} retained`,()=>assert.equal(p.viewAvailable(view),true))
-  for(const view of mockViews)await check(`${development?'DEV':'production'} mock route ${view}`,()=>assert.equal(p.viewAvailable(view),development))
+  for(const view of mockViews)await check(`${development?'DEV':'production'} mock route ${view}`,()=>assert.equal(p.viewAvailable(view),false))
   const nav=[{id:'dashboard',href:'#/dashboard'},{id:'configuracoes',href:'#/settings/menu-visibility'},{id:'sistema',href:'#/system'},{id:'ajuda',href:'#/help'},{id:'plataformas',href:'#/whitelabels',children:[{id:'whitelabels',href:'#/whitelabels'},{id:'whitelabel-settings',href:'#/whitelabels/wl_proto_01/settings'},{id:'whitelabel-emails',href:'#/whitelabels/wl_proto_01/emails'}]},{id:'financeiro',href:'#/whitelabels/wl_proto_01/finance/gateways',children:[{id:'finance-gateways',href:'mock'},{id:'finance-modalities',href:'mock'},{id:'finance-catalogs',href:'mock'},{id:'finance-investments',href:'#/finance/investments'},{id:'finance-payments',href:'#/finance/payments'},{id:'finance-wallets',href:'#/finance/wallets'}]}]
-  await check('actual readiness navigation transformation, immutable saved model',()=>{const before=JSON.stringify(nav),ready=p.readinessNavigation(nav);assert.equal(JSON.stringify(nav),before);if(development)assert.equal(ready,nav);else{assert.deepEqual(ready.map(i=>i.id),['dashboard','configuracoes','plataformas','financeiro']);assert.equal(ready[2].children.length,2);assert.equal(ready[2].children[1].href,'#/whitelabels/select/settings');assert.equal(ready[3].children.length,3);assert.equal(ready[3].href,'#/finance/investments')}})
-  await check('mock tabs production hidden, local preserved',()=>assert.equal(p.readinessTabs([{value:'overview'},{value:'activity'},{value:'atividade'}]).length,development?3:1))
+  await check('actual readiness navigation transformation, immutable saved model',()=>{const before=JSON.stringify(nav),ready=p.readinessNavigation(nav);assert.equal(JSON.stringify(nav),before);{assert.deepEqual(ready.map(i=>i.id),['dashboard','configuracoes','plataformas','financeiro']);assert.equal(ready[2].children.length,2);assert.equal(ready[2].children[1].href,'#/whitelabels/select/settings');assert.equal(ready[3].children.length,3);assert.equal(ready[3].href,'#/finance/investments')}})
+  await check('mock tabs production hidden, local preserved',()=>assert.equal(p.readinessTabs([{value:'overview'},{value:'activity'},{value:'atividade'}]).length,1))
   const {TopHeader}=await load('src/components/shell/TopHeader.tsx')
-  await check('actual rendered header command hygiene',()=>{const html=render(h(TopHeader,{title:'Operadores',location:'Configurações',navOpen:false,onOpenNav(){}}));assert.equal(html.includes('aria-label="Notificações"'),development);assert.equal(html.includes('role="search"'),development);assert.ok(html.includes('menu do usuário'))})
+  await check('actual rendered header command hygiene',()=>{const html=render(h(TopHeader,{title:'Operadores',location:'Configurações',navOpen:false,onOpenNav(){}}));assert.equal(html.includes('aria-label="Notificações"'),false);assert.equal(html.includes('role="search"'),false);assert.ok(html.includes('menu do usuário'))})
   const {DashboardPage}=await load('src/features/dashboard/DashboardPage.tsx')
-  await check('actual rendered Dashboard placeholders/KPIs',()=>{const html=render(h(DashboardPage));assert.equal((html.match(/data-kpi=/g)||[]).length,development?5:4);assert.equal(html.includes('data-kpi="kyc"'),development);assert.equal(html.includes('Status operacional'),development)})
+  await check('actual rendered Dashboard placeholders/KPIs',()=>{const html=render(h(DashboardPage));assert.equal((html.match(/data-kpi=/g)||[]).length,4);assert.equal(html.includes('data-kpi="kyc"'),false);assert.equal(html.includes('Status operacional'),false)})
   const {OperatorsEntry,OperatorFeedback}=await load('src/features/control-plane-operators/OperatorUi.tsx'),{OperatorsListPage}=await load('src/features/control-plane-operators/OperatorsListPage.tsx'),{OperatorDetailPage}=await load('src/features/control-plane-operators/OperatorDetailPage.tsx')
   const api=await load('src/features/control-plane-operators/operatorApi.ts')
   const {AccountAccessActions}=await load('src/features/whitelabel-accounts/access/AccountAccessActions.tsx')
@@ -48,7 +48,7 @@ for(const development of [false,true]){
     globalThis.__operatorRead={status:'success',data:row};const detail=render(h(OperatorDetailPage,{id}));assert.equal(detail.includes('Synthetic QA'),allowed);assert.equal(detail.includes('Acesso não permitido'),!allowed)
   })
   globalThis.__operatorRoles=['SUPER_ADMIN']
-  for(const state of [{status:'loading'},{status:'success',data:{rows:[],page:1,perPage:20,total:0,lastPage:1}},{status:'success',data:{rows:[row],page:1,perPage:20,total:1,lastPage:1}}])await check('real list states, no operational writes or raw secrets',()=>{globalThis.__operatorRead=state;const html=render(h(OperatorsListPage,{rawQuery:''}));assert.doesNotMatch(html,/Criar operador|Editar operador|Ativar|Desativar|Redefinir senha|Enviar convite|DO_NOT_RENDER|qa@example.invalid/);if(state.status==='success')assert.ok(html.includes(state.data.total===0?'Nenhum operador nesta página':'SUPER_ADMIN'));else assert.ok(html.includes('Carregando operadores'))})
+  for(const state of [{status:'loading'},{status:'success',data:{rows:[],page:1,perPage:20,total:0,lastPage:1}},{status:'success',data:{rows:[row],page:1,perPage:20,total:1,lastPage:1}}])await check('real list states, no operational writes or raw secrets',()=>{globalThis.__operatorRead=state;const html=render(h(OperatorsListPage,{rawQuery:''}));assert.doesNotMatch(html,/Criar operador|Editar operador|Ativar|Desativar|Redefinir senha|Enviar convite|DO_NOT_RENDER/);if(state.status==='success')assert.ok(html.includes(state.data.total===0?'Nenhum operador nesta página':'SUPER_ADMIN'));else assert.ok(html.includes('Carregando operadores'))})
   await check('null time, roles and neutral unknown status rendered',()=>{globalThis.__operatorRead={status:'success',data:row};const html=render(h(OperatorDetailPage,{id}));assert.ok(html.includes('Não registrado / indisponível'));assert.ok(html.includes('READ_ONLY'));assert.ok(html.includes('Status não reconhecido'));assert.doesNotMatch(html,/type="(?:text|email|password)"|DO_NOT_RENDER/)})
   const {ApiError}=await load('src/lib/api.ts')
   for(const status of [403,404,502])await check('truthful error render, no error → zero/fake success',()=>{const html=render(h(OperatorFeedback,{error:new ApiError(status,{}),retry(){}}));assert.equal(html.includes('Tentar novamente'),status>=500);assert.doesNotMatch(html,/0 operadores|Nenhum operador|Salvo com sucesso/)})

@@ -58,7 +58,7 @@ export function VisibilityControls({
           ) : null}
           {entry.id === 'operacao' ? (
             <p className={styles.groupNote} data-companies-note>
-              Empresas é uma visão contextual (protótipo) dentro de Empreendedores e não tem ID de visibilidade aprovado: não aparece nesta
+              Empresas é uma visão contextual dentro de Empreendedores e não tem ID de visibilidade aprovado: não aparece nesta
               lista e não recebe comportamento próprio aqui.
             </p>
           ) : null}

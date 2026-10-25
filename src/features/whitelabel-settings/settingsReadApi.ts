@@ -1,5 +1,7 @@
 import { ApiError } from '../../lib/api'
 import { authenticatedGet } from '../../lib/apiClient'
+import { readAppContent } from './appContentRead'
+import { readPlatformPresentation } from './platformPresentationRead'
 
 /** Core SettingsQueryService + PlatformSettingService projection. Never retain the raw settings bag. */
 export type ReadValue<T> = { state: 'missing' } | { state: 'null' } | { state: 'value'; value: T }
@@ -85,6 +87,8 @@ export function parseSettingsRead(raw: unknown, id: string) {
     experience: { title: field(login, 'title', text), subtitle: field(login, 'subtitle', text), sideTitle: field(theme, 'sideTitle', text), sideSubtitle: field(theme, 'sideSubtitle', text), bullets },
     features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, field(flags, k, bool)])) as Record<keyof typeof FEATURE_LABELS, ReadValue<boolean>>,
     terminology: Object.fromEntries(Object.keys(TERMINOLOGY_LABELS).map(k => [k, field(values, k, text)])) as Record<keyof typeof TERMINOLOGY_LABELS, ReadValue<string>>,
+    app: { entry: readAppContent(s, 'entry'), authenticated: readAppContent(s, 'authenticated') },
+    platformPresentation: readPlatformPresentation(s),
     terms: { current: termField(legal, 'current'), history: history === undefined ? { state: 'missing' as const } : history === null ? { state: 'null' as const } : { state: 'value' as const, value: (history as unknown[]).map(terms) } },
   }
 }

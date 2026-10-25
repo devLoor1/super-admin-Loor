@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
+import { reviewedSettingsEvolution } from './reviewed-settings-evolution-boundary.mjs'
 import { readdir } from 'node:fs/promises'
 import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
@@ -487,6 +488,17 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    if (file.replaceAll('\\', '/').endsWith('src/features/whitelabel-settings/settingsWriteClient.ts')) {
+      // Prepared transport only: exact reviewed bytes, unreleased by default,
+      // and absent from the operational page's import graph.
+      assert.equal(reviewedSettingsEvolution('src/features/whitelabel-settings/settingsWriteClient.ts'), true)
+      assert.equal((source.match(/method: 'PUT'/g) || []).length, 1)
+      assert.equal(/method:\s*['"](POST|PATCH|DELETE)['"]/.test(source), false)
+      assert.match(source, /releasedFields: readonly SettingsField\[\] = \[\]/)
+      const page = await readFile(resolve(root, 'src/features/whitelabel-settings/OperationalSettingsPage.tsx'), 'utf8')
+      assert.doesNotMatch(page, /import[^\n]*SettingsWriteEditor|releasedFields=/)
+      continue
+    }
     if(file.replaceAll('\\','/').endsWith('src/features/operation/opportunities/write/opportunityWriteClient.ts')){
       assert.equal(reviewedOpportunityWrite('src/features/operation/opportunities/write/opportunityWriteClient.ts'),true)
       continue

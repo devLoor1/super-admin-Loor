@@ -88,6 +88,7 @@
 }
 
 .sectionLink {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -110,7 +111,8 @@
   color: var(--text-on-dark);
 }
 
-.sectionLink[aria-current='true'] {
+.sectionLink[aria-current='true'],
+.sectionLink[aria-current='page'] {
   border-color: rgb(126 118 255 / 0.45);
   background: rgb(98 90 230 / 0.18);
   color: var(--text-on-dark);

@@ -55,7 +55,7 @@ export const PRIMARY_NAV: NavItem[] = [
       // tenant selector; pages pass `subNavHrefs` for the current one.
       { id: 'contas', label: 'Contas', icon: UsersRound, href: '#/whitelabels/select/accounts' },
       { id: 'whitelabel-settings', label: 'Config. do Whitelabel', icon: SlidersHorizontal, href: '#/whitelabels/select/settings' },
-      { id: 'whitelabel-emails', label: 'E-mails', icon: Mail },
+      { id: 'whitelabel-emails', label: 'E-mails', icon: Mail, href: '#/whitelabels/select/emails?section=smtp' },
     ],
   },
   {

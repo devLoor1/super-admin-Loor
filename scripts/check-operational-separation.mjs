@@ -87,7 +87,7 @@ for (const node of appTree.statements) if (ts.isImportDeclaration(node) && node.
 }
 const authStub = `export const isAuthenticated=()=>globalThis.__operationalAuthed;export const subscribeSession=()=>()=>{};export const validateSession=async()=>({status:'valid'});export const useSessionOperator=()=>({roles:['SUPER_ADMIN']});export const logout=()=>{};`
 const routeCases = [
-  ['#/dashboard', 'DashboardPage'], ['#/whitelabels', 'WhitelabelsPage'], ['#/whitelabels/6/accounts', 'WhitelabelAccountsPage'], ['#/whitelabels/6/settings', 'OperationalSettingsPage'],
+  ['#/dashboard', 'DashboardPage'], ['#/whitelabels', 'WhitelabelsPage'], ['#/whitelabels/6/accounts', 'WhitelabelAccountsPage'], ['#/whitelabels/6/settings', 'OperationalSettingsPage'], ['#/whitelabels/6/settings?area=app', 'OperationalSettingsPage'], ['#/whitelabels/6/settings?area=terms', 'OperationalSettingsPage'], ['#/whitelabels/6/emails?section=smtp', 'OperationalSmtpPage'], ['#/whitelabels/select/emails?section=smtp', 'OperationalSmtpPage'],
   ['#/operation/opportunities', 'OpportunitiesPage'], ['#/operation/opportunities/new', 'OpportunityFormPage'], ['#/operation/opportunities/77/edit', 'OpportunityFormPage'], ['#/operation/opportunities/77', 'OpportunityDetailPage'],
   ['#/operation/investors', 'InvestorsPage'], ['#/operation/investors/77', 'InvestorDetailPage'], ['#/operation/entrepreneurs', 'EntrepreneursPage'], ['#/operation/entrepreneurs/30', 'EntrepreneurDetailPage'], ['#/operation/companies', 'CompaniesPage'], ['#/operation/companies/1', 'CompanyDetailPage'],
   ['#/finance/investments', 'InvestmentsPage'], ['#/finance/investments/1', 'InvestmentDetailPage'], ['#/finance/payments', 'PaymentsPage'], ['#/finance/payments/1', 'PaymentDetailPage'], ['#/finance/wallets', 'WalletsPage'], ['#/finance/wallets/6', 'WalletDetailPage'],
@@ -102,7 +102,7 @@ for (const development of [false, true]) {
     globalThis.window = { location: { hash } }
     assert.ok(render(h(App)).includes(`data-current-page="${page}"`))
   })
-  for (const hash of ['#/whitelabels/wl_proto_01/emails', '#/whitelabels/6/emails', '#/whitelabels/6/finance/gateways', '#/whitelabels/6/finance/modalities', '#/whitelabels/6/finance/segments-resource-uses']) await check(`Unsupported direct route remains truthful (${development}): ${hash}`, () => {
+  for (const hash of ['#/whitelabels/6/finance/gateways', '#/whitelabels/6/finance/modalities', '#/whitelabels/6/finance/segments-resource-uses']) await check(`Unsupported direct route remains truthful (${development}): ${hash}`, () => {
     globalThis.window = { location: { hash } }
     const html = render(h(App)); assert.ok(html.includes('data-readiness-unavailable')); assert.doesNotMatch(html, /data-current-page=/)
   })
@@ -119,7 +119,10 @@ for (const development of [false, true]) {
     assert.equal(ready.find(n => n.id === 'financeiro').href, '#/finance/investments')
     assert.ok(ready.some(n => n.id === 'dashboard')); assert.ok(ready.some(n => n.id === 'configuracoes'))
     const flat = ready.flatMap(n => [n, ...(n.children ?? [])]); assert.ok(flat.every(n => !n.href?.includes('_proto_')))
-    assert.ok(!flat.some(n => ['whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs', 'sistema', 'ajuda'].includes(n.id)))
+    assert.ok(!flat.some(n => ['finance-gateways', 'finance-modalities', 'finance-catalogs', 'sistema', 'ajuda'].includes(n.id)))
+    assert.equal(flat.find(n => n.id === 'whitelabel-emails').href, '#/whitelabels/select/emails?section=smtp')
+    assert.equal(availability.readinessHref('whitelabel-emails', '#/whitelabels/6/emails?section=smtp'), '#/whitelabels/6/emails?section=smtp')
+    assert.equal(availability.readinessHref('whitelabel-emails', '#/whitelabels/wl_proto_01/emails'), '#/whitelabels/select/emails?section=smtp')
   })
   await check(`Only accepted Opportunity commands exposed (${development})`, () => {
     for (const action of ['create', 'image', 'patch', 'archive']) assert.equal(availability.opportunityActionAvailable(action), true)

@@ -4,6 +4,7 @@ import { LoginPage } from '../features/login/LoginPage'
 import { WhitelabelsPage } from '../features/whitelabels/WhitelabelsPage'
 import { WhitelabelAccountsPage } from '../features/whitelabel-accounts/WhitelabelAccountsPage'
 import { OperationalSettingsPage } from '../features/whitelabel-settings/OperationalSettingsPage'
+import { OperationalSmtpPage } from '../features/whitelabel-emails/OperationalSmtpPage'
 import { OpportunitiesPage } from '../features/operation/opportunities/OpportunitiesPage'
 import { OpportunityDetailPage } from '../features/operation/opportunities/OpportunityDetailPage'
 import { OpportunityFormPage } from '../features/operation/opportunities/OpportunityFormPage'
@@ -72,8 +73,8 @@ type Route =
   | { view: 'login' | 'dashboard' }
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
-  | { view: 'settings'; whitelabelId: string }
-  | { view: 'emails'; whitelabelId: string }
+  | { view: 'settings'; whitelabelId: string; area?: string }
+  | { view: 'emails'; whitelabelId: string; section?: string }
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
   | { view: 'finance-catalogs'; whitelabelId: string }
@@ -288,12 +289,17 @@ function routeFromHash(): Route {
     }
   }
   const settings = SETTINGS_PATH.exec(path)
-  if (settings) return { view: 'settings', whitelabelId: settings[1] }
+  if (settings) {
+    const query = new URLSearchParams(search)
+    const validQuery = [...query.keys()].every(key => key === 'area') && query.getAll('area').length <= 1
+    return { view: 'settings', whitelabelId: settings[1], area: validQuery ? query.get('area') ?? undefined : '__invalid__' }
+  }
   const emails = EMAILS_PATH.exec(path)
   if (emails) {
     return {
       view: 'emails',
       whitelabelId: emails[1],
+      section: [...new URLSearchParams(search).keys()].every(key => key === 'section') && new URLSearchParams(search).getAll('section').length <= 1 ? new URLSearchParams(search).get('section') ?? undefined : '__invalid__',
     }
   }
   const finance = FINANCE_GATEWAYS_PATH.exec(path)
@@ -502,7 +508,8 @@ export function App() {
       />
     )
   }
-  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} />
+  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} />
+  if (route.view === 'emails') return <OperationalSmtpPage whitelabelId={route.whitelabelId} section={route.section} />
   if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params} />
   if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />
   if (route.view === 'operation-opportunity-edit') {

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, type CSSProperties } from 'react'
+import { opportunityActionAvailable } from '../../../app/presentationAvailability'
 import { Archive, ChartColumn, CircleAlert, CircleCheck, Eye, FilterX, Hourglass, Info, RotateCw, Search, SearchX, Target } from 'lucide-react'
 import { replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../../app/routeQuery'
 import { useUrlSearchDraft } from '../../../app/useUrlSearchDraft'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { IconTile } from '../../../components/ui/IconTile'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
+import outline from '../../../components/ui/OutlineButton.module.css'
+import { useSessionOperator } from '../../../lib/authSession'
 import fin from '../../finance-gateways/sections/FinanceSections.module.css'
 import type { WhitelabelRecord } from '../../whitelabels/whitelabelApi'
 import { entrepreneurHref } from '../entrepreneurs/entrepreneurRoute'
@@ -40,14 +43,17 @@ import styles from './Opportunities.module.css'
 
 /**
  * `#/operation/opportunities` — Oportunidades (Opportunities Read V1): global,
- * READ-ONLY list from `GET /opportunities`. Search, Whitelabel, status and
+ * Read-only list from `GET /opportunities`. Search, Whitelabel, status and
  * modality filters, sorting and pagination are applied by the Control Plane
- * (URL-backed). No create, edit, approval, publication or status change exists.
+ * (URL-backed). Creation is a separate SUPER_ADMIN flow; the list never writes.
  */
 export function OpportunitiesPage(props: OpportunityListProps) {
+  const roles = useSessionOperator()?.roles ?? []
+  const canCreate = opportunityActionAvailable('create') && roles.includes('SUPER_ADMIN')
   return (
     <OperationShell section="opportunities" title="Oportunidades">
-      <PageIntro text="Oportunidades de todos os Whitelabels, com dados do Control Plane. Somente leitura: nenhuma ação cria, edita, aprova ou altera o status de oportunidades." />
+      <PageIntro text="Consulte oportunidades de todos os Whitelabels no Control Plane. SUPER_ADMIN pode preparar uma criação sem garantia; a nova oportunidade permanece em revisão, sem aprovação ou provisionamento de provedor." />
+      {canCreate && <div><a href="#/operation/opportunities/new" className={`${outline.button} ${shared.secondaryButton}`} data-opportunity-create>Nova oportunidade</a></div>}
       <OpportunityList {...props} />
     </OperationShell>
   )

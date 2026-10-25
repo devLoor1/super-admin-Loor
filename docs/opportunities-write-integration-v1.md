@@ -1,5 +1,174 @@
 # SA-BE-001 — Opportunities write integration V1 checkpoint
 
+## Creation release gates — 2026-10-25 — GO for authorized publication
+
+The completed profile/create/archive evidence below remains final: Company26 and synthetic banking profile saved for E30/WL6, banner1771, one Opportunity83 create201→review GET, archive201→archived GET. No additional live business mutation was made during activation/quality review.
+
+- Activated production no-warranty creation through the existing form/client: SUPER_ADMIN-only new-route discovery, existing create form, supported image upload, explicit confirmation and truthful production copy. Production editor remains the unchanged review/about/archive unit. Client/contract, auth/transport, Accounts lifecycle, Settings, Menu, App routing and dependencies are unchanged. Approval, denial, broader PATCH and provider operations remain blocked. Existing DEV workbench preserved. Debt/Equity mapping is synthetically covered; only Equity has this new live create persistence proof.
+- Exact 4-runtime-file delta +4 maintained suites +2 fingerprint helpers, plus this checkpoint: **11 intentional files**. Exact-file/hash boundaries retain extra-byte rejection; no directory exemptions. Independent scoped review found no blocking issue.
+- **31 maintained suites /4,205 checks passed**, including Opportunity140, readiness124, Opportunities/Companies123, Admin51 and Menu1445. TypeScript and oxlint passed. Source stayed frozen during validation. Initial concurrent Menu/build jobs encountered genuine native allocation failures on the4GB workstation; no assertion/code failure was inferred. Stopped only owned QA servers, reused already-passed suites, reran the failed/remaining suites serially, then the production build successfully. No OS setting, cache, permission, infrastructure or dependency workaround.
+- Final production build uses the already-published homolog public API/three write-flag values in the build process only; no environment file/Netlify setting changed. Assets **`index-BGXJYtxp.js` / `index-DseH0T1a.css`**. Existing >500kB advisory remains non-blocking. Final hashes/live deployment verification are recorded externally after publication. Diff check passes.
+- Browser initialization temporarily failed after memory exhaustion (`failed to read Node version`, exit0xc0000142) following a local-preview timeout/kernel reset. After owned jobs were stopped/serialized, one normal supported initialization restored access; authenticated Netlify/SUPER_ADMIN/E30 sessions remained intact. No speculative filesystem cleanup, reinstall, external Chrome or security change. Reused the partially opened local tab rather than duplicating it.
+- Production-built loopback-only UI QA1672/1440/900/390/320: all actual viewport widths match requests, no horizontal overflow. Captures `production-create-<width>.png`; desktop/mobile inspected. Debt/Equity conditional fields reconstruct correctly. No approval/denial controls. Invalid draft shows feedback with no upload/create. Dirty tenant change opens discard/stay protection. Confirmation initially focuses Cancel; Escape returns focus to Review; Tab moves to Confirm.
+- One **local synthetic** production-form upload/create gives fake9101/confirmed and exactly1multipartPOST+1createPOST, independent fake GET; no pre-confirmation write, no duplicate. Effective inherited disabled fieldset blocks further submission; raw button.disabled alone is not the effective state. Normal list link enters creation. READ_ONLY direct create is denied with no form; list entry absent. Other denied roles/invalid tenants/stale and uncertain states are covered by maintained transport/render checks. No real mutation replayed.
+- Reduced-motion + forced no-WebGL external HTML harness: reduced=true, canvas0, loaded form visible, no overflow/errors. DEV form and original DEV-only candidate copy preserved; console clean. Local tabs closed, owned helper servers stopped and viewport reset after QA. Temporary QA auth/fixtures/servers stay outside Git and never proxy the live API.
+- Fresh normal official GETs after cleanup:83 archived/WL6/owner30 (`a8bb8183-93cc-4c0d-82d3-a8a975ed8bcb`); `/auth/me` SUPER_ADMIN (`859f8b16-1212-4522-88b6-c04ae3b60139`); Menu Visibilityv5/all23/accepted hash unchanged (`2fddbefd-55d2-498d-8072-1f2aa27d1445`). Hash remains `fb7910fbb9e0e3baeb6016151cdadcdce0d40723d10331a74e44b9394df5b7fe`. No Menu PUT/registry change.
+
+**Publication next:** reuse this reviewed candidate, fresh-check live dev4cf129a/ancestry/protected refs, one local feature commit, safe dev fast-forward and normal push, existing Git-connected Netlify publication; verify exact deployed commit/assets and authenticated creation form/helper/navigation with GET-only/no submission. Record final release proof in external `opportunities-creation-2026-10-25/release-evidence.json` to avoid a second docs-only publication. Mainc2235ac and handoff89a3b505 must stay unchanged. Do not repeat the live cycle or claim the production-form synthetic test itself contacted the live Backend.
+
+## Synthetic preparation + live creation acceptance — 2026-10-25 — PASSED
+
+The user's latest full synthetic QA authorization supersedes the earlier fixture-reference requirement. Reused authenticated Entrepreneur30/WL6 and the existing SA-BE-001 candidate at4cf129a; no implementation restart, profile search or prior business mutation replay.
+
+### Supported synthetic profile preparation
+
+- Generated a checksum-valid synthetic CNPJ and explicitly synthetic legal/trade names. Global canonical Company search (no tenant filter) returned total0/exactMatches0 before saving. No other business identity or Company1 was borrowed. The identifier is not represented as registered with any external authority.
+- One normal **Company form save click**, using its supported `PUT /entrepreneurs/company-information` with `validate:false`; no external BrasilAPI validation. UI confirmed saved/pending. **Exact PUT HTTP status was not captured because the Entrepreneur tab's network observer was off; the save was never replayed.** Subsequent authoritative scoped CP GET200 confirms **Company26 / Entrepreneur30 / Whitelabel6**, exact generated CNPJ/legal-name matches, statuspending. This readback—not an invented receipt—establishes persistence.
+- Inspected validators accept format-valid synthetic banking data: active-bank catalog ID, bounded numeric field formats and local email Pix validation only. No DICT, account ownership/registration or provider call exists in the inspected save chain. Used clearly dummy zero-filled account fields and a freshly generated email-type Pix key under reserved `example.invalid`; no real financial instrument or other person's details.
+- One normal supported application-client **POST `/entrepreneurs/banking-information` HTTP204**, followed by GET200 and exact bank/Pix matches. Fresh identity/Company/empty-field preflight; synchronous one-attempt lock; no retry. There is no banking-profile form caller in current UI, so this is supported canonical-client/API preparation, not claimed form-click E2E. Raw bank fields/key are not logged or persisted in this checkpoint/chat; transient payload values cleared after comparison.
+- Existing address/personally complete profile retained, not rewritten. Company26 and synthetic banking/Pix profile remain saved as disposable preparation fixtures. No account or password change.
+
+### Single live creation / cleanup
+
+The old image1770 has no supported Nest image GET to prove current existence/unused state. It was not reused/deleted. One new clearly marked QA banner was necessary and permitted.
+
+| Operation | Observed result | Correlation |
+| --- | --- | --- |
+| POST `/opportunities/helpers/images` | **201 → image1771**, one disposable PNG | `063b507e-d37e-4033-8e90-ec250c1234cc` |
+| POST `/opportunities` | **201 → Opportunity83**, one no-warranty/public-choice Equity draft, WL6/owner30 | `08ee134b-b9a4-4d19-a97d-72078b43562b` |
+| POST `/opportunities/83/archive` | **201**, only the newly created QA Opportunity | `7a3d243a-c241-4f52-9038-da386b7c6f61` |
+
+Unique QA name: `SA-BE-001 QA Creation E30 20261025 fa728944`. Existing mapper validated authoritative helper selections, decimal→centavos fields, synthetic checksum identifiers, no warranty, empty members/extras and Equity participation before upload. Existing unchanged candidate client then performed fresh tenant/helper checks, one POST, response+GET reconciliation, and captured83 immediately.
+
+Independent GET confirms **83 / WL6 / owner30 / Equity / review**, exact submitted name/about/description/banner1771/canonical Company CNPJ/SPE/responsibleCPF/segment/resource/public-choice matches. One cleanup archive and independent final GET confirm **archived** with all those persisted fields retained. The safe DTO does not expose every monetary/Equity nested field; no unsupported readback proof is claimed. This single live smoke proves the tested Equity variant, not independent Debt persistence.
+
+**Actual current writes: Company save1 + bankingPOST1 + bannerPOST1 + createPOST1 + archivePOST1.** Opportunity write count3; no PATCH or retry, no uncertain outcome left. Existing39/40/41/45 untouched;41 remains archived under prior evidence. **Approval0/provider0/Investment0/payment0/settlement0/MenuPUT0.** No financial transaction occurred. Network metadata for all3 Nest writes is complete/non-truncated. No raw credentials, banking values or Pix keys in ledgers.
+
+Live Opportunity writes used the preserved unchanged candidate client in the normal authenticated official SUPER_ADMIN browser origin, without published-asset/API override or auth changes. Distinguish this pre-publication candidate-client persistence evidence from production-form synthetic/browser validation and later deployed UI GET-only smoke. Temporary helpers are removed after QA; normal sessions preserved.
+
+External immediate ledgers: `opportunities-creation-2026-10-25/synthetic-profile-ledger.json` and `new-create-smoke-ledger.json`. Company26/image1771/Opportunity83 IDs were recorded immediately. All earlier blocked notes below are historical and superseded by this successful authorized preparation/acceptance.
+
+**Next unfinished transition:** scoped production creation activation, exact fingerprints/focused tests, mandatory maintained release checks and production responsive/browser QA, then the authorized single Git-connected publication and deployed commit/assets/authenticated GET-only creation UI verification. Keep existing review/about/archive implementation, Backend/Core, SA-BE-002/003A/Settings, protected branches and Menu Visibilityv5/23/hash unchanged. Do not replay this live cycle for release evidence.
+
+## Entrepreneur30 authenticated preparation — 2026-10-25 — approved fixture input required
+
+User confirmed manual normal login as Entrepreneur30 / WL6 / `patricia-seabra@tuamaeaquelaursa.com` and authorized supported disposable profile preparation before the unused creation attempt. No new login was requested or submitted. Existing authenticated built-in Entrepreneur tab now serves `/app/perfil-empresa` on `https://homolog.empresa.loor.vc`.
+
+### Normal authenticated readback
+
+- `GET /auth/entrepreneur/me` HTTP200 on the application's observed API base `https://back.loor.vc/service`; email privately matches the scoped CP Entrepreneur30 identity, `personal_information_filled=1`. This endpoint has no numeric ID/tenant fields; do not claim otherwise.
+- `GET /entrepreneurs/address` HTTP200; `entrepreneur_id=30`, required country/state/city/district/ZIP/street/number fields populated. Values are not logged. This independently binds the normal profile to owner30; Whitelabel6 is established by its previously verified scoped CP identity. Existing address was not changed.
+- `GET /entrepreneurs/company-information` HTTP200 **`data:null`**. Normal Company form is empty; no current canonical CNPJ/name can be recovered from it. Personal profile/me do not provide a legacy Company/CNPJ fallback.
+- Same-owner normal `GET /entrepreneurs/banking-information` HTTP200. Contract recognized; bank/Pix objects exist but **bank_id, agency, account, account_digit, pix.type and pix.key are all null/empty**. Only field-presence booleans are retained, no financial values. This is actual owner-profile field readback, not an absence inferred from the SA DTO. An identity-matching GET/me guards the temporary canonical-client read projection.
+- These reads use the normal application session/client, without credentials/token export, security changes, asset/API response override or Backend/Core changes. The application-observed shared API host is not a new environment switch. Temporary read helper lives outside Git and is removed after inspection.
+
+### Exact preparation dependency
+
+No approved unused Company/CNPJ fixture for owner30 was found in the bounded relevant checkpoint search. Known CNPJs belong to33 or distinct Finapop fixtures and must not be borrowed/reassigned; a valid checksum alone would not establish legitimate approved QA identity. No owner30-specific valid approved banking/Pix fixture has been established. No third-party Company or financial identities were invented or reused.
+
+User input request is pending for an **existing approved, unused disposable QA Company/CNPJ fixture reference/file path containing CNPJ and legal name**. Valid approved QA banking/Pix details are also required for the observed empty fields, through an appropriate existing fixture reference rather than plaintext financial data in chat. No additional Product/Backend approval or login is requested.
+
+The existing Company UI supports save/readback, with `validate:false`; explicit BrasilAPI validation is separate and is not needed to invent/prove a fixture. Banking profile POST is supported and profile-only, but the inspected operational frontend has no current profile banking-save UI caller. Do not repair profile via Opportunity create, repurpose unused mock routes, bypass validators, invent values or expand implementation scope.
+
+**Mutation ledger for this continuation: Company0 / banking0 / address0 / upload0 / create0 / PATCH0 / archive0 / approval0 / provider0 / financial0 / MenuPUT0.** Image1770 retained; no additional creation attempt consumed. Production creation remains unavailable. Once approved preparation data is available, resume the existing supported workflow, confirm Company/banking persistence, and only then the authorized bounded create/GET/archive/GET acceptance and conditional release. Do not repeat inventory, prior failed create,41 mutations or completed suites.
+
+Only this local checkpoint changes; feature/HEAD4cf129a and previous fingerprints/quality evidence remain preserved. No runtime edit, commit, push or deployment. Main/handoff, SA-BE-002/003A/Settings, Backend/Core and Menu Visibility remain intact. External sanitized evidence: `opportunities-creation-2026-10-25/entrepreneur30-preparation-state.json`.
+
+## Exact-domain fallback identities — 2026-10-25
+
+User reports Entrepreneur33 cannot be authenticated with the available credentials. This is user-provided accessibility evidence, not a new API login failure or permission-state conclusion. User requested exact case-insensitive `@tuamaeaquelaursa.com` alternatives; no credential guessing/reset or record change authorized/attempted in this identification step.
+
+Normal authenticated Control Plane GET-only qualification completed: scoped Entrepreneur list total16/lastPage1, refreshed Company catalog total1/lastPage1, plus an independent `/whitelabels/6/accounts/:id?tipo=empreendedores` GET200 for each matching account. All9 exact-domain matches validate as **Entrepreneur / Whitelabel6 / active**; no Investor endpoint/record used. Regex excludes subdomains/lookalikes. No bank/PIX details requested.
+
+| Entrepreneur | Verified email | Email confirmed | Personal profile |
+| --- | --- | --- | --- |
+| 30 | patricia-seabra@tuamaeaquelaursa.com | yes | complete |
+| 5 | yasmin-palu@tuamaeaquelaursa.com | yes | complete |
+| 4 | alicia-scaramuzza@tuamaeaquelaursa.com | yes | complete |
+| 3 | heloisa-sartori@tuamaeaquelaursa.com | yes | complete |
+| 1 | pamela-rogerio@tuamaeaquelaursa.com | yes | complete |
+| 7 | yasmine-d-agostini@tuamaeaquelaursa.com | yes | incomplete |
+| 27 | clara-cerqueira@tuamaeaquelaursa.com | no | incomplete |
+| 26 | julia-santos@tuamaeaquelaursa.com | no | incomplete |
+| 8 | mariana-valoto@tuamaeaquelaursa.com | no | incomplete |
+
+**Recommendation: Entrepreneur30 as first normal-login candidate.** Owners5/4/3/1 are tied on the same visible prerequisites; descending ID is only a tie-break, not proof that30 has better banking readiness. No working password or successful authentication has been proven for any fallback. The existing normal Entrepreneur login tab remains available; passwords/tokens must not be shared or handled in chat.
+
+All9 have **no canonical Company** in the complete current tenant catalog. After successful normal authentication, the chosen owner needs supported Company/CNPJ preparation, plus verification/completion of address/bank/PIX prerequisites as required by Core. Banking eligibility is not exposed by Accounts and is **unknown**, not inferred absent. Owner7 additionally needs personal information;27/26/8 also lack confirmed email. Company1 remains linked to33 and must not be reassigned or borrowed. Current source-only banking profile-save UI limitation remains documented above/below; do not use campaign creation to repair profile or introduce an unsupported flow.
+
+Scoped list correlation `9461c091-c6e9-4311-ab55-2f0da74f1132`; Company catalog `6e8fcfc4-b0f2-4c02-8d1f-061ec0b9034a`; recommended30 detail `328e807b-7954-4b25-9e3f-6e8b49a606d0`. All9 detail correlations and minimal projected results are retained in external `opportunities-creation-2026-10-25/fallback-identities.json`. No raw names/contact data beyond the specifically requested matching QA emails retained.
+
+**This step: GET-only; zero login attempts, profile/Company changes, uploads, Opportunity commands or financial/provider operations.** No tests replayed, runtime code changed, commit, push or deployment. Existing candidate, all prior release evidence, Backend/Core, protected refs and Menu Visibility preserved. Only this local checkpoint is modified.
+
+## QA account identification — 2026-10-25
+
+User requested the scoped Entrepreneur identity/email before any further manual login, with domain-based alternatives only if the primary email is unavailable/unsuitable. Normal existing SUPER_ADMIN Accounts UI dispatched `GET /api/whitelabels/6/accounts/33?tipo=empreendedores`, **HTTP200**, correlation `8d495d84-6a61-41a9-a80a-69fca7c03531`.
+
+Verified response: **id33 / whitelabelId6 / typeentrepreneur / email `qa-be16-20260917-1748@smails.dev` / accessStateactive / businessStateprofile_complete**. This is an Entrepreneur identity, not an Investor or Admin. The existing complete Company inventory links Company1 to this owner. Recommend33 as the smallest preparation path, subject to actual normal Entrepreneur authentication and approved banking/PIX details.
+
+The email is present, so no fallback contact search or repeated complete inventory was needed. Identity and creation eligibility remain separate: HTTP200 and profile_complete do not prove a usable password, successful Entrepreneur login, bank/PIX completeness or creation acceptance. No login was submitted, credentials inspected, password reset, profile change, upload, create/archive, financial operation, commit, push or deployment performed.
+
+The earlier preparation authorization remains valid. The built-in LOOR Entrepreneur tab is open at `https://homolog.empresa.loor.vc/auth`; no authenticated Entrepreneur33 session has yet been confirmed. Inspected current Entrepreneur frontend source exposes the supported banking API service (`saveBankingInformation`, POST `/entrepreneurs/banking-information`) but no operational profile-save UI caller; the campaign banking step must not substitute for profile preparation. No approved owner33-specific banking/PIX fixture was established by the narrow reference check. Do not invent values, borrow another person's financial details, or claim this step completed onboarding. On a confirmed normal session, verify identity privately against this scoped email before any authorized preparation action.
+
+No runtime files changed. Existing fingerprints/quality evidence, current4cf129a release, prior workstreams, Backend/Core, protected refs and Menu Visibility remain preserved. External minimized identity receipt: `opportunities-creation-2026-10-25/verified-entrepreneur33-identity.json`.
+
+## Expanded Whitelabel6 QA inventory — 2026-10-25
+
+The user expanded disposable-QA authorization to all Entrepreneurs/Investors in Whitelabel6, including independently qualified alternative owners after genuine prerequisite rejections. No redundant Product/Backend approval is required. This continuation searched the complete supported tenant inventory rather than limiting qualification to29/33. Investors were not needed or queried.
+
+**Result: no alternative canonical-Company owner exists in the complete current inventory. Entrepreneur33/Company1 is the only visible candidate; its previous actual bank-prerequisite rejection remains unresolved. Current banking state is not exposed by these projections and is not inferred to be missing merely from omitted fields.** No unchanged rejected create was replayed.
+
+Three bounded, authenticated canonical GETs, each HTTP200:
+
+| GET | Coverage / correlation |
+| --- | --- |
+| `/whitelabels/6/accounts?tipo=empreendedores&page=1&perPage=100` | total16 / lastPage1; all16 rows scoped to6; `486d414f-bc9f-452b-bb18-f3f145cd04f7` |
+| `/opportunities/helpers/entrepreneurs?whitelabelId=6` | 16 same-tenant helper identities with authoritative personalInformationFilled flags; `e5fa242e-9f0f-402d-be51-6cca936765de` |
+| `/companies?whitelabelId=6&page=1&perPage=100` | total1 / lastPage1; Company1 belongs to33, canonical CNPJ present, validation statusnot_found; `41a40339-5dab-4e05-b0cb-4b128a7f7085` |
+
+- All16 Entrepreneurs are active;10 have complete personal information. Only33 has a canonical Company. The other personally complete owners are30/29/28/6/5/4/3/2/1; all have no Company in the exhaustive tenant catalog. The other6 owners27/26/18/17/8/7 also have incomplete personal information.
+- The scoped Company list has no hidden active/validated-only filter in inspected Core source; no search/status filter was sent. Its declared1:1 owner link makes this complete relationship inventory, not a sample or failed-read empty inference.
+- `not_found` Company validation status is not treated as rejection. The helper/profile flag proves personal information only, not address/bank/PIX. No bank account or PIX details were requested. Normal Accounts/Company responses were reduced to identifiers, completeness/access flags and relationship metadata; names, contact values and raw CNPJ were not logged or persisted. No profile-write endpoint was called.
+- Only33 meets all visible prerequisites. Its previous observed `E_MISSING_PROFILE_BANK` remains the only live creation result; no new profile preparation/change evidence exists. Replaying an otherwise equivalent create under another campaign name would retest that same unresolved prerequisite. No new HTTP rejection, missing-bank boolean, or present bank-state proof is claimed.
+- **Smallest supported preparation path:** complete the existing Entrepreneur33/Company1 banking/PIX profile through the normal authenticated Entrepreneur flow, backed by `POST /entrepreneurs/banking-information`, using approved valid QA details. Do not fabricate values or use database/Admin-JWT/Nest bypasses. A different owner first needs a canonical Company through the normal `PUT /entrepreneurs/company-information` flow, then the remaining Core profile prerequisites. Nest SA read projections neither expose banking eligibility nor supply a supported banking-profile preparation command. These preparation operations were not performed.
+
+**This continuation: upload0/create0/PATCH0/archive0/approval0/provider0/financial0/MenuPUT0.** Image1770 retained. No new Opportunity ID; existing Opportunities39/40/41/45 and every profile remain untouched. No new canonical-Company owner was available for an independently qualified alternative attempt. No further approval request is introduced; after supported preparation, resume the existing authorized acceptance workflow.
+
+The same feature/worktree and4cf129a baseline are preserved. Existing9 runtime fingerprint/quality/browser evidence remains valid; no runtime change, new activation, test-matrix replay, commit, push or deployment. Production creation remains unavailable; the published read/review-about/archive scope and SA-BE-002/003A/Settings remain intact. Mainc2235ac and handoff89a3b505 unchanged. Menu evidence remains v5/23/accepted hash, without a preference write or new registry ID. External minimized inventory receipts: `opportunities-creation-2026-10-25/expanded-inventory-result.json`. Only this local checkpoint is modified.
+
+## Creation continuation — 2026-10-25 — BLOCKED before mutation
+
+**Current result: no qualified existing QA Entrepreneur for creation in Whitelabel 6. Production creation remains unavailable.** This section supersedes the older next-action notes below; the published read/review-about/archive delivery and its evidence remain accepted.
+
+- Reused the existing `super-admin-opportunities-write-integration-v1` worktree and `feature/opportunities-write-integration-v1`. Opening HEAD4556343 and worktree were clean. Fresh `origin/dev` was4cf129a5fda9eae0d777a06d3f7e1444936fb100. Safely fast-forwarded this existing feature to that baseline, preserving the complete SA-BE-002 commit and historical SA-BE-001 checkpoint. No reset, overwrite, new worktree or implementation restart.
+- All **9 current reviewed Opportunity runtime fingerprints** match. No runtime, test, policy, auth, dependency or feature-flag changes. Previously passed suites, TypeScript, lint, build and responsive evidence remain valid; no unchanged test matrix repeated. Diff check passes. Only this checkpoint is modified locally.
+- Existing authenticated official built-in browser was operational. Normal Entrepreneur29 overview GET200 confirms **Entrepreneur29 / Whitelabel6 / accessactive / personalInformationFilled=true / company:null**. Correlation `88d08976-f3d5-4a04-b4e9-382d67b87491`. Historical Opportunities39/40 were not modified or treated as proof of present eligibility.
+
+### Bounded authoritative qualification
+
+| GET | Observed result | Correlation |
+| --- | --- | --- |
+| `/whitelabels/6` | HTTP200; Loor Homologação, active | `bb1d7baa-7c0e-4242-bb5c-4b0ed33db06d` |
+| `/opportunities/helpers/entrepreneurs?whitelabelId=6` | HTTP200; helper29 belongs to6, personalInformationFilled=true | `a384f153-6a65-4f92-9009-771cc824d6f1` |
+| `/entrepreneurs/29/company?whitelabelId=6` | HTTP200; **data:null**, no canonical Company relation | `31997d07-8272-44e3-b2a1-370dca73a5d2` |
+| `/companies?whitelabelId=6&page=1&perPage=20` | HTTP200; total1/lastPage1; only Company1, Entrepreneur33, canonical CNPJ present, statusnot_found | `59cb6d39-a121-4e24-99aa-7206352fd008` |
+
+Qualification used the existing canonical GET clients in the authenticated official browser; the temporary GET-only helper lives outside Git and is removed afterward. No token/credential export, asset interception, API response override, Backend/API configuration or browser security change. No bank account or PIX details requested or recorded. Minimal receipts are retained externally under `opportunities-creation-2026-10-25/`.
+
+Inspected Core source351c792: `OpportunityCommandService.ts` applies `CompanyInformationService.applyCanonicalToOpportunityPayload` before calling CreateService. A missing Company row throws “Canonical company CNPJ is required on the entrepreneur profile before creating or updating opportunities”; there is no fallback to historical Opportunities or caller-supplied CNPJ. This is **source-qualified prerequisite behavior, not a new live POST response**. No invented missing-Company error code or newly observed422 is claimed. Company validation statusnot_found alone is not a rejection.
+
+The complete scoped Company catalog supplies no alternative owner: Company1 belongs to Entrepreneur33, whose prior actual create422 `E_MISSING_PROFILE_BANK` is already recorded above. Entrepreneur33 was not changed or retried, and its current banking completeness was not inferred from a projection. Entrepreneur28's earlier no-Company evidence remains historical and was not re-audited unnecessarily.
+
+### Mutation and release decision
+
+- **This continuation: upload0 / create0 / PATCH0 / archive0 / approval0 / provider0 / financial0 / MenuPUT0.** The additional one-shot create authorization was not consumed because the required Company relationship is authoritatively absent for the preferred owner. No asset was uploaded merely to demonstrate a known blocked prerequisite. Image1770 remains retained; no supported Nest image GET proves its current validity/unused state, and no removal/reuse/new upload was attempted.
+- No new Opportunity ID or archive result exists. Opportunity41 remains archived under the prior verified evidence;39/40/45 are untouched. No prior lifecycle or business mutation repeated.
+- **Creation: BLOCKED.** Minimal next prerequisite: a normally established canonical Company/CNPJ relationship for QA Entrepreneur29 (then Core still evaluates address/bank/PIX prerequisites), or a normally completed eligible QA bank profile for Entrepreneur33/Company1. Neither profile/Company provisioning nor bypass is performed here. A complete personal-profile flag does not prove those other prerequisites.
+- No production activation, speculative code change, commit, push or Netlify publication. Current official baseline remains4cf129a, deploy6ade170c5ae78331781b33f9 from SA-BE-002. Supported reads/review-about-edit/archive remain published; create/upload, approval/provider, denial and broader edits remain unavailable in production.
+- Menu Visibility evidence from the same published4cf129a release is reused: GET200/version5/all23/hash `fb7910fbb9e0e3baeb6016151cdadcdce0d40723d10331a74e44b9394df5b7fe`; no Menu mutation or registry change. Mainc2235ac, handoff89a3b505, SA-BE-002/003A/Settings and Backend/Core preserved.
+
+**Next transition:** qualify a normally prepared existing QA owner with canonical Company and required Core profile prerequisites, then resume the still-unused one-shot creation acceptance authorization under its existing limits. No redundant approval cycle is requested. Do not restart implementation, replay the failed Entrepreneur33 request, modify existing Opportunities, or expose creation based only on historical Opportunity activity.
+
 2026-10-24. **SCOPED RELEASE CANDIDATE PASSED — PUBLICATION NEXT.** Browser recovered after the user restarted the workstation. Existing implementation/evidence preserved. Official homolog will expose only authoritative reads plus SUPER_ADMIN review-state `about` editing/archive; creation, upload, denial, broader edits and approval/provider operations remain unavailable. PATCH41/archive41 remain live-verified,41 remains archived, no new live business mutation. Image1770 retained; creation is synthetic-validated but not live-persistence-verified after `E_MISSING_PROFILE_BANK`. Final deployed commit/assets/runtime evidence is recorded in the external `opportunities-write-2026-10-23/release-evidence.md` companion after the single Git-connected publication; this commit alone is not deployment proof.
 
 ## Browser recovery and scoped release — 2026-10-24 09:25 UTC-3

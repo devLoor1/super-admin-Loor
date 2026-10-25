@@ -2,10 +2,10 @@ import type { NavItem } from '../components/shell/navigation'
 
 /** Presentation eligibility, never authorization or saved Menu Visibility configuration. */
 export const PROTOTYPE_PRESENTATION = import.meta.env.DEV
-export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs', 'operation-opportunity-new'])
+export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs'])
 /** SA-BE-001 accepted subset. Backend authorization and fresh state checks still apply. */
 export const opportunityEditorialAvailable = (status: string, roles: readonly string[]) => status === 'review' && roles.includes('SUPER_ADMIN')
-export const opportunityActionAvailable = (action: string, development = PROTOTYPE_PRESENTATION) => development || action === 'patch' || action === 'archive'
+export const opportunityActionAvailable = (action: string, development = PROTOTYPE_PRESENTATION) => development || ['create', 'image', 'patch', 'archive'].includes(action)
 /** Candidate lifecycle commands still require their release gates and authoritative Backend RBAC. */
 export const administratorLifecycleAvailable = (roles: readonly string[]) => roles.includes('SUPER_ADMIN')
 const MOCK_MENU_IDS = new Set(['sistema', 'ajuda', 'whitelabel-emails', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])

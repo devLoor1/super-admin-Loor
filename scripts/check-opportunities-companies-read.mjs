@@ -498,10 +498,11 @@ await check('list pages clamp a page past the end once (strictly smaller target)
     assert.ok(source.includes("const resetPage = !('page' in next) || pendingSearch !== route.search;"), path)
   }
 })
-await check('create stays unavailable; edit delegates only to the reviewed editorial unit', async () => {
+await check('create delegates to the reviewed create unit; production edit stays editorial', async () => {
   const form = await code('src/features/operation/opportunities/OpportunityFormPage.tsx')
-  assert.ok(form.includes('indisponível') && !/useState|onSubmit|<form|save|store/i.test(form))
-  assert.ok(form.includes("if (mode === 'edit') return <OpportunityEditorialPage"))
+  assert.ok(form.includes("import.meta.env.DEV || mode === 'create'") && form.includes('return <OpportunityWritePage'))
+  assert.ok(!/useState|onSubmit|<form|save|store/i.test(form))
+  assert.ok(form.includes('return <OpportunityEditorialPage'))
 })
 await check('no Companies menu id or sidebar entry anywhere', async () => {
   for (const file of await walk(resolve(root, 'src'))) assert.equal((await code(relative(root, file))).includes("'operation-companies'"), false, relative(root, file))

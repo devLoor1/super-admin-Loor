@@ -6,7 +6,7 @@ import { root } from './operators-test-harness.mjs'
 // Exact reviewed SA-BE-002 paths only. Independent tests cover tenant/RBAC,
 // password privacy, name aliases, stale/uncertain writes and last-active protection.
 const pins = {
-  'src/app/presentationAvailability.ts': 'ffb10f6365f5997b9ac4d9ee8d350ce71333fd013b2387b8aa980c53b5ef3cf3',
+  'src/app/presentationAvailability.ts': "c3b5fce5a41efc430e86eeef5c01608f2af0659a3dcad2866f81c0a3a232c111",
   'src/features/whitelabel-accounts/accountsApi.ts': '6521c482ade5acf094bd810f30c312636053eb0a9db3a083c81cd9af23ccb99e',
   'src/features/whitelabel-accounts/accountsPresent.ts': 'd9cf9c5675760fe7db2aea360fafa6ce87c93dc6de5fc211c2026652562f6387',
   'src/features/whitelabel-accounts/AccountListPanel.tsx': '01b3c86952e1d1fe8ed365d9859311f6f4809323e40fe265e19fb54f491b235a',

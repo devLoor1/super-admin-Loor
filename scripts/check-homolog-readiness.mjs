@@ -18,8 +18,8 @@ const overrides={
   'src/features/control-plane-operators/useOperators.ts':`export const useOperators=()=>({state:globalThis.__operatorRead,allowed:globalThis.__operatorRoles.includes('SUPER_ADMIN'),reload(){}});export const useOperatorDetail=useOperators;`,
 }
 let checks=0;async function check(name,fn){try{await fn();checks++}catch(cause){throw Error(name,{cause})}}
-const realViews=['settings','dashboard','whitelabels','accounts','operation-investors','operation-investor','operation-entrepreneurs','operation-entrepreneur','operation-opportunities','operation-opportunity','operation-opportunity-edit','operation-company-list','operation-company','finance-investments','finance-investment','finance-payments','finance-payment','finance-wallets','finance-wallet','compliance-kyc','compliance-kyc-case','audit','audit-event','settings-menu-visibility','control-plane-operators','control-plane-operator']
-const mockViews=['emails','finance','finance-modalities','finance-catalogs','operation-opportunity-new']
+const realViews=['settings','dashboard','whitelabels','accounts','operation-investors','operation-investor','operation-entrepreneurs','operation-entrepreneur','operation-opportunities','operation-opportunity','operation-opportunity-new','operation-opportunity-edit','operation-company-list','operation-company','finance-investments','finance-investment','finance-payments','finance-payment','finance-wallets','finance-wallet','compliance-kyc','compliance-kyc-case','audit','audit-event','settings-menu-visibility','control-plane-operators','control-plane-operator']
+const mockViews=['emails','finance','finance-modalities','finance-catalogs']
 const id='c'+'a'.repeat(24)
 for(const development of [false,true]){
   const load=moduleLoader({development,overrides}),p=await load('src/app/presentationAvailability.ts')

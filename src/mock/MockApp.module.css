@@ -1,0 +1,11 @@
+.tools { position: fixed; z-index: 10000; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); max-width: min(440px, calc(100vw - 24px)); color: #eeeaff; font: 12px/1.5 Inter, sans-serif; }
+.tools details { position: relative; }
+.tools summary { cursor: pointer; padding: 7px 12px; border: 1px solid #9b8cff70; border-radius: 8px; background: #242035; box-shadow: 0 4px 18px #0005; }
+.panel { position: absolute; right: 0; bottom: calc(100% + 8px); box-sizing: border-box; width: min(440px, calc(100vw - 24px)); padding: 16px; border: 1px solid #9b8cff70; border-radius: 10px; background: #171724; max-height: min(calc(100dvh - 180px), 640px); overflow-y: auto; overflow-wrap: anywhere; }
+.panel nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 14px 0; }
+.panel a { color: #c2b6ff; text-decoration: underline; }
+.panel button { cursor: pointer; color: #eeeaff; background: #343047; border: 1px solid #8d80c7; border-radius: 6px; padding: 8px; }
+.panel code { white-space: normal; }
+.tools :focus-visible { outline: 2px solid #c6b4ff; outline-offset: 3px; }
+@media (max-width: 767px) { .tools { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); } .panel { max-height: calc(100dvh - 204px); } }
+@media (max-width: 390px) { .panel nav { grid-template-columns: 1fr; } }

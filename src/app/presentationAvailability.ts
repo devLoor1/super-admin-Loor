@@ -1,7 +1,7 @@
 import type { NavItem } from '../components/shell/navigation'
 
 /** Presentation eligibility, never authorization or saved Menu Visibility configuration. */
-export const PROTOTYPE_PRESENTATION = import.meta.env.DEV
+export const PROTOTYPE_PRESENTATION = true // Dedicated offline mock, including built previews.
 export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['emails', 'finance', 'finance-modalities', 'finance-catalogs'])
 /** SA-BE-001 accepted subset. Backend authorization and fresh state checks still apply. */
 export const opportunityEditorialAvailable = (status: string, roles: readonly string[]) => status === 'review' && roles.includes('SUPER_ADMIN')

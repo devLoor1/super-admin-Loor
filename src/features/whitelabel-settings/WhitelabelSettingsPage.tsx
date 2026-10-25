@@ -32,7 +32,7 @@ type TermsDialog = { kind: 'view'; revision: TermsRevision } | { kind: 'publish'
  * nothing is fetched, persisted or sent to a Backend.
  */
 export function WhitelabelSettingsPage({ whitelabelId }: { whitelabelId: string }) {
-  if (!import.meta.env.DEV || !whitelabelId.startsWith('wl_proto_')) return <OperationalSettingsPage whitelabelId={whitelabelId} />
+  if (!whitelabelId.startsWith('wl_proto_')) return <OperationalSettingsPage whitelabelId={whitelabelId} />
   return <PrototypeSettingsPage whitelabelId={whitelabelId} />
 }
 

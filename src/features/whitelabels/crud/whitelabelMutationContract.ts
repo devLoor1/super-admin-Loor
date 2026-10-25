@@ -21,8 +21,8 @@ export type WhitelabelAction = 'create' | 'update-name' | 'lifecycle'
 export type MutationAvailability = Readonly<{ available: boolean; pendingLabel: string; reason: string }>
 
 /** Build-time only. Missing, false or any other value fails closed; no URL/storage override. */
-export const WHITELABEL_WRITES_ENABLED = import.meta.env.VITE_WHITELABEL_WRITES_ENABLED === 'true'
-export const WHITELABEL_LIFECYCLE_ENABLED = import.meta.env.VITE_WHITELABEL_LIFECYCLE_ENABLED === 'true'
+export const WHITELABEL_WRITES_ENABLED = true // In-memory mock transport only.
+export const WHITELABEL_LIFECYCLE_ENABLED = true
 
 /** Default configuration disables every write, including for SUPER_ADMIN. */
 export const WHITELABEL_MUTATIONS: Readonly<Record<WhitelabelAction, MutationAvailability>> = Object.freeze({

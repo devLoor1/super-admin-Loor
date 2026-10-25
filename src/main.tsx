@@ -3,10 +3,10 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/inter'
 import './styles/tokens.css'
 import './styles/global.css'
-import { App } from './app/App'
+import { MockApp } from './mock/MockApp'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <MockApp />
   </StrictMode>,
 )

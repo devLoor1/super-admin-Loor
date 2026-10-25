@@ -18,8 +18,8 @@ import { ApiError, apiRequest, isAbortError } from './api'
  * No refresh tokens, no localStorage, no passwords stored, nothing logged.
  */
 
-const TOKEN_KEY = 'loor_sa_access_token'
-const OPERATOR_KEY = 'loor_sa_operator'
+const TOKEN_KEY = 'loor_sa_mock_session'
+const OPERATOR_KEY = 'loor_sa_mock_operator'
 
 /** Background validation must not remain pending for a minute. No automatic retry. */
 const VALIDATION_TIMEOUT_MS = 15_000

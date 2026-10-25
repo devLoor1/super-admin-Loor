@@ -1,0 +1,6 @@
+# Mock branch only. Never merge this file into operational dev/main.
+# Normal Git-connected jobs stop before building; a manually triggered build
+# that bypasses ignore also fails closed instead of publishing the mock.
+[build]
+  ignore = "exit 0"
+  command = "node -e \"console.error('Offline mock branch: Netlify publication is disabled. Use npm run build locally.'); process.exit(1)\""

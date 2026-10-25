@@ -1,5 +1,7 @@
 # Loor Super Admin — Frontend
 
+> **Branch `mock`: independent offline demonstration.** Start with [MOCK.md](MOCK.md). No real login, API, Backend or deployment is used. All interactions are synthetic; reload resets business examples. The operational history below belongs to `dev` and is retained for traceability.
+
 Frontend of the **Super Admin LOØR**: Login V1, the application-frame
 **App Shell + Global Dashboard V1**, the **Whitelabels V1** list/detail page,
 **Whitelabel Account Control V1** (Contas do Whitelabel), **Whitelabel

@@ -1,5 +1,5 @@
 import { ApiError, apiRequest } from '../../../../lib/api'
-import { opportunityActionAvailable, opportunityEditorialAvailable } from '../../../../app/presentationAvailability'
+import { opportunityActionAvailable } from '../../../../app/presentationAvailability'
 import { getAccessToken, getOperator, getSessionVersion, handleUnauthorized } from '../../../../lib/authSession'
 import { getTenantWhitelabel } from '../../shared/whitelabelContext'
 import { approvalPayload, createPayload, getEditable, getHelpers, invalid, isBag, parseEditable, patchPayload, reasonPayload, validId, validateImage, type ApprovalDraft, type CreateDraft, type EditableOpportunity } from './opportunityWriteContract'
@@ -33,7 +33,6 @@ function compareValues(record:EditableOpportunity,body:Record<string,unknown>){r
 export async function executeOpportunity(input:Command,version:number,signal?:AbortSignal){
   const command=structuredClone(input)
   const token=authorize(version,command.action)
-  if(!import.meta.env.DEV&&command.action==='patch'&&Object.keys(command.changes).some(k=>k!=='about'))throw new ApiError(403,{code:'OPPORTUNITY_SCOPE_NOT_RELEASED'})
   if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
   if(!['create','patch','approve','deny','archive'].includes(command.action)||!validId(command.tenantId)||command.action!=='create'&&!validId(command.id))throw invalid()
   const key=commandKey(command);if(attemptLocked(attempts.get(key)))throw new ApiError(409,{code:'ATTEMPT_LOCKED'})
@@ -46,11 +45,10 @@ export async function executeOpportunity(input:Command,version:number,signal?:Ab
       body=createPayload(command.draft,await getHelpers(command.tenantId,signal),command.tenantId,command.banner,command.extras)
     }else{
       baseline=await getEditable(command.id,command.tenantId,signal)
-      if(!import.meta.env.DEV&&!opportunityEditorialAvailable(baseline.status,getOperator()?.roles??[]))throw new ApiError(403,{code:'OPPORTUNITY_SCOPE_NOT_RELEASED'})
       if(command.action==='patch'){
         if(command.baseline.id!==command.id||command.baseline.whitelabelId!==command.tenantId||command.baseline.status!==baseline.status||Object.keys(command.changes).some(k=>command.baseline.values[k as keyof EditableOpportunity['values']]!==baseline!.values[k as keyof EditableOpportunity['values']])){publish(key,{...a,phase:'stale'});return}
         // The released about-only field has no catalog dependency. Wider DEV edits keep all helper checks.
-        body=patchPayload(baseline,command.changes,import.meta.env.DEV?await getHelpers(command.tenantId,signal):{entrepreneurs:[],segments:[],'resource-utilizations':[],contracts:[],'investor-profiles':[]});if(!Object.keys(body).length){publish(key,{...a,phase:'rejected'});return}
+        body=patchPayload(baseline,command.changes,await getHelpers(command.tenantId,signal));if(!Object.keys(body).length){publish(key,{...a,phase:'rejected'});return}
       }else{
         if(baseline.status!=='review')throw invalid()
         if(command.action==='approve'){if(!command.providerEffectsAccepted)throw invalid();body=approvalPayload(command.draft,await getHelpers(command.tenantId,signal),baseline)}

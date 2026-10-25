@@ -1,5 +1,7 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '')
-  || 'http://localhost:3334/api'
+import { mockRequest } from '../mock/mockBackend'
+
+// Permanent mock branch: environment variables cannot select a real service.
+const API_BASE = 'mock://local/api'
 
 export type ApiErrorBody = {
   statusCode?: number
@@ -128,7 +130,7 @@ export async function apiRequest<T>(
   let response: Response
   let text: string
   try {
-    response = await fetch(`${API_BASE}${path.startsWith('/') ? path : `/${path}`}${queryString(options.query)}`, {
+    response = await mockRequest(`${path.startsWith('/') ? path : `/${path}`}${queryString(options.query)}`, {
       method: options.method || 'GET',
       headers,
       body: multipart ? options.body as FormData : options.body !== undefined ? JSON.stringify(options.body) : undefined,

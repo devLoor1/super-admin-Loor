@@ -136,6 +136,6 @@ export const isConcluded = (status: KycStatus) => status === 'approved' || statu
 
 /* ---------- Routes owned by this module ---------- */
 
-export const KYC_LIST_PATH = 'compliance/kyc'
+export const KYC_LIST_PATH = 'mock/kyc'
 
-export const kycCaseHref = (kycCaseId: string) => `#/compliance/kyc/${encodeURIComponent(kycCaseId)}`
+export const kycCaseHref = (kycCaseId: string) => `#/mock/kyc/${encodeURIComponent(kycCaseId)}`

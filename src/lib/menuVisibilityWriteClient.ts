@@ -6,7 +6,7 @@ import type { VisibilityMap } from '../features/menu-visibility/visibilityModel'
 import { expectedAccess } from '../features/menu-visibility/visibilityPolicy'
 
 /** Build-time only. URL, storage and UI state have no activation authority. */
-export const MENU_VISIBILITY_WRITES_ENABLED = import.meta.env.VITE_MENU_VISIBILITY_WRITES_ENABLED === 'true'
+export const MENU_VISIBILITY_WRITES_ENABLED = true // Dedicated mock: changes only this tab's simulation.
 
 /** Includes operator/roles hydration changes even when the canonical session version stays the same. */
 export function menuVisibilitySessionKey() {

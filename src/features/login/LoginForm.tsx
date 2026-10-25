@@ -16,8 +16,8 @@ type FieldErrors = {
 
 /** Nest Control Plane login. Credentials are entered only in the normal form. */
 export function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('demo@example.invalid')
+  const [password, setPassword] = useState('demo')
   const [errors, setErrors] = useState<FieldErrors>({})
   // A session ended by the server (401) explains itself once on the Login screen.
   const [notice, setNotice] = useState(() =>
@@ -71,7 +71,7 @@ export function LoginForm() {
     <section className={styles.card} aria-labelledby="login-title">
       <header className={styles.header}>
         <TypeOnceHeading />
-        <p className={styles.subtitle}>Entre com suas credenciais para continuar</p>
+        <p className={styles.subtitle}>Demonstração offline. Use os valores de exemplo; nunca informe credenciais reais.</p>
       </header>
 
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
@@ -85,7 +85,7 @@ export function LoginForm() {
             type="email"
             required
             inputMode="email"
-            autoComplete="username"
+            autoComplete="off"
             spellCheck={false}
             placeholder="seu@e-mail.com"
             value={email}
@@ -101,7 +101,7 @@ export function LoginForm() {
             name="password"
             label="Senha"
             required
-            autoComplete="current-password"
+            autoComplete="off"
             placeholder="Sua senha"
             value={password}
             error={errors.password}

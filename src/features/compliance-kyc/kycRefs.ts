@@ -38,11 +38,11 @@ export function resolveParticipant(item: Pick<KycCase, 'participantType' | 'part
 }
 
 export const participantProfileHref = (type: ParticipantType, participantId: string) =>
-  `#/operation/${type === 'investor' ? 'investors' : 'entrepreneurs'}/${encodeURIComponent(participantId)}`
+  `#/operation/${type === 'investor' ? 'investors' : 'entrepreneurs'}/${Number(participantId.match(/(\d+)$/)?.[1])}`
 
 /** Existing tenant Accounts screen with the participant's type tab (no per-account deep link exists). */
 export const participantAccountHref = (item: Pick<KycCase, 'whitelabelId' | 'participantType'>) =>
-  accountsHref(item.whitelabelId, item.participantType)
+  accountsHref(String(Number(item.whitelabelId.match(/(\d+)$/)?.[1])), item.participantType)
 
 /** Auditoria prefiltered by this case. Navigation only: it never creates an Auditoria event. */
 export const auditHrefForCase = (kycCaseId: string) => buildHash('audit', { resourceType: 'kyc_case', resourceId: kycCaseId })

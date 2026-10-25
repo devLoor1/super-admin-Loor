@@ -105,8 +105,8 @@ export function IdentitySection({ whitelabel, saved, publicName, ctaLabel, onCom
   return (
     <SettingsSection
       id="settings-identity"
-      title="Identidade"
-      subtitle="Logo, favicon e cores aplicados à plataforma deste Whitelabel."
+      title="Identidade visual"
+      subtitle="Proposta de branding global do tenant: logo, favicon e cores. Não equivale a quick_profile.theme."
       status={configured ? 'configured' : 'default'}
       editButtonRef={editButtonRef}
       editor={{ ...editor, startEditing, discard: () => finish('discard'), save: () => finish('save') }}

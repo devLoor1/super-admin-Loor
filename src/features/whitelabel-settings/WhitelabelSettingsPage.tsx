@@ -20,6 +20,7 @@ import { SECTIONS, type SectionKey, type TermsRevision } from './settingsModel'
 import { updateWhitelabelSettings, useWhitelabelSettings } from './settingsStore'
 import styles from './WhitelabelSettingsPage.module.css'
 import { OperationalSettingsPage } from './OperationalSettingsPage'
+import { PlatformAppSection } from './platform-app/PlatformAppSection'
 
 const settingsHref = (id: string) => `#/whitelabels/${id}/settings`
 
@@ -173,8 +174,8 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
               Voltar para Whitelabels
             </a>
             <p className={styles.subtitle}>
-              Configure identidade, textos, funcionalidades e Termos de Uso do Whitelabel selecionado. Cada seção é
-              salva separadamente.
+              Plataforma, Platform App, E-mail e Termos de Uso no contexto do Whitelabel selecionado.
+              As alterações desta demonstração são salvas apenas na memória da aba.
             </p>
           </div>
           <WhitelabelContextSelector
@@ -208,6 +209,7 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
                   </button>
                 </li>
               ))}
+              <li><a className={styles.sectionLink} href={`#/whitelabels/${whitelabel.id}/emails`}>E-mail</a></li>
             </ul>
           </nav>
           <p className={styles.legend}>
@@ -318,9 +320,11 @@ function SettingsSections({
           terms={settings.terms}
           onView={(revision) => onTerms({ kind: 'view', revision })}
           onPublish={() => onTerms({ kind: 'publish' })}
+          onDiscardDraft={() => { save(value => ({ terms: { ...value.terms, draft: undefined } })); notify('Rascunho dos Termos descartado localmente.') }}
         />
         <SmtpSummary whitelabelId={whitelabel.id} />
       </div>
+      <PlatformAppSection whitelabelId={whitelabel.id} onDirtyChange={onDirtyChange} notify={notify} />
     </>
   )
 }
@@ -361,9 +365,14 @@ function TermsDialogs({
       whitelabelName={whitelabel.name}
       platformName={settings.experience.publicName.value}
       current={current}
+      draft={settings.terms.draft}
       onCancel={onClose}
       onDirtyChange={onDraftChange}
       fallbackFocus={focusTerms}
+      onSaveDraft={(draft) => {
+        updateWhitelabelSettings(whitelabel.id, value => ({ terms: { ...value.terms, draft } }))
+        onClose()
+      }}
       onPublish={({ title, content }) => {
         const revision = (current?.revision ?? 0) + 1
         updateWhitelabelSettings(whitelabel.id, (value) => ({

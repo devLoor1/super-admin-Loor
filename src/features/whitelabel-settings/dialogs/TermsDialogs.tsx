@@ -4,7 +4,7 @@ import { Dialog } from '../../../components/ui/Dialog'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../../components/ui/PrimaryButton'
 import { StatusPill } from '../../../components/ui/StatusPill'
-import { formatDateTime, type TermsRevision } from '../settingsModel'
+import { formatDateTime, type TermsDraft, type TermsRevision } from '../settingsModel'
 import styles from './SettingsDialogs.module.css'
 
 /** Read-only view of one Terms of Use revision (current or previous). */
@@ -57,6 +57,8 @@ type PublishProps = {
   whitelabelName: string
   platformName: string
   current: TermsRevision | null
+  draft?: TermsDraft
+  onSaveDraft: (draft: TermsDraft) => void
   onCancel: () => void
   onPublish: (input: { title: string; content: string }) => void
   onDirtyChange: (dirty: boolean) => void
@@ -74,13 +76,15 @@ export function PublishTermsDialog({
   whitelabelName,
   platformName,
   current,
+  draft,
+  onSaveDraft,
   onCancel,
   onPublish,
   onDirtyChange,
   fallbackFocus,
 }: PublishProps) {
   const nextRevision = (current?.revision ?? 0) + 1
-  const [initial] = useState(() => ({ title: current?.title ?? `Termos de Uso — ${platformName}`, content: current?.content ?? '' }))
+  const [initial] = useState(() => draft ?? ({ title: current?.title ?? `Termos de Uso — ${platformName}`, content: current?.content ?? '' }))
   const [title, setTitle] = useState(initial.title)
   const [content, setContent] = useState(initial.content)
   const [confirmed, setConfirmed] = useState(false)
@@ -135,6 +139,17 @@ export function PublishTermsDialog({
     else onPublish({ title: nextTitle, content: nextContent })
   }
 
+  function saveDraft() {
+    const nextTitle = title.trim(), nextContent = content.trim()
+    const next: Errors = {}
+    if (!nextTitle || nextTitle.length > TITLE_MAX) next.title = `Informe um título de até ${TITLE_MAX} caracteres.`
+    if (!nextContent || nextContent.length > CONTENT_MAX) next.content = `Informe conteúdo de até ${CONTENT_MAX} caracteres.`
+    setErrors(next)
+    if (next.title) titleRef.current?.focus()
+    else if (next.content) contentRef.current?.focus()
+    else onSaveDraft({ title: nextTitle, content: nextContent })
+  }
+
   return (
     <Dialog
       title={current ? 'Publicar nova revisão' : 'Publicar primeira revisão'}
@@ -162,6 +177,7 @@ export function PublishTermsDialog({
             <OutlineButton className={styles.footerButton} onClick={requestClose}>
               Cancelar
             </OutlineButton>
+            <OutlineButton className={styles.footerButton} onClick={saveDraft}>Salvar rascunho local</OutlineButton>
             <PrimaryButton type="submit" form="publish-terms-form" className={styles.footerButton}>
               <Send size={16} strokeWidth={1.9} aria-hidden="true" />
               Publicar revisão {nextRevision}

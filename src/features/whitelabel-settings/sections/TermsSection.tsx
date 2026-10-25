@@ -11,6 +11,7 @@ type Props = {
   terms: TermsSettings
   onView: (revision: TermsRevision) => void
   onPublish: () => void
+  onDiscardDraft: () => void
 }
 
 /**
@@ -18,7 +19,7 @@ type Props = {
  * flow (dialog owned by the page). Current and previous revisions are
  * visually distinct; nothing here triggers a new acceptance.
  */
-export function TermsSection({ terms, onView, onPublish }: Props) {
+export function TermsSection({ terms, onView, onPublish, onDiscardDraft }: Props) {
   const { current, history } = terms
 
   return (
@@ -28,6 +29,7 @@ export function TermsSection({ terms, onView, onPublish }: Props) {
       subtitle="Revisão vigente e histórico de publicações deste Whitelabel."
       status={current ? 'published' : 'not_configured'}
     >
+      {terms.draft ? <div className={fields.note}><FileText size={16} aria-hidden="true" /><div><strong>Rascunho local salvo</strong><p>{terms.draft.title}</p><button type="button" className={fields.textButton} onClick={onPublish}>Continuar rascunho</button>{' · '}<button type="button" className={fields.textButton} onClick={onDiscardDraft}>Descartar rascunho salvo</button><p>A revisão vigente e seus aceites permanecem inalterados até a publicação simulada.</p></div></div> : null}
       {current ? (
         <div className={styles.layout}>
           <article className={styles.current} aria-labelledby="terms-current-title">

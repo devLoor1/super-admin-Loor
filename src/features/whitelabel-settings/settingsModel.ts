@@ -50,7 +50,8 @@ export type TermsRevision = {
   local?: boolean
 }
 
-export type TermsSettings = { current: TermsRevision | null; history: TermsRevision[] }
+export type TermsDraft = { title: string; content: string }
+export type TermsSettings = { current: TermsRevision | null; history: TermsRevision[]; draft?: TermsDraft }
 
 export type WhitelabelSettings = {
   whitelabelId: string
@@ -128,7 +129,7 @@ export const FEATURES: { key: FeatureKey; label: string; description: string }[]
 
 /* ---------- Section status ---------- */
 
-export type SectionKey = 'general' | 'identity' | 'experience' | 'features' | 'terms'
+export type SectionKey = 'general' | 'identity' | 'experience' | 'features' | 'app' | 'terms'
 
 export type SectionPhase = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -161,10 +162,11 @@ export const SECTION_STATUS_META: Record<SectionStatus, { label: string; tone: S
 
 export const SECTIONS: { key: SectionKey; label: string; anchor: string }[] = [
   { key: 'general', label: 'Geral', anchor: 'settings-general' },
-  { key: 'identity', label: 'Identidade', anchor: 'settings-identity' },
-  { key: 'experience', label: 'Experiência', anchor: 'settings-experience' },
-  { key: 'features', label: 'Funcionalidades', anchor: 'settings-features' },
+  { key: 'experience', label: 'Plataforma', anchor: 'settings-experience' },
+  { key: 'app', label: 'Platform App', anchor: 'settings-app' },
   { key: 'terms', label: 'Termos de Uso', anchor: 'settings-terms' },
+  { key: 'identity', label: 'Identidade visual', anchor: 'settings-identity' },
+  { key: 'features', label: 'Funcionalidades', anchor: 'settings-features' },
 ]
 
 /* ---------- Helpers ---------- */

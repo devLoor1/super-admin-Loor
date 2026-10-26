@@ -212,7 +212,7 @@ export function validationMeta(state: string | null): { label: string; tone: Bus
 
 export function investorTypeLabel(value: string | null) {
   if (!value) return null
-  return value === 'pessoa_fisica' ? 'Pessoa física' : value
+  return value === 'pessoa_fisica' ? 'Pessoa física' : value === 'pessoa_juridica' ? 'Pessoa jurídica' : value
 }
 
 /**

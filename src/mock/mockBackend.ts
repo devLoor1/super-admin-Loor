@@ -1,5 +1,6 @@
 import { MENU_VISIBILITY_IDS } from '../features/menu-visibility/menuRegistry'
 import { CARDINALITY, initialMockDatabase, MONEY, MOCK_SESSION, operator, OPERATOR_ID, STAMP, type MockRow } from './mockFixtures'
+import { validateAccountCreation, type ParticipantKind } from './account-creation/accountCreationModel'
 
 /** Dedicated mock protocol. There is deliberately no network client, URL base or fallback. */
 const database = initialMockDatabase()
@@ -36,7 +37,7 @@ function list<T extends object>(all: T[], query: URLSearchParams, extra: Bag = {
 }
 
 function accountRows(kind: string | null) { return kind === 'empreendedores' ? database.entrepreneurs : kind === 'administradores' || kind === 'admins' ? database.admins : database.investors }
-function accountOverview(row: MockRow) { return { accessState: row.accessState, reason: row.reason ?? null, pausedAt: row.pausedAt ?? null, emailVerifiedAt: STAMP, createdAt: row.createdAt, updatedAt: row.updatedAt, lastLoginAt: STAMP } }
+function accountOverview(row: MockRow) { return { accessState: row.accessState, reason: row.reason ?? null, pausedAt: row.pausedAt ?? null, emailVerifiedAt: row.emailVerifiedAt ?? null, createdAt: row.createdAt, updatedAt: row.updatedAt, lastLoginAt: row.mockCreated ? null : STAMP } }
 function overview(row: MockRow, investor: boolean) {
   const related = database.opportunities.filter(o => o.entrepreneurId === row.id && o.whitelabelId === row.whitelabelId)
   if (!investor) {
@@ -46,10 +47,10 @@ function overview(row: MockRow, investor: boolean) {
         byStatus: Object.fromEntries(['review', 'active', 'finished', 'archived'].map(status => [status, related.filter(o => o.status === status).length])) }, opportunities: related }, { cardinality: CARDINALITY })
   }
   const investments = database.investments.filter(i => i.investorId === row.id), payments = database.payments.filter(p => p.investorId === row.id)
-  const wallet = database.wallets.find(w => w.id === row.whitelabelId)
-  return envelope({ investor: row, account: accountOverview(row), personalData: { investorType: 'individual', personalInformationFilled: true },
-    kyc: { status: 'approved', bureau: { status: 'approved', verifiedAt: STAMP }, faceMatch: { id: 100 + row.id, status: 'approved', submittedAt: STAMP, processedAt: STAMP } },
-    summary: { investmentsCount: investments.length, investedAmountCents: 123450, paymentsCount: payments.length },
+  const wallet = !row.mockCreated && database.wallets.find(w => w.id === row.whitelabelId)
+  return envelope({ investor: row, account: accountOverview(row), personalData: { investorType: row.investorType, personalInformationFilled: row.personalInformationFilled },
+    kyc: row.mockCreated ? null : { status: 'approved', bureau: { status: 'approved', verifiedAt: STAMP }, faceMatch: { id: 100 + row.id, status: 'approved', submittedAt: STAMP, processedAt: STAMP } },
+    summary: { investmentsCount: investments.length, investedAmountCents: row.mockCreated ? 0 : 123450, paymentsCount: payments.length },
     recentInvestments: investments.slice(0, 10).map(i => ({ ...i, opportunityName: database.opportunities.find(o => o.id === i.opportunityId)?.name ?? null })), recentPayments: payments.slice(0, 10),
     wallet: wallet ? { whitelabelId: row.whitelabelId, balance: wallet, recentMovements: [] } : null })
 }
@@ -62,7 +63,7 @@ function settings(row: MockRow) {
     terminology: { config: { capabilityId: 'platform.terminology', version: 1, locale: 'pt-BR', values: { 'investmentPortfolio.label.singular': 'Carteira', 'investmentPortfolio.label.plural': 'Carteiras', 'investmentOffering.label.singular': 'Oportunidade', 'investmentOffering.label.plural': 'Oportunidades', 'investorRole.label.singular': 'Investidor', 'investorRole.label.plural': 'Investidores' } } } }, terms: { current: terms, history: [terms] } })
 }
 
-function kycRows() { return database.investors.map((i, index) => ({ id: 100 + i.id, status: index % 3 === 0 ? 'pending' : 'approved', investorId: i.id, investorName: i.fullName, whitelabelId: i.whitelabelId, faceMatchStatus: 'approved', updatedAt: STAMP })) }
+function kycRows() { return database.investors.filter(i => !i.mockCreated).map((i, index) => ({ id: 100 + i.id, status: index % 3 === 0 ? 'pending' : 'approved', investorId: i.id, investorName: i.fullName, whitelabelId: i.whitelabelId, faceMatchStatus: 'approved', updatedAt: STAMP })) }
 function kycDetail(id: number) {
   const row = kycRows().find(r => r.id === id), investor = row && database.investors.find(i => i.id === row.investorId)
   return row && investor ? envelope({ id, status: row.status, investor, whitelabel: { id: investor.whitelabelId }, personalDataValidation: { status: 'approved' },
@@ -125,6 +126,33 @@ export async function mockRequest(path: string, options: RequestInit = {}): Prom
   if (p === '/auth/me' && method === 'GET') return json({ ...operator, roles: [role] })
   if (method !== 'GET' && role !== 'SUPER_ADMIN' && !(role === 'SUPPORT_ADMIN' && /\/accounts\/\d+\/(pause|reactivate)$/.test(p))) return error(403, 'MOCK_READ_ONLY')
 
+  // Explicitly synthetic namespace. No operational creation route or Core actor token is introduced.
+  const creation = /^\/mock\/account-creation\/whitelabels\/([1-9]\d*)\/(investor|entrepreneur)(?:\/([1-9]\d*))?$/.exec(p)
+  if (creation) {
+    const tenantId = Number(creation[1]), kind = creation[2] as ParticipantKind
+    if (!Number.isSafeInteger(tenantId) || !database.whitelabels.some(w => w.id === tenantId)) return error(404, 'MOCK_NOT_FOUND')
+    const rows = kind === 'investor' ? database.investors : database.entrepreneurs
+    if (method === 'GET' && creation[3]) {
+      const row = rows.find(item => item.id === Number(creation[3]) && item.whitelabelId === tenantId)
+      return row ? json(envelope(row.mockCreated ? row : null, { mockOnly: true })) : error(404, 'MOCK_NOT_FOUND')
+    }
+    if (method !== 'POST' || creation[3]) return error(405)
+    const { values, errors } = validateAccountCreation(kind, body)
+    if (Object.keys(errors).length) return error(422, 'MOCK_ACCOUNT_INPUT_INVALID')
+    if (rows.some(item => item.whitelabelId === tenantId && text(item.email).trim().toLowerCase() === values.email)) return error(409, 'MOCK_EMAIL_TAKEN')
+    const row: MockRow = { id: nextId(), type: kind, whitelabelId: tenantId, fullName: values.full_name, name: values.full_name, email: values.email, phone: values.phone,
+      accessState: 'active', businessState: kind === 'investor' ? 'waiting' : 'incomplete', status: 'pending',
+      emailVerifiedAt: null, termsAcceptedAt: null, termsRevisionId: null, personalInformationFilled: false,
+      credentialsProvisioned: false, mockCreated: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      ...(kind === 'investor' ? { investorType: values.investor_type } : {}) }
+    rows.push(row)
+    if (kind === 'investor') {
+      const tenant = database.whitelabels.find(w => w.id === tenantId)!
+      tenant.counts = { ...asBag(tenant.counts), investors: rows.filter(item => item.whitelabelId === tenantId).length }
+    }
+    return json(envelope(row, { mockOnly: true }), 201)
+  }
+
   if (p === '/homolog/menu-visibility') {
     if (method === 'GET') return json(envelope(mockMenu))
     if (method === 'PUT') {
@@ -166,9 +194,13 @@ export async function mockRequest(path: string, options: RequestInit = {}): Prom
         return id && !row ? error(404) : json(dedicated ? { status: 200, data: result } : result)
       }
       if (!id && dedicated && method === 'POST') {
-        if (database.admins.some(a => a.email === body.email)) return error(422, 'E_EMAIL_TAKEN')
-        const created: MockRow = { id: nextId(), whitelabelId: tenantId, type: 'admin', name: null, fullName: null, email: body.email, accessState: 'active', businessState: 'active', invitation: 'accepted', isSuperAdmin: false, createdAt: STAMP, updatedAt: STAMP }
-        database.admins.push(created); return json(envelope(created), 201)
+        const email = text(body.email).trim().toLowerCase()
+        if (Object.keys(body).some(key => !['email', 'password'].includes(key)) || email.length > 256 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof body.password !== 'string' || body.password.length < 8 || body.password.length > 60) return error(422, 'ADMIN_INPUT_INVALID')
+        if (database.admins.some(a => text(a.email).trim().toLowerCase() === email)) return error(422, 'E_EMAIL_TAKEN')
+        const created: MockRow = { id: nextId(), whitelabelId: tenantId, type: 'admin', name: null, fullName: null, email, accessState: 'active', businessState: 'active', invitation: null, isSuperAdmin: false, emailVerifiedAt: null, credentialsProvisioned: false, createdAt: STAMP, updatedAt: STAMP }
+        database.admins.push(created)
+        tenantRow.admins = database.admins.filter(item => item.whitelabelId === tenantId).length
+        return json(envelope(created), 201)
       }
       if (!row) return error(404)
       if (dedicated && method === 'PATCH') {

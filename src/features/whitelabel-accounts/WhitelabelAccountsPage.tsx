@@ -21,6 +21,8 @@ import { ACCOUNT_SEARCH_MAX_LENGTH, accountsPageHref, parseAccountsRoute, type A
 import { useAccountDetail, useAccountList, useWhitelabelOptions, useWhitelabelRecord } from './useAccountsData'
 import styles from './WhitelabelAccountsPage.module.css'
 import { AdminCreateAction } from './admin/AdminLifecycleActions'
+import { MockAccountCreateAction } from '../../mock/account-creation/MockAccountCreateAction'
+import { MockAccountOnboarding } from '../../mock/account-creation/MockAccountOnboarding'
 
 const MOBILE_QUERY = '(max-width: 767px)'
 const STACKED_TABS_QUERY = '(max-width: 479px)'
@@ -237,8 +239,8 @@ function AccountsContent({
           Voltar para Whitelabels
         </a>
         <p className={styles.subtitle}>
-          Consulte administradores, investidores e empreendedores do Whitelabel selecionado, com dados do Control Plane.
-          A gestão de acesso de investidores e empreendedores depende da permissão do operador.
+          Consulte e crie contas sintéticas no Whitelabel selecionado. Cadastros e alterações ficam somente nesta aba.
+          Verificação, termos e conclusão do perfil são etapas separadas.
         </p>
       </div>
       {selector}
@@ -306,7 +308,7 @@ function AccountsContent({
   let detailPanel
   let announcement: string
   if (whitelabel && detail.state.status === 'success') {
-    detailPanel = <AccountDetailPanel detail={detail.state.data} whitelabel={whitelabel} />
+    detailPanel = <><AccountDetailPanel detail={detail.state.data} whitelabel={whitelabel} /><MockAccountOnboarding detail={detail.state.data} tenantId={whitelabel.id} /></>
     announcement = `Detalhes de ${accountDisplayName(detail.state.data)} em exibição.`
   } else if (detailError?.notFound && selectedId) {
     detailPanel = (
@@ -358,12 +360,13 @@ function AccountsContent({
           />
           <p className={styles.readOnly} data-read-only-note>
             <Info size={14} strokeWidth={1.9} aria-hidden="true" />
-            {route.kind === 'admin' ? 'Consulta e gestão de administradores' : 'Somente leitura'}
+            {route.kind === 'admin' ? 'Gestão simulada de administradores' : 'Cadastro e consulta simulados'}
           </p>
         </div>
 
         <div className={styles.list}>
           {route.kind === 'admin' && whitelabel && <div><AdminCreateAction key={whitelabel.id} whitelabel={whitelabel} /></div>}
+          {route.kind !== 'admin' && whitelabel && <MockAccountCreateAction whitelabel={whitelabel} kind={route.kind} />}
           <AccountListPanel
             kind={route.kind}
             whitelabelName={whitelabelName}

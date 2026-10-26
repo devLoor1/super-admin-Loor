@@ -23,7 +23,7 @@ export function AdminFeedback({ error }: { error: unknown }) {
 }
 function AttemptFeedback({ value, onReconcile }: { value: AdminAttempt; onReconcile: () => void }) {
   return <div className={css.feedback} role="status" data-admin-phase={value.phase}>
-    <p>{value.phase === 'confirmed' ? 'Operação aceita; persistência confirmada por resposta e GET.' : value.phase === 'readback_matches' ? 'O GET corresponde ao esperado, mas a resposta da operação não foi confirmada. Não reenviar.' : value.phase === 'uncertain' ? 'Resultado incerto. A operação pode ter sido aplicada; não repetir nem recarregar para reenviar.' : value.phase === 'stale' ? 'O registro mudou antes do envio. Nenhuma alteração foi enviada.' : value.phase === 'rejected' ? value.code === 'LAST_ACTIVE_ADMIN_PROTECTED' ? 'Desativação bloqueada: não foi confirmado outro administrador ativo.' : value.code === 'E_EMAIL_TAKEN' ? 'E-mail já utilizado. Criação/edição recusada.' : 'Operação recusada ou pré-condição inválida. Nada foi apresentado como salvo.' : 'Conferindo identidade, enviando uma vez e consultando o resultado…'}</p>
+    <p>{value.phase === 'confirmed' ? 'Simulação aceita; registro na memória confirmado por resposta e GET.' : value.phase === 'readback_matches' ? 'O GET corresponde ao esperado, mas a resposta da operação não foi confirmada. Não reenviar.' : value.phase === 'uncertain' ? 'Resultado incerto. A operação pode ter sido aplicada; não repetir nem recarregar para reenviar.' : value.phase === 'stale' ? 'O registro mudou antes do envio. Nenhuma alteração foi enviada.' : value.phase === 'rejected' ? value.code === 'LAST_ACTIVE_ADMIN_PROTECTED' ? 'Desativação bloqueada: não foi confirmado outro administrador ativo.' : value.code === 'E_EMAIL_TAKEN' ? 'E-mail já utilizado. Criação/edição recusada.' : 'Operação recusada ou pré-condição inválida. Nada foi apresentado como salvo.' : 'Conferindo identidade, enviando uma vez e consultando o resultado…'}</p>
     {value.id && <p>Administrador #{value.id}</p>}{value.status && <p>HTTP {value.status}</p>}{value.correlationId && <p>Diagnóstico: {value.correlationId}</p>}
     {['uncertain', 'readback_matches'].includes(value.phase) && <OutlineButton onClick={onReconcile}>Reconciliar por GET</OutlineButton>}
   </div>
@@ -60,14 +60,14 @@ function CreateScope({ whitelabel, version }: { whitelabel: WhitelabelRecord; ve
     finally { busyRef.current = false; if (input.current) input.current.value = ''; setSecretPresent(false) }
   }
   return <section className={`${css.panel} ${css.create}`} data-admin-create>
-    <h3>Administradores do Whitelabel</h3><p>Credenciais iniciais; sem convite, envio de e-mail ou permissões inventadas.</p>
-    {created && <p role="status">Administrador #{created} criado e confirmado por GET. A senha inicial foi removida do formulário.</p>}
+    <h3>Administradores do Whitelabel</h3><p>Cadastro com credenciais simuladas, somente nesta aba. Use e-mail e senha fictícios.</p>
+    {created && <p role="status">Administrador #{created} criado na demonstração e conferido por GET. A senha inicial foi removida do formulário.</p>}
     <div><OutlineButton disabled={busy || adminAttemptLocked(attempt)} onClick={() => { setError(null); setOpen(true) }}>Criar administrador</OutlineButton></div>
     {attempt && <AttemptFeedback value={attempt} onReconcile={() => void reconcileAdmin(key, version).catch(setError)} />}
     {!!error && <AdminFeedback error={error} />}
     {open && !discard && !guard.pending && <Dialog title="Criar administrador do Whitelabel?" description={`${whitelabel.name} · Whitelabel #${whitelabel.id}`} initialFocusRef={cancel} onClose={close} footer={<><OutlineButton ref={cancel} disabled={busy} onClick={close}>Cancelar</OutlineButton><PrimaryButton type="submit" form={formId} disabled={busy || adminAttemptLocked(attempt)}>Confirmar criação</PrimaryButton></>}>
       <form id={formId} className={css.form} onSubmit={event => { event.preventDefault(); void submit() }}>
-        <p>O Core cria a conta com e-mail e senha. O nome é definido depois, pela edição suportada. O novo administrador poderá acessar este Whitelabel; funções do Control Plane não são atribuídas.</p>
+        <p>O fluxo existente usa e-mail e senha. Nesta demonstração, a conta fica somente na memória e nenhuma credencial externa é provisionada. O nome pode ser definido depois pela edição. O escopo é este Whitelabel; funções do Control Plane não são atribuídas.</p>
         <label className={css.field}><span>E-mail do novo administrador</span><input type="email" required maxLength={256} autoComplete="off" value={email} disabled={busy || adminAttemptLocked(attempt)} onChange={event => setEmail(event.target.value)} /></label>
         <label className={css.field}><span>Senha inicial (8–60 caracteres)</span><input ref={input} type="password" required minLength={8} maxLength={60} autoComplete="new-password" disabled={busy || adminAttemptLocked(attempt)} onChange={event => setSecretPresent(!!event.target.value)} /></label>
         <p>A senha será limpa no envio e não será exibida novamente. Nenhum convite ou mensagem é enviado por esta integração. Resultado incerto exige GET, nunca nova criação automática.</p>

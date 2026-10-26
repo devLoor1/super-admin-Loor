@@ -5,6 +5,7 @@ import { MockKycListPage } from '../features/compliance-kyc/MockKycListPage'
 import { MockKycDetailPage } from '../features/compliance-kyc/MockKycDetailPage'
 import { WhitelabelAccountsPage as LegacyAccountsPage } from './legacy-accounts/WhitelabelAccountsPage'
 import styles from './MockApp.module.css'
+import { watchAccountDraftSession } from './account-creation/accountCreationDrafts'
 
 const DEMO_LINKS = [
   ['Dashboard', '#/dashboard'], ['Whitelabels / CRUD local', '#/whitelabels'], ['Contas / acesso local', '#/whitelabels/1/accounts'], ['Contas · protótipo / transferência local', '#/mock/accounts/wl_proto_01'],
@@ -20,6 +21,7 @@ const DEMO_LINKS = [
 
 /** Mock-only entry. Local review actions remain distinct from the current read-only KYC contract. */
 export function MockApp() {
+  useEffect(() => watchAccountDraftSession(subscribeSession), [])
   const [hash, setHash] = useState(window.location.hash)
   const authed = useSyncExternalStore(subscribeSession, isAuthenticated)
   const [outboundBlocked, setOutboundBlocked] = useState(false)

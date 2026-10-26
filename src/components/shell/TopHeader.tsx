@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 're
 import { Bell, ChevronDown, ChevronRight, Globe, House, Layers, LogOut, Menu, Search } from 'lucide-react'
 import { logout, useSessionOperator } from '../../lib/authSession'
 import { usePrototypeNotice } from './prototypeNotice'
-import { RotatingDashboardTitle } from '../originkit/RotatingDashboardTitle'
 import styles from './TopHeader.module.css'
 import { PROTOTYPE_PRESENTATION } from '../../app/presentationAvailability'
 
@@ -85,7 +84,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
       <div className={styles.titleBlock}>
         <span className={styles.accentBar} aria-hidden="true" />
         <h1 className={styles.title}>
-          {title === 'Dashboard Global' ? <><span className="visually-hidden">Dashboard Global</span><RotatingDashboardTitle /></> : title}
+          {title}
         </h1>
         {breadcrumbs?.length ? (
           <nav className={styles.location} aria-label="Trilha de navegação">

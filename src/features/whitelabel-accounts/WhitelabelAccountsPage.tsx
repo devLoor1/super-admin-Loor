@@ -366,7 +366,7 @@ function AccountsContent({
 
         <div className={styles.list}>
           {route.kind === 'admin' && whitelabel && <div><AdminCreateAction key={whitelabel.id} whitelabel={whitelabel} /></div>}
-          {route.kind !== 'admin' && whitelabel && <MockAccountCreateAction whitelabel={whitelabel} kind={route.kind} />}
+          {route.kind !== 'admin' && whitelabel && <div><MockAccountCreateAction whitelabel={whitelabel} kind={route.kind} /></div>}
           <AccountListPanel
             kind={route.kind}
             whitelabelName={whitelabelName}

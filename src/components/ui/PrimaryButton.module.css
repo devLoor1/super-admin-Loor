@@ -18,19 +18,31 @@
   white-space: nowrap;
   transition:
     filter var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .button svg {
   flex: none;
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   filter: brightness(1.08);
 }
 
-.button:active {
+.button:active:not(:disabled) {
   filter: brightness(0.95);
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (pointer: coarse) {
+  .button { min-height: 44px; height: auto; padding-block: 12px; white-space: normal; }
 }
 
 .button:focus-visible {

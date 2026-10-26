@@ -55,7 +55,10 @@
   --shadow-button: 0 1px 2px rgb(40 34 140 / 0.16);
 
   /* Motion */
-  --transition-fast: 140ms ease;
+  --motion-duration-micro: 150ms;
+  --motion-duration-panel: 210ms;
+  --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --transition-fast: var(--motion-duration-micro) var(--motion-ease);
 
   /* ---------- Authenticated app shell (dark, navy-tinted) ----------
      Sampled from the approved Dashboard V1 image. The accent tokens above

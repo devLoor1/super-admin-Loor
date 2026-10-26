@@ -1,0 +1,37 @@
+{
+  "baseline": "9f7f71e328440972dfd63588e9e981fbb2ced673",
+  "files": {
+    "src/components/shell/TopHeader.tsx": {
+      "before": "a4f4bf2b041d91124b4dae36c7ac58a6f008aa25e8ee11629cc0d626c1e2d224",
+      "after": "8226c91fc785a9abe98cbbde67f09a245bba7e2c0b48c4dba2eaeea49e9e67f5"
+    },
+    "src/components/ui/DetailTransition.tsx": {
+      "before": "10b122ba8fd1ec210fa19a5a53e2fd3c3bade99381eea2f9d9a034d33cf2c38a",
+      "after": "8319d115ae954d11a37b604b10d13194caf417387aa35908bf993ad95a393c38"
+    },
+    "src/components/ui/Dialog.module.css": {
+      "before": "c6d8a0da53d0da94f80bb2316245fcd34357ccbd67c687c937bd5d804122ca73",
+      "after": "ed2780395952454442d2a79542e8f77bc9d193f960576efe02170bc73e6c564b"
+    },
+    "src/components/ui/OutlineButton.module.css": {
+      "before": "a7fbcbb4b9f739746d2f7fcc4fdf1cb29562f835424d33da0d1cec49a3141c39",
+      "after": "d1457488945624c342b3e8df88fa9cce7b93298377e14bdf8b20f116ec67e899"
+    },
+    "src/components/ui/PrimaryButton.module.css": {
+      "before": "f2186773c67d1d128b69ee7dcc0c97519050d74bd9da567fccef4de098a632c2",
+      "after": "3a3b57e53284dfa59a25d65ab27bdfb96ac03ba908e99ae1aeb99264b68da8a4"
+    },
+    "src/features/whitelabel-accounts/admin/AdminLifecycle.module.css": {
+      "before": "acd4668fbc36057adda92b878c8abe23711bba1937e6319cd5d55470151ebbc7",
+      "after": "fc73a5840ce44ebfd96c72ee9a428d2fcf057814b6ea38c480c60976b4391441"
+    },
+    "src/features/whitelabels/visuals/DotMatrixBackground.module.css": {
+      "before": "f2a28f10def147af7b78efa2529369d609a67229f09056e2d09ca1249e50fbdd",
+      "after": "c3572788c4441fb3b4d135763a1eedebfcdb4838de1f089b7a408ec7cbd07922"
+    },
+    "src/styles/tokens.css": {
+      "before": "c5baa9b21db83e2483e04d191ad7ef7ca9a3fdb64b70d5522a8fd9bba02cdae6",
+      "after": "8a1cfcfac5aaf68bf9cb56be09087d9d204b561ccbeb07f16a132139d0ce5e9e"
+    }
+  }
+}

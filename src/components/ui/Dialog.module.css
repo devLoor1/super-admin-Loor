@@ -23,13 +23,13 @@
 }
 
 .dialog[open] {
-  animation: dialog-in 160ms ease-out;
+  animation: dialog-in var(--motion-duration-panel) var(--motion-ease);
 }
 
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.99);
+    transform: translateY(4px) scale(0.995);
   }
 }
 
@@ -87,6 +87,7 @@
 .heading {
   min-width: 0;
   padding-top: 1px;
+  overflow-wrap: anywhere;
 }
 
 .title {
@@ -106,14 +107,15 @@
 .close {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   margin: -3px -2px 0 0;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-on-dark-secondary);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .close:hover {

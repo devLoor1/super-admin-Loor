@@ -22,9 +22,18 @@
   color: var(--text-on-dark-secondary);
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   border-color: #3d4766;
   background: rgb(255 255 255 / 0.04);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .button { min-height: 44px; height: auto; padding-block: 10px; white-space: normal; }
 }
 
 .button:focus-visible {

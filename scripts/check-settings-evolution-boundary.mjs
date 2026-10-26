@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeSettingsEvolution, reviewedSettingsEvolution, settingsEvolutionBaseline, settingsEvolutionFiles, verifySettingsEvolutionSource } from './reviewed-settings-evolution-boundary.mjs'
 import { beforeConsolidation, execFileSync } from './reviewed-consolidation-boundary.mjs'
+import { reviewedAccountUx } from './reviewed-account-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const normalized = source => source.replaceAll('\r\n', '\n')
@@ -16,7 +17,9 @@ function check(label, run) { try { run(); checks++ } catch (cause) { throw Error
 
 check('all changed or added runtime files have individual exact pins', () => {
   const paths = [...new Set((git('diff', '--name-only', settingsEvolutionBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
-  assert.deepEqual(settingsEvolutionFiles().sort(), paths)
+  // A later presentation unit has its own independently checked exact manifest.
+  // Its files are not silently added to or re-pinned in this historical manifest.
+  assert.deepEqual(settingsEvolutionFiles().sort(), paths.filter(path => !reviewedAccountUx(path)))
 })
 for (const path of settingsEvolutionFiles()) {
   const actual = source(path)

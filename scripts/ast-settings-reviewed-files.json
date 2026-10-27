@@ -1,0 +1,114 @@
+{
+  "baseline": "fe7a9a839c5f5595825661c136aa1107c5071c6f",
+  "finalized": true,
+  "files": {
+    "src/app/App.tsx": {
+      "before": "4c4d4d8460c28de81a4994c4d30d0d65b171409984f92b4e54b24d38928af344",
+      "after": "bbdeec6fc57b4c11e067e218b42b633353e87bd31b698099f5d1625f4f924185"
+    },
+    "src/app/presentationAvailability.ts": {
+      "before": "57bc060a37ac5d521bf74787ff46e2f9eb82f702e5d7ef9030f5a1f83e49e00d",
+      "after": "30018a8379dadff05cd419702e8f7bd2ab8d7921cd70410391999a00b158f2fb"
+    },
+    "src/features/whitelabel-emails/EmailBrandingWorkspace.tsx": {
+      "before": null,
+      "after": "dfc734cffd256bd7ffbb581153f4df85c757b1def30a0e3d4fa652b471f1081a"
+    },
+    "src/features/whitelabel-emails/EmailTemplatesWorkspace.module.css": {
+      "before": null,
+      "after": "008c97d6d45c27a6791bf2fce41eaec7419cd22f252c62d1ef712073004c66d3"
+    },
+    "src/features/whitelabel-emails/EmailTemplatesWorkspace.tsx": {
+      "before": null,
+      "after": "d2ca5599fcc3506e5b47d7b0dd43d2990643e85432fc5db3e302ef7594ef18f8"
+    },
+    "src/features/whitelabel-emails/OperationalSmtpPage.tsx": {
+      "before": "5d209690f0900553238d8ea0894606cb2b732cffa59eb423a6f293766f3451b2",
+      "after": "464fc5a433a39086e017dc08667a2d98855c7b0246055532e6fa9f0152c59605"
+    },
+    "src/features/whitelabel-emails/editorial/emailConfirmationTemplateModel.ts": {
+      "before": null,
+      "after": "e1a17177096769e3c1ef9e9f52d45a256342b29241d702ecbf52c8ae2c85f7de"
+    },
+    "src/features/whitelabel-emails/editorial/investmentContractTemplateModel.ts": {
+      "before": null,
+      "after": "dac7501dcb999334dcac4dd099f81d9c16dfb14f8ad61d9b1e252574c0f7cc9c"
+    },
+    "src/features/whitelabel-emails/editorial/linkedTemplateModel.ts": {
+      "before": null,
+      "after": "c485cdfd1df1dfaaeb7cc3bae656f70c3c67d6afe09094c136f7c0444a6364ba"
+    },
+    "src/features/whitelabel-emails/emailBrandingDisplay.ts": {
+      "before": null,
+      "after": "5e9e432234620c7eb2218859c1bd9f5df8ecc8ca63f7fffa7f0ea98e5b2f3840"
+    },
+    "src/features/whitelabel-emails/emailEditorialModel.ts": {
+      "before": null,
+      "after": "69ab2d314a1d80f00ef3fdef86f03678e85dfa96bd817905ecc758ee463e154e"
+    },
+    "src/features/whitelabel-emails/emailPreviewGeometry.ts": {
+      "before": null,
+      "after": "613b29a8e150cf5258de2f046a685da3652bb283ba3db0f38401d406e896df30"
+    },
+    "src/features/whitelabel-emails/emailTemplateWrites.ts": {
+      "before": null,
+      "after": "c06ce7f1f4ce86f4dcbb52b766f3acce7ae588a88a463e0658121b072affd869"
+    },
+    "src/features/whitelabel-emails/emailTemplatesApi.ts": {
+      "before": null,
+      "after": "75b0485e6416426c988881445508e88bfc3ae6af46dce1691e9eedc620f8fa31"
+    },
+    "src/features/whitelabel-settings/AppConfigurationPreview.tsx": {
+      "before": null,
+      "after": "77ac46b49b8252c3f3588b1e423f5a38c9e63bd4d26f237249d42f917c14f913"
+    },
+    "src/features/whitelabel-settings/ConfigurationEditor.tsx": {
+      "before": null,
+      "after": "699b6b2c7623cc47a100dafc8224707adb10b32bdc728d2107b3c5702d388f31"
+    },
+    "src/features/whitelabel-settings/ConfigurationPreview.tsx": {
+      "before": null,
+      "after": "14a7a1d28bd6593c3699ab5d14f535191ef529495cfe53a07ab8d34f55f81f99"
+    },
+    "src/features/whitelabel-settings/ConfigurationStudio.module.css": {
+      "before": null,
+      "after": "3d5a0235d68053b4fe82c9ec8087cf07e6515c092cdf87d30963255b8e3c927c"
+    },
+    "src/features/whitelabel-settings/ConfigurationStudio.tsx": {
+      "before": null,
+      "after": "0ba5ab83d8be5213f129f5fe7596883de9fec10e73fbf885a41991e367858ac9"
+    },
+    "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
+      "before": "210e5a03dc8dd237b531538438fdcba8efafef7d0406edd9b9d3a551197d0f55",
+      "after": "85bea41f5704969fdfaf2e4f6a8ab6184e70c528053d8ec283823a98ab4a5ba7"
+    },
+    "src/features/whitelabel-settings/PlatformAssetEditor.module.css": {
+      "before": null,
+      "after": "36afa8ccac203f0b20d1f7661be7519cc6b2d620c0b12cc516e6303cb7fce3cb"
+    },
+    "src/features/whitelabel-settings/PlatformAssetEditor.tsx": {
+      "before": null,
+      "after": "4cea34755cfd0d79149f9df672b04e62e585e66fbbb4ed8b097bb39d460cb736"
+    },
+    "src/features/whitelabel-settings/configRoute.ts": {
+      "before": "b43eea18cd9493a6c0b4f4acae26a5e708713fb7014f22afc67cefde72d3d0b9",
+      "after": "e92d90e0502e622a6397223fdfeed3b5fce9cc046a3582b8c0a9546860828eca"
+    },
+    "src/features/whitelabel-settings/configurationClient.ts": {
+      "before": null,
+      "after": "8f5da19f6b15a18f09827f060a432820ca56a2f31a039dcf816e414bdcbfbcf1"
+    },
+    "src/features/whitelabel-settings/configurationContract.ts": {
+      "before": null,
+      "after": "f95e0727cb7bfbc28b39df05d154d7d0dc128d479c8810beff7ab1b2b47e2a24"
+    },
+    "src/features/whitelabel-settings/platformAssetClient.ts": {
+      "before": null,
+      "after": "db59a30896072b5acec91c2052e8ef46ed6e2832ea0fb5d391be06d089ba5241"
+    },
+    "src/features/whitelabel-settings/settingsReadApi.ts": {
+      "before": "192e8c5997e7d2577f30a52b322ae0ffe3acd80c7880f5f759b84605fbe041a4",
+      "after": "6f93cdc720ebca781c9d8f07996da029f8047ba8a09b384d13e0217d76c59781"
+    }
+  }
+}

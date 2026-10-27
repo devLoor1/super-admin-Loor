@@ -2,6 +2,7 @@ import { ApiError } from '../../lib/api'
 import { authenticatedGet } from '../../lib/apiClient'
 import { readAppContent } from './appContentRead'
 import { readPlatformPresentation } from './platformPresentationRead'
+import { readConfigOrigins } from './configurationContract'
 
 /** Core SettingsQueryService + PlatformSettingService projection. Never retain the raw settings bag. */
 export type ReadValue<T> = { state: 'missing' } | { state: 'null' } | { state: 'value'; value: T }
@@ -124,6 +125,7 @@ export function parseSettingsRead(raw: unknown, id: string) {
     experience: { title: effective(provenance['login.title'], field(login, 'title', text)), subtitle: effective(provenance['login.subtitle'], field(login, 'subtitle', text)), sideTitle: field(theme, 'sideTitle', text), sideSubtitle: field(theme, 'sideSubtitle', text), bullets: effective(provenance['login.bullets'], bullets) },
     features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, effective(provenance[`features.${k}` as QualifiedSetting], field(flags, k, bool))])) as Record<keyof typeof FEATURE_LABELS, ReadValue<boolean>>,
     provenance,
+    configuration: readConfigOrigins(data.provenance),
     terminology: Object.fromEntries(Object.keys(TERMINOLOGY_LABELS).map(k => [k, field(values, k, text)])) as Record<keyof typeof TERMINOLOGY_LABELS, ReadValue<string>>,
     app: { entry: readAppContent(s, 'entry'), authenticated: readAppContent(s, 'authenticated') },
     platformPresentation: readPlatformPresentation(s),

@@ -3,6 +3,7 @@ import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedSettingsEvolution } from './reviewed-settings-evolution-boundary.mjs'
 import { beforeSetSmtp, reviewedSetSmtp } from './reviewed-set-smtp-boundary.mjs'
+import { reviewedAstSettings } from './reviewed-ast-settings-boundary.mjs'
 import { readdir } from 'node:fs/promises'
 import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
@@ -490,6 +491,38 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
     const runtimePath = file.slice(root.length + 1).replaceAll('\\', '/')
+    // These four transports have independent physical behavioral suites. This
+    // inherited cross-domain freeze recognizes only their finalized exact pins,
+    // and retains their specific domain/method restrictions below.
+    if (['src/features/whitelabel-settings/configurationClient.ts', 'src/features/whitelabel-settings/platformAssetClient.ts', 'src/features/whitelabel-emails/emailTemplatesApi.ts', 'src/features/whitelabel-emails/emailTemplateWrites.ts'].includes(runtimePath)) {
+      assert.equal(reviewedAstSettings(runtimePath), true)
+      assert.doesNotMatch(source, /\/admin\/|\/internal\/|\/smtp\/test|fetch\s*\(|sendBeacon|WebSocket|setInterval/)
+      if (runtimePath.endsWith('/configurationClient.ts')) {
+        assert.match(source, /\/whitelabels\/\$\{tenant\}\/settings/)
+        assert.match(source, /method:\s*operation\s*===\s*'save'\s*\?\s*'PUT'\s*:\s*'DELETE'/)
+        assert.doesNotMatch(source, /'POST'|'PATCH'|\/platform\/assets|\/emails\//)
+      } else if (runtimePath.endsWith('/platformAssetClient.ts')) {
+        assert.match(source, /\/platform\/assets/)
+        assert.match(source, /form\.append\('slot', 'main_area'\)/)
+        assert.match(source, /method:\s*operation\s*===\s*'upload'\s*\?\s*'POST'\s*:\s*operation\s*===\s*'replace'\s*\?\s*'PUT'\s*:\s*'DELETE'/)
+        assert.doesNotMatch(source, /'PATCH'|\/emails\//)
+      } else if (runtimePath.endsWith('/emailTemplatesApi.ts')) {
+        assert.match(source, /\/emails\/templates/)
+        assert.equal((source.match(/method:\s*'POST'/g) || []).length, 1)
+        assert.match(source, /apiRequest\(emailTemplatePath\(tenant, '\/preview'\)/)
+        assert.doesNotMatch(source, /method:\s*'(PATCH|PUT|DELETE)'/)
+      } else {
+        assert.match(source, /apiRequest<\{ data: unknown \}>\(emailTemplatePath\(command\.tenant/)
+        assert.match(source, /const method = command\.operation === 'delete' \? 'DELETE' : command\.baseline \? 'PATCH' : 'POST'/)
+        // The exact correlation sanitizer import is not an SMTP transport.
+        // Strip only that reviewed import; SMTP URLs and any other SMTP module
+        // reference remain forbidden by the original domain restriction.
+        const correlationImport = /^import \{ safeSmtpCorrelation \} from '\.\/smtpReadApi'\r?$/m
+        assert.match(source, correlationImport)
+        assert.doesNotMatch(source.replace(correlationImport, ''), /'PUT'|\/smtp|\/platform\/assets/)
+      }
+      continue
+    }
     if (runtimePath === 'src/features/whitelabel-emails/smtpWriteClient.ts') {
       // Current metadata PATCH is independently behavioral-tested; this older
       // cross-domain freeze accepts only the exact finalized reviewed unit.

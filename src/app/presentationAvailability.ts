@@ -11,8 +11,8 @@ export function viewAvailable(view: string) { return !MOCK_ONLY_VIEWS.has(view) 
 export function readinessHref(id: string, candidate?: string) {
   if (id === 'financeiro') return '#/finance/investments'
   if (id === 'contas' && (!candidate || candidate.includes('_proto_'))) return '#/whitelabels/select/accounts'
-  if (id === 'whitelabel-settings' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/settings(?:\?area=(?:platform|app|identity|terms))?$/.test(candidate))) return '#/whitelabels/select/settings'
-  if (id === 'whitelabel-emails' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/emails(?:\?section=smtp)?$/.test(candidate))) return '#/whitelabels/select/emails?section=smtp'
+  if (id === 'whitelabel-settings' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/settings(?:\?area=(?:platform|app|identity|terms)(?:&cell=[a-z_]+\.[a-z_]+)?)?$/.test(candidate))) return '#/whitelabels/select/settings'
+  if (id === 'whitelabel-emails' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/emails(?:\?section=(?:smtp|templates|branding))?$/.test(candidate))) return '#/whitelabels/select/emails?section=smtp'
   return candidate?.includes('_proto_') ? undefined : candidate
 }
 /** Applied AFTER persisted preference policy, including its error fallback. No registry edits. */

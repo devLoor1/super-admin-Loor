@@ -16,8 +16,7 @@ import { ConfigNavigation } from './ConfigNavigation'
 import { configArea, configHref, type ConfigArea } from './configRoute'
 import { PlatformAppRead } from './PlatformAppRead'
 import { PlatformPresentationRead } from './PlatformPresentationCards'
-import { SettingsWriteEditor } from './SettingsWriteEditor'
-import { SETTINGS_FIELDS } from './settingsWriteContract'
+import { ConfigurationStudio } from './ConfigurationStudio'
 
 const settingsReadHref = (id: string, area: ConfigArea = 'platform') => configHref(id, area)
 export function SettingsReadFeedback({ error, retry }: { error: unknown; retry: () => void }) {
@@ -72,16 +71,18 @@ export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; 
       {data.terms.current.state === 'value' ? <Revision revision={data.terms.current.value} /> : <p>{data.terms.current.state === 'null' ? 'Nenhuma revisão vigente retornada para este Whitelabel.' : 'Revisão vigente não informada pela API.'}</p>}
       {data.terms.history.state === 'value' ? <details><summary>Histórico retornado ({data.terms.history.value.length} revisões)</summary>{data.terms.history.value.length ? data.terms.history.value.map(r => <Revision key={r.id} revision={r} />) : <p>Nenhuma revisão no histórico retornado.</p>}</details> : <p>Histórico {data.terms.history.state === 'null' ? 'sem valor (null)' : 'não informado pela API'}.</p>}
     </Section>}
-    <p className={read.missing}>Configuração SMTP possui uma consulta própria em E-mail. Credenciais e configurações internas não são exibidas. Publicação de Termos, branding global, uploads e testes de e-mail não estão disponíveis neste fluxo operacional.</p>
+    <p className={read.missing}>SMTP, templates e identidade de e-mail possuem áreas próprias em E-mail. Imagens das páginas de acesso são configuradas em Plataforma. Credenciais e configurações internas não são exibidas. Publicação de Termos, identidade global/PWA e envio de testes permanecem indisponíveis.</p>
   </>
 }
-function ConfirmedSettings({ id, area }: { id: string; area: ConfigArea }) {
+function ConfirmedSettings({ id, area, cell }: { id: string; area: ConfigArea; cell?: string }) {
   const remote = useSettingsRead(id)
   if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configurações…</p>
-  return <><SettingsReadCards data={remote.state.data} area={area} />{area === 'platform' && <SettingsWriteEditor id={id} data={remote.state.data} onReload={remote.reload} releasedFields={SETTINGS_FIELDS} />}</>
+  return area === 'platform' || area === 'app'
+    ? <ConfigurationStudio id={id} data={remote.state.data} area={area} selectedCell={cell} onReload={remote.reload} />
+    : <SettingsReadCards data={remote.state.data} area={area} />
 }
-function SettingsTenant({ whitelabelId, area }: { whitelabelId: string; area: ConfigArea | null }) {
+function SettingsTenant({ whitelabelId, area, cell }: { whitelabelId: string; area: ConfigArea | null; cell?: string }) {
   const id = isSettingsTenantId(whitelabelId) ? whitelabelId : null
   const tenant = useWhitelabelRecord(id), registry = useWhitelabelOptions()
   const record = tenant.state.status === 'success' ? tenant.state.data : null
@@ -92,13 +93,13 @@ function SettingsTenant({ whitelabelId, area }: { whitelabelId: string; area: Co
         <AccountsWhitelabelSelector current={record} pendingId={id ?? undefined} options={registry.state.status === 'success' ? registry.state.data.rows.filter(w => isSettingsTenantId(w.id)) : null} optionsStatus={registry.state.status === 'error' ? 'error' : registry.state.status === 'success' ? 'success' : 'loading'} onRetryOptions={registry.reload} contextLabel="as configurações" onSelect={next => { window.location.hash = settingsReadHref(next, area ?? 'platform') }} />
       </div>
       <ConfigNavigation id={id ?? 'select'} active={area ?? 'platform'} />
-      {!area ? <div role="alert" className={styles.notFound}><h2>Área de configuração inválida</h2><p>Escolha uma das áreas disponíveis acima.</p></div> : !id ? <div className={styles.notFound}><h2>Selecione um Whitelabel</h2><p>Escolha um registro real do Control Plane para consultar suas configurações.</p></div> : tenant.state.status === 'error' ? <SettingsReadFeedback error={tenant.state.error} retry={tenant.reload} /> : record ? <ConfirmedSettings key={id} id={id} area={area} /> : <p role="status">Confirmando Whitelabel…</p>}
+      {!area ? <div role="alert" className={styles.notFound}><h2>Área de configuração inválida</h2><p>Escolha uma das áreas disponíveis acima.</p></div> : !id ? <div className={styles.notFound}><h2>Selecione um Whitelabel</h2><p>Escolha um registro real do Control Plane para consultar suas configurações.</p></div> : tenant.state.status === 'error' ? <SettingsReadFeedback error={tenant.state.error} retry={tenant.reload} /> : record ? <ConfirmedSettings key={`${id}:${area}`} id={id} area={area} cell={cell} /> : <p role="status">Confirmando Whitelabel…</p>}
     </div></div>
   </AppShell>
 }
-export function OperationalSettingsPage({ whitelabelId, area }: { whitelabelId: string; area?: string }) {
+export function OperationalSettingsPage({ whitelabelId, area, cell }: { whitelabelId: string; area?: string; cell?: string }) {
   const operator = useSessionOperator()
   const session = useSyncExternalStore(subscribeSession, getSessionVersion, getSessionVersion)
   if (!canReadSettings(operator?.roles)) return <AppShell activeNav="plataformas" title="Configurações do Whitelabel" location="Configurações"><div role="alert" className={styles.notFound}><h2>Acesso não permitido</h2><p>Este perfil não pode consultar configurações. A autorização final pertence ao Backend.</p></div></AppShell>
-  return <SettingsTenant key={session} whitelabelId={whitelabelId} area={configArea(area)} />
+  return <SettingsTenant key={session} whitelabelId={whitelabelId} area={configArea(area)} cell={cell} />
 }

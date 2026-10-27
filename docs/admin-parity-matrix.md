@@ -1,8 +1,29 @@
 # Admin → Super Admin configuration parity
 
-Source qualification, 25 October 2026. This document concerns repository contracts, not an assertion of live runtime acceptance. The four Admin menu categories alone did not establish their fields. No Backend or shared tenant was changed during this audit.
+Source qualification started 25 October 2026; current candidate delta recorded 27 October 2026. Repository contracts, local implementation and live acceptance are separate evidence. The historical audit below is retained with its original source references; the dated delta supersedes its statements about current capability availability. No shared tenant mutation was performed for this comparison.
 
-## Source references
+## Current Admin comparison and candidate delta — 27 October 2026
+
+The Admin reference is now `7b1c792fa07b51cc40a978d85fe5f4495dcae543`, read from freshly fetched `origin/dev` without changing the Admin checkout. Actual authenticated Login, entry image, App, Email templates and Email identity screens were inspected. Their captures are listed in [the AST-01 checkpoint](ast01-settings-email-redesign-checkpoint.md). Historical `caed153` / `1464915` source alone does not describe the current Email interface: it now has transport, templates and identity tabs. The initial entry iframe screenshot was blank despite populated DOM; that capture proves editor composition, not rendered image-consumer acceptance.
+
+| Capability | Current Admin / contract evidence | Current local Super Admin candidate | Remaining acceptance boundary |
+| --- | --- | --- | --- |
+| Settings transport and SMTP metadata | Existing tenant Settings provenance/reset and credential-preserving SMTP metadata contracts | Previously released SET-01/SMTP-01 clients and guards retained; grouped editor/preview presentation replaces detached summaries | The completed four-write acceptance cycle is reused. No repeated SMTP cycle or credential/test-send surface is introduced |
+| Entry content and appearance | Grouped page/region/property controls; actual Admin serializers preserve unknown stored properties | Task-oriented Login, Registration and Quick Profile sections, contextual preview, explicit stored/effective source and whole-row preservation | Current GET-before/after discipline is not atomic concurrency. New composite persistence and intended consumer effects still need scoped runtime evidence |
+| Entry image AST-01 | Dedicated Platform asset API already exists; canonical association is `platform.main_area_image@1`, `{enabled,assetRef}` | Upload, association, replacement, unlink/reset and dependency-aware deletion use the existing asset pipeline. A narrow local Core patch adds tenant ownership validation to operator Settings association | Local patch and controls are not proof of deployed Core behavior. No new upload/association or public-consumer acceptance is claimed |
+| Platform App | 20 entry and 13 authenticated editorial fields; representative phone preview; shared terminology remains separate | Screen-focused editor/preview with original field semantics and unknown-property preservation | App cache/refresh and actual tenant resolution remain part of consumer acceptance; a local preview cannot prove it |
+| Email transport | Transport/remitter tab | Existing SMTP metadata editor and client unchanged, with contextual sender-header presentation | Credentials, test-send and actual delivery remain outside this workstream |
+| Email templates | Current Core catalog has 17 types; Admin uses structured editorial controls and server rendering | Catalog/default/custom selection, Admin-derived editorial serializers, draft/saved Core preview, inactive creation, guarded PATCH/delete and explicit activation intent | Operator Core/Nest bridge is implemented locally, not verified deployed. No live template write or send occurred |
+| Email identity | Current Admin has `EmailBrandingSettings.tsx` / `emailBranding.ts` | `email_branding/config` composite editor and Core-rendered preview share existing Settings and EmailBrandingService contracts | Email-only identity; external images are blocked in the safe preview. Logo persistence does not prove delivery/consumer rendering |
+| Global identity / legal / event policy | Runtime global PWA identity, legal draft/reacceptance and event suppression are distinct unresolved capabilities | No invented generic branding, legal publication or event switch is enabled | Preserve BRD-01, LEG-02 and EVT-01 Product/consumer decisions in the handoff |
+
+The original pure Admin `emailConfirmationTemplateModel.ts`, `investmentContractTemplateModel.ts` and `linkedTemplateModel.ts` are reused without Admin transport/authentication. This is editorial serialization, not a second mail engine. System variables remain controlled; unknown stored HTML is retained unless the operator explicitly chooses a structured replacement. A saved template may affect future selection, but saving never sends mail.
+
+Email preview uses the existing Core renderer through the candidate operator bridge, explicit synthetic samples, sanitized HTML and an empty-sandbox iframe. It blocks scripts, links/actions and external images. A fixed 600 px desktop / 360 px mobile viewport scales within narrow panels without changing the original email body. Branding display and draft preview match Core's existing `primary_color ?? primaryColor` / `logo_url ?? logoUrl` resolution: a missing or null canonical value falls back to the legacy alias. Stored nulls, aliases and unknown extensions remain unchanged. Preview alone normalizes valid six/eight-digit colors, optional # and whitespace to lowercase #RRGGBB, discarding alpha exactly as Core does; no normalization is silently persisted.
+
+Operational candidate tests include 60 focused synthetic Email checks. Independent mock TypeScript, oxlint, production build and the 66-check no-network boundary suite passed; those are not live Backend acceptance. Final release evidence belongs to the checkpoint. All new work remains local until coordinated Backend/frontend validation and deployment are verified.
+
+## Historical source references — 25 October 2026
 
 - **A**: `C:/Users/User/Desktop/Loor/admin-canvas`, clean `caed1532f52becc48346234897667f2b1d8f3213`; `src/components/admin/platform/` and `platform-app/`.
 - **T**: preserved `C:/Users/User/Desktop/Loor/worktrees/finapop-terms-admin`, clean `1464915f23f15a78b6143e787852fd68be940475`; the same Platform/App controls plus `src/components/admin/terms/` and `email/`. This is a source reference, not the operational Super Admin build.
@@ -13,7 +34,7 @@ Source qualification, 25 October 2026. This document concerns repository contrac
 
 Paths below are relative to their identified source repository. Admin JWT endpoints are evidence of existing Core capability only; the Super Admin must use the Nest Control Plane and its own SUPER_ADMIN/READ_ONLY authorization.
 
-## Capability matrix
+## Historical capability matrix — 25 October 2026
 
 | Admin section | Actual functionality | Existing Core/Admin endpoint | Entity / page + key | Super Admin destination | Frontend state / decision |
 | --- | --- | --- | --- | --- | --- |
@@ -39,7 +60,7 @@ Paths below are relative to their identified source repository. Admin JWT endpoi
 | Identity | Logo/favicon/global colors/live preview | No verified runtime global branding API | Current public PWA branding selected by build env/presets | Settings → Identidade visual | Existing design retained as explicit proposal in mock. Not a `quick_profile.theme` integration and not proven persisted branding. |
 | Tenant context | Slug/domain display and consumer resolution | Public `/investor/platform?platform_slug=…`; host fallback | Whitelabel numeric id + slug | Existing tenant selector/context | Numeric canonical API ID mandatory; slug is identity/resolution metadata. No slug edit added and no tenant inferred by alias. |
 
-## Exact Platform App fields and limits
+## Exact Platform App fields and limits (preserved contract)
 
 Source **A/T** `platform-app/platformAppEntryContract.ts` and `platformAppAuthenticatedContract.ts`; model companions implement compatibility, normalization and unknown-data preservation. These contract files are copied unchanged only on the separate `mock` branch at `src/features/whitelabel-settings/platform-app/{entryContract,authenticatedContract}.ts`. Operational `dev` uses its allowlisted read projection rather than importing those mock editors or defaults.
 
@@ -62,7 +83,7 @@ Source **A/T** `platform-app/platformAppEntryContract.ts` and `platformAppAuthen
 
 All are nonempty single-line plain text; normalize NFC, trim/collapse whitespace, reject CR/LF, Cc/Cf controls, `<`/`>`, `{{…}}`, `${…}`, `%token%`. An incompatible root/capability/version/locale is not a writable v1. Missing/bad individual text may use effective consumer defaults but must be identified as fallback, not claimed persisted data. Existing serializers retain unknown root properties, unknown screens and unknown properties within known screens. Core replaces a whole page/key value, not nested fields. Reconcile the authoritative row and preserve unknown data before a future composite write.
 
-## Consumer evidence and limits
+## Consumer evidence and limits (historical audit, with current delta above)
 
 - **P** public frontend resolves slug from the configured platform/environment/host and uses GET `/investor/platform`; `usePublicPlatformSettings.ts` uses tenant-keyed cache, stale60s, gc30min, refetchOnMount always, no focus refetch/retry. Consumer reload must be part of actual eventual write acceptance; saving Core alone is insufficient.
 - **M** App consumes `app_entry` and `app_authenticated`, normalizes typed known strings with defaults, and queries through `PlatformSettingsProvider.tsx` (stale5min, retry1, explicit refresh). No arbitrary generic mock identity field is proved consumed.

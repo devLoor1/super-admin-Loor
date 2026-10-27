@@ -1,12 +1,46 @@
 # Multi-tenant Settings — Backend/Product handoff
 
-2026-10-25 · Contract qualification, gaps and delivery order. This is a proposed delivery plan, not an announcement that the proposed routes or DTOs exist.
+2026-10-25 audit, updated with a 2026-10-27 candidate delta. The original 11-capability handoff and its 15 fields per capability remain below for history. The dated status matrix supersedes historical missing-route, read-only and missing-editor assertions; it does not assert unverified deployment or live persistence.
+
+## Current 11-capability status — 27 October 2026
+
+Inspected current baselines: Admin `7b1c792fa07b51cc40a978d85fe5f4495dcae543`, Core `eab5d3d64f15a1c6adf2338234e2deb614c1a709`, Nest `47c4bea3e1200fda27a68eed292e14df2b02f0d8`; preserved frontend baseline `fe7a9a839c5f5595825661c136aa1107c5071c6f`. The new candidate work is local and unpublished. Current Admin comparison was rendered, not inferred solely from old source: [parity matrix](admin-parity-matrix.md). Exact file/test and visual evidence is maintained in [the AST-01 checkpoint](ast01-settings-email-redesign-checkpoint.md).
+
+| ID | Current established capability / local delivery | Exact remaining boundary and owner action |
+| --- | --- | --- |
+| SET-01 | Existing tenant Settings transport, stored/effective provenance and override reset are delivered. Previously accepted SET-01 live write/restoration evidence is preserved; grouped presentation does not replace that transport | Do not repeat the completed four-write SET/SMTP cycle. GET-before/after remains sequential protection, not an atomic concurrency claim |
+| APP-01 | 33 App fields plus qualified entry/presentation composites use typed editors and complete stored-value preservation in the local candidate | Validate newly edited composites and the actual Public/App consumer after refresh. Unknown extensions survive; effective fallback is not silently persisted. Unsupported versions are non-editable |
+| AST-01 | Platform asset routes already exist. Narrow local Core correction adds tenant ownership/normalization for operator Settings association; local frontend provides asset upload/read/replace/delete and explicit page association | Complete Core maintained checks, supported deployment and live ownership/association/consumer acceptance. Do not request duplicate endpoints or use Opportunity assets |
+| BRD-01 | Existing main-area and email-specific identity are distinct from global branding | Runtime Public/App/PWA identity, supported logo/favicon slots and consumer cache policy remain Product/Core work. Mock fields do not create production keys |
+| SMTP-01 | Credential-preserving metadata client/editor is already accepted and unchanged; redesigned transport/remitter presentation reuses it | No new credential-editing scope. Preserve existing safe DTOs, guards and evidence |
+| SMTP-02 | Actual test-send is a distinct external side effect | Not enabled or performed. Recipient/outcome policy and separately authorized delivery acceptance remain required |
+| LEG-01 | Existing Terms read is preserved; legal publication is not part of this redesign acceptance | Do not publish legal content for visual QA or reinterpret generic Settings PUT as publication. Retain the separately qualified legal lifecycle contract |
+| LEG-02 | Local mock drafts remain explicitly simulated | Server draft/reacceptance lifecycle and consequences require Product/Core decisions; no legal or account effect is inferred |
+| EML-01 | Local operator Core/Nest bridge reuses the current 17-type Email engine/catalog. Frontend structured editors reuse current Admin serializers; list/detail, inactive create, partial PATCH, own-custom DELETE and no-send preview are implemented locally | Bridge maintained tests/deployment/RBAC and bounded reversible live lifecycle remain required. No route is claimed live and no new live template write/send occurred |
+| EMB-01 | Existing `email_branding/config` Settings provenance/PUT/DELETE and EmailBrandingService are reused; current Admin has the identity editor. Local frontend preserves aliases/unknowns and displays canonical null correctly | Accept new visual persistence/restoration through scoped GET and Core preview. External images are blocked, so remote-logo and real-delivery rendering remain separate evidence |
+| EVT-01 | Template `active` and SMTP state remain separate from automatic-event policy | No event suppression switch is enabled. Product must define trigger/mandatory/queue semantics before Core/Nest registry work |
+
+### Current contract deltas from the historical proposal
+
+- **Settings/composites:** existing generic PUT replaces one complete `(tenant,page,key)` value; it is not a deep merge. Current provenance and override DELETE support stored absence/default distinction. Preserve unknown stored data and unrelated rows. New frontend editors mutate only explicit paths; neither a parser fallback nor a local preview proves stored data. Versions are not silently treated as atomic preconditions.
+- **AST-01:** `platform.main_area_image@1` stores `enabled` and tenant-owned `assetRef`. The existing consumer controls crop/position; no invented fit/position payload is persisted. The local Core association patch and its 26 isolated scenarios are documented in `C:/Users/User/Desktop/Loor/worktrees/backend-ast-settings-email-v1/docs/ast-settings-composite-contract-v1.md`. The 15 focused frontend asset scenarios are synthetic; they do not establish a deployed storage or consumer result.
+- **EML-01:** candidate base `/api/whitelabels/:whitelabelId/emails/templates`: GET `/types`, GET list and GET `/:id` are SUPER_ADMIN/READ_ONLY reads; POST `/preview` is SUPER_ADMIN/READ_ONLY, HTTP 200 and no-send/no-persistence. SUPER_ADMIN POST creates (201), PATCH `/:id` updates (200), DELETE `/:id` removes only an owned custom template (200). Defaults are immutable. The old proposed operator PUT and four-type list below are obsolete. See the exact candidate contract at `C:/Users/User/Desktop/Loor/worktrees/backend-ast-settings-email-nest-v1/docs/email-template-operator-contract-v1.md`.
+- **Template safety:** catalog comes from Core, currently 17 types; `type` is immutable on PATCH. Create defaults inactive; activation explicitly changes future same-type custom selection without sending. HTML is bounded at 150,000 characters, subject at 512 and name at 256, with a scoped 1 MiB JSON limit. Preview accepts only type/subject/HTML and optional allowlisted branding, never arbitrary user variables; Core injects synthetic samples. Versions are informational. Fresh GET, single dispatch and GET reconciliation are required, with no automatic retries after uncertain results.
+- **Preview and identity:** Core renderer/branding is reused rather than duplicated. The frontend sanitizes returned mail HTML again and uses an empty-sandbox iframe with restrictive CSP. Scripts, actions, links and external images are blocked. Display and draft preview follow Core's existing nullish fallback (`primary_color ?? primaryColor`, `logo_url ?? logoUrl`); stored nulls/aliases remain unchanged. Valid legacy six/eight-digit colors normalize only in the preview command to lowercase #RRGGBB with alpha discarded, matching Core. The frontend does not redefine persisted consumer semantics. Email identity does not become global App/PWA identity or proof of delivered mail.
+
+### Outstanding coordinated release evidence
+
+The existing SET-01/SMTP-01 release is not reopened. For the new dependent capability, the Core/Nest owners must finish maintained checks and follow the supported deployment paths, then provide exact deployed revisions and authenticated contract evidence. The recorded Core flow is the existing AWS pull/build/restart procedure; access, checkout and service supervisor must be identified by its owner, not guessed. Nest homolog uses its established `homolog` promotion flow; a `dev` push alone does not prove deployment. Both are still dependencies of this local candidate.
+
+After deployed-contract qualification, perform only bounded disposable-tenant acceptance with authoritative readback/restoration, then publish and verify the frontend's exact commit/assets. No live mutation has been performed in this redesign workstream. Whitelabel 8 remains inactive and cannot prove active Public consumer resolution; tenant activation is not a workaround. Local synthetic tests and the isolated mock prove UI/protocol behavior only. Preserve the accepted Menu Visibility v5/23 preferences without mutation, protected branches, previous releases and the independent no-network mock.
+
+## Historical audit references — 25 October 2026
 
 Audited live development source refs: Nest Control Plane `86aa3663915f38903f6ceb2a17b8d48a554ede4f`; Core `351c7926163d35d6bc984fd3958ccc6cee2e04c3`. Source refs do not prove the currently deployed Backend binary. No Backend/Core change or mutation was performed during this frontend delivery. Proposed Backend work below is a separate owner-delivered follow-up.
 
 Detailed evidence: [Settings qualification](settings-write-qualification.md), [SMTP/Terms qualification](smtp-contract-qualification.md). Admin parity and branding proposals were also derived from `docs/admin-parity-matrix.md` and `docs/branding-contract-handoff.md` on the separate mock workstream. Admin JWT routes below are **capability references only**; Super Admin must use the operator-authenticated Nest Control Plane.
 
-## Current delivery boundary
+## Historical delivery boundary — 25 October 2026
 
 - Official Settings and SMTP integrations are read-only. The prepared Settings scalar/flag client has an empty release scope; SMTP has no operational write/test client.
 - Existing Settings PUT is a single-row upsert, not a whole-settings replacement. Scalar login copy and eight boolean feature rows are source-qualified, but no live Settings write acceptance is claimed.
@@ -14,7 +48,7 @@ Detailed evidence: [Settings qualification](settings-write-qualification.md), [S
 - SMTP writes remain held because replacement requires the existing username, while safe read state intentionally does not retain it and Nest Audit can persist that username. A test POST really sends mail and is not a discovery probe.
 - Interactive drafts, SMTP simulations, App editing and branding in `mock` are offline design evidence only. They do not establish persistence, legal publication, credential validity or delivery.
 
-## Common contract rules
+## Common contract rules from the original proposal
 
 Existing Nest route prefixes below include `/api`. `:id` is a canonical positive numeric Whitelabel ID. Slug, aliases, host and base URL are identity/consumer-resolution metadata; none may silently substitute for `:id`. Every command must verify tenant ownership before acting. SUPER_ADMIN is the proposed write role; qualified reads retain SUPER_ADMIN/READ_ONLY unless a capability explicitly requires a narrower policy. Other roles fail closed. Existing authentication and Backend RBAC remain authoritative.
 

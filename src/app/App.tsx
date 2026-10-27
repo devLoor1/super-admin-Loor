@@ -73,7 +73,7 @@ type Route =
   | { view: 'login' | 'dashboard' }
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
-  | { view: 'settings'; whitelabelId: string; area?: string }
+  | { view: 'settings'; whitelabelId: string; area?: string; cell?: string }
   | { view: 'emails'; whitelabelId: string; section?: string }
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
@@ -291,8 +291,8 @@ function routeFromHash(): Route {
   const settings = SETTINGS_PATH.exec(path)
   if (settings) {
     const query = new URLSearchParams(search)
-    const validQuery = [...query.keys()].every(key => key === 'area') && query.getAll('area').length <= 1
-    return { view: 'settings', whitelabelId: settings[1], area: validQuery ? query.get('area') ?? undefined : '__invalid__' }
+    const validQuery = [...query.keys()].every(key => key === 'area' || key === 'cell') && query.getAll('area').length <= 1 && query.getAll('cell').length <= 1
+    return { view: 'settings', whitelabelId: settings[1], area: validQuery ? query.get('area') ?? undefined : '__invalid__', cell: validQuery ? query.get('cell') ?? undefined : undefined }
   }
   const emails = EMAILS_PATH.exec(path)
   if (emails) {
@@ -508,7 +508,7 @@ export function App() {
       />
     )
   }
-  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} />
+  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} cell={route.cell} />
   if (route.view === 'emails') return <OperationalSmtpPage whitelabelId={route.whitelabelId} section={route.section} />
   if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params} />
   if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />

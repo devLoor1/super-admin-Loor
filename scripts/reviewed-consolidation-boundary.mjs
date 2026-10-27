@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { beforeSettingsEvolution, reviewedSettingsEvolution, settingsEvolutionExclusions } from './reviewed-settings-evolution-boundary.mjs'
 import { beforeAccountUx, reviewedAccountUx, accountUxExclusions } from './reviewed-account-ux-boundary.mjs'
 import { beforeSetSmtp, reviewedSetSmtp, setSmtpExclusions } from './reviewed-set-smtp-boundary.mjs'
+import { reviewedAstSettings, astSettingsExclusions } from './reviewed-ast-settings-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const baseline = '450b9d5a5a1eabb6f986222bf2e08e0b18a71464'
@@ -24,11 +25,12 @@ export function testSourceExists(path) {
 
 /** Exact reviewed files only. No directory exemption and no automatic re-pinning. */
 export function reviewedConsolidation(path) {
+  const astSettings = reviewedAstSettings(path)
   const setSmtp = reviewedSetSmtp(path)
   const accountUx = reviewedAccountUx(path)
   const evolution = reviewedSettingsEvolution(path)
   const pin = manifest.files[path]
-  if (!pin) return evolution || accountUx || setSmtp
+  if (!pin) return evolution || accountUx || setSmtp || astSettings
   const absolute = resolve(root, path)
   if (pin.after === null) assert.equal(existsSync(absolute), false, `Removed prototype returned: ${path}`)
   else assert.equal(hash(beforeSettingsEvolution(path, beforeAccountUx(path, nativeReadFileSync(absolute, 'utf8')))), pin.after, `Unreviewed consolidation change: ${path}`)
@@ -44,6 +46,7 @@ export function beforeConsolidation(path, source) {
   // Nested historical adapters may already hold the original pre-consolidation
   // source. Still verify the physical candidate against the newer exact pins.
   reviewedAccountUx(path)
+  reviewedAstSettings(path)
   reviewedSetSmtp(path)
   reviewedSettingsEvolution(path)
   if (pin?.before !== null && pin?.before !== undefined && hash(source) === pin.before) return normalize(source)
@@ -69,7 +72,7 @@ export function execFileSync(command, args, options) {
     const beforePaths = args.slice(1, args.indexOf('--')).filter(a => !a.startsWith('-'))
     if (beforePaths.length <= 1) {
       for (const path of Object.keys(manifest.files)) reviewedConsolidation(path)
-      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions()]
+      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions()]
     }
   }
   return nativeExecFileSync(command, args, options)

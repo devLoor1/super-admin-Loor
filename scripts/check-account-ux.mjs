@@ -8,6 +8,7 @@ import ts from 'typescript'
 import { accountUxBaseline, accountUxFiles, accountUxPaths, beforeAccountUx, reviewedAccountUx, verifyAccountUxSource } from './reviewed-account-ux-boundary.mjs'
 import { beforeConsolidation, execFileSync as historicalGit } from './reviewed-consolidation-boundary.mjs'
 import { reviewedSetSmtp, setSmtpExclusions } from './reviewed-set-smtp-boundary.mjs'
+import { reviewedAstSettings, astSettingsExclusions } from './reviewed-ast-settings-boundary.mjs'
 
 // Read and execute current candidates directly. Historical normalization cannot
 // satisfy the rendered component, animation-effect, or CSS assertions below.
@@ -59,7 +60,7 @@ await check('only the eight reviewed runtime paths changed from the operational 
   assert.deepEqual(accountUxFiles().sort(), [...accountUxPaths].sort())
   // A later Settings/SMTP unit is independently checked against exact final
   // pins; do not repin or broaden this historical eight-file UX acceptance.
-  assert.deepEqual(changed.filter(path => !reviewedSetSmtp(path)), [...accountUxPaths].sort())
+  assert.deepEqual(changed.filter(path => !reviewedSetSmtp(path) && !reviewedAstSettings(path)), [...accountUxPaths].sort())
 })
 for (const path of accountUxPaths) await check(`exact reviewed source and adversarial rejection: ${path}`, () => {
   const actual = text(path), previous = git('show', `${accountUxBaseline}:${path}`)
@@ -79,7 +80,7 @@ for (const path of ['src/lib/apiClient.ts', 'src/mock/mockBackend.ts', 'src/comp
 })
 await check('previous manifests, authoritative transport and business behavior preserved byte for byte', () => {
   for (const path of ['scripts/consolidation-reviewed-files.json', 'scripts/settings-evolution-reviewed-files.json']) assert.equal(text(path), git('show', `${accountUxBaseline}:${path}`))
-  const laterExactPaths = setSmtpExclusions()
+  const laterExactPaths = [...setSmtpExclusions(), ...astSettingsExclusions()]
   for (const path of ['src/lib', 'src/app', 'src/features/menu-visibility', 'src/features/operation', 'src/features/whitelabel-settings', 'src/features/whitelabel-emails', 'src/features/whitelabel-accounts/admin/AdminLifecycleActions.tsx', 'src/features/whitelabel-accounts/admin/adminLifecycleContract.ts', 'src/features/whitelabel-accounts/admin/adminLifecycleClient.ts', 'package.json', 'package-lock.json', 'netlify.toml']) assert.equal(git('diff', accountUxBaseline, '--', path, ...laterExactPaths), '', path)
   assert.equal(historicalGit('git', ['diff', '--name-only', accountUxBaseline, '--', 'src'], { cwd: root, encoding: 'utf8' }).trim(), '')
   const args = ['diff', '--name-only', '450b9d5a5a1eabb6f986222bf2e08e0b18a71464', accountUxBaseline, '--', 'src']

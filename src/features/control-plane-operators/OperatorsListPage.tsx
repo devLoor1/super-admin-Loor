@@ -30,8 +30,7 @@ export function OperatorsListPage({ rawQuery }: { rawQuery: string }) {
   }, [data, query])
   const context = operatorListHref(query)
   return <OperatorShell>
-    <PageIntro text="Consulte os operadores administrativos da plataforma, seus perfis de acesso e o estado de suas contas." />
-    <InfoNote>Somente leitura. Operadores do Control Plane e administradores de Whitelabel são identidades distintas. Perfis atribuídos não representam uma matriz de permissões. Datas em Brasília.</InfoNote>
+    <PageIntro text="Consulte operadores administrativos, perfis de acesso e estado das contas." readOnly />
     {!remote.allowed ? <OperatorFeedback denied /> : <>
       <section className={fin.card} aria-label="Consulta de operadores">
         <div className={styles.filters}>
@@ -43,14 +42,15 @@ export function OperatorsListPage({ rawQuery }: { rawQuery: string }) {
       {!valid ? <section className={fin.card} role="alert" data-operator-state="invalid-query"><h2>Parâmetros inválidos ou não suportados</h2><p>Nenhuma consulta foi enviada. Limpe a consulta para continuar. São aceitos somente página, busca e ordem de criação.</p></section> : !data ? <OperatorFeedback error={remote.state.status === 'error' ? remote.state.error : undefined} retry={remote.reload} /> : <section className={fin.card} data-operator-state="loaded" aria-labelledby="operators-list-title">
         <h2 id="operators-list-title" className={fin.cardTitleSm}>Operadores</h2>
         <p role="status">{data.total.toLocaleString('pt-BR')} operadores na consulta · Página {data.page} de {data.lastPage}</p>
-        {data.rows.length ? <><p className={styles.hint}>Role a tabela horizontalmente para ver todas as colunas. No teclado, foque a tabela e use as setas.</p>
+        {data.rows.length ? <><p className={`${styles.hint} ${styles.tableHint}`}>Em telas menores, role a tabela para ver todas as colunas. No teclado, foque a tabela e use as setas.</p>
           <div className={styles.scroll} tabIndex={0} role="region" aria-label="Operadores: tabela com rolagem horizontal"><table className={`${fin.table} ${styles.table}`}>
             <caption className="visually-hidden">Operadores do Control Plane, somente leitura. Ordem por criação {query.order === 'asc' ? 'crescente' : 'decrescente'}. Datas em America/Sao_Paulo.</caption>
-            <thead><tr>{['Operador', 'Identificador', 'Status', 'Perfis de acesso', 'Último acesso', 'Criado em', 'Consultar'].map(label => <th scope="col" key={label} aria-sort={label === 'Criado em' ? query.order === 'asc' ? 'ascending' : 'descending' : undefined}>{label}</th>)}</tr></thead>
-            <tbody>{data.rows.map(row => <tr key={row.id} data-operator-row><td><strong>{row.name}</strong><p className={styles.hint}>{row.email}</p></td><td><code>{row.id}</code></td><td><OperatorStatus value={row.status} /></td><td><OperatorRoles roles={row.roles} /></td><td>{operatorDateText(row.lastLoginAt)}</td><td>{operatorDateText(row.createdAt)}</td><td><a className={shared.inlineLink} href={`#/settings/operators/${row.id}?returnTo=${encodeURIComponent(context)}`} aria-label={`Consultar operador ${row.name}`}>Consultar</a></td></tr>)}</tbody>
+            <thead><tr>{['Operador', 'Status', 'Perfis de acesso', 'Último acesso', 'Criado em', 'Consultar'].map(label => <th scope="col" key={label} aria-sort={label === 'Criado em' ? query.order === 'asc' ? 'ascending' : 'descending' : undefined}>{label}</th>)}</tr></thead>
+            <tbody>{data.rows.map(row => <tr key={row.id} data-operator-row><td><strong>{row.name}</strong><p className={styles.hint}>{row.email}</p><p className={styles.identifier}><span>Identificador</span> <code>{row.id}</code></p></td><td><OperatorStatus value={row.status} /></td><td><OperatorRoles roles={row.roles} /></td><td>{operatorDateText(row.lastLoginAt)}</td><td>{operatorDateText(row.createdAt)}</td><td><a className={shared.inlineLink} href={`#/settings/operators/${row.id}?returnTo=${encodeURIComponent(context)}`} aria-label={`Consultar operador ${row.name}`}>Consultar</a></td></tr>)}</tbody>
           </table></div></> : <EmptyState icon={SearchX} title={query.search ? 'Nenhum operador encontrado' : 'Nenhum operador nesta página'} description={query.search ? 'O Control Plane não retornou operadores para esta busca.' : 'O Control Plane retornou uma lista vazia nesta página.'} />}
         <div className={styles.footer}><p>{data.rows.length} registros nesta página · Total autoritativo do Control Plane</p><WindowedPagination label="Paginação dos operadores" current={data.page} last={data.lastPage} disabled={false} onChange={page => navigate({ page })} /></div>
       </section>}
     </>}
+    <InfoNote>Somente leitura. Operadores do Control Plane e administradores de Whitelabel são identidades distintas. Perfis atribuídos não representam uma matriz de permissões. Datas em Brasília.</InfoNote>
   </OperatorShell>
 }

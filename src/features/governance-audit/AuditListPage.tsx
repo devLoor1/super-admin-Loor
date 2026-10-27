@@ -30,7 +30,7 @@ const COUNT_FORMAT = new Intl.NumberFormat('pt-BR')
 export function AuditListPage(props: AuditRouteParams & { routeKey: string }) {
   return (
     <AuditShell>
-      <PageIntro text="Consulte o registro de auditoria do Control Plane (logins de operadores e ações administrativas registradas). Consulta somente leitura." />
+      <PageIntro text="Investigue logins de operadores e ações administrativas registradas." readOnly />
       <AuditList {...props} />
       <InfoNote>
         <strong>Auditoria é somente leitura.</strong> Os eventos vêm do registro de auditoria do Control Plane e não podem ser editados,
@@ -95,11 +95,12 @@ function AuditList({ routeKey, ...params }: AuditRouteParams & { routeKey: strin
       </section>
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="audit-list-title" data-audit-list>
-        <h2 id="audit-list-title" className="visually-hidden">
+        <h2 id="audit-list-title" className={shared.listHeading}>
           Lista de eventos de auditoria
         </h2>
         <div className={shared.filters} style={{ '--filter-count': 2 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar por código da ação, tipo de recurso, ID do recurso ou Correlation ID (busca feita pelo Control Plane)</span>
             <input
@@ -112,7 +113,8 @@ function AuditList({ routeKey, ...params }: AuditRouteParams & { routeKey: strin
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
               <span className="visually-hidden">Ordem por data e hora</span>
               <select id="audit-order" value={route.order} onChange={(event) => navigate({ order: event.target.value as AuditOrder })}>
                 <option value="desc">Mais recentes primeiro</option>

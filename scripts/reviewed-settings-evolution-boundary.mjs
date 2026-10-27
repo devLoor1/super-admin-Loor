@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeSetSmtp } from './reviewed-set-smtp-boundary.mjs'
+import { withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const settingsEvolutionBaseline = 'f2c5bbf188ec101b092e0350e7f5c749a1975ce3'
@@ -27,6 +28,7 @@ for (const [path, pin] of Object.entries(manifest.files)) {
 export function verifySettingsEvolutionSource(path, source) {
   const pin = pinFor(path)
   if (!pin) return false
+  source = withoutOperationalUx(path, source)
   source = beforeSetSmtp(path, source)
   if (pin.after === null) assert.equal(source, null, `Deleted Settings evolution source returned: ${path}`)
   else assert.equal(hash(source), pin.after, `Unreviewed Settings evolution change: ${path}`)
@@ -46,6 +48,7 @@ export function beforeSettingsEvolution(path, source) {
   const pin = pinFor(path)
   if (!pin) return normalize(source)
   reviewedSettingsEvolution(path)
+  source = withoutOperationalUx(path, source)
   // Nested older assertions may already hold the exact pre-evolution source.
   // The physical candidate was still verified above against the latest pins.
   if (pin.before !== null && hash(source) === pin.before) return normalize(source)

@@ -1,25 +1,55 @@
-/*
- * Layout follows the approved Whitelabels V1 image at 1:1 (1672px viewport):
- * four summary cards, then list (≈60%) + detail (≈40%) side by side.
- * Below 1360px the detail panel moves under the list.
- */
+/* Query and selected tenant form one workspace. Narrow layouts show the
+   explicit URL selection as a detail view, with a context-preserving return. */
 .page {
   position: relative;
   isolation: isolate;
-  display: grid;
-  gap: 15px;
   padding-top: 14px;
 }
 
-.summary {
+.split {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+  align-items: start;
+  gap: 20px;
 }
 
-.summaryCell {
-  container-type: inline-size;
+.list,
+.detail {
   min-width: 0;
+}
+
+.detail {
+  display: grid;
+  gap: 8px;
+}
+
+.detailContext {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+  padding-inline: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-on-dark-muted);
+}
+
+.returnButton {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-on-dark-secondary);
+}
+
+.returnButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
 }
 
 .noSelection {
@@ -32,35 +62,14 @@
   background: var(--surface);
 }
 
-.split {
-  display: grid;
-  grid-template-columns: minmax(0, 801fr) minmax(420px, 536fr);
-  align-items: stretch;
-  gap: 15px;
-}
-
-@media (max-width: 1359px) {
-  .split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 1199px) {
-  .summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 767px) {
-  .page,
-  .summary,
-  .split {
-    gap: 12px;
-  }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .detail { display: none; }
+  .split[data-detail-open] .list { display: none; }
+  .split[data-detail-open] .detail { display: grid; }
+  .returnButton { display: inline-flex; }
 }
 
 @media (max-width: 479px) {
-  .summary {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  .detailContext { align-items: flex-start; flex-direction: column; gap: 8px; }
 }

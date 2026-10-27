@@ -22,7 +22,7 @@ import { useAccountDetail, useAccountList, useWhitelabelOptions, useWhitelabelRe
 import styles from './WhitelabelAccountsPage.module.css'
 import { AdminCreateAction } from './admin/AdminLifecycleActions'
 
-const MOBILE_QUERY = '(max-width: 767px)'
+const MOBILE_QUERY = '(max-width: 1199px)'
 const STACKED_TABS_QUERY = '(max-width: 479px)'
 const subscribeStackedTabs = (callback: () => void) => {
   const media = window.matchMedia(STACKED_TABS_QUERY)
@@ -219,6 +219,16 @@ function AccountsContent({
     pushRouteKeepingScroll(accountsPageHref(id, { kind: route.kind }))
   }
 
+  function returnToList() {
+    revealPending.current = false
+    pushRouteKeepingScroll(href({ page: route.page }))
+    window.requestAnimationFrame(() => {
+      const heading = document.getElementById('acc-list-title')
+      heading?.focus({ preventScroll: true })
+      heading?.scrollIntoView({ block: 'start' })
+    })
+  }
+
   const selector = (
     <AccountsWhitelabelSelector
       current={whitelabel}
@@ -237,8 +247,7 @@ function AccountsContent({
           Voltar para Whitelabels
         </a>
         <p className={styles.subtitle}>
-          Consulte administradores, investidores e empreendedores do Whitelabel selecionado, com dados do Control Plane.
-          A gestão de acesso de investidores e empreendedores depende da permissão do operador.
+          Consulte contas e selecione um registro para ver seus dados e ações disponíveis.
         </p>
       </div>
       {selector}
@@ -342,7 +351,7 @@ function AccountsContent({
     <div className={styles.page}>
       <DotMatrixBackground />
 
-      <div className={styles.layout}>
+      <div className={styles.layout} data-detail-open={route.accountId ? true : undefined}>
         {contextRow}
 
         <div className={styles.typeRow}>
@@ -386,7 +395,15 @@ function AccountsContent({
           ))}
         </div>
 
-        <div className={styles.detail}>{detailPanel}</div>
+        <div className={styles.detail}>
+          <div className={styles.detailContext}>
+            <button type="button" className={styles.returnButton} onClick={returnToList}>
+              <ArrowLeft size={16} aria-hidden="true" /> Voltar à lista
+            </button>
+            <p>Conta selecionada</p>
+          </div>
+          {detailPanel}
+        </div>
       </div>
 
       <p className="visually-hidden" role="status">

@@ -5,7 +5,6 @@ import type { Tone } from '../../components/ui/IconTile'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { describeApiError } from '../../lib/apiErrors'
 import { ActivityPanel } from './ActivityPanel'
-import { GlobalOverviewPanel } from './GlobalOverviewPanel'
 import { MetricCard, type MetricReading } from '../../components/ui/MetricCard'
 import { QuickActionsPanel } from './QuickActionsPanel'
 import { RecentEventsPanel } from './RecentEventsPanel'
@@ -86,6 +85,7 @@ function DashboardContent() {
 
   return (
     <div className={styles.dashboard} data-operational>
+      <QuickActionsPanel />
       <section aria-labelledby="kpi-heading" data-dashboard-kpis>
         <h2 id="kpi-heading" className="visually-hidden">
           Indicadores globais
@@ -127,8 +127,6 @@ function DashboardContent() {
         ))}
       </section>
 
-      <GlobalOverviewPanel />
-
       <div className={styles.middle}>
         <ActivityPanel className={styles.activity} />
         <WhitelabelDistributionPanel className={styles.distribution} overview={overview.state} onReloadOverview={overview.reload} />
@@ -136,7 +134,6 @@ function DashboardContent() {
 
       <div className={styles.bottom}>
         <RecentEventsPanel />
-        <QuickActionsPanel />
       </div>
     </div>
   )

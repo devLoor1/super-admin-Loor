@@ -59,7 +59,7 @@ const ORDER_LABEL: Record<InvestmentSortKey, Record<SortOrder, string>> = {
 export function InvestmentsPage(props: FinanceListProps) {
   return (
     <FinanceCoreShell section="investments" title="Investimentos">
-      <PageIntro text="Investimentos de todos os Whitelabels, com dados do Control Plane. Somente leitura: nenhuma ação cria, altera, confirma ou estorna investimentos." />
+      <PageIntro text="Consulte investimentos, valores e estados por Whitelabel." readOnly />
       <InvestmentList {...props} />
     </FinanceCoreShell>
   )
@@ -157,11 +157,12 @@ function InvestmentList({ status, whitelabel, investidor, oportunidade, search: 
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="inv-list-title" data-investment-list>
-        <h2 id="inv-list-title" className="visually-hidden">
+        <h2 id="inv-list-title" className={shared.listHeading}>
           Lista de investimentos
         </h2>
         <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 3 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar por nome ou e-mail do investidor, ou nome da oportunidade (busca feita pelo Control Plane)</span>
             <input
@@ -174,7 +175,8 @@ function InvestmentList({ status, whitelabel, investidor, oportunidade, search: 
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Status</span>
               <span className="visually-hidden">Filtrar por status do investimento</span>
               <select id="investment-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as InvestmentStatus) })}>
                 <option value="all">Todos os status</option>
@@ -185,7 +187,8 @@ function InvestmentList({ status, whitelabel, investidor, oportunidade, search: 
                 ))}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
               <span className="visually-hidden">Filtrar por Whitelabel</span>
               <select id="investment-whitelabel" value={route.whitelabelId ?? 'all'} onChange={(event) => navigate({ whitelabelId: event.target.value === 'all' ? undefined : event.target.value })}>
                 <option value="all">Todos os Whitelabels</option>
@@ -199,7 +202,8 @@ function InvestmentList({ status, whitelabel, investidor, oportunidade, search: 
                 ) : null}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
               <span className="visually-hidden">Ordenar investimentos</span>
               <select
                 id="investment-sort"

@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const accountUxBaseline = '9f7f71e328440972dfd63588e9e981fbb2ced673'
@@ -35,6 +36,7 @@ export const accountUxFiles = () => Object.keys(manifest.files)
 export function verifyAccountUxSource(path, source) {
   const pin = pinFor(path)
   if (!pin) return false
+  source = withoutOperationalUx(path, source)
   assert.equal(digest(source), pin.after, `Unreviewed account UX source: ${path}`)
   return true
 }
@@ -50,6 +52,7 @@ export function beforeAccountUx(path, source) {
   const pin = pinFor(path)
   if (!pin) return normalized(source)
   reviewedAccountUx(path)
+  source = withoutOperationalUx(path, source)
   const actual = digest(source)
   assert.ok(actual === pin.before || actual === pin.after, `Only exact account UX delta may be normalized: ${path}`)
   if (actual === pin.before) return normalized(source)

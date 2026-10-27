@@ -7,6 +7,7 @@ import { beforeSettingsEvolution, reviewedSettingsEvolution, settingsEvolutionBa
 import { beforeConsolidation, execFileSync } from './reviewed-consolidation-boundary.mjs'
 import { reviewedAccountUx } from './reviewed-account-ux-boundary.mjs'
 import { beforeSetSmtp, reviewedSetSmtp } from './reviewed-set-smtp-boundary.mjs'
+import { reviewedOperationalUx, withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const normalized = source => source.replaceAll('\r\n', '\n')
@@ -20,7 +21,7 @@ check('all changed or added runtime files have individual exact pins', () => {
   const paths = [...new Set((git('diff', '--name-only', settingsEvolutionBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
   // A later presentation unit has its own independently checked exact manifest.
   // Its files are not silently added to or re-pinned in this historical manifest.
-  assert.deepEqual(settingsEvolutionFiles().sort(), paths.filter(path => !reviewedAccountUx(path) && (!reviewedSetSmtp(path) || settingsEvolutionFiles().includes(path))))
+  assert.deepEqual(settingsEvolutionFiles().sort(), paths.filter(path => !reviewedAccountUx(path) && (!reviewedSetSmtp(path) || settingsEvolutionFiles().includes(path)) && (!reviewedOperationalUx(path) || settingsEvolutionFiles().includes(path))))
 })
 for (const path of settingsEvolutionFiles()) {
   const actual = source(path)
@@ -32,7 +33,7 @@ for (const path of settingsEvolutionFiles()) {
   })
   check(`historical normalization is explicit and idempotent: ${path}`, () => {
     const before = beforeSettingsEvolution(path, actual)
-    assert.equal(before, pins[path].before === null ? beforeSetSmtp(path, actual) : normalized(git('show', `${settingsEvolutionBaseline}:${path}`)))
+    assert.equal(before, pins[path].before === null ? beforeSetSmtp(path, withoutOperationalUx(path, actual)) : normalized(git('show', `${settingsEvolutionBaseline}:${path}`)))
     const historical = beforeConsolidation(path, actual)
     assert.equal(beforeConsolidation(path, historical), historical)
   })

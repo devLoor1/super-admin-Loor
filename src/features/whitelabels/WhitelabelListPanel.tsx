@@ -16,7 +16,6 @@ import {
   Building,
 } from 'lucide-react'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { FilterChips } from '../../components/ui/FilterChips'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { SearchField } from '../../components/ui/SearchField'
@@ -70,18 +69,11 @@ type WhitelabelListPanelProps = {
   accentColor: string
 }
 
-const CHIPS: { value: WhitelabelStatusFilter; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'active', label: 'Ativos' },
-  { value: 'inactive', label: 'Inativos' },
-]
-
 const COLUMNS: { key: SortKey | null; label: string; className: string }[] = [
   { key: 'name', label: 'Nome', className: 'colName' },
   { key: 'domain', label: 'Domínio', className: 'colDomain' },
   { key: 'status', label: 'Status', className: 'colStatus' },
   { key: null, label: 'Administradores', className: 'colAdmins' },
-  { key: null, label: 'Aplicações', className: 'colApps' },
   { key: 'updatedAt', label: 'Atualizado em', className: 'colUpdated' },
 ]
 
@@ -137,10 +129,10 @@ export function WhitelabelListPanel({
       <div className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.accentBar} aria-hidden="true" />
-          <h2 id="wl-list-title" className={styles.title}>
+          <h2 id="wl-list-title" className={styles.title} tabIndex={-1}>
             Lista de Whitelabels
           </h2>
-          <p className={styles.subtitle}>Gerencie plataformas, domínios, administradores e integrações.</p>
+          <p className={styles.subtitle}>Selecione uma plataforma para consultar seus dados e ações.</p>
         </div>
         {createAccess === 'super-admin' ? (
           <PrimaryButton className={styles.newButton} onClick={onCreate} data-wl-create>
@@ -189,7 +181,10 @@ export function WhitelabelListPanel({
         </SelectField>
       </div>
 
-      <FilterChips label="Filtro rápido de status" options={CHIPS} value={status} onChange={onStatusChange} />
+      <div className={styles.resultContext}>
+        <p role="status">{data ? `${data.total} ${data.total === 1 ? 'Whitelabel encontrado' : 'Whitelabels encontrados'}` : loading ? 'Consultando Whitelabels…' : 'Consulta indisponível'}</p>
+        {filtersActive ? <button type="button" className={styles.clearFilters} onClick={onClearFilters}>Limpar filtros</button> : null}
+      </div>
 
       {ignored.length ? (
         <p className={styles.ignoredNote} role="status" data-ignored-params>
@@ -222,7 +217,6 @@ export function WhitelabelListPanel({
               {sortable
                 ? 'As colunas ordenáveis ordenam todos os resultados.'
                 : 'Ordenação por coluna indisponível: os resultados ocupam mais de uma página.'}{' '}
-              Aplicações: o Control Plane ainda não fornece este dado.
             </caption>
             <thead>
               <tr>
@@ -292,6 +286,7 @@ export function WhitelabelListPanel({
                           <span className={styles.nameStatus}>
                             <StatusPill tone={statusMeta.tone} label={statusMeta.label} />
                           </span>
+                          <span className={styles.nameUpdated}>Atualizado em {formatWhitelabelDate(row.updatedAt) ?? '—'}</span>
                         </td>
                         <td className={styles.colDomain}>
                           <NoData value={row.domain} />
@@ -301,9 +296,6 @@ export function WhitelabelListPanel({
                         </td>
                         <td className={styles.colAdmins}>
                           <NoData value={row.admins} />
-                        </td>
-                        <td className={styles.colApps}>
-                          <NoData value={row.applications} />
                         </td>
                         <td className={styles.colUpdated}>
                           <NoData value={formatWhitelabelDate(row.updatedAt)} />

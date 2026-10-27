@@ -24,6 +24,14 @@
     0 14px 32px -22px rgb(0 0 0 / 0.7);
 }
 
+.header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 16px; }
+.title { font-size: 18px; line-height: 24px; font-weight: 600; color: var(--text-on-dark); border-radius: 4px; scroll-margin-top: 16px; }
+.title:focus-visible { outline: none; box-shadow: var(--focus-ring-dark); }
+.resultContext { font-size: 12px; line-height: 18px; color: var(--text-on-dark-muted); }
+.legendDetails { margin-top: 12px; font-size: 12px; color: var(--text-on-dark-muted); }
+.legendDetails summary { cursor: pointer; padding-block: 5px; border-radius: 4px; }
+.legendDetails summary:focus-visible { outline: none; box-shadow: var(--focus-ring-dark); }
+
 /* ---------- Search ---------- */
 
 .controls {

@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const setSmtpBaseline = 'ebc2f49b328e7185b679e7413b355056b4b49554'
@@ -44,6 +45,7 @@ export const setSmtpFiles = () => Object.keys(manifest.files)
 export function verifySetSmtpSource(path, source) {
   const pin = pinFor(path)
   if (!pin) return false
+  source = withoutOperationalUx(path, source)
   assert.equal(setSmtpDigest(source), pin.after, `Unreviewed SET/SMTP source: ${path}`)
   return true
 }
@@ -58,6 +60,7 @@ export function beforeSetSmtp(path, source) {
   const pin = pinFor(path)
   if (!pin) return normalize(source)
   reviewedSetSmtp(path)
+  source = withoutOperationalUx(path, source)
   const digest = setSmtpDigest(source)
   assert.ok(digest === pin.before || digest === pin.after, `Only exact SET/SMTP delta may be normalized: ${path}`)
   if (digest === pin.before || pin.before === null) return normalize(source)

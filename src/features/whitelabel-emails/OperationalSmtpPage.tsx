@@ -48,7 +48,7 @@ function ConfirmedSmtp({ id }: { id: string }) {
   const remote = useSmtpRead(id)
   if (remote.state.status === 'error') return <SmtpReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configuração SMTP…</p>
-  return <><SmtpReadCards data={remote.state.data} />{remote.state.data.state === 'saved' && <SmtpMetadataEditor id={id} data={remote.state.data} onReload={remote.reload} />}</>
+  return <>{remote.state.data.state === 'saved' && <SmtpMetadataEditor id={id} data={remote.state.data} onReload={remote.reload} />}<SmtpReadCards data={remote.state.data} /></>
 }
 function SmtpTenant({ whitelabelId, section }: { whitelabelId: string; section: string }) {
   const id = isSmtpTenantId(whitelabelId) ? whitelabelId : null

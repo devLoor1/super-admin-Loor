@@ -79,7 +79,7 @@ function ConfirmedSettings({ id, area }: { id: string; area: ConfigArea }) {
   const remote = useSettingsRead(id)
   if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configurações…</p>
-  return <><SettingsReadCards data={remote.state.data} area={area} />{area === 'platform' && <SettingsWriteEditor id={id} data={remote.state.data} onReload={remote.reload} releasedFields={SETTINGS_FIELDS} />}</>
+  return <>{area === 'platform' && <SettingsWriteEditor id={id} data={remote.state.data} onReload={remote.reload} releasedFields={SETTINGS_FIELDS} />}<SettingsReadCards data={remote.state.data} area={area} /></>
 }
 function SettingsTenant({ whitelabelId, area }: { whitelabelId: string; area: ConfigArea | null }) {
   const id = isSettingsTenantId(whitelabelId) ? whitelabelId : null

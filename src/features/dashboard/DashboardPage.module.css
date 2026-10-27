@@ -1,19 +1,12 @@
-/*
- * Grid follows the approved image at 1:1 (1672px viewport):
- *   KPI row        5 equal cards
- *   overview       full width
- *   middle row     527 / 422 / 359 (status keeps ≥344px)
- *   bottom row     765 / 558 (quick actions keep ≥560px)
- * Below 1360px the middle and bottom rows restack instead of shrinking.
- */
+/* Task shortcuts → indicators → analysis → recent audit history. */
 .dashboard {
   display: grid;
-  gap: 15px;
+  gap: 20px;
 }
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -82,22 +75,21 @@
 
 .middle {
   display: grid;
-  grid-template-columns: minmax(0, 527fr) minmax(0, 422fr) minmax(344px, 359fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 15px;
   min-height: 276px;
 }
 
 .bottom {
   display: grid;
-  /* Quick actions keep ≥560px so tile titles and descriptions stay on one line. */
-  grid-template-columns: minmax(0, 765fr) minmax(560px, 558fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
-/* Laptop: activity gets the full row; events and quick actions stack. */
-@media (max-width: 1359px) {
+/* Stack analytical panels before their legends become cramped. */
+@media (max-width: 1199px) {
   .middle {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .activity {
@@ -109,18 +101,18 @@
   }
 }
 
-/* Tablet: KPI cards 3 + 2. */
+/* Indicators retain a compact two-column overview on tablet. */
 @media (max-width: 1199px) {
   .kpis {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .kpiCell {
-    grid-column: span 2;
+    grid-column: auto;
   }
 
   .kpiCell:nth-child(n + 4) {
-    grid-column: span 3;
+    grid-column: auto;
   }
 }
 
@@ -152,7 +144,7 @@
   }
 
   .kpiCell:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 }
 

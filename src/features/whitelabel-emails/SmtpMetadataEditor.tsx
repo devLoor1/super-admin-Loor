@@ -33,6 +33,7 @@ function Editor({ id, data, session, onReload }: { id: string; data: SmtpSaved; 
     setOpen(true)
   }
   return <section className={styles.section} aria-label="Edição de metadados SMTP">
+    <h2>Gerenciar configuração SMTP</h2>
     <p>Edite somente os metadados da configuração existente. Credenciais são preservadas por omissão; nenhum teste de conexão ou envio é executado.</p>
     <OutlineButton onClick={edit}>{smtpWriteLocked(attempt) && !smtpWriteVerified(attempt) ? 'Consultar resultado SMTP' : 'Editar metadados SMTP'}</OutlineButton>
     {attempt && !open && <p role="status">{messages[attempt.phase]}</p>}

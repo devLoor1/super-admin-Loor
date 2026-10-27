@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeSetSmtp, reviewedSetSmtp, setSmtpBaseline, setSmtpDigest, setSmtpFiles, setSmtpFinalized, setSmtpReviewPaths, verifySetSmtpSource } from './reviewed-set-smtp-boundary.mjs'
 import { beforeConsolidation, execFileSync as historicalGit } from './reviewed-consolidation-boundary.mjs'
+import { reviewedOperationalUx, withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).replaceAll('\r\n', '\n')
@@ -16,7 +17,7 @@ check('final runtime diff was explicitly reviewed', () => assert.equal(setSmtpFi
 check('all runtime changes have individual finalized review pins', () => {
   const paths = [...new Set((git('diff', '--name-only', setSmtpBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
   assert.ok(paths.length > 0)
-  assert.deepEqual(setSmtpFiles().sort(), paths)
+  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || !reviewedOperationalUx(path)))
 })
 for (const path of setSmtpFiles()) {
   check(`exact current candidate and mutation rejection: ${path}`, () => {
@@ -33,7 +34,7 @@ for (const path of setSmtpFiles()) {
     const existed = git('ls-tree', '--name-only', setSmtpBaseline, '--', path).trim() === path
     assert.equal(pin.before, existed ? setSmtpDigest(git('show', `${setSmtpBaseline}:${path}`)) : null)
     const before = beforeSetSmtp(path, actual)
-    assert.equal(before, pin.before === null ? actual : git('show', `${setSmtpBaseline}:${path}`))
+    assert.equal(before, pin.before === null ? withoutOperationalUx(path, actual) : git('show', `${setSmtpBaseline}:${path}`))
     assert.equal(beforeSetSmtp(path, before), before)
     const historical = beforeConsolidation(path, actual)
     assert.equal(beforeConsolidation(path, historical), historical)

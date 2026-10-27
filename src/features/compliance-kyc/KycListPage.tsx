@@ -22,8 +22,7 @@ export function KycListPage({ participant, whitelabel, status, routeKey }: { par
   const unsupported = Boolean(participant || whitelabel || status || [...params.keys()].some(key => key !== 'page'))
   const goPage = (next: number) => replaceRouteKeepingScroll(`#/compliance/kyc${next > 1 ? `?page=${next}` : ''}`)
   return <KycShell>
-    <PageIntro text="Consulta de casos KYC vinculados a Face Match de investidores. Somente leitura — dados do Control Plane." />
-    <InfoNote>Esta lista não representa todas as validações KYC da plataforma. Busca, filtros e totais por status não estão disponíveis nesta integração. Nenhuma decisão ou alteração de acesso é executada aqui.</InfoNote>
+    <PageIntro text="Consulte casos KYC vinculados a Face Match de investidores." readOnly />
     {unsupported || rawPage !== null && page === 1 && rawPage !== '1' ? <p role="status" className={styles.unavailable}>Parâmetros não suportados foram ignorados. A consulta usa apenas paginação, sem filtro de participante, Whitelabel ou status.</p> : null}
     {!result ? <KycReadFeedback error={query.state.status === 'error' ? query.state.error : undefined} retry={query.reload} /> :
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="kyc-list-title" data-kyc-state="loaded">
@@ -45,5 +44,6 @@ export function KycListPage({ participant, whitelabel, status, routeKey }: { par
           <div className={styles.pagerActions}><OutlineButton disabled={page === 1} onClick={() => goPage(page - 1)}>Página anterior</OutlineButton><OutlineButton disabled={page >= result.lastPage} onClick={() => goPage(page + 1)}>Próxima página</OutlineButton></div>
         </nav>
       </section>}
+    <InfoNote>Esta lista não representa todas as validações KYC da plataforma. Busca, filtros e totais por status não estão disponíveis nesta integração. Nenhuma decisão ou alteração de acesso é executada aqui.</InfoNote>
   </KycShell>
 }

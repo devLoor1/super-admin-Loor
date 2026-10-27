@@ -66,7 +66,7 @@ type InvestorsPageProps = {
 export function InvestorsPage(props: InvestorsPageProps) {
   return (
     <OperationShell section="investors" title="Investidores">
-      <PageIntro text="Acompanhe investidores de todos os Whitelabels em uma só visão operacional, com dados do Control Plane. Somente leitura: conta, investimentos e KYC ficam nos módulos responsáveis." />
+      <PageIntro text="Consulte perfis de investidores e seus vínculos por Whitelabel." readOnly />
       <InvestorList {...props} />
     </OperationShell>
   )
@@ -190,11 +190,12 @@ function InvestorList({ whitelabel, page: pageParam, search: searchParam, routeK
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="participant-list-title" data-investor-list>
-        <h2 id="participant-list-title" className="visually-hidden">
+        <h2 id="participant-list-title" className={shared.listHeading}>
           Lista de investidores
         </h2>
         <div className={shared.filters} style={{ '--filter-count': 4 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar investidores (busca feita pelo Control Plane)</span>
             <input
@@ -207,7 +208,8 @@ function InvestorList({ whitelabel, page: pageParam, search: searchParam, routeK
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
               <span className="visually-hidden">Whitelabel (consulta separada por Whitelabel no Control Plane)</span>
               <select
                 id="investor-whitelabel"

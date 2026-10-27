@@ -4,17 +4,14 @@ import {
   CircleAlert,
   Copy,
   LayoutGrid,
-  Link,
   Lock,
   Pencil,
   RotateCw,
   SearchX,
-  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { useNotice } from '../../components/shell/notice'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { IconTile, type Tone } from '../../components/ui/IconTile'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { StatusPill } from '../../components/ui/StatusPill'
 import { Tabs } from '../../components/ui/Tabs'
@@ -39,9 +36,8 @@ const ID_PREFIX = 'wl-detail'
  * Detail of the selected Whitelabel, from `GET /whitelabels/:id`.
  *
  * Backend-authoritative: name, ID, status, domain, base URL, slug, created /
- * updated dates, administrators count. Frontend-only: avatar initial / tone
- * (decoration), tabs other than "Visão geral", quick actions, and the
- * Aplicações / Integrações cards (the Control Plane returns no value → "—").
+ * updated dates, administrators count. Avatar initial / tone is decoration.
+ * Aggregates absent from the contract remain explicitly unavailable.
  * The accessible region stays mounted during selection transitions.
  *
  * Whitelabel CRUD Safe Preparation V1: "Editar nome" (SUPER_ADMIN) opens the
@@ -250,23 +246,13 @@ function Overview({
   onEditName: () => void
 }) {
   const status = WHITELABEL_STATUS_META[whitelabel.status]
-  const summary: { label: string; icon: LucideIcon; tone: Tone; value: number | null; note: string }[] = [
-    { label: 'Administradores', icon: Users, tone: 'blue', value: whitelabel.admins, note: 'Control Plane' },
-    {
-      label: 'Aplicações vinculadas',
-      icon: LayoutGrid,
-      tone: 'indigo',
-      value: whitelabel.applications,
-      note: whitelabel.applications === null ? 'Sem dados no Control Plane' : 'Control Plane',
-    },
-    {
-      label: 'Integrações',
-      icon: Link,
-      tone: 'violet',
-      value: whitelabel.integrations,
-      note: whitelabel.integrations === null ? 'Sem dados no Control Plane' : 'Control Plane',
-    },
+  const summary: { label: string; value: number | null }[] = [
+    { label: 'Administradores', value: whitelabel.admins },
+    { label: 'Aplicações vinculadas', value: whitelabel.applications },
+    { label: 'Integrações', value: whitelabel.integrations },
   ]
+  const availableSummary = summary.filter(item => item.value !== null)
+  const unavailableSummary = summary.filter(item => item.value === null)
 
   return (
     <div className={styles.overview}>
@@ -314,25 +300,18 @@ function Overview({
         </dl>
       </section>
 
-      <ul className={styles.summary} aria-label={`Resumo de ${whitelabel.name}`} data-detail-stage="summary">
-        {summary.map((item) => (
-          <li key={item.label} className={styles.summaryCard}>
-            <IconTile icon={item.icon} tone={item.tone} size="sm" className={styles.summaryIcon} />
-            <p className={styles.summaryLabel}>{item.label}</p>
-            <p className={styles.summaryValue}>
-              {item.value !== null ? (
-                item.value
-              ) : (
-                <>
-                  <span aria-hidden="true">—</span>
-                  <span className="visually-hidden">sem dados</span>
-                </>
-              )}
-            </p>
-            <p className={styles.summaryStatus}>{item.note}</p>
-          </li>
-        ))}
-      </ul>
+      <div className={styles.relationships} data-detail-stage="summary">
+        {availableSummary.length ? (
+          <dl className={styles.summary} aria-label={`Resumo de ${whitelabel.name}`}>
+            {availableSummary.map(item => (
+              <div key={item.label} className={styles.summaryItem}>
+                <dt>{item.label}</dt><dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+        {unavailableSummary.length ? <p className={styles.unavailableSummary}>Sem dados no Control Plane: {unavailableSummary.map(item => item.label.toLocaleLowerCase('pt-BR')).join(', ')}.</p> : null}
+      </div>
 
     </div>
   )

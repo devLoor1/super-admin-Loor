@@ -52,8 +52,10 @@ export function OpportunitiesPage(props: OpportunityListProps) {
   const canCreate = opportunityActionAvailable('create') && roles.includes('SUPER_ADMIN')
   return (
     <OperationShell section="opportunities" title="Oportunidades">
-      <PageIntro text="Consulte oportunidades de todos os Whitelabels no Control Plane. SUPER_ADMIN pode preparar uma criação sem garantia; a nova oportunidade permanece em revisão, sem aprovação ou provisionamento de provedor." />
-      {canCreate && <div><a href="#/operation/opportunities/new" className={`${outline.button} ${shared.secondaryButton}`} data-opportunity-create>Nova oportunidade</a></div>}
+      <PageIntro
+        text="Consulte as oportunidades e acompanhe seus estados por Whitelabel."
+        actions={canCreate && <a href="#/operation/opportunities/new" className={`${outline.button} ${shared.secondaryButton}`} data-opportunity-create>Nova oportunidade</a>}
+      />
       <OpportunityList {...props} />
     </OperationShell>
   )
@@ -160,11 +162,12 @@ function OpportunityList({ whitelabel, status, modalidade, search: searchParam, 
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="opp-list-title" data-opportunity-list>
-        <h2 id="opp-list-title" className="visually-hidden">
+        <h2 id="opp-list-title" className={shared.listHeading}>
           Lista de oportunidades
         </h2>
         <div className={shared.filters} style={{ '--filter-count': 5 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar por nome ou razão social da oportunidade (busca feita pelo Control Plane)</span>
             <input
@@ -177,7 +180,8 @@ function OpportunityList({ whitelabel, status, modalidade, search: searchParam, 
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
               <span className="visually-hidden">Filtrar por Whitelabel</span>
               <select
                 id="opportunity-whitelabel"
@@ -194,7 +198,8 @@ function OpportunityList({ whitelabel, status, modalidade, search: searchParam, 
                 {!registryHasScope && route.whitelabelId ? <option value={route.whitelabelId}>{whitelabelName(route.whitelabelId)}</option> : null}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Status</span>
               <span className="visually-hidden">Filtrar por status</span>
               <select id="opportunity-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as OpportunityStatus) })}>
                 <option value="all">Todos os status</option>
@@ -205,7 +210,8 @@ function OpportunityList({ whitelabel, status, modalidade, search: searchParam, 
                 ))}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Modalidade</span>
               <span className="visually-hidden">Filtrar por modalidade</span>
               <select
                 id="opportunity-modality"
@@ -220,7 +226,8 @@ function OpportunityList({ whitelabel, status, modalidade, search: searchParam, 
                 ))}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
               <span className="visually-hidden">Ordenar oportunidades</span>
               <select
                 id="opportunity-sort"

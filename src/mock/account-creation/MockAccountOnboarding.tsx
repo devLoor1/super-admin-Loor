@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { CircleCheck, CircleDashed, ChevronRight } from 'lucide-react'
 import type { AccountDetail } from '../../features/whitelabel-accounts/accountsApi'
 import { authenticatedGet } from '../../lib/apiClient'
@@ -12,6 +12,7 @@ export function MockAccountOnboarding({ detail, tenantId }: { detail: AccountDet
   return <ParticipantOnboarding key={`${tenantId}:${detail.kind}:${detail.record.id}`} tenantId={tenantId} kind={detail.kind} id={detail.record.id} />
 }
 function ParticipantOnboarding({ tenantId, kind, id }: { tenantId: string; kind: ParticipantKind; id: string }) {
+  const sectionId = useId()
   const remote = useRemote(`mock-onboarding:${tenantId}:${kind}:${id}`, signal => authenticatedGet<{ data: { mockCreated?: boolean } | null; mockOnly: boolean }>(`/mock/account-creation/whitelabels/${tenantId}/${kind}/${id}`, { signal }))
   const [selected, setSelected] = useState('registration')
   if (remote.state.status !== 'success' || remote.state.data.mockOnly !== true || !remote.state.data.data?.mockCreated) return null
@@ -23,9 +24,11 @@ function ParticipantOnboarding({ tenantId, kind, id }: { tenantId: string; kind:
     { id: 'verification', label: 'Validação e serviços', state: 'Não iniciados', text: 'KYC, documentos e serviços financeiros seguem suas próprias regras e autorizações. Este cadastro não cria wallet, pagamento ou investimento.', complete: false },
   ]
   const active = stages.find(item => item.id === selected)!
-  return <section className={css.onboarding} aria-labelledby="mock-onboarding-title" data-mock-onboarding>
-    <header><p className={css.eyebrow}>Jornada simulada</p><h3 id="mock-onboarding-title">Próximas etapas da conta</h3><p>Explore o que vem depois do cadastro inicial.</p></header>
-    <div className={css.stageList}>{stages.map(stage => <button type="button" key={stage.id} onClick={() => setSelected(stage.id)} aria-pressed={selected === stage.id} aria-controls="mock-onboarding-description"><span className={css.stageIcon} aria-hidden="true">{stage.complete ? <CircleCheck size={18} /> : <CircleDashed size={18} />}</span><span><strong>{stage.label}</strong><small>{stage.state}</small></span><ChevronRight size={15} aria-hidden="true" /></button>)}</div>
-    <div id="mock-onboarding-description" className={css.stageDescription} role="status"><h4>{active.label}</h4><p>{active.text}</p></div>
+  return <section className={css.onboarding} aria-labelledby={`${sectionId}-title`} data-mock-onboarding>
+    <header><p className={css.eyebrow}>Jornada simulada</p><h3 id={`${sectionId}-title`}>Próximas etapas da conta</h3><p>Selecione uma etapa para entender o que falta. A seleção não conclui a etapa.</p></header>
+    <div className={css.stageLayout}>
+      <nav className={css.stageList} aria-label="Etapas do onboarding">{stages.map(stage => <button type="button" key={stage.id} onClick={() => setSelected(stage.id)} aria-pressed={selected === stage.id} aria-controls={`${sectionId}-description`}><span className={css.stageIcon} aria-hidden="true">{stage.complete ? <CircleCheck size={18} /> : <CircleDashed size={18} />}</span><span><strong>{stage.label}</strong><small>{stage.state}</small></span><ChevronRight size={15} aria-hidden="true" /></button>)}</nav>
+      <div id={`${sectionId}-description`} className={css.stageDescription} role="status"><span className={css.stageState}>{active.state}</span><h4>{active.label}</h4><p>{active.text}</p></div>
+    </div>
   </section>
 }

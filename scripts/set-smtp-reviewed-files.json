@@ -1,0 +1,54 @@
+{
+  "baseline": "ebc2f49b328e7185b679e7413b355056b4b49554",
+  "finalized": true,
+  "files": {
+    "src/features/whitelabel-emails/OperationalSmtpPage.tsx": {
+      "before": "8f1f79471be46b3dc1c42fcd051b8693af1530b038f99f4750ed2e298aa38766",
+      "after": "5d209690f0900553238d8ea0894606cb2b732cffa59eb423a6f293766f3451b2"
+    },
+    "src/features/whitelabel-emails/SmtpMetadataEditor.module.css": {
+      "before": null,
+      "after": "530fb7624be2e2a7047cb9fadc3847a9e77558ed87b1648f379f05b5e1d5414e"
+    },
+    "src/features/whitelabel-emails/SmtpMetadataEditor.tsx": {
+      "before": null,
+      "after": "e84f6c2e8c6ddd5dddecab0a41319745ab1c40cd09760a7260e62ad32559ebe6"
+    },
+    "src/features/whitelabel-emails/smtpReadApi.ts": {
+      "before": "e81e999961062adfb71fb33a4e3d4b19de7f08453c168743df91e2422f4ea8b2",
+      "after": "f956f18d1e0e3ca66538574c988275ee119b57d28275f6eba5a248bd7d5920a1"
+    },
+    "src/features/whitelabel-emails/smtpWriteClient.ts": {
+      "before": null,
+      "after": "63c677201b21d3b25bafbd6fad96d2ea4730b3d852e9e2de7d207c4c6ac11fe2"
+    },
+    "src/features/whitelabel-emails/smtpWriteContract.ts": {
+      "before": null,
+      "after": "c3c75aa577607ed3d378aa50f5d9f46118c85b92f781233524a8428f6b9eaaa6"
+    },
+    "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
+      "before": "cecb06d43aaec64d25e31be8de8f9a105e59b5f92c4b796c9bfb7b52c9dee83c",
+      "after": "210e5a03dc8dd237b531538438fdcba8efafef7d0406edd9b9d3a551197d0f55"
+    },
+    "src/features/whitelabel-settings/SettingsWriteEditor.module.css": {
+      "before": "a405c354f035678e80b96d51f8a303be657b508bebd3ad9190aa568f11bee1ee",
+      "after": "628733a062b5a13afa9802a73b487611d8293ba63ef6c743051281c4bc5d77b9"
+    },
+    "src/features/whitelabel-settings/SettingsWriteEditor.tsx": {
+      "before": "5e700e499d794e2d929bca01ce4a2d7cdc18057f7afb05635589c57c43db0d44",
+      "after": "2b0edb86cea13d522f9022136de48411cbf350c2fbafe6ce64758d8244e3359f"
+    },
+    "src/features/whitelabel-settings/settingsReadApi.ts": {
+      "before": "35919588a0c27278472b064011a01f04f948bc8d7c57821e40c88de83c500c49",
+      "after": "192e8c5997e7d2577f30a52b322ae0ffe3acd80c7880f5f759b84605fbe041a4"
+    },
+    "src/features/whitelabel-settings/settingsWriteClient.ts": {
+      "before": "51e7d20bc70ef95be9001e08c23805d31ab8553b790456d334a392f1af5a883b",
+      "after": "d8cbfe6030280094b64b0af7ba9438da9e6dc63d548250d432b92ccf278ce0d0"
+    },
+    "src/features/whitelabel-settings/settingsWriteContract.ts": {
+      "before": "60dd1c29f15beb7fd9d4f1644736aa8e6758ec983ce1718d2ab30984a1267d67",
+      "after": "20bc5008d98abe26d5a9528f5939f1ded015f7b76c4c16c3b42168202a0788e6"
+    }
+  }
+}

@@ -16,7 +16,7 @@ const api = await load('src/features/whitelabel-emails/smtpReadApi.ts')
 const auth = await load('src/lib/authSession.ts')
 const { ApiError } = await load('src/lib/api.ts')
 const { SmtpReadCards, SmtpReadFeedback } = await load('src/features/whitelabel-emails/OperationalSmtpPage.tsx')
-const fixture = () => ({ data: { id: 12, whitelabelId: 6, host: 'smtp.qa.example.invalid', port: 587, secure: false, username: 'PRIVATE_CREDENTIAL_SENTINEL', hasPassword: true, configured: true, active: false, fromEmail: 'sender@qa.example.invalid', fromName: 'Synthetic QA sender', tlsRejectUnauthorized: true, createdAt: '2026-10-25T13:15:00.000Z', updatedAt: null } })
+const fixture = () => ({ data: { id: 12, whitelabelId: 6, host: 'smtp.qa.example.invalid', port: 587, secure: false, hasUsername: true, hasPassword: true, configured: true, active: false, fromEmail: 'sender@qa.example.invalid', fromName: 'Synthetic QA sender', tlsRejectUnauthorized: true, version: '12:2026-10-26T13:15:00.000Z', createdAt: '2026-10-25T13:15:00.000Z', updatedAt: null } })
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status })
 const session = (roles = ['SUPER_ADMIN']) => auth.persistSession({ accessToken: 'synthetic-only-token', tokenType: 'Bearer', operator: { id: 'synthetic-operator', name: 'QA', email: 'qa@example.invalid', roles } })
 const malformed = error => error.kind === 'malformed'
@@ -26,15 +26,17 @@ async function check(label, fn) { try { await fn(); checks++ } catch (cause) { t
 await check('safe projection distinguishes complete credentials and inactive server', () => {
   const parsed = api.parseSmtpRead(fixture(), '6')
   assert.equal(parsed.state, 'saved'); assert.equal(parsed.tenantId, '6'); assert.equal(parsed.id, '12')
-  assert.equal(parsed.configured, true); assert.equal(parsed.hasPassword, true); assert.equal(parsed.active, false)
+  assert.equal(parsed.configured, true); assert.equal(parsed.hasUsername, true); assert.equal(parsed.hasPassword, true); assert.equal(parsed.active, false); assert.equal(parsed.version, fixture().data.version)
   assert.equal(parsed.secure, false); assert.equal(parsed.port, 587); assert.equal(parsed.updatedAt, null)
   assert.doesNotMatch(JSON.stringify(parsed), /PRIVATE_CREDENTIAL_SENTINEL|"username"|"password"|"auth"/)
 })
-await check('credential accessor is never read or copied', () => {
+await check('unexpected username is rejected without reading its value', () => {
   const raw = fixture()
   Object.defineProperty(raw.data, 'username', { enumerable: true, get() { throw new Error('Credential value was accessed') } })
-  raw.data.extra = { credentials: 'PRIVATE_CREDENTIAL_SENTINEL' }
-  raw.metadata = { token: 'PRIVATE_CREDENTIAL_SENTINEL' }
+  assert.throws(() => api.parseSmtpRead(raw, '6'), malformed)
+})
+await check('unrelated unknown fields never enter the safe projection', () => {
+  const raw = fixture(); raw.data.extra = { credentials: 'PRIVATE_CREDENTIAL_SENTINEL' }; raw.metadata = { token: 'PRIVATE_CREDENTIAL_SENTINEL' }
   assert.doesNotMatch(JSON.stringify(api.parseSmtpRead(raw, '6')), /PRIVATE_CREDENTIAL_SENTINEL|extra|metadata|username/)
 })
 await check('unexpected response password rejects without accessing its value', () => {
@@ -57,7 +59,7 @@ for (const value of [7, '6', 0, -6, 6.5, null, undefined, Number.MAX_SAFE_INTEGE
 for (const value of ['12', 0, -1, 12.5, null, undefined, Number.MAX_SAFE_INTEGER + 1]) await check('configuration ID is a strict positive safe integer', () => {
   const raw = fixture(); raw.data.id = value; assert.throws(() => api.parseSmtpRead(raw, '6'), malformed)
 })
-for (const field of ['secure', 'hasPassword', 'configured', 'active', 'tlsRejectUnauthorized']) {
+for (const field of ['secure', 'hasUsername', 'hasPassword', 'configured', 'active', 'tlsRejectUnauthorized']) {
   const stored = ['secure', 'active', 'tlsRejectUnauthorized'].includes(field)
   for (const value of stored ? [0, 1] : []) await check(`${field} accepts live Core database boolean`, () => {
     const raw = fixture(); raw.data[field] = value; assert.equal(api.parseSmtpRead(raw, '6')[field], value === 1)
@@ -96,7 +98,7 @@ for (const field of ['createdAt', 'updatedAt']) {
     const raw = fixture(); raw.data[field] = value; assert.throws(() => api.parseSmtpRead(raw, '6'), malformed)
   })
 }
-for (const key of ['password', 'passwordHash', 'password_hash', 'credentials', 'authorization', 'auth', 'apiKey', 'api_key', 'clientSecret', 'client_secret', 'accessToken', 'refresh_token', 'token']) await check('unexpected known secret field cannot enter state', () => {
+for (const key of ['username', 'password', 'replaceUsername', 'replacePassword', 'passwordHash', 'password_hash', 'credentials', 'authorization', 'auth', 'apiKey', 'api_key', 'clientSecret', 'client_secret', 'accessToken', 'refresh_token', 'token']) await check('unexpected known secret field cannot enter state', () => {
   const raw = fixture(); raw.data[key] = 'PRIVATE_CREDENTIAL_SENTINEL'; assert.throws(() => api.parseSmtpRead(raw, '6'), malformed)
 })
 for (const roles of [['SUPER_ADMIN'], ['READ_ONLY'], ['SUPER_ADMIN', 'READ_ONLY'], ['SUPPORT_ADMIN'], ['COMPLIANCE_ADMIN'], ['FINANCIAL_ADMIN'], [], ['super_admin']]) await check(`read role authorization ${roles}`, async () => {

@@ -8,7 +8,7 @@ import { useWhitelabelOptions, useWhitelabelRecord } from '../operation/shared/w
 import { AccountsWhitelabelSelector } from '../whitelabel-accounts/AccountsWhitelabelSelector'
 import { DotMatrixBackground } from '../whitelabels/visuals/DotMatrixBackground'
 import { SettingsSection } from './SettingsSection'
-import { canReadSettings, FEATURE_LABELS, isSettingsTenantId, TERMINOLOGY_LABELS, type ReadValue, type SettingsRead, type TermsRead } from './settingsReadApi'
+import { canReadSettings, FEATURE_LABELS, isSettingsTenantId, TERMINOLOGY_LABELS, type ReadValue, type SettingsRead, type TermsRead, type SettingProvenance } from './settingsReadApi'
 import { useSettingsRead } from './useSettingsRead'
 import styles from './WhitelabelSettingsPage.module.css'
 import read from './SettingsRead.module.css'
@@ -16,6 +16,8 @@ import { ConfigNavigation } from './ConfigNavigation'
 import { configArea, configHref, type ConfigArea } from './configRoute'
 import { PlatformAppRead } from './PlatformAppRead'
 import { PlatformPresentationRead } from './PlatformPresentationCards'
+import { SettingsWriteEditor } from './SettingsWriteEditor'
+import { SETTINGS_FIELDS } from './settingsWriteContract'
 
 const settingsReadHref = (id: string, area: ConfigArea = 'platform') => configHref(id, area)
 export function SettingsReadFeedback({ error, retry }: { error: unknown; retry: () => void }) {
@@ -28,8 +30,11 @@ function Value({ field, boolean = false }: { field: ReadValue<string | number | 
   if (field.value === '') return <span className={read.missing}>Texto vazio</span>
   return <>{boolean ? field.value ? 'Sim' : 'Não' : String(field.value)}</>
 }
-function Row({ label, field, boolean }: { label: string; field: ReadValue<string | number | boolean>; boolean?: boolean }) {
-  return <div className={read.row}><dt>{label}</dt><dd><Value field={field} boolean={boolean} /></dd></div>
+function Origin({ provenance }: { provenance?: SettingProvenance }) {
+  return <small className={read.missing}>{!provenance ? 'Origem individual não informada.' : provenance.source === 'stored' ? 'Origem: substituição armazenada.' : provenance.source === 'default' ? 'Origem: padrão herdado; sem substituição armazenada.' : 'Origem: ausente; sem substituição armazenada.'}</small>
+}
+function Row({ label, field, boolean, provenance }: { label: string; field: ReadValue<string | number | boolean>; boolean?: boolean; provenance?: SettingProvenance }) {
+  return <div className={read.row}><dt>{label}</dt><dd><Value field={field} boolean={boolean} />{provenance && <><br /><Origin provenance={provenance} /></>}</dd></div>
 }
 function Revision({ revision }: { revision: TermsRead }) {
   return <div className={read.revision}><dl className={read.list}>
@@ -45,7 +50,7 @@ const Section = ({ id, title, subtitle, children }: { id: string; title: string;
 export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; area?: ConfigArea | 'all' }) {
   const show = (target: ConfigArea) => area === 'all' || area === target
   return <>
-    <p className={read.notice}>Consulta do Control Plane. Os valores podem incluir padrões aplicados pelo Core; a origem individual não é informada. A consulta não comprova a origem de cada padrão. Edição só é disponibilizada após qualificação e aceite do campo; não há reset de herança suportado neste contrato.</p>
+    <p className={read.notice}>Consulta do Control Plane. Nos textos de login e oito funcionalidades, a proveniência qualificada distingue substituição armazenada, padrão herdado e ausência. Sem proveniência, a consulta não comprova a origem e a edição permanece indisponível. Outras configurações continuam somente leitura.</p>
     {area === 'app' && <PlatformAppRead entry={data.app.entry} authenticated={data.app.authenticated} />}
     <div className={styles.columns}>
       {show('platform') && <Section id="general" title="Geral" subtitle="Identidade retornada pelo endpoint deste Whitelabel."><dl className={read.list}>
@@ -55,11 +60,12 @@ export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; 
         <Row label="Cor principal do perfil inicial" field={data.identity.primaryColor} /><Row label="Cor de fundo do perfil inicial" field={data.identity.backgroundColor} /><Row label="Cor do texto do perfil inicial" field={data.identity.textColor} />
       </dl><p className={read.missing}>Logo e favicon não possuem referências públicas qualificadas nesta integração.</p></Section>}
       {show('platform') && <Section id="experience" title="Experiência" subtitle="Textos públicos de entrada e vocabulário suportado."><dl className={read.list}>
-        <Row label="Título de login" field={data.experience.title} /><Row label="Subtítulo de login" field={data.experience.subtitle} /><Row label="Título do perfil inicial" field={data.experience.sideTitle} /><Row label="Subtítulo do perfil inicial" field={data.experience.sideSubtitle} />
+        <Row label="Título de login" field={data.experience.title} provenance={data.provenance['login.title']} /><Row label="Subtítulo de login" field={data.experience.subtitle} provenance={data.provenance['login.subtitle']} /><Row label="Título do perfil inicial" field={data.experience.sideTitle} /><Row label="Subtítulo do perfil inicial" field={data.experience.sideSubtitle} />
         {data.experience.bullets.state === 'value' ? data.experience.bullets.value.map((v,i) => <Row key={i} label={`Destaque de login ${i+1}`} field={{state:'value',value:v}} />) : <Row label="Destaques de login" field={data.experience.bullets} />}
+        <div className={read.row}><dt>Origem dos destaques de login</dt><dd><Origin provenance={data.provenance['login.bullets']} /></dd></div>
         {Object.entries(TERMINOLOGY_LABELS).map(([k,label]) => <Row key={k} label={label} field={data.terminology[k as keyof typeof TERMINOLOGY_LABELS]} />)}
       </dl></Section>}
-      {show('platform') && <Section id="features" title="Funcionalidades" subtitle="Valores booleanos retornados pelo Core; não constituem autorização ou comprovação de disponibilidade de cada serviço."><dl className={read.list}>{Object.entries(FEATURE_LABELS).map(([k,label]) => <Row key={k} label={label} field={data.features[k as keyof typeof FEATURE_LABELS]} boolean />)}</dl></Section>}
+      {show('platform') && <Section id="features" title="Funcionalidades" subtitle="Valores booleanos retornados pelo Core; não constituem autorização ou comprovação de disponibilidade de cada serviço."><dl className={read.list}>{Object.entries(FEATURE_LABELS).map(([k,label]) => <Row key={k} label={label} field={data.features[k as keyof typeof FEATURE_LABELS]} provenance={data.provenance[`features.${k as keyof typeof FEATURE_LABELS}`]} boolean />)}</dl></Section>}
     </div>
     {show('platform') && <PlatformPresentationRead capabilities={data.platformPresentation} />}
     {show('terms') && <Section id="terms" title="Termos de Uso" subtitle="Revisão vigente e até 20 revisões publicadas retornadas pela API. Sem publicação ou edição.">
@@ -73,7 +79,7 @@ function ConfirmedSettings({ id, area }: { id: string; area: ConfigArea }) {
   const remote = useSettingsRead(id)
   if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configurações…</p>
-  return <SettingsReadCards data={remote.state.data} area={area} />
+  return <><SettingsReadCards data={remote.state.data} area={area} />{area === 'platform' && <SettingsWriteEditor id={id} data={remote.state.data} onReload={remote.reload} releasedFields={SETTINGS_FIELDS} />}</>
 }
 function SettingsTenant({ whitelabelId, area }: { whitelabelId: string; area: ConfigArea | null }) {
   const id = isSettingsTenantId(whitelabelId) ? whitelabelId : null

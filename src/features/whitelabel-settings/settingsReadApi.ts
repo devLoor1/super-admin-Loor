@@ -45,6 +45,42 @@ export const FEATURE_LABELS = {
   opportunity_show_investor_profile: 'Exibir perfil do investidor na oportunidade',
   opportunity_show_warranty_amount: 'Exibir valor da garantia',
 } as const
+export type QualifiedSetting = 'login.title' | 'login.subtitle' | 'login.bullets' | `features.${keyof typeof FEATURE_LABELS}`
+export type QualifiedSettingValue = string | string[] | boolean
+export type SettingProvenance = { stored: boolean; storedValue: QualifiedSettingValue | null; effectiveValue: QualifiedSettingValue | null; source: 'stored' | 'default' | 'absent'; version: string | null }
+export const QUALIFIED_SETTINGS: readonly QualifiedSetting[] = ['login.title', 'login.subtitle', 'login.bullets', ...Object.keys(FEATURE_LABELS).map(key => `features.${key}` as QualifiedSetting)]
+export function isQualifiedSetting(value: string): value is QualifiedSetting { return QUALIFIED_SETTINGS.includes(value as QualifiedSetting) }
+export function qualifiedSettingValue(field: QualifiedSetting, value: unknown): value is QualifiedSettingValue | null {
+  return value === null || (field.startsWith('features.') ? typeof value === 'boolean' : field === 'login.bullets' ? Array.isArray(value) && value.length <= 3 && value.every(text) : text(value))
+}
+/** Only the eleven released cells are retained. Unknown configuration provenance is never copied. */
+export function parseSettingProvenance(raw: unknown, field: QualifiedSetting): SettingProvenance {
+  if (!object(raw) || typeof raw.stored !== 'boolean' || !Object.hasOwn(raw, 'storedValue') || !Object.hasOwn(raw, 'effectiveValue') || !Object.hasOwn(raw, 'version')
+    || !qualifiedSettingValue(field, raw.storedValue) || !qualifiedSettingValue(field, raw.effectiveValue)
+    || !['stored', 'default', 'absent'].includes(String(raw.source))
+    || !(raw.version === null || typeof raw.version === 'string' && raw.version.length > 0 && raw.version.length <= 512 && !/[\p{Cc}\p{Cf}]/u.test(raw.version))) throw malformed()
+  if (raw.stored ? raw.source !== 'stored' : raw.storedValue !== null || raw.source === 'stored' || raw.version !== null) throw malformed()
+  if (raw.source === 'absent' && raw.effectiveValue !== null || raw.source === 'default' && raw.effectiveValue === null) throw malformed()
+  return { stored: raw.stored, storedValue: Array.isArray(raw.storedValue) ? [...raw.storedValue] : raw.storedValue, effectiveValue: Array.isArray(raw.effectiveValue) ? [...raw.effectiveValue] : raw.effectiveValue, source: raw.source as SettingProvenance['source'], version: raw.version }
+}
+function readProvenance(data: Record<string, unknown>) {
+  const result: Partial<Record<QualifiedSetting, SettingProvenance>> = {}
+  if (!Object.hasOwn(data, 'provenance')) return result
+  if (!Array.isArray(data.provenance) || data.provenance.length > 200) throw malformed()
+  for (const entry of data.provenance) {
+    if (!object(entry) || typeof entry.page !== 'string' || typeof entry.key !== 'string') throw malformed()
+    const field = `${entry.page}.${entry.key}`
+    if (!isQualifiedSetting(field)) continue
+    if (Object.hasOwn(result, field)) throw malformed()
+    result[field] = parseSettingProvenance(entry, field)
+  }
+  return result
+}
+function effective<T>(provenance: SettingProvenance | undefined, fallback: ReadValue<T>): ReadValue<T> {
+  if (!provenance) return fallback
+  if (provenance.source === 'absent') return { state: 'missing' }
+  return provenance.effectiveValue === null ? { state: 'null' } : { state: 'value', value: provenance.effectiveValue as T }
+}
 export const TERMINOLOGY_LABELS = {
   'investmentPortfolio.label.singular': 'Carteira — singular',
   'investmentPortfolio.label.plural': 'Carteira — plural',
@@ -71,6 +107,7 @@ export function parseSettingsRead(raw: unknown, id: string) {
   const { data } = raw
   if (!object(data.whitelabel) || data.whitelabel.id !== Number(id) || !object(data.settings)) throw malformed()
   const w = data.whitelabel, s = data.settings
+  const provenance = readProvenance(data)
   const theme = bag(bag(s, 'quick_profile'), 'theme'), login = bag(s, 'login'), flags = bag(s, 'features')
   const terminology = bag(bag(s, 'terminology'), 'config')
   if (terminology && (terminology.capabilityId !== 'platform.terminology' || terminology.version !== 1 || terminology.locale !== 'pt-BR')) throw malformed()
@@ -84,8 +121,9 @@ export function parseSettingsRead(raw: unknown, id: string) {
     name: field(w, 'name', text), slug: field(w, 'slug', text), baseUrl: field(w, 'baseUrl', url),
     active: active.state === 'value' ? { state: 'value' as const, value: Boolean(active.value) } : active,
     identity: { primaryColor: field(theme, 'primaryColor', color), backgroundColor: field(theme, 'backgroundColor', color), textColor: field(theme, 'textColor', color) },
-    experience: { title: field(login, 'title', text), subtitle: field(login, 'subtitle', text), sideTitle: field(theme, 'sideTitle', text), sideSubtitle: field(theme, 'sideSubtitle', text), bullets },
-    features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, field(flags, k, bool)])) as Record<keyof typeof FEATURE_LABELS, ReadValue<boolean>>,
+    experience: { title: effective(provenance['login.title'], field(login, 'title', text)), subtitle: effective(provenance['login.subtitle'], field(login, 'subtitle', text)), sideTitle: field(theme, 'sideTitle', text), sideSubtitle: field(theme, 'sideSubtitle', text), bullets: effective(provenance['login.bullets'], bullets) },
+    features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, effective(provenance[`features.${k}` as QualifiedSetting], field(flags, k, bool))])) as Record<keyof typeof FEATURE_LABELS, ReadValue<boolean>>,
+    provenance,
     terminology: Object.fromEntries(Object.keys(TERMINOLOGY_LABELS).map(k => [k, field(values, k, text)])) as Record<keyof typeof TERMINOLOGY_LABELS, ReadValue<string>>,
     app: { entry: readAppContent(s, 'entry'), authenticated: readAppContent(s, 'authenticated') },
     platformPresentation: readPlatformPresentation(s),

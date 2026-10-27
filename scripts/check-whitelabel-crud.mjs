@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedSettingsEvolution } from './reviewed-settings-evolution-boundary.mjs'
+import { beforeSetSmtp, reviewedSetSmtp } from './reviewed-set-smtp-boundary.mjs'
 import { readdir } from 'node:fs/promises'
 import { readFile } from './reviewed-consolidation-boundary.mjs'
 import { createRequire } from 'node:module'
@@ -488,14 +489,24 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
     entry.isDirectory() ? walk(resolve(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(dir, entry.name)] : []))).flat()
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
+    const runtimePath = file.slice(root.length + 1).replaceAll('\\', '/')
+    if (runtimePath === 'src/features/whitelabel-emails/smtpWriteClient.ts') {
+      // Current metadata PATCH is independently behavioral-tested; this older
+      // cross-domain freeze accepts only the exact finalized reviewed unit.
+      assert.equal(reviewedSetSmtp(runtimePath), true)
+      assert.match(source, /method:\s*['"]PATCH['"]/)
+      assert.doesNotMatch(source, /method:\s*['"](?:POST|PUT|DELETE)['"]|\/admin\/|\/internal\//)
+      continue
+    }
     if (file.replaceAll('\\', '/').endsWith('src/features/whitelabel-settings/settingsWriteClient.ts')) {
-      // Prepared transport only: exact reviewed bytes, unreleased by default,
-      // and absent from the operational page's import graph.
+      // Preserve this historical held-editor assertion over the exact prior
+      // unit. Current SET/SMTP behavior has separate acceptance suites/pins.
       assert.equal(reviewedSettingsEvolution('src/features/whitelabel-settings/settingsWriteClient.ts'), true)
-      assert.equal((source.match(/method: 'PUT'/g) || []).length, 1)
-      assert.equal(/method:\s*['"](POST|PATCH|DELETE)['"]/.test(source), false)
-      assert.match(source, /releasedFields: readonly SettingsField\[\] = \[\]/)
-      const page = await readFile(resolve(root, 'src/features/whitelabel-settings/OperationalSettingsPage.tsx'), 'utf8')
+      const previous = beforeSetSmtp(runtimePath, source)
+      assert.equal((previous.match(/method: 'PUT'/g) || []).length, 1)
+      assert.equal(/method:\s*['"](POST|PATCH|DELETE)['"]/.test(previous), false)
+      assert.match(previous, /releasedFields: readonly SettingsField\[\] = \[\]/)
+      const page = beforeSetSmtp('src/features/whitelabel-settings/OperationalSettingsPage.tsx', await readFile(resolve(root, 'src/features/whitelabel-settings/OperationalSettingsPage.tsx'), 'utf8'))
       assert.doesNotMatch(page, /import[^\n]*SettingsWriteEditor|releasedFields=/)
       continue
     }

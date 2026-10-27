@@ -6,7 +6,7 @@ import { businessText } from '../operation/shared/businessPresentation'
 export type SmtpSaved = {
   state: 'saved'; tenantId: string; id: string
   host: string; port: number; secure: boolean
-  hasPassword: boolean; configured: boolean; active: boolean
+  hasUsername: boolean; hasPassword: boolean; configured: boolean; active: boolean; version: string
   fromEmail: string; fromName: string | null; tlsRejectUnauthorized: boolean
   createdAt: string | null; updatedAt: string | null
 }
@@ -40,7 +40,7 @@ function date(value: unknown): string | null {
   return value
 }
 
-/** Projection intentionally does not read/store username or any password/config bag. */
+/** The completion contract rejects credentials by key without ever reading their values. */
 export function parseSmtpRead(value: unknown, tenantId: string): SmtpRead {
   if (!isSmtpTenantId(tenantId)) return malformed()
   const envelope = object(value)
@@ -49,16 +49,19 @@ export function parseSmtpRead(value: unknown, tenantId: string): SmtpRead {
   const row = object(envelope.data)
   if (idNumber(row.whitelabelId) !== tenantId) return malformed()
   // An unexpected secret in a response is a contract error, never component state.
-  if (Object.keys(row).some(key => /^(password|password_hash|passwordHash|credentials|auth|authorization|api_?key|client_?secret|access_?token|refresh_?token|token)$/i.test(key))) return malformed()
-  const host = text(row.host), fromEmail = text(row.fromEmail)
+  if (Object.keys(row).some(key => /^(username|password|password_hash|passwordHash|replaceUsername|replacePassword|credentials|auth|authorization|api_?key|client_?secret|access_?token|refresh_?token|token)$/i.test(key))) return malformed()
+  text(row.host); text(row.fromEmail)
+  const host = row.host as string, fromEmail = row.fromEmail as string
   if (!validSmtpHost(host) || !validSmtpEmail(fromEmail) || typeof row.port !== 'number' || !Number.isInteger(row.port) || row.port < 1 || row.port > 65535) return malformed()
-  const hasPassword = boolean(row.hasPassword), configured = boolean(row.configured)
-  if (configured && !hasPassword) return malformed()
+  const hasUsername = boolean(row.hasUsername), hasPassword = boolean(row.hasPassword), configured = boolean(row.configured)
+  if (configured && (!hasUsername || !hasPassword)) return malformed()
+  const version = row.version
+  if (typeof version !== 'string' || !version || version.length > 256 || /[\p{Cc}\p{Cf}]/u.test(version) || businessText(version, 256) === null) return malformed()
   let fromName: string | null
   if (row.fromName === null) fromName = null
   else if (row.fromName === '') fromName = ''
-  else fromName = text(row.fromName)
-  return { state: 'saved', tenantId, id: idNumber(row.id), host, port: row.port, secure: storedBoolean(row.secure), hasPassword, configured,
+  else { text(row.fromName); fromName = row.fromName as string }
+  return { state: 'saved', tenantId, id: idNumber(row.id), host, port: row.port, secure: storedBoolean(row.secure), hasUsername, hasPassword, configured, version,
     active: storedBoolean(row.active), fromEmail, fromName, tlsRejectUnauthorized: storedBoolean(row.tlsRejectUnauthorized), createdAt: date(row.createdAt), updatedAt: date(row.updatedAt) }
 }
 

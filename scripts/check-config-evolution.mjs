@@ -34,7 +34,15 @@ check('navigation keeps tenant and uses existing destinations', () => { const ht
 check('missing App content stays truthful', () => { const html = render(h(PlatformAppRead, { entry: { state: 'missing', groups: [] }, authenticated: { state: 'null', groups: [] } })); assert.match(html, /não foi informada/); assert.doesNotMatch(html, /Persisted QA text|Esqueci minha senha|type="text"|Salvar/) })
 check('Terms remains text-only, no publication or HTML execution', () => { const raw = source(); raw.data.terms.current = { configured: true, revision_id: 4, revision: 4, title: 'QA', content_markdown: '<script>SECRET_SENTINEL</script>', published_at: '2026-10-25T12:00:00Z', updated_at: '2026-10-25T12:00:00Z' }; const html = render(h(SettingsReadCards, { data: api.parseSettingsRead(raw, '400'), area: 'terms' })); assert.match(html, /&lt;script&gt;/); assert.doesNotMatch(html, /<script>|dangerouslySetInnerHTML|Publicar revisão/) })
 const runtime = await readFile(resolve(root, 'src/features/whitelabel-settings/OperationalSettingsPage.tsx'), 'utf8')
-check('unaccepted write UI is not in operational import graph', () => assert.doesNotMatch(runtime, /import.*SettingsWriteEditor|releasedFields=|method:.*PUT/))
+check('only qualified SET editor is wired to the platform area; App and legal editors remain unavailable', () => {
+  assert.match(runtime, /area === 'platform' && <SettingsWriteEditor/)
+  assert.match(runtime, /releasedFields=\{SETTINGS_FIELDS\}/)
+  assert.doesNotMatch(runtime, /method:.*PUT|AppWriteEditor|TermsWriteEditor|BrandingEditor/)
+  for (const area of ['app', 'terms', 'identity']) {
+    const html = render(h(SettingsReadCards, { data: api.parseSettingsRead(source(), '400'), area }))
+    assert.doesNotMatch(html, /Editar configuração|Salvar esta configuração|Publicar revisão|Remover substituição/)
+  }
+})
 const registry = await load('src/features/menu-visibility/menuRegistry.ts')
 check('no new persisted visibility identifiers', () => { assert.equal(registry.MENU_VISIBILITY_IDS.length, 23); assert.equal(registry.MENU_VISIBILITY_IDS.includes('platform-app'), false); assert.equal(registry.MENU_VISIBILITY_IDS.includes('whitelabel-settings'), true) })
 console.log(`Tenant configuration evolution: ${checks} checks passed (actual read projections, public App contracts and rendered navigation; no network)`)

@@ -9,9 +9,8 @@
 .content .notice { padding: 12px; background: #b899ff0d; border: 1px solid #b899ff30; border-radius: 8px; }
 .fields { display: grid; gap: 14px; margin: 0; padding: 12px; min-width: 0; border: 1px solid #ffffff20; border-radius: 8px; }
 .fields label { display: grid; gap: 6px; color: var(--text-secondary, #bbb9ce); font-size: 13px; }
-.fields label:has(input[type='checkbox']), .review label { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.6; }
-.fields input[type='checkbox'], .review input { margin-top: 3px; accent-color: var(--accent-primary, #a78bfa); flex-shrink: 0; }
+.fields label:has(input[type='checkbox']) { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.6; }
+.fields input[type='checkbox'] { margin-top: 3px; accent-color: var(--accent-primary, #a78bfa); flex-shrink: 0; }
 .fields:disabled { opacity: .75; }
-.review { display: grid; gap: 12px; padding: 12px; border: 1px solid #b899ff40; border-radius: 8px; }
 .content .meta { font-family: monospace; font-size: 12px; }
 @media (max-width: 480px) { .row { align-items: stretch; flex-direction: column; } .row select { flex-basis: auto; width: 100%; } }

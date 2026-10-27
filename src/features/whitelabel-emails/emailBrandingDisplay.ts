@@ -27,8 +27,17 @@ export function emailBrandingPreviewDraft(value: Json): EmailPreviewCommand['bra
     }
   }
   if (logo !== undefined) {
-    if (logo !== null && typeof logo !== 'string') return null
-    branding.logo_url = logo
+    if (logo === null) branding.logo_url = null
+    else {
+      if (typeof logo !== 'string' || logo.length > 2048 || logo !== logo.trim() || /[\p{Cc}\p{Cf}]/u.test(logo)) return null
+      try {
+        const url = new URL(logo)
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null
+      } catch { return null }
+      // Both preview boundaries remove images. Represent presence/header layout
+      // only, never an applied logo, and never forward the real URL/query/token.
+      branding.logo_url = 'https://example.invalid/email-logo-preview.png'
+    }
   }
   return branding
 }

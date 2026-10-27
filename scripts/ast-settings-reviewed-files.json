@@ -40,7 +40,7 @@
     },
     "src/features/whitelabel-emails/emailBrandingDisplay.ts": {
       "before": null,
-      "after": "5e9e432234620c7eb2218859c1bd9f5df8ecc8ca63f7fffa7f0ea98e5b2f3840"
+      "after": "c67aa6679504f99175ee8f07550784b817d9126e3f3e23a60c1b5a86576b2b7e"
     },
     "src/features/whitelabel-emails/emailEditorialModel.ts": {
       "before": null,

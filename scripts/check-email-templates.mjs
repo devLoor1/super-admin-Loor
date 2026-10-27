@@ -72,7 +72,7 @@ await check('preview normalizes Core legacy colors without changing saved data o
   for (const color of ['AABBCC', '#AABBCC', '#AABBCCDD', ' AABBCCDD ']) for (const key of ['primary_color', 'primaryColor']) {
     const original = Object.freeze({ [key]: color, logo_url: 'https://qa.example.invalid/new-logo.png', extension: Object.freeze({ untouched: true }) }), snapshot = JSON.stringify(original)
     const brandingDraft = branding.emailBrandingPreviewDraft(original)
-    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: original.logo_url })
+    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
     await api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft })
     assert.deepEqual(sent.brandingDraft, brandingDraft); assert.equal(JSON.stringify(original), snapshot)
   }
@@ -81,10 +81,29 @@ await check('preview branding keeps stored null distinct while matching Core ali
   assert.deepEqual(branding.emailBrandingPreviewDraft({}), {})
   assert.deepEqual(branding.emailBrandingPreviewDraft(null), { primary_color: null, logo_url: null })
   const saved = Object.freeze({ primary_color: null, primaryColor: '#aabbcc', logo_url: null, logoUrl: 'https://qa.example.invalid/logo.png' })
-  assert.deepEqual(branding.emailBrandingPreviewDraft(saved), { primary_color: '#aabbcc', logo_url: saved.logoUrl })
+  assert.deepEqual(branding.emailBrandingPreviewDraft(saved), { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
   assert.equal(saved.primary_color, null); assert.equal(saved.logo_url, null)
   assert.deepEqual(branding.emailBrandingPreviewDraft({ primary_color: null, logo_url: null }), { primary_color: null, logo_url: null })
   for (const value of [{ primary_color: 'invalid' }, { primary_color: '#12345' }, { primary_color: 123456 }, { logo_url: false }, []]) assert.equal(branding.emailBrandingPreviewDraft(value), null)
+})
+await check('color-only preview keeps legacy logo layout without forwarding any actual URL', async () => {
+  login(['READ_ONLY']); let sent
+  dispatch = async (_url, options) => { sent = JSON.parse(options.body); return response({ subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1 }) }
+  for (const logo of ['http://legacy.example.invalid/logo.png', 'https://legacy.example.invalid/logo.png?token=DO_NOT_FORWARD', 'https://legacy.example.invalid/logo.png#private-reference', 'http://legacy.example.invalid/logo.png?v=1#logo']) for (const key of ['logo_url', 'logoUrl']) {
+    const original = Object.freeze({ primary_color: '#112233', [key]: logo, extension: Object.freeze({ untouched: true }) }), snapshot = JSON.stringify(original)
+    const brandingDraft = branding.emailBrandingPreviewDraft({ ...original, primary_color: '#aabbcc' })
+    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
+    await api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft })
+    assert.deepEqual(sent.brandingDraft, brandingDraft); assert.doesNotMatch(JSON.stringify(sent), /legacy\.example|DO_NOT_FORWARD|private-reference/); assert.doesNotMatch(sent.brandingDraft.logo_url, /[?#]/)
+    assert.equal(JSON.stringify(original), snapshot)
+  }
+})
+await check('logo presence projection rejects userinfo, invalid schemes and malformed values', () => {
+  for (const logo of ['https://user:pass@example.invalid/logo.png', 'https://user@example.invalid/logo.png', 'javascript:alert(1)', 'data:image/png;base64,AA', 'ftp://example.invalid/logo.png', '//example.invalid/logo.png', 'not-a-url', '', ' https://example.invalid/logo.png', 'https://example.invalid/\nlogo.png']) {
+    assert.equal(branding.emailBrandingPreviewDraft({ logo_url: logo }), null)
+  }
+  assert.deepEqual(branding.emailBrandingPreviewDraft({ primary_color: '#aabbcc' }), { primary_color: '#aabbcc' })
+  assert.deepEqual(branding.emailBrandingPreviewDraft({ logo_url: null }), { logo_url: null })
 })
 function fixture(operation = 'save', mode = 'normal', create = false) {
   const tenant = String(++sequence), session = login(), baseline = row(tenant), initial = create ? [] : [baseline], records = [...initial], seen = []

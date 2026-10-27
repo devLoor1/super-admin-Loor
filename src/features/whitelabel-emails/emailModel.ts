@@ -88,9 +88,10 @@ export type WhitelabelEmailSettings = {
 }
 
 /** Sections with local drafts tracked by the page's unsaved-change guard. */
-export type EmailSectionKey = 'smtp' | 'events'
+export type EmailSectionKey = 'smtp' | 'events' | 'templates'
 
 export const EMAIL_SECTION_LABEL: Record<EmailSectionKey, string> = {
+  templates: 'Template de e-mail',
   smtp: 'SMTP',
   events: 'Envios automáticos',
 }

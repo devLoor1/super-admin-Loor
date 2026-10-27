@@ -236,3 +236,5 @@
     font-size: 12.5px;
   }
 }
+
+.preserved{min-width:0;color:var(--text-on-dark-secondary);font-size:12px;border-top:1px solid var(--surface-border);padding-top:18px;margin-top:6px}.preserved>summary{cursor:pointer;padding:10px 0 20px}.preserved[open]{display:grid;gap:16px}

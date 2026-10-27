@@ -15,6 +15,7 @@ import { EventsSection } from './sections/EventsSection'
 import { SessionActivity } from './sections/SessionActivity'
 import { SmtpSection } from './sections/SmtpSection'
 import { TemplatesSummary } from './sections/TemplatesSummary'
+import { MockEmailStudio } from '../whitelabel-settings/MockConfigurationStudio'
 import styles from './WhitelabelEmailsPage.module.css'
 
 const emailsHref = (id: string) => `#/whitelabels/${id}/emails`
@@ -99,6 +100,8 @@ function EmailsContent({ whitelabel, section }: { whitelabel: Whitelabel; sectio
     if (!section || displayedId !== whitelabel.id) return
     const element = document.getElementById(SECTION_ANCHOR[section])
     if (!element) return
+    const disclosure = element.closest('details')
+    if (disclosure) disclosure.open = true
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     element.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
     element.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
@@ -180,6 +183,8 @@ function EmailSections({
       <p id="whitelabel-emails-label" className="visually-hidden">
         E-mails de {whitelabel.name}
       </p>
+      <MockEmailStudio tenantId={whitelabel.id} tenantName={whitelabel.name} onDirtyChange={value => onDirtyChange('templates', value)} />
+      <details className={styles.preserved}><summary>Configuração SMTP e simulações preservadas</summary>
       <div className={styles.columns}>
         <div className={styles.main}>
           <SmtpSection whitelabelId={whitelabel.id} saved={settings.smtp} onDirtyChange={onDirtyChange} notify={notify} />
@@ -204,6 +209,7 @@ function EmailSections({
           <SessionActivity entries={activity} />
         </div>
       </div>
+      </details>
     </>
   )
 }

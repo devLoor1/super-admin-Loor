@@ -129,7 +129,7 @@ export const FEATURES: { key: FeatureKey; label: string; description: string }[]
 
 /* ---------- Section status ---------- */
 
-export type SectionKey = 'general' | 'identity' | 'experience' | 'features' | 'app' | 'terms'
+export type SectionKey = 'entryStudio' | 'general' | 'identity' | 'experience' | 'features' | 'app' | 'terms'
 
 export type SectionPhase = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -161,6 +161,7 @@ export const SECTION_STATUS_META: Record<SectionStatus, { label: string; tone: S
 }
 
 export const SECTIONS: { key: SectionKey; label: string; anchor: string }[] = [
+  { key: 'entryStudio', label: 'Jornada de entrada', anchor: 'settings-entry-studio' },
   { key: 'general', label: 'Geral', anchor: 'settings-general' },
   { key: 'experience', label: 'Plataforma', anchor: 'settings-experience' },
   { key: 'app', label: 'Platform App', anchor: 'settings-app' },

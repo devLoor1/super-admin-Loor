@@ -21,6 +21,7 @@ import { updateWhitelabelSettings, useWhitelabelSettings } from './settingsStore
 import styles from './WhitelabelSettingsPage.module.css'
 import { OperationalSettingsPage } from './OperationalSettingsPage'
 import { PlatformAppSection } from './platform-app/PlatformAppSection'
+import { MockEntryStudio } from './MockConfigurationStudio'
 
 const settingsHref = (id: string) => `#/whitelabels/${id}/settings`
 
@@ -146,6 +147,8 @@ function SettingsContent({ whitelabel }: { whitelabel: Whitelabel }) {
     const section = SECTIONS.find((item) => item.key === key)
     const element = section && document.getElementById(section.anchor)
     if (!element) return
+    const disclosure = element.closest('details')
+    if (disclosure) disclosure.open = true
     navLock.current = true
     setActiveSection(key)
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -286,6 +289,8 @@ function SettingsSections({
       <p id="whitelabel-settings-label" className="visually-hidden">
         Configurações de {whitelabel.name}
       </p>
+      <MockEntryStudio tenantId={whitelabel.id} tenantName={whitelabel.name} onDirtyChange={value => onDirtyChange('entryStudio', value)} />
+      <details className={styles.preserved}><summary>Outras configurações e demonstrações preservadas</summary>
       <div className={styles.columns}>
         <div className={styles.stack}>
           <GeneralSection whitelabel={whitelabel} lastLocalChange={settings.lastLocalChange} onCopy={onCopy} />
@@ -325,6 +330,7 @@ function SettingsSections({
         <SmtpSummary whitelabelId={whitelabel.id} />
       </div>
       <PlatformAppSection whitelabelId={whitelabel.id} onDirtyChange={onDirtyChange} notify={notify} />
+      </details>
     </>
   )
 }

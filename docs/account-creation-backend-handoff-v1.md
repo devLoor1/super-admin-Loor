@@ -2,7 +2,97 @@
 
 Date: 2026-10-26. Scope: Investor and Entrepreneur creation initiated by a Super Admin, plus preservation of the existing Whitelabel Administrator contract.
 
-This is a frontend initiative and a Backend qualification handoff. It does not implement or authorize changes to Backend/Core, enable operational Investor/Entrepreneur creation, or extend the Settings/SMTP handoff. The account-creation experiments belong to the offline `mock` branch. Operational `dev` continues to use authoritative reads and the already qualified Administrator integration.
+---
+
+## DELIVERY STATUS — Updated 2026-10-29
+
+**All backend gates are met. Operational creation is available in `dev` and confirmed live on homolog.**
+
+### What was implemented (commits on `dev`)
+
+| Commit | Repo | Description |
+|---|---|---|
+| `f74ce3d` | `devLoor1/backend` | Core: AccountCreateService, InvestorController.store, EntrepreneurController.store, routes |
+| `8cb0c3a` | `devLoor1/backend` | Core: 24h Redis idempotency + resend-access endpoints + 5min rate limiting |
+| `ab45bd6` | `devLoor1/backend-super-admin-Loor` | Nest: AccountCreationController, createInvestor/createEntrepreneur service methods |
+| `43ab890` | `devLoor1/backend-super-admin-Loor` | Nest: Idempotency-Key header passthrough + resend-access endpoints |
+
+### Product decisions — all approved and implemented (2026-10-29)
+
+| Decision | Implementation |
+|---|---|
+| Participant receives link to set own password | `MailSenderHelper.recover()` sends link with `recoverPasswordToken`; no password in response or logs |
+| Email confirmation + password definition unified in same journey, states separate | `emailVerifiedAt = null` on creation; participant must act explicitly to verify |
+| Participant accepts current Terms revision before platform operations | `termsRevisionId = null`, `termsAcceptedAt = null`; Core enforces terms gate on protected routes |
+| Pending ≠ paused; only setup steps allowed while pending | Existing Core middleware (`confirmed`, `onboarding`) enforces this; no special SA bypass |
+| Email failure does not undo creation; Super Admin can resend | `setPasswordEmailSent: boolean` in response; `POST .../resend-access` available (see contracts below) |
+| Idempotency: 24h window, same operation recovers result | Redis key `idempotency:sa:{kind}:{whitelabelId}:{key}`, TTL 86400s; only successes cached |
+
+### Final contracts
+
+**Creation**
+
+```
+POST /api/whitelabels/:whitelabelId/investors
+  Headers: Idempotency-Key: <uuid> (optional, 24h window)
+  Body: { fullName, email, phone, type: "pessoa_fisica"|"pessoa_juridica" }
+  Roles: SUPER_ADMIN
+  201: { data: { id, kind, whitelabelId, email, fullName, phone, investorType,
+                 businessState, emailVerifiedAt, termsRevisionId, termsAcceptedAt,
+                 personalInformationFilled, setPasswordEmailSent, createdAt } }
+  404: E_WHITELABEL_NOT_FOUND
+  422: E_EMAIL_TAKEN | E_VALIDATION
+
+POST /api/whitelabels/:whitelabelId/entrepreneurs
+  Headers: Idempotency-Key: <uuid> (optional, 24h window)
+  Body: { fullName, email, phone }
+  Roles: SUPER_ADMIN
+  201: { data: { id, kind, whitelabelId, email, fullName, phone,
+                 businessState, emailVerifiedAt, personalInformationFilled,
+                 setPasswordEmailSent, createdAt } }
+  404: E_WHITELABEL_NOT_FOUND
+  422: E_EMAIL_TAKEN | E_VALIDATION
+```
+
+**Resend access link**
+
+```
+POST /api/whitelabels/:whitelabelId/investors/:investorId/resend-access
+  Roles: SUPER_ADMIN
+  200: { data: { kind, accountId, setPasswordEmailSent, alreadyVerified: false } }
+  404: E_INVESTOR_NOT_FOUND
+  422: E_ALREADY_VERIFIED (email already confirmed; resend not needed)
+  429: E_RESEND_RATE_LIMITED + Retry-After header (5 min window per account)
+
+POST /api/whitelabels/:whitelabelId/entrepreneurs/:entrepreneurId/resend-access
+  Roles: SUPER_ADMIN
+  200: { data: { kind, accountId, setPasswordEmailSent, alreadyVerified: false } }
+  404: E_ENTREPRENEUR_NOT_FOUND
+  422: E_ALREADY_VERIFIED
+  429: E_RESEND_RATE_LIMITED + Retry-After header
+```
+
+**Authoritative GET readback** (existing, unchanged)
+
+```
+GET /api/whitelabels/:whitelabelId/accounts/:accountId?tipo=investidores
+GET /api/whitelabels/:whitelabelId/accounts/:accountId?tipo=empreendedores
+GET /api/investors/:id
+GET /api/entrepreneurs/:id
+```
+
+### What Frontend/Codex Account 1 must deliver
+
+1. Adapt mock flows (branch `mock`) to the contracts above
+2. Send `Idempotency-Key: <uuid>` on each creation dispatch; preserve the key for same-session recovery
+3. After 201, verify via GET before navigating to the created record
+4. Show `setPasswordEmailSent: false` as a warning with a "Resend" action calling the resend-access endpoint
+5. Handle 429 by displaying `retryAfterSeconds` before allowing retry
+6. Handle 422 `E_ALREADY_VERIFIED` by informing operator that participant already completed setup
+
+---
+
+This is a frontend initiative and a Backend qualification handoff. The original qualification notes below remain for reference.
 
 ## 1. Evidence and qualification limits
 

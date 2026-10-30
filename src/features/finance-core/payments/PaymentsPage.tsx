@@ -69,7 +69,7 @@ const ORDER_LABEL: Record<PaymentSortKey, Record<SortOrder, string>> = {
 export function PaymentsPage(props: FinanceListProps) {
   return (
     <FinanceCoreShell section="payments" title="Pagamentos / PIX">
-      <PageIntro text="Cobranças PIX de investimentos em todos os Whitelabels, com dados do Control Plane. Somente leitura: nenhuma ação gera, confirma, cancela ou estorna pagamentos." />
+      <PageIntro text="Acompanhe cobranças PIX e seus vínculos com os investimentos." readOnly />
       <PaymentList {...props} />
     </FinanceCoreShell>
   )
@@ -163,11 +163,12 @@ function PaymentList({ status, whitelabel, investidor, oportunidade, search: sea
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="pay-list-title" data-payment-list>
-        <h2 id="pay-list-title" className="visually-hidden">
+        <h2 id="pay-list-title" className={shared.listHeading}>
           Lista de pagamentos
         </h2>
         <div className={`${shared.filters} ${core.filtersWide}`} style={{ '--filter-count': 3 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar por TxID, nome ou e-mail do investidor (busca feita pelo Control Plane)</span>
             <input
@@ -180,7 +181,8 @@ function PaymentList({ status, whitelabel, investidor, oportunidade, search: sea
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Status</span>
               <span className="visually-hidden">Filtrar por status do pagamento</span>
               <select id="payment-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as PaymentStatus) })}>
                 <option value="all">Todos os status</option>
@@ -191,7 +193,8 @@ function PaymentList({ status, whitelabel, investidor, oportunidade, search: sea
                 ))}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
               <span className="visually-hidden">Filtrar por Whitelabel</span>
               <select id="payment-whitelabel" value={route.whitelabelId ?? 'all'} onChange={(event) => navigate({ whitelabelId: event.target.value === 'all' ? undefined : event.target.value })}>
                 <option value="all">Todos os Whitelabels</option>
@@ -205,7 +208,8 @@ function PaymentList({ status, whitelabel, investidor, oportunidade, search: sea
                 ) : null}
               </select>
             </label>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
               <span className="visually-hidden">Ordenar pagamentos</span>
               <select
                 id="payment-sort"

@@ -3,7 +3,7 @@ import { execFileSync as nativeGit } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { astSettingsBaseline, astSettingsDigest, astSettingsFiles, astSettingsFinalized, astSettingsReviewPaths, beforeAstSettings, createAstSettingsBoundary, reviewedAstSettings, verifyAstSettingsSource } from './reviewed-ast-settings-boundary.mjs'
+import { astSettingsBaseline, astSettingsDigest, astSettingsFiles, astSettingsFinalized, astSettingsReviewPaths, beforeAstSettings, createAstSettingsBoundary, reviewedAstSettings, verifyAstSettingsSource, withoutAstSettings } from './reviewed-ast-settings-boundary.mjs'
 import { beforeConsolidation, execFileSync as historicalGit, readFile as physicalRead, readFileSync as physicalReadSync } from './reviewed-consolidation-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -97,6 +97,9 @@ for (const path of astSettingsFiles()) {
     const before = beforeAstSettings(path, actual)
     assert.equal(before, pin.before === null ? actual : git('show', `${astSettingsBaseline}:${path}`))
     assert.equal(beforeAstSettings(path, before), before)
+    assert.equal(withoutAstSettings(path, actual), before)
+    assert.equal(withoutAstSettings(path, before), before)
+    assert.equal(withoutAstSettings(path, '// unrelated historical bytes'), '// unrelated historical bytes')
     const historical = beforeConsolidation(path, actual)
     assert.equal(beforeConsolidation(path, historical), historical)
   })

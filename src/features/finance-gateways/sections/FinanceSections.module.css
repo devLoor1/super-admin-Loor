@@ -119,6 +119,67 @@
   color: var(--text-on-dark-muted);
 }
 
+/* Operational summaries form one quiet strip; historic tenant prototypes keep
+   their original cards. Counts and their authoritative scope remain available. */
+.summaryStrip {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: #131a28;
+}
+
+.summaryStrip .summaryCard {
+  padding: 12px 14px;
+  gap: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.summaryStrip .summaryText {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 10px;
+}
+
+.summaryStrip .summaryValue {
+  margin-top: 0;
+  font-size: 20px;
+  line-height: 26px;
+}
+
+.summaryStrip .summaryDetail {
+  grid-column: 1 / -1;
+}
+
+.summaryProvenance {
+  grid-column: 1 / -1;
+  padding: 8px 14px;
+  border-top: 1px solid var(--surface-divider);
+  font-size: 11.5px;
+  line-height: 17px;
+  color: var(--text-on-dark-muted);
+}
+
+.summaryProvenance summary {
+  width: fit-content;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.summaryProvenance summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.summaryProvenance p {
+  margin-top: 6px;
+  max-width: 100ch;
+}
+
 /* ---------- Gateway list ---------- */
 
 .listControls {
@@ -178,6 +239,57 @@
 
 .search:focus-within,
 .filter:focus-within {
+  border-color: var(--color-accent-glow);
+  box-shadow: 0 0 0 3px rgb(139 129 255 / 0.22);
+}
+
+/* Visible labels stay above the field after a value is selected. Existing
+   accessible names remain intact; these variants opt in operational lists. */
+.labeledSearch,
+.labeledFilter {
+  display: grid;
+  gap: 6px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.controlLabel {
+  color: var(--text-on-dark-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.labeledSearch > svg {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  pointer-events: none;
+}
+
+.labeledSearch input,
+.labeledFilter select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 9px;
+  background: #121826;
+}
+
+.labeledSearch input {
+  padding-left: 38px;
+}
+
+.labeledSearch:focus-within,
+.labeledFilter:focus-within {
+  box-shadow: none;
+}
+
+.labeledSearch input:focus-visible,
+.labeledFilter select:focus-visible {
   border-color: var(--color-accent-glow);
   box-shadow: 0 0 0 3px rgb(139 129 255 / 0.22);
 }

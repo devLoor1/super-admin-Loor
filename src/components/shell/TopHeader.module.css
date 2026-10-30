@@ -5,7 +5,7 @@
   grid-template-areas: 'title controls actions';
   align-items: center;
   column-gap: 22px;
-  padding: 39px 0 31px;
+  padding: 35px 0 27px;
 }
 
 /* ---------- Mobile bar (menu + brand), hidden on larger screens ---------- */
@@ -41,10 +41,9 @@
   position: relative;
   grid-area: title;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 34px;
-  row-gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -60,12 +59,23 @@
 
 .title {
   padding-top: 4px;
-  font-size: 25px;
-  font-weight: 600;
-  line-height: 30px;
+  font-size: clamp(24px, 2.1vw, 32px);
+  font-weight: 650;
+  line-height: 1.15;
   letter-spacing: -0.01em;
   color: var(--text-on-dark);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  animation: titleArrival 180ms ease-out both;
+}
+
+@keyframes titleArrival {
+  from { opacity: 0.65; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title { animation: none; }
 }
 
 .location {

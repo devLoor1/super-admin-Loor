@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 18px 13px 12px 15px;
+  padding: 20px;
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-panel);
   background:
@@ -22,8 +22,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
-  column-gap: 22px;
-  padding: 0 7px 0 6px;
+  column-gap: 14px;
+  padding: 0;
 }
 
 .identity {
@@ -75,6 +75,8 @@
 
 .tabs {
   margin-top: 13px;
+  padding-bottom: 1px;
+  overflow-y: hidden;
 }
 
 .tabsHint {
@@ -218,10 +220,8 @@
 
 .card {
   container-type: inline-size;
-  padding: 12px 15px 3px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-tile);
-  background: #141b2a;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--surface-divider);
 }
 
 .cardHeader {
@@ -269,7 +269,8 @@
   grid-template-columns: minmax(110px, min(36%, 240px)) minmax(0, 1fr);
   align-items: center;
   column-gap: 12px;
-  min-height: 31px;
+  min-height: 38px;
+  padding-block: 4px;
   border-bottom: 1px solid var(--surface-divider);
 }
 
@@ -325,63 +326,12 @@
   box-shadow: var(--focus-ring-dark);
 }
 
-/* Data-ready summary cards */
-.summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 13px;
-}
-
-.summaryCard {
-  display: grid;
-  grid-template-columns: 31px minmax(0, 1fr);
-  grid-template-rows: minmax(31px, auto) auto auto;
-  grid-template-areas:
-    'icon label'
-    'icon value'
-    'icon status';
-  align-content: start;
-  column-gap: 8px;
-  padding: 10px 8px 10px 9px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-tile);
-  background: #151c2c;
-}
-
-.summaryIcon {
-  grid-area: icon;
-}
-
-.summary .summaryCard .summaryIcon {
-  width: 31px;
-  height: 31px;
-}
-
-.summaryLabel {
-  grid-area: label;
-  align-self: center;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 14px;
-  color: #cfd9eb;
-}
-
-.summaryValue {
-  grid-area: value;
-  margin-top: 3px;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  color: var(--text-on-dark);
-}
-
-.summaryStatus {
-  grid-area: status;
-  margin-top: 4px;
-  font-size: 10.5px;
-  line-height: 14px;
-  color: var(--text-on-dark-muted);
-}
+/* Qualified relationship counts stay compact; unavailable aggregates are not KPIs. */
+.relationships { display: grid; gap: 10px; }
+.summary { display: grid; gap: 6px; margin: 0; }
+.summaryItem { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--text-on-dark-secondary); }
+.summaryItem dd { margin: 0; font-weight: 600; color: var(--text-on-dark); }
+.unavailableSummary { font-size: 12px; line-height: 18px; color: var(--text-on-dark-muted); }
 
 /* Quick actions */
 .actions {
@@ -450,68 +400,6 @@
 }
 
 /* ---------- Narrow panels ---------- */
-
-/* Medium (e.g. 1360–1500px viewports): summary cards keep three columns,
-   with the icon above the text so labels never break mid-word. */
-@container (max-width: 479px) {
-  /* Lets the four tabs fit without scrolling down to ~380px panels. */
-  .tabs [role='tab'] {
-    padding: 0 8px;
-    font-size: 12.5px;
-  }
-
-  .summary {
-    gap: 10px;
-  }
-
-  .summaryCard {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
-    grid-template-areas: 'icon' 'label' 'value' 'status';
-    padding: 10px 10px 11px;
-  }
-
-  /* Two-line slot keeps the values aligned across the three cards. */
-  .summaryLabel {
-    align-self: start;
-    min-height: 28px;
-    margin-top: 9px;
-  }
-}
-
-/* Narrow (phones): one summary row per item, value on the right. */
-@container (max-width: 359px) {
-  .tabsHint {
-    display: block;
-  }
-
-  .summary {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .summaryCard {
-    grid-template-columns: 31px minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    grid-template-areas: 'icon label value' 'icon status value';
-    align-items: center;
-    padding: 10px 12px 10px 10px;
-  }
-
-  .summaryLabel {
-    align-self: end;
-    min-height: 0;
-    margin-top: 0;
-  }
-
-  .summaryValue {
-    margin: 0 4px 0 0;
-  }
-
-  .summaryStatus {
-    align-self: start;
-    margin-top: 2px;
-  }
-}
 
 /* Quick actions: one column once two tiles would wrap descriptions badly. */
 @container (max-width: 420px) {

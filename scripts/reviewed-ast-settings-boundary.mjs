@@ -6,7 +6,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-export const astSettingsBaseline = 'fe7a9a839c5f5595825661c136aa1107c5071c6f'
+export const astSettingsBaseline = 'f8978e3a6a23ff0af3f60ad1abdc785be3755425'
 // Maximum review scope only. This list never grants compatibility by itself.
 // A finalized manifest and both physical/supplied exact bytes are required.
 export const astSettingsReviewPaths = Object.freeze([
@@ -104,3 +104,10 @@ export const verifyAstSettingsSource = boundary.verifySource
 export const reviewedAstSettings = boundary.reviewed
 export const beforeAstSettings = boundary.before
 export const astSettingsExclusions = boundary.exclusions
+
+/** Reverse only this exact successor for older, independently pinned assertions. */
+export function withoutAstSettings(path, source) {
+  if (!boundary.files().includes(path)) return normalize(source)
+  boundary.reviewed(path)
+  return astSettingsDigest(source) === manifest.files[path].after ? boundary.before(path, source) : normalize(source)
+}

@@ -602,7 +602,33 @@ await check('row actions: mobile reveal preserves specific menu focus, including
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
   assert.match(page, /const actionFocused = panel\?\.querySelector\('\[data-wl-actions\]'\) === document\.activeElement/)
   assert.match(page, /if \(!actionFocused\) panel\?\.focus/)
-  assert.match(page, /if \(selectedId === id && detail\.state\.status === 'success'\) \{[\s\S]*?if \(window\.matchMedia\(MOBILE_QUERY\)\.matches\) revealDetail\(\)/)
+  assert.match(page, /if \(selectedId === id && detail\.state\.status === 'success'\) \{[\s\S]*?if \(window\.matchMedia\(MOBILE_QUERY\)\.matches\) \{\s*if \(route\.id !== id\) activate\(id\)\s*else revealDetail\(\)\s*\}\s*onDetailDisplay\(id\)/)
+  // Execute the current handler: an implicit first-row selection needs an
+  // explicit route on mobile before focus can reach its now-visible actions.
+  const parsed = ts.createSourceFile('WhitelabelsPage.tsx', page, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  const handlers = []
+  const visit = node => {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === 'openActions') handlers.push(node)
+    ts.forEachChild(node, visit)
+  }
+  visit(parsed)
+  assert.equal(handlers.length, 1)
+  const code = ts.transpileModule(handlers[0].getText(parsed), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+  const loadHandler = new Function('selectedId', 'detail', 'route', 'actionsFocusFor', 'window', 'MOBILE_QUERY', 'activate', 'revealDetail', 'onDetailDisplay', `${code}; return openActions`)
+  for (const mobile of [false, true]) for (const explicit of [false, true]) {
+    const calls = [], focus = { current: null }, target = RECORD_A.id
+    const run = loadHandler(target, { state: { status: 'success' } }, { id: explicit ? target : undefined }, focus, { matchMedia: () => ({ matches: mobile }) }, '(max-width: 1199px)', id => calls.push(['activate', id]), () => calls.push(['reveal']), id => calls.push(['focus', id]))
+    run(target)
+    assert.equal(focus.current, target)
+    assert.deepEqual(calls, [...(mobile ? [explicit ? ['reveal'] : ['activate', target]] : []), ['focus', target]])
+  }
+  for (const [selectedId, status] of [[RECORD_B.id, 'success'], [RECORD_A.id, 'loading']]) {
+    const calls = [], focus = { current: null }, target = RECORD_A.id
+    const run = loadHandler(selectedId, { state: { status } }, {}, focus, { matchMedia: () => ({ matches: true }) }, '(max-width: 1199px)', id => calls.push(['activate', id]), () => calls.push(['reveal']), id => calls.push(['focus', id]))
+    run(target)
+    assert.equal(focus.current, target)
+    assert.deepEqual(calls, [['activate', target]], 'unloaded or different records must await authoritative detail before focus')
+  }
   const menu = crudSources['WhitelabelActionsMenu.tsx']
   assert.match(menu, /aria-label=\{`Ações de \$\{name\}`\}/)
   assert.match(menu, /data-wl-actions/)

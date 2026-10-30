@@ -89,14 +89,14 @@ export function BackLink({ href, label }: { href: string; label: string }) {
 }
 
 /** Intro row: optional back link + supporting copy, actions on the right. */
-export function PageIntro({ back, text, actions }: { back?: ReactNode; text: ReactNode; actions?: ReactNode }) {
+export function PageIntro({ back, text, actions, readOnly = false }: { back?: ReactNode; text: ReactNode; actions?: ReactNode; readOnly?: boolean }) {
   return (
     <section className={styles.intro} aria-label="Contexto da página">
       <div className={styles.introText}>
         {back}
         <p className={styles.subtitle}>{text}</p>
       </div>
-      {actions ? <div className={styles.introActions}>{actions}</div> : null}
+      {readOnly || actions ? <div className={styles.introActions}>{readOnly && <span className={styles.readOnly}>Somente leitura</span>}{actions}</div> : null}
     </section>
   )
 }
@@ -107,13 +107,13 @@ export type SummaryCard = { label: string; value: number | string | null; detail
 /** Shared summaries; the caller labels authoritative, prototype or pending data. */
 export function SummaryCards({ title, cards, note }: { title: string; cards: SummaryCard[]; note: string }) {
   return (
-    <section className={fin.summary} aria-labelledby="op-summary-title">
+    <section className={`${fin.summary} ${fin.summaryStrip}`} aria-labelledby="op-summary-title">
       <h2 id="op-summary-title" className="visually-hidden">
         {title}
       </h2>
       {cards.map((card) => (
         <article key={card.label} className={fin.summaryCard}>
-          <IconTile icon={card.icon} tone={card.tone} size="lg" />
+          <IconTile icon={card.icon} tone={card.tone} size="sm" />
           <div className={fin.summaryText}>
             <h3 className={fin.summaryLabel}>{card.label}</h3>
             <p className={fin.summaryValue}>
@@ -130,7 +130,10 @@ export function SummaryCards({ title, cards, note }: { title: string; cards: Sum
           </div>
         </article>
       ))}
-      <p className={fin.summaryNote}>{note}</p>
+      <details className={fin.summaryProvenance}>
+        <summary>Escopo e origem dos indicadores</summary>
+        <p>{note}</p>
+      </details>
     </section>
   )
 }

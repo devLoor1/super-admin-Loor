@@ -48,6 +48,7 @@ function ReleasedEditor({ id, data, version, fields, onReload }: { id: string; d
     setOpen(true)
   }
   return <section className={styles.section} aria-label="Edição de configuração qualificada">
+    <h2>Editar textos e funcionalidades</h2>
     <p>Uma configuração por solicitação. A conferência por GET e o bloqueio local reduzem conflitos, sem travamento atômico no servidor.</p>
     <div className={styles.row}>
       <label htmlFor={selectId}>Configuração</label>

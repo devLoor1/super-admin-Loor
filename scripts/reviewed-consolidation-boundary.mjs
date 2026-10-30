@@ -9,6 +9,7 @@ import { beforeSettingsEvolution, reviewedSettingsEvolution, settingsEvolutionEx
 import { beforeAccountUx, reviewedAccountUx, accountUxExclusions } from './reviewed-account-ux-boundary.mjs'
 import { beforeSetSmtp, reviewedSetSmtp, setSmtpExclusions } from './reviewed-set-smtp-boundary.mjs'
 import { reviewedAstSettings, astSettingsExclusions } from './reviewed-ast-settings-boundary.mjs'
+import { withoutOperationalUx, reviewedOperationalUx, operationalUxExclusions } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const baseline = '450b9d5a5a1eabb6f986222bf2e08e0b18a71464'
@@ -26,14 +27,15 @@ export function testSourceExists(path) {
 /** Exact reviewed files only. No directory exemption and no automatic re-pinning. */
 export function reviewedConsolidation(path) {
   const astSettings = reviewedAstSettings(path)
+  const operationalUx = reviewedOperationalUx(path)
   const setSmtp = reviewedSetSmtp(path)
   const accountUx = reviewedAccountUx(path)
   const evolution = reviewedSettingsEvolution(path)
   const pin = manifest.files[path]
-  if (!pin) return evolution || accountUx || setSmtp || astSettings
+  if (!pin) return evolution || accountUx || setSmtp || astSettings || operationalUx
   const absolute = resolve(root, path)
   if (pin.after === null) assert.equal(existsSync(absolute), false, `Removed prototype returned: ${path}`)
-  else assert.equal(hash(beforeSettingsEvolution(path, beforeAccountUx(path, nativeReadFileSync(absolute, 'utf8')))), pin.after, `Unreviewed consolidation change: ${path}`)
+  else assert.equal(hash(beforeSettingsEvolution(path, beforeAccountUx(path, withoutOperationalUx(path, nativeReadFileSync(absolute, 'utf8'))))), pin.after, `Unreviewed consolidation change: ${path}`)
   return true
 }
 
@@ -42,6 +44,7 @@ export function reviewedConsolidation(path) {
  * separation/presentation suites independently exercise the replacement behavior.
  */
 export function beforeConsolidation(path, source) {
+  source = withoutOperationalUx(path, source)
   const pin = manifest.files[path]
   // Nested historical adapters may already hold the original pre-consolidation
   // source. Still verify the physical candidate against the newer exact pins.
@@ -72,7 +75,7 @@ export function execFileSync(command, args, options) {
     const beforePaths = args.slice(1, args.indexOf('--')).filter(a => !a.startsWith('-'))
     if (beforePaths.length <= 1) {
       for (const path of Object.keys(manifest.files)) reviewedConsolidation(path)
-      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions()]
+      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions(), ...operationalUxExclusions()]
     }
   }
   return nativeExecFileSync(command, args, options)

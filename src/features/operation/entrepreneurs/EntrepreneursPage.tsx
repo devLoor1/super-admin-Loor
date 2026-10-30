@@ -51,7 +51,8 @@ export function EntrepreneursPage(props: EntrepreneursPageProps) {
   return (
     <OperationShell section="entrepreneurs" title="Empreendedores">
       <PageIntro
-        text="Acompanhe empreendedores de todos os Whitelabels em uma só visão operacional, com dados do Control Plane. Somente leitura: conta, empresa, oportunidades e KYC ficam nos módulos responsáveis."
+        text="Consulte perfis de empreendedores e seus vínculos por Whitelabel."
+        readOnly
         actions={<EntrepreneurViewSwitch current="entrepreneurs" />}
       />
       <EntrepreneurList {...props} />
@@ -178,11 +179,12 @@ function EntrepreneurList({ whitelabel, page: pageParam, search: searchParam, ro
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="participant-list-title" data-entrepreneur-list>
-        <h2 id="participant-list-title" className="visually-hidden">
+        <h2 id="participant-list-title" className={shared.listHeading}>
           Lista de empreendedores
         </h2>
         <div className={shared.filters} style={{ '--filter-count': 4 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar empreendedores (busca feita pelo Control Plane)</span>
             <input
@@ -195,7 +197,8 @@ function EntrepreneurList({ whitelabel, page: pageParam, search: searchParam, ro
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
               <span className="visually-hidden">Whitelabel (consulta separada por Whitelabel no Control Plane)</span>
               <select
                 id="entrepreneur-whitelabel"

@@ -1,7 +1,7 @@
 /*
  * Geometry follows the approved Whitelabels V1 image at 1:1.
  * The panel is a size container: columns drop out as it narrows
- * (counts → date → domain → status move into the name cell) instead of
+ * (domain, date and status move into the name cell) instead of
  * shrinking the table until it is unreadable. Container widths are the
  * panel's content box (all seven columns need ≥738px, reached at the
  * 1672px reference viewport).
@@ -81,14 +81,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(170px, 190px);
   gap: 16px;
-  margin: 20px 0 18px;
+  margin: 20px 0 12px;
 }
 
 /* ---------- Table ---------- */
 
 .tableArea {
   flex: 1 1 auto;
-  margin-top: 16px;
+  margin-top: 10px;
   border-top: 1px solid var(--surface-divider);
 }
 
@@ -159,23 +159,19 @@
  * to ~93%, leaving room for the action column at the reference size.
  */
 .colName {
-  width: 24%;
+  width: 30%;
 }
 
 .colDomain {
-  width: 15.2%;
+  width: 23%;
 }
 
 .colStatus {
-  width: 16.7%;
+  width: 14%;
 }
 
 .colAdmins {
-  width: 13.4%;
-}
-
-.colApps {
-  width: 9.5%;
+  width: 14%;
 }
 
 .colUpdated {
@@ -196,7 +192,6 @@
 }
 
 .table td.colAdmins,
-.table td.colApps,
 .table td.colUpdated {
   padding-left: 22px;
   color: var(--text-on-dark);
@@ -264,7 +259,8 @@
 }
 
 .nameDomain,
-.nameStatus {
+.nameStatus,
+.nameUpdated {
   display: none;
 }
 
@@ -481,107 +477,79 @@
   color: var(--text-on-dark-muted);
 }
 
-/* ---------- Narrow panels (container queries on .panel) ---------- */
-
-@container (max-width: 737px) {
-  .colApps {
-    display: none;
-  }
-
-  .colName {
-    width: 26%;
-  }
-
-  .colDomain {
-    width: 17.5%;
-  }
-
-  .colStatus {
-    width: 18.5%;
-  }
-
-  .colAdmins {
-    width: 14.5%;
-  }
-
-  .colUpdated {
-    width: 16%;
-  }
+.resultContext {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-height: 28px;
+  font-size: 12px;
+  color: var(--text-on-dark-secondary);
 }
 
-@container (max-width: 662px) {
-  .colAdmins {
-    display: none;
-  }
+.clearFilters {
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-accent-glow);
+  font-size: 12px;
+  font-weight: 600;
+}
 
-  .colName {
-    width: 30%;
-  }
+.clearFilters:focus-visible,
+.title:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
 
-  .colDomain {
-    width: 20%;
-  }
+.nameButton .nameText [data-whitelabel-identity] {
+  max-width: none;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+}
 
-  .colStatus {
-    width: 23%;
-  }
+.nameButton .nameText [data-whitelabel-identity] > span {
+  padding-inline: 0;
+}
 
-  .colUpdated {
-    width: 20%;
-  }
+.nameUpdated {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  white-space: normal;
+}
+
+/* ---------- Narrow panels (container queries on .panel) ---------- */
+
+@container (max-width: 860px) {
+  .colDomain { display: none; }
+  .nameDomain { display: block; }
+  .colName { width: auto; }
+  .colStatus { width: 104px; }
+  .colAdmins { width: 110px; }
+  .colUpdated { width: 112px; }
+  .table td { padding-block: 8px; }
+}
+
+@container (max-width: 720px) {
+  .colAdmins { display: none; }
 }
 
 @container (max-width: 540px) {
-  .colUpdated {
-    display: none;
-  }
-
-  .controls {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .newButton {
-    width: 100%;
-    margin-top: 0;
-  }
+  .colUpdated { display: none; }
+  .nameUpdated { display: block; }
+  .controls { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .newButton { width: 100%; margin-top: 0; }
 }
 
-@container (max-width: 430px) {
-  .colDomain {
-    display: none;
-  }
-
-  .colName {
-    width: auto;
-  }
-
-  .colStatus {
-    width: 128px;
-  }
-
-  .nameDomain {
-    display: block;
-  }
-
-  .table td {
-    height: 64px;
-  }
-}
-
-@container (max-width: 330px) {
-  .colStatus {
-    display: none;
-  }
-
-  .nameStatus {
-    display: block;
-    margin: 4px 0 2px;
-  }
-
-  .table td {
-    padding-block: 8px;
-  }
+@container (max-width: 380px) {
+  .colStatus { display: none; }
+  .nameStatus { display: block; margin: 4px 0 2px; }
 }
 
 @media (max-width: 767px) {

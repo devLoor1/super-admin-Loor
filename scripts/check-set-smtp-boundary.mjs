@@ -5,7 +5,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeSetSmtp, reviewedSetSmtp, setSmtpBaseline, setSmtpDigest, setSmtpFiles, setSmtpFinalized, setSmtpReviewPaths, verifySetSmtpSource } from './reviewed-set-smtp-boundary.mjs'
 import { beforeConsolidation, execFileSync as historicalGit } from './reviewed-consolidation-boundary.mjs'
-import { beforeAstSettings, reviewedAstSettings } from './reviewed-ast-settings-boundary.mjs'
+import { withoutAstSettings, reviewedAstSettings } from './reviewed-ast-settings-boundary.mjs'
+import { reviewedOperationalUx, withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).replaceAll('\r\n', '\n')
@@ -19,7 +20,7 @@ check('all runtime changes have individual finalized review pins', () => {
   assert.ok(paths.length > 0)
   // Keep every old SET pin; only exact reviewed successor additions are outside
   // this historical unit. The successor has its own complete-delta assertion.
-  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => !reviewedAstSettings(path) || setSmtpFiles().includes(path)))
+  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || (!reviewedAstSettings(path) && !reviewedOperationalUx(path))))
 })
 for (const path of setSmtpFiles()) {
   check(`exact current candidate and mutation rejection: ${path}`, () => {
@@ -36,7 +37,7 @@ for (const path of setSmtpFiles()) {
     const existed = git('ls-tree', '--name-only', setSmtpBaseline, '--', path).trim() === path
     assert.equal(pin.before, existed ? setSmtpDigest(git('show', `${setSmtpBaseline}:${path}`)) : null)
     const before = beforeSetSmtp(path, actual)
-    assert.equal(before, pin.before === null ? beforeAstSettings(path, actual) : git('show', `${setSmtpBaseline}:${path}`))
+    assert.equal(before, pin.before === null ? withoutOperationalUx(path, withoutAstSettings(path, actual)) : git('show', `${setSmtpBaseline}:${path}`))
     assert.equal(beforeSetSmtp(path, before), before)
     const historical = beforeConsolidation(path, actual)
     assert.equal(beforeConsolidation(path, historical), historical)

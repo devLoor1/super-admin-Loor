@@ -32,7 +32,7 @@ type WalletsPageProps = WalletListProps
 export function WalletsPage(props: WalletsPageProps) {
   return (
     <FinanceCoreShell section="wallets" title="Wallet">
-      <PageIntro text="Wallets do ledger da plataforma — uma por Whitelabel — com o saldo autoritativo informado pelo Control Plane. Somente leitura: nenhuma ação credita, debita, transfere ou ajusta saldo." />
+      <PageIntro text="Consulte o saldo informado e as movimentações da wallet de cada Whitelabel." readOnly />
       <WalletList {...props} />
     </FinanceCoreShell>
   )
@@ -99,11 +99,12 @@ function WalletList({ search: searchParam, page, sort, order, routeKey = '' }: W
       />
 
       <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="wal-list-title" data-wallet-list>
-        <h2 id="wal-list-title" className="visually-hidden">
+        <h2 id="wal-list-title" className={shared.listHeading}>
           Lista de wallets
         </h2>
         <div className={shared.filters} style={{ '--filter-count': 1 } as CSSProperties}>
-          <label className={fin.search}>
+          <label className={`${fin.search} ${fin.labeledSearch}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Busca</span>
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="visually-hidden">Buscar por nome ou slug do Whitelabel (busca feita pelo Control Plane)</span>
             <input
@@ -116,7 +117,8 @@ function WalletList({ search: searchParam, page, sort, order, routeKey = '' }: W
             />
           </label>
           <div className={shared.filterSelects}>
-            <label className={fin.filter}>
+            <label className={`${fin.filter} ${fin.labeledFilter}`}>
+              <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
               <span className="visually-hidden">Ordenar wallets</span>
               <select
                 id="wallet-sort"

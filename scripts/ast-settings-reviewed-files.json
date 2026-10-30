@@ -1,5 +1,5 @@
 {
-  "baseline": "fe7a9a839c5f5595825661c136aa1107c5071c6f",
+  "baseline": "f8978e3a6a23ff0af3f60ad1abdc785be3755425",
   "finalized": true,
   "files": {
     "src/app/App.tsx": {
@@ -23,7 +23,7 @@
       "after": "d2ca5599fcc3506e5b47d7b0dd43d2990643e85432fc5db3e302ef7594ef18f8"
     },
     "src/features/whitelabel-emails/OperationalSmtpPage.tsx": {
-      "before": "5d209690f0900553238d8ea0894606cb2b732cffa59eb423a6f293766f3451b2",
+      "before": "43b89228c031b491f5768b13bcb7ab59a9664a7ea8bbb56784c534e6903fda07",
       "after": "464fc5a433a39086e017dc08667a2d98855c7b0246055532e6fa9f0152c59605"
     },
     "src/features/whitelabel-emails/editorial/emailConfirmationTemplateModel.ts": {
@@ -79,7 +79,7 @@
       "after": "0ba5ab83d8be5213f129f5fe7596883de9fec10e73fbf885a41991e367858ac9"
     },
     "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
-      "before": "210e5a03dc8dd237b531538438fdcba8efafef7d0406edd9b9d3a551197d0f55",
+      "before": "bf0f4b282cc04bc07a0b600e04be64fabc195cb553c0ae79c6f1dc243bd20b28",
       "after": "85bea41f5704969fdfaf2e4f6a8ab6184e70c528053d8ec283823a98ab4a5ba7"
     },
     "src/features/whitelabel-settings/PlatformAssetEditor.module.css": {
@@ -88,7 +88,7 @@
     },
     "src/features/whitelabel-settings/PlatformAssetEditor.tsx": {
       "before": null,
-      "after": "4cea34755cfd0d79149f9df672b04e62e585e66fbbb4ed8b097bb39d460cb736"
+      "after": "ed6026a1772847201ad0f9e91020db97add1fad10cce5f3a0a8467a6b3a2bf2c"
     },
     "src/features/whitelabel-settings/configRoute.ts": {
       "before": "b43eea18cd9493a6c0b4f4acae26a5e708713fb7014f22afc67cefde72d3d0b9",

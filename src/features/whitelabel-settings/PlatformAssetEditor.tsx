@@ -16,6 +16,8 @@ const pages = ['login', 'register', 'quick_profile'] as const
 const pageNames = { login: 'Login', register: 'Cadastro', quick_profile: 'Completar dados' }
 const imageCells = pages.map(page => `${page}.main_area_image` as ConfigCell)
 const pendingAssets = new Map<string, PlatformAsset>()
+// Session-only cleanup reference after confirmed unlink/reset; never an association.
+const detachedAssets = new Map<string, PlatformAsset>()
 const keyFor = (id: string, cell: ConfigCell, session: number) => `${id}:${cell}:${session}`
 const sourceValue = (origin: ConfigOrigin) => origin.stored ? origin.storedValue : origin.effectiveValue
 const refFrom = (value: Json) => record(value) && assetReference(value.assetRef) ? value.assetRef : null
@@ -42,6 +44,7 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
   const [origin, setOrigin] = useState(baseline)
   const [asset, setAsset] = useState<PlatformAsset | null>(null)
   const [candidate, setCandidate] = useState<PlatformAsset | null>(() => pendingAssets.get(key) ?? null)
+  const [detached, setDetached] = useState<PlatformAsset | null>(() => detachedAssets.get(key) ?? null)
   const [file, setFile] = useState<File | null>(null)
   const [localUrl, setLocalUrl] = useState<string | null>(null)
   const [enabled, setEnabled] = useState(() => isEnabled(sourceValue(baseline)))
@@ -127,6 +130,7 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
         if (!fresh) throw new Error('origin')
         const ref = refFrom(sourceValue(fresh)), image = ref ? await getPlatformAsset(id, ref) : null
         if (!alive()) return
+        if (asset && origin.stored && asset.ref === currentRef && ref !== asset.ref) { detachedAssets.set(key, asset); setDetached(asset) }
         setOrigin(fresh); setAsset(image); setEnabled(isEnabled(sourceValue(fresh)))
         if (candidate && ref === candidate.ref) { pendingAssets.delete(key); setCandidate(null) }
         onReload(); setNotice(value === undefined ? 'Substituição removida e origem conferida.' : 'Associação salva e lida. A prévia mostra a configuração persistida; a aplicação no consumidor exige verificação própria.')
@@ -167,6 +171,7 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
         if (after.dependencies.length) throw new Error('references remain')
         if (!alive()) return
         if (candidate?.ref === selected.ref) { pendingAssets.delete(key); setCandidate(null) }
+        if (detached?.ref === selected.ref) { detachedAssets.delete(key); setDetached(null) }
         const own = after.all.find(item => item.cell === cell)!.origin
         setOrigin(own); setEnabled(isEnabled(sourceValue(own)))
         if (currentRef === selected.ref) setAsset(null)
@@ -221,6 +226,7 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
         {removableRef && <OutlineButton disabled={working || locked} onClick={() => { void inspect('delete', removableRef) }}><Trash2 size={15} /> {candidate ? 'Limpar imagem enviada…' : 'Excluir arquivo…'}</OutlineButton>}
       </div>
     </> : <p>Seu perfil permite consultar a imagem e a configuração.</p>}
+    {writable && detached && detached.ref !== removableRef && <div className={styles.notice}><p>Arquivo retirado da associação nesta sessão. A referência foi preservada para limpeza; nenhuma imagem será apagada automaticamente.</p><code>{detached.ref}</code><OutlineButton disabled={working || locked} onClick={() => { void inspect('delete', detached.ref) }}>Inspecionar arquivo retirado…</OutlineButton></div>}
     {candidate && <p className={styles.notice}>A imagem está armazenada, mas ainda não foi associada nesta página. Você pode salvar a associação ou inspecionar e limpar esse arquivo. O upload não será repetido.</p>}
     {attempt?.phase === 'uncertain' && <div className={styles.notice} role="status"><p>Resultado do arquivo incerto. {attempt.ref ? 'Referência preservada para consulta.' : 'O servidor não retornou uma identidade verificável. O envio está bloqueado para evitar duplicação.'}</p>{attempt.cell !== cell && <p>A operação pertence a outra página deste Whitelabel.</p>}{attempt.ref && <code>{attempt.ref}</code>}{writable && <OutlineButton disabled={working || !attempt.ref} onClick={() => { void reconcile() }}>Consultar resultado por GET</OutlineButton>}</div>}
     {configAttempt && <p role="status">{CONFIG_MESSAGES[configAttempt.phase]}</p>}

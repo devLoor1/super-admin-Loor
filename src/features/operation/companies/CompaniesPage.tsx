@@ -42,7 +42,8 @@ export function CompaniesPage(props: CompanyListProps) {
   return (
     <OperationShell section="entrepreneurs" title="Empresas" trail={['Empresas']}>
       <PageIntro
-        text="Empresas dos empreendedores de todos os Whitelabels, com dados do Control Plane: razão social, nome fantasia, CNPJ, validação e vínculo com o empreendedor (no máximo uma empresa por empreendedor). Somente leitura."
+        text="Consulte empresas, dados cadastrais e o vínculo com cada empreendedor."
+        readOnly
         actions={<EntrepreneurViewSwitch current="companies" />}
       />
       <CompanyList {...props} />
@@ -112,11 +113,12 @@ function CompanyList({ whitelabel, status, search: searchParam, page, sort, orde
 
   return (
     <section className={`${fin.card} ${shared.listCard}`} aria-labelledby="company-list-title" data-company-list>
-      <h2 id="company-list-title" className="visually-hidden">
+      <h2 id="company-list-title" className={shared.listHeading}>
         Lista de empresas
       </h2>
       <div className={shared.filters} style={{ '--filter-count': 4 } as CSSProperties}>
-        <label className={fin.search}>
+        <label className={`${fin.search} ${fin.labeledSearch}`}>
+          <span className={fin.controlLabel} aria-hidden="true">Busca</span>
           <Search size={16} strokeWidth={1.8} aria-hidden="true" />
           <span className="visually-hidden">Buscar empresas por razão social, nome fantasia ou CNPJ (busca feita pelo Control Plane)</span>
           <input
@@ -129,7 +131,8 @@ function CompanyList({ whitelabel, status, search: searchParam, page, sort, orde
           />
         </label>
         <div className={shared.filterSelects}>
-          <label className={fin.filter}>
+          <label className={`${fin.filter} ${fin.labeledFilter}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Whitelabel</span>
             <span className="visually-hidden">Filtrar por Whitelabel</span>
             <select
               id="company-whitelabel"
@@ -146,7 +149,8 @@ function CompanyList({ whitelabel, status, search: searchParam, page, sort, orde
               {!registryHasScope && route.whitelabelId ? <option value={route.whitelabelId}>{whitelabelName(route.whitelabelId)}</option> : null}
             </select>
           </label>
-          <label className={fin.filter}>
+          <label className={`${fin.filter} ${fin.labeledFilter}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Status</span>
             <span className="visually-hidden">Filtrar por status de validação</span>
             <select id="company-status" value={route.status ?? 'all'} onChange={(event) => navigate({ status: event.target.value === 'all' ? undefined : (event.target.value as CompanyStatus) })}>
               <option value="all">Todos os status</option>
@@ -157,7 +161,8 @@ function CompanyList({ whitelabel, status, search: searchParam, page, sort, orde
               ))}
             </select>
           </label>
-          <label className={fin.filter}>
+          <label className={`${fin.filter} ${fin.labeledFilter}`}>
+            <span className={fin.controlLabel} aria-hidden="true">Ordenação</span>
             <span className="visually-hidden">Ordenar empresas</span>
             <select
               id="company-sort"

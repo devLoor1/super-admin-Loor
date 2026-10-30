@@ -1,0 +1,142 @@
+{
+  "baseline": "fe7a9a839c5f5595825661c136aa1107c5071c6f",
+  "finalized": true,
+  "files": {
+    "src/components/shell/TopHeader.module.css": {
+      "before": "e221a2b4d26df601e54dd6175e19b7cae2d3dc16eb57924ab5592b154b313b28",
+      "after": "8cebd7e871420d6d2b4159552da3bd52d65cced7d86f2b46ff455df32d190261"
+    },
+    "src/features/compliance-kyc/KycListPage.tsx": {
+      "before": "2e884bd7649d2a282cc2b161d97541e4c1b75cdd2778e94a58282cac0cf51324",
+      "after": "e345e1db48f394323546426cfab829ff858efef3cddf0bd5b6ac4afe69ef6a9d"
+    },
+    "src/features/control-plane-operators/Operators.module.css": {
+      "before": "71926f08b109ec50acf03f0681a73ac7ad33808bc22feff6a1a9bb99a5a7f305",
+      "after": "718feaee226ca94273a842229f3304d91acb5ae9a06a563c704580345168e12b"
+    },
+    "src/features/control-plane-operators/OperatorsListPage.tsx": {
+      "before": "b6f544f77496b04aa56a5f714b872a71daf25865327e56c3755de5d71ee499f3",
+      "after": "72a8666560df9bbf2f4e31d691432351ef7be24e47143cc3822a67a70ab7bf14"
+    },
+    "src/features/dashboard/DashboardPage.module.css": {
+      "before": "3e11b6adee041dd44423a4320a2487f1c010318121225fa4bbc960a09116694c",
+      "after": "7c867e478636dfbbcce5d7cb881a9e08e61fe018520a181e863c5db5d635309b"
+    },
+    "src/features/dashboard/DashboardPage.tsx": {
+      "before": "3f8c03cc40fe40edbdaafe1ca109caa81fd4e2f7b2f34ae5033ddb05d3b75a9b",
+      "after": "bca640d6b207ea505a51c1fd3a8a5062c78f91d090b00b730b77afa6097a5c47"
+    },
+    "src/features/dashboard/QuickActionsPanel.module.css": {
+      "before": "0b87fc694761a812ae0eadd3d25a7ee9a0e81f2f31b22bc15e38ee804c31f2db",
+      "after": "3046dca46d93e780406d891259300dccdf2f4f1dba171e71c25bbf738c1b2290"
+    },
+    "src/features/dashboard/QuickActionsPanel.tsx": {
+      "before": "34fc1ca937040a7c831d133824d06125d6cbf97e2dd3d77449ac718c11016793",
+      "after": "0e39932b7f81d1821cc8e70c598c6ac4fd53617fd7e7ef908d635b3cc1da17d6"
+    },
+    "src/features/finance-core/investments/InvestmentsPage.tsx": {
+      "before": "ad2899b0cf07934d0547f5303ef57c1a526c9c41c2ddc9f7b987ab35f289bb6e",
+      "after": "049b792bc1503fda2a5b610e4d06e451bdd0b41d766090ae042e7598fa1c6dea"
+    },
+    "src/features/finance-core/payments/PaymentsPage.tsx": {
+      "before": "45855b630f14766b27e3eba5933a5e13ef0c5d50fc181e68e99d6c32571ec77e",
+      "after": "a33e30461cbb1be830e2d91a68e4b012fa7f0b2fed59383884aeab4dc300c7b8"
+    },
+    "src/features/finance-core/wallets/WalletsPage.tsx": {
+      "before": "78a0baf3d7967d0cd2a35f289178eb7b07ca9505368fb4d7aad4f0b0b86c19e2",
+      "after": "08b823dc75c16a43ac66e407e0f4cccf6e884b68679b57ac504ffc76bb2d442a"
+    },
+    "src/features/finance-gateways/sections/FinanceSections.module.css": {
+      "before": "29c303dc86356f2b05555a38d529a7672a39bdcf2c7ed03b3234972e041dc806",
+      "after": "7a1cd4b0b6e5b049a8d20b7ff6a3a376bcfb5a492bdd6b75b21c8e1ecd93c6ad"
+    },
+    "src/features/governance-audit/AuditListPage.tsx": {
+      "before": "6d7092dd5684967237d05acb0d5cd51f515f625460b10f0dc69d6600f75a84a7",
+      "after": "dec261f88e222975d044b294b2b2baed3b83231a92f3ff07409048185963474c"
+    },
+    "src/features/operation/companies/CompaniesPage.tsx": {
+      "before": "658df9089b02789274e4be31348bd9317b37e288ba1a89b2571854c522006cfa",
+      "after": "a2ab67f4c918fb924704c0afb86a37ff9b57c9af83617d63aa35e53b5c969cf5"
+    },
+    "src/features/operation/entrepreneurs/EntrepreneursPage.tsx": {
+      "before": "27c369a8da2983455c1cdb6dee8cd782f46980f74f13cc8927db3482826896f0",
+      "after": "e29f16b68e1b1e32ebd847be2bdab621b24a22fca6327069a2981cf81d9c92fb"
+    },
+    "src/features/operation/investors/InvestorsPage.tsx": {
+      "before": "8307c37773d1049595eeed176a0ea2a4168c049440a6f09a04c893f6cd55b557",
+      "after": "acad76ac49301c0f63e43eeabf71dedfd1913939cee3dc50b32bb36a26bcb74f"
+    },
+    "src/features/operation/opportunities/OpportunitiesPage.tsx": {
+      "before": "04065f66e0d51b2dea0c52a01fcd96ba5354317766602bfb0cfdd3f529620892",
+      "after": "fba726e45db2622f9e920304cce0af011fc7b35c38fdabbf2cbd9bebb5542045"
+    },
+    "src/features/operation/shared/Operation.module.css": {
+      "before": "d595368436de7348f5c7cbfc18871702eb25aa41b7a1c382cad6ae6119da9555",
+      "after": "8e0fb08b5b10a4deaf64c1995e5e7e7305576b6fed8bd957c7790c8acc87cf62"
+    },
+    "src/features/operation/shared/OperationUi.tsx": {
+      "before": "17a2b809714fd970652133093885204fb0f514a0ee704e41bc406798894b74b5",
+      "after": "1802ca1159b328b01749ad03ddf8b57828db5fc56c309200383e35d07107e38f"
+    },
+    "src/features/whitelabel-accounts/AccountDetailPanel.module.css": {
+      "before": "ebe3a9255795e924fc353c803614bb616c37f9f90596388e3f37cdad7912ae37",
+      "after": "754e3644fa3edb746052deee39a8a63439d1bc8ff65305e49fef9f9cb162281b"
+    },
+    "src/features/whitelabel-accounts/AccountListPanel.module.css": {
+      "before": "88e3305d6af8548fbb16aa692e02314f01b9913487880b581df0787250af129c",
+      "after": "4eabd1b4876bebd4d28c523c209553a7d8bdbda58884edcd22d93f6e900fb571"
+    },
+    "src/features/whitelabel-accounts/AccountListPanel.tsx": {
+      "before": "01b3c86952e1d1fe8ed365d9859311f6f4809323e40fe265e19fb54f491b235a",
+      "after": "aa1686beee1ea168ec2824dbf183bbf2aafe5801581a2b399bb880d5b69f74ce"
+    },
+    "src/features/whitelabel-accounts/WhitelabelAccountsPage.module.css": {
+      "before": "11dd8d1dc4337b93607f77d752753da936d204a837f71e30cd753ba5e3c9568b",
+      "after": "17d684295ef01ef9364824db022f8959d903a79e57afd4a2a678f3265159b12e"
+    },
+    "src/features/whitelabel-accounts/WhitelabelAccountsPage.tsx": {
+      "before": "70475aec7e51aa3aa699a532d6b8a0278d2c5256d607c61349177bbe378b66c2",
+      "after": "abd3f1c9a305b1ffc8dd498b54dc6429e2b7c9be305b1dd7bda99e51af5f8a1d"
+    },
+    "src/features/whitelabel-emails/OperationalSmtpPage.tsx": {
+      "before": "5d209690f0900553238d8ea0894606cb2b732cffa59eb423a6f293766f3451b2",
+      "after": "43b89228c031b491f5768b13bcb7ab59a9664a7ea8bbb56784c534e6903fda07"
+    },
+    "src/features/whitelabel-emails/SmtpMetadataEditor.tsx": {
+      "before": "e84f6c2e8c6ddd5dddecab0a41319745ab1c40cd09760a7260e62ad32559ebe6",
+      "after": "e4baace0967dca819aa792415cac00fae620fa6bd59c2e1f151c38fc2b7242a1"
+    },
+    "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
+      "before": "210e5a03dc8dd237b531538438fdcba8efafef7d0406edd9b9d3a551197d0f55",
+      "after": "bf0f4b282cc04bc07a0b600e04be64fabc195cb553c0ae79c6f1dc243bd20b28"
+    },
+    "src/features/whitelabel-settings/SettingsWriteEditor.tsx": {
+      "before": "2b0edb86cea13d522f9022136de48411cbf350c2fbafe6ce64758d8244e3359f",
+      "after": "d58b5dad4ce401076ea36c6b23fb54659a3b92d0d95bca0f05a9c95e1ca7df57"
+    },
+    "src/features/whitelabels/WhitelabelDetailPanel.module.css": {
+      "before": "b1a5c7e863ea2b74e1e8064d6a159dceb1e88299cb0fee2061f19487755b8d59",
+      "after": "83c7d865d337e8c60f11b7b516673f69424af527f5dfe2c1145cb008fb168316"
+    },
+    "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
+      "before": "e9202ce0930ae82f9f0bd3b5a887a3ede39aac03fdc8e64e286a1780ccad9a5b",
+      "after": "e308fdbbc8ccac06f5ba101cb2d0875e589b6346043f1e46d876a6044eadebb6"
+    },
+    "src/features/whitelabels/WhitelabelListPanel.module.css": {
+      "before": "b3c26328180ed2926e37227f0f2e6d56f135d4ceee9307483e2ebce54386b3c2",
+      "after": "f703bdba91377c4d965ef961a79b5a6dffffe701fea6afeb03cdf568fa3ca7c9"
+    },
+    "src/features/whitelabels/WhitelabelListPanel.tsx": {
+      "before": "ddc8d7ca11dfe539c0bd8f0f1cdde56fe5db041107cc23718a2db033638e5907",
+      "after": "1f222cbc4a7c8d85f6f698c1a441d6095e1c4a4c3c1ae2c30948413ce35ab968"
+    },
+    "src/features/whitelabels/WhitelabelsPage.module.css": {
+      "before": "eb3f042fe3d6e2ec5271355599b5f97eaf95d1e8f0206d69e892344c33903d51",
+      "after": "4aaa8d348c8a185734eb4fc5f8754512b8808f550337c399167cb3f7491964e9"
+    },
+    "src/features/whitelabels/WhitelabelsPage.tsx": {
+      "before": "a30ee8bbab9d9bcc2bfd22c4040621ebefda05307d09953d06de2b5a699ad3b5",
+      "after": "1d5336a7f68056d84ab13d0c3f62590cdde014c9e94259061847cb748a4ab212"
+    }
+  }
+}

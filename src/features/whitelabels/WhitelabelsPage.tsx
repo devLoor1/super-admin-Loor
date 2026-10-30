@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Box, Building, ChartNoAxesColumnIncreasing, Link, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Building } from 'lucide-react'
 import { pushRouteKeepingScroll, replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../app/routeQuery'
 import { AppShell } from '../../components/shell/AppShell'
 import { useNotice } from '../../components/shell/notice'
-import type { Tone } from '../../components/ui/IconTile'
-import { MetricCard } from '../../components/ui/MetricCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { describeApiError } from '../../lib/apiErrors'
 import { getSessionVersion, useSessionOperator } from '../../lib/authSession'
@@ -35,8 +33,8 @@ type WhitelabelsPageProps = {
 
 /**
  * Whitelabels V1 — list + detail for the Plataformas domain, reading the
- * Control Plane (`GET /whitelabels`, `GET /whitelabels/:id`). The summary
- * cards are not integrated yet and keep their data-ready "—" state.
+ * Control Plane (`GET /whitelabels`, `GET /whitelabels/:id`). Result counts
+ * describe the current query; unavailable global aggregates are not inferred.
  *
  * Operational V1 reuses the review dialogs for Create/name-only PATCH.
  * Real transport is default-OFF and SUPER_ADMIN-only; confirmed operations
@@ -51,14 +49,7 @@ export function WhitelabelsPage({ accentColor = DEFAULT_WHITELABEL_ACCENT, route
   )
 }
 
-const SUMMARY: { id: string; label: string; icon: LucideIcon; tone: Tone }[] = [
-  { id: 'total', label: 'Total de plataformas', icon: Building, tone: 'blue' },
-  { id: 'active', label: 'Ativos', icon: ChartNoAxesColumnIncreasing, tone: 'teal' },
-  { id: 'setup', label: 'Em configuração', icon: Box, tone: 'amber' },
-  { id: 'integrations', label: 'Integrações', icon: Link, tone: 'violet' },
-]
-
-const MOBILE_QUERY = '(max-width: 767px)'
+const MOBILE_QUERY = '(max-width: 1199px)'
 
 /** The edit dialog keeps the authoritative record it opened with; its ID must stay the selected one. */
 type CrudDialog = ({ kind: 'create' } | { kind: 'edit'; record: WhitelabelRecord } | { kind: 'lifecycle'; record: WhitelabelRecord; operation: LifecycleOperation }) & { sessionVersion: number } | null
@@ -250,9 +241,12 @@ function WhitelabelsContent({
   function openActions(id: string) {
     actionsFocusFor.current = id
     if (selectedId === id && detail.state.status === 'success') {
-      // The default/selected record can be below the list on a phone even
-      // without a route change, so reveal it for this path too.
-      if (window.matchMedia(MOBILE_QUERY).matches) revealDetail()
+      // The implicit first-row detail is hidden in the narrow list view.
+      // Make that selection explicit before handing focus to its actions.
+      if (window.matchMedia(MOBILE_QUERY).matches) {
+        if (route.id !== id) activate(id)
+        else revealDetail()
+      }
       onDetailDisplay(id)
     } else activate(id)
   }
@@ -261,6 +255,16 @@ function WhitelabelsContent({
     if (route.search !== '') ownSearch.current = ''
     setDraft('')
     navigate({ search: '', status: 'all' })
+  }
+
+  function returnToList() {
+    revealPending.current = false
+    navigate({ page: route.page }, 'push')
+    window.requestAnimationFrame(() => {
+      const listHeading = document.getElementById('wl-list-title')
+      listHeading?.focus({ preventScroll: true })
+      listHeading?.scrollIntoView({ block: 'start' })
+    })
   }
 
   const detailError = detail.state.status === 'error' ? describeApiError(detail.state.error, 'o Whitelabel') : null
@@ -295,28 +299,8 @@ function WhitelabelsContent({
   return (
     <div className={styles.page}>
       <DotMatrixBackground accentColor={accentColor} />
-      <section aria-labelledby="wl-summary-heading">
-        <h2 id="wl-summary-heading" className="visually-hidden">
-          Resumo de whitelabels
-        </h2>
-        <ul className={styles.summary}>
-          {SUMMARY.map((card) => (
-            <li key={card.id} className={styles.summaryCell}>
-              <MetricCard
-                label={card.label}
-                icon={card.icon}
-                tone={card.tone}
-                density="compact"
-                onOpen={() =>
-                  notify(`O indicador "${card.label}" ainda não está integrado; a lista abaixo já usa dados do Control Plane.`)
-                }
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className={styles.split}>
+      <div className={styles.split} data-detail-open={route.id ? true : undefined}>
+        <div className={styles.list}>
         <WhitelabelListPanel
           state={listState}
           lastData={list.lastData}
@@ -340,7 +324,16 @@ function WhitelabelsContent({
           createAccess={writeAccess}
           accentColor={accentColor}
         />
-        {detailPanel}
+        </div>
+        <div className={styles.detail}>
+          <div className={styles.detailContext}>
+            <button type="button" className={styles.returnButton} onClick={returnToList}>
+              <ArrowLeft size={16} aria-hidden="true" /> Voltar à lista
+            </button>
+            <p>Whitelabel selecionado</p>
+          </div>
+          {detailPanel}
+        </div>
       </div>
       <p className="visually-hidden" role="status">
         {detailAnnouncement}

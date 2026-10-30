@@ -79,6 +79,10 @@ export function AccountListPanel({
       aria-labelledby={tabId(TYPE_TABS_ID, kind)}
       data-account-list={kind}
     >
+      <header className={styles.header}>
+        <h2 id="acc-list-title" className={styles.title} tabIndex={-1}>{meta.label}</h2>
+        <p className={styles.resultContext} role="status">{data ? `${formatCount(data.total)} ${data.total === 1 ? 'conta encontrada' : 'contas encontradas'}` : loading ? 'Consultando contas…' : 'Consulta indisponível'}</p>
+      </header>
       <div className={styles.controls} data-read-only>
         <SearchField
           id="acc-search"
@@ -91,6 +95,8 @@ export function AccountListPanel({
         />
       </div>
 
+      <details className={styles.legendDetails}>
+      <summary>Entenda os estados da conta</summary>
       <p className={styles.legend}>
         <span className={styles.legendItem}>
           <span className={styles.legendDot} aria-hidden="true" />
@@ -106,6 +112,7 @@ export function AccountListPanel({
           </span>
         </span>
       </p>
+      </details>
       {ignored.length ? (
         <p className={states.ignoredNote} role="status" data-ignored-params>
           <Info size={14} strokeWidth={1.9} aria-hidden="true" />

@@ -18,6 +18,7 @@ import { BUSINESS_HEADING, accountInitials, businessView } from './accountsPrese
 import styles from './AccountDetailPanel.module.css'
 import { AccountAccessActions } from './access/AccountAccessActions'
 import { AdminLifecycleActions } from './admin/AdminLifecycleActions'
+import { ParticipantAccessDelivery } from './creation/ParticipantAccessDelivery'
 
 /*
  * Selected account, read from `GET /whitelabels/:id/accounts/:accountId?tipo=…`.
@@ -111,6 +112,8 @@ function DetailContents({ detail, whitelabel, actionsCurrent }: { detail: Accoun
         {detail.kind === 'admin' ? <AdminData detail={detail} /> : <RegistrationData detail={detail} />}
 
         <Links detail={detail} />
+
+        {detail.kind !== 'admin' && <ParticipantAccessDelivery key={`delivery:${whitelabel.id}:${detail.kind}:${record.id}`} detail={detail} activeTenant={whitelabel.status === 'active'} current={actionsCurrent} />}
 
         {detail.kind !== 'admin' ? <AccountAccessActions key={`${whitelabel.id}:${detail.kind}:${record.id}`} detail={detail} tenantId={whitelabel.id} current={actionsCurrent} /> : null}
         {detail.kind === 'admin' && <AdminLifecycleActions record={detail.record} tenantId={whitelabel.id} current={actionsCurrent} />}

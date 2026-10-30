@@ -6,6 +6,8 @@ export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['finance', 'finance
 export const opportunityEditorialAvailable = (status: string, roles: readonly string[]) => status === 'review' && roles.includes('SUPER_ADMIN')
 export const opportunityActionAvailable = (action: string) => ['create', 'image', 'patch', 'archive'].includes(action)
 export const administratorLifecycleAvailable = (roles: readonly string[]) => roles.includes('SUPER_ADMIN')
+/** Participant initial-access acceptance is tracked independently from Administrator lifecycle. */
+export const participantCreationAvailable = (kind: string, roles: readonly string[]) => ['investor', 'entrepreneur'].includes(kind) && roles.includes('SUPER_ADMIN')
 const UNAVAILABLE_MENU_IDS = new Set(['sistema', 'ajuda', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
 export function viewAvailable(view: string) { return !MOCK_ONLY_VIEWS.has(view) }
 export function readinessHref(id: string, candidate?: string) {

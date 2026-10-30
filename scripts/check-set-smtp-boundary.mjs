@@ -7,6 +7,7 @@ import { beforeSetSmtp, reviewedSetSmtp, setSmtpBaseline, setSmtpDigest, setSmtp
 import { beforeConsolidation, execFileSync as historicalGit } from './reviewed-consolidation-boundary.mjs'
 import { withoutAstSettings, reviewedAstSettings } from './reviewed-ast-settings-boundary.mjs'
 import { reviewedOperationalUx, withoutOperationalUx } from './reviewed-operational-ux-boundary.mjs'
+import { reviewedParticipantCreation } from './reviewed-participant-creation-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).replaceAll('\r\n', '\n')
@@ -20,7 +21,7 @@ check('all runtime changes have individual finalized review pins', () => {
   assert.ok(paths.length > 0)
   // Keep every old SET pin; only exact reviewed successor additions are outside
   // this historical unit. The successor has its own complete-delta assertion.
-  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || (!reviewedAstSettings(path) && !reviewedOperationalUx(path))))
+  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || (!reviewedAstSettings(path) && !reviewedOperationalUx(path) && !reviewedParticipantCreation(path))))
 })
 for (const path of setSmtpFiles()) {
   check(`exact current candidate and mutation rejection: ${path}`, () => {

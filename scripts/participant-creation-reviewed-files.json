@@ -1,0 +1,42 @@
+{
+  "baseline": "d78fc0ab94a1989dbcc73ba58ce62cfb509b8777",
+  "finalized": true,
+  "files": {
+    "src/lib/api.ts": {
+      "before": "388f891c13cd1bbfc10a40534a487c4f078d217b2a88c0f0f97014c698aa4e5e",
+      "after": "e86f361cbcfc57f8997f454a2cbbf16dad28be10a5fdf19755da84d01717975f"
+    },
+    "src/app/presentationAvailability.ts": {
+      "before": "30018a8379dadff05cd419702e8f7bd2ab8d7921cd70410391999a00b158f2fb",
+      "after": "0fee101cdb4040fcaa122131bac5532a6256ae5a8f39d47ea9c19ba89c367f62"
+    },
+    "src/features/whitelabel-accounts/WhitelabelAccountsPage.tsx": {
+      "before": "abd3f1c9a305b1ffc8dd498b54dc6429e2b7c9be305b1dd7bda99e51af5f8a1d",
+      "after": "c8719a2f884e833c3d6086f8510ee4662bdb1c4a56c80602f3749bfdacea0ecd"
+    },
+    "src/features/whitelabel-accounts/AccountDetailPanel.tsx": {
+      "before": "5968faa14263bf901c346492b155cf2bd9107f6625f2e4309bc6fcd45cc9ff7b",
+      "after": "cd8347b5e15494842cd15c471432d9d795a51954b3d859f7f814c76b2ee7abd6"
+    },
+    "src/features/whitelabel-accounts/creation/participantCreationContract.ts": {
+      "before": null,
+      "after": "4820c682cfe0c74e3de8d0e3c7bf531404c75420b20f94ee92f4eca5eaf27cdf"
+    },
+    "src/features/whitelabel-accounts/creation/participantCreationClient.ts": {
+      "before": null,
+      "after": "3cbe9c222ff6ccd00324a178b56ca803256b96caea725f0510217f4f0e37cf89"
+    },
+    "src/features/whitelabel-accounts/creation/ParticipantCreateAction.tsx": {
+      "before": null,
+      "after": "165b3d63d6230c4fca56a744f8013a7a6b9836541ac18f050c744d8acf1b0c7a"
+    },
+    "src/features/whitelabel-accounts/creation/ParticipantAccessDelivery.tsx": {
+      "before": null,
+      "after": "e67603322d05da889f8bba772ede7ddf91b36dd9ed32971bbb448eef2a8e40f3"
+    },
+    "src/features/whitelabel-accounts/creation/ParticipantCreation.module.css": {
+      "before": null,
+      "after": "051a9a73f9512f88e76ac3b551d43d472498a99186a4d5f5e6f4cc6ac3a580e9"
+    }
+  }
+}

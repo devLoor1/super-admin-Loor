@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { ParticipantCreateAction } from './creation/ParticipantCreateAction'
 import { ArrowLeft, Briefcase, Building2, CircleAlert, Info, RotateCw, ShieldCheck, TrendingUp } from 'lucide-react'
 import { pushRouteKeepingScroll, replaceRouteKeepingScroll, useRestoreReplacedScroll } from '../../app/routeQuery'
 import { useUrlSearchDraft } from '../../app/useUrlSearchDraft'
@@ -367,12 +368,13 @@ function AccountsContent({
           />
           <p className={styles.readOnly} data-read-only-note>
             <Info size={14} strokeWidth={1.9} aria-hidden="true" />
-            {route.kind === 'admin' ? 'Consulta e gestão de administradores' : 'Somente leitura'}
+            {route.kind === 'admin' ? 'Consulta e gestão de administradores' : 'Consulta e cadastro inicial'}
           </p>
         </div>
 
         <div className={styles.list}>
           {route.kind === 'admin' && whitelabel && <div><AdminCreateAction key={whitelabel.id} whitelabel={whitelabel} /></div>}
+          {route.kind !== 'admin' && whitelabel && <ParticipantCreateAction whitelabel={whitelabel} kind={route.kind} />}
           <AccountListPanel
             kind={route.kind}
             whitelabelName={whitelabelName}

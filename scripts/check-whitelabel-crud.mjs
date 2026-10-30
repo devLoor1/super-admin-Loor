@@ -491,6 +491,14 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
     const runtimePath = file.slice(root.length + 1).replaceAll('\\', '/')
+    if (runtimePath === 'src/features/whitelabel-accounts/creation/participantCreationClient.ts') {
+      const { reviewedParticipantCreation } = await import('./reviewed-participant-creation-boundary.mjs')
+      assert.equal(reviewedParticipantCreation(runtimePath), true)
+      assert.equal((source.match(/method:\s*'POST'/g) || []).length, 2)
+      assert.match(source, /\/resend-access/)
+      assert.doesNotMatch(source, /method:\s*'(PATCH|PUT|DELETE)'|fetch\s*\(|sendBeacon|WebSocket|\/admin\/|\/internal\//)
+      continue
+    }
     // These four transports have independent physical behavioral suites. This
     // inherited cross-domain freeze recognizes only their finalized exact pins,
     // and retains their specific domain/method restrictions below.

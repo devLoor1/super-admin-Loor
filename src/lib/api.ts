@@ -6,6 +6,7 @@ export type ApiErrorBody = {
   code?: string
   message?: string | string[]
   correlationId?: string
+  retryAfterSeconds?: number
 }
 
 /**
@@ -29,11 +30,12 @@ export class ApiError extends Error {
   code?: string
   /** Server correlation id (body, then response header) or the id this request sent. */
   correlationId?: string
+  retryAfterSeconds?: number
 
   constructor(
     status: number,
     body: ApiErrorBody,
-    options: { kind?: ApiErrorKind; correlationId?: string } = {},
+    options: { kind?: ApiErrorKind; correlationId?: string; retryAfterSeconds?: number } = {},
   ) {
     const kind = options.kind ?? 'http'
     const responseMessage = typeof body.message === 'string'
@@ -49,6 +51,7 @@ export class ApiError extends Error {
     this.status = status
     this.kind = kind
     this.code = typeof body.code === 'string' ? body.code : undefined
+    this.retryAfterSeconds = options.retryAfterSeconds ?? retryDelay(body.retryAfterSeconds)
     // Error JSON is untrusted too: objects must never reach a React text child.
     this.correlationId = typeof body.correlationId === 'string' && body.correlationId.trim()
       ? body.correlationId.trim().slice(0, 128)
@@ -62,6 +65,17 @@ export function isAbortError(error: unknown) {
 }
 
 export type ApiQuery = Record<string, string | number | boolean | null | undefined>
+
+/** Supported cooldown metadata only; never guess a deadline from a missing value. */
+export function retryDelay(value: unknown, now = Date.now()): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0 ? Math.ceil(value) : undefined
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  if (/^\d+(?:\.\d+)?$/.test(value.trim())) return retryDelay(Number(value))
+  // Retry-After's HTTP-date representation, not arbitrary text/numeric dates.
+  if (!/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), /i.test(value)) return undefined
+  const date = Date.parse(value)
+  return Number.isFinite(date) ? Math.max(0, Math.ceil((date - now) / 1000)) : undefined
+}
 
 function correlationId() {
   return crypto.randomUUID()
@@ -101,9 +115,12 @@ export async function apiRequest<T>(
     timeoutMs?: number
     /** A write must receive its documented success status, otherwise its result is uncertain. */
     successStatus?: number
+    /** UUID for one logical participant creation, retained by its in-memory ledger. */
+    idempotencyKey?: string
   } = {},
 ): Promise<T> {
   const requestId = correlationId()
+  if (options.idempotencyKey !== undefined && !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(options.idempotencyKey)) throw new ApiError(400, { code: 'INVALID_IDEMPOTENCY_KEY' })
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'X-Correlation-ID': requestId,
@@ -111,6 +128,7 @@ export async function apiRequest<T>(
   const multipart = typeof FormData !== 'undefined' && options.body instanceof FormData
   if (options.body !== undefined && !multipart) headers['Content-Type'] = 'application/json'
   if (options.token) headers.Authorization = `Bearer ${options.token}`
+  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey
 
   const controller = new AbortController()
   let timedOut = false
@@ -158,7 +176,7 @@ export async function apiRequest<T>(
   if (!response.ok) {
     // Non-JSON error bodies (proxy / HTML pages) are never surfaced as messages.
     const body = parsed && isJsonObject(data) ? (data as ApiErrorBody) : {}
-    throw new ApiError(response.status, body, { correlationId: echoedId })
+    throw new ApiError(response.status, body, { correlationId: echoedId, retryAfterSeconds: retryDelay(response.headers.get('Retry-After')) ?? retryDelay(body.retryAfterSeconds) })
   }
 
   if (!parsed || (options.successStatus !== undefined && response.status !== options.successStatus)) {

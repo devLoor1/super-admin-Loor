@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { withoutParticipantCreation } from './reviewed-participant-creation-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -95,18 +96,19 @@ export function createAstSettingsBoundary(manifest, { readCurrent, readBaseline 
 
 const manifest = JSON.parse(readFileSync(resolve(root, 'scripts/ast-settings-reviewed-files.json'), 'utf8'))
 const boundary = createAstSettingsBoundary(manifest, {
-  readCurrent: path => readFileSync(resolve(root, path), 'utf8'),
+  readCurrent: path => withoutParticipantCreation(path, readFileSync(resolve(root, path), 'utf8')),
   readBaseline: path => execFileSync('git', ['show', `${astSettingsBaseline}:${path}`], { cwd: root, encoding: 'utf8' }),
 })
 export const astSettingsFinalized = boundary.finalized
 export const astSettingsFiles = boundary.files
-export const verifyAstSettingsSource = boundary.verifySource
+export const verifyAstSettingsSource = (path, source) => boundary.verifySource(path, withoutParticipantCreation(path, source))
 export const reviewedAstSettings = boundary.reviewed
-export const beforeAstSettings = boundary.before
+export const beforeAstSettings = (path, source) => boundary.before(path, withoutParticipantCreation(path, source))
 export const astSettingsExclusions = boundary.exclusions
 
 /** Reverse only this exact successor for older, independently pinned assertions. */
 export function withoutAstSettings(path, source) {
+  source = withoutParticipantCreation(path, source)
   if (!boundary.files().includes(path)) return normalize(source)
   boundary.reviewed(path)
   return astSettingsDigest(source) === manifest.files[path].after ? boundary.before(path, source) : normalize(source)

@@ -25,6 +25,7 @@ function fixture(mode = 'normal', roles = ['SUPER_ADMIN']) {
   dispatch = async (url, options) => {
     seen.push({ url, method: options.method, body: options.body })
     if (options.method === 'GET') {
+      if (state.mode === 'emptyRead503') return response({}, 503)
       if (state.mode === 'read404' || state.deleted) return response({}, 404)
       if (state.mode === 'read503') return response({}, 503)
       if (state.mode === 'foreign') return response({ data: { ...asset, wtlb_id: Number(id) + 1 } })
@@ -32,7 +33,12 @@ function fixture(mode = 'normal', roles = ['SUPER_ADMIN']) {
     }
     if (state.mode === 'rejected') return response({}, 422)
     if (state.mode === 'lost') throw new TypeError('Synthetic network loss')
-    if (options.method === 'DELETE') { state.deleted = state.mode !== 'notDeleted'; return response({ data: null }) }
+    if (options.method === 'DELETE') {
+      state.deleted = !['notDeleted', 'emptyNotDeleted'].includes(state.mode)
+      if (['emptyDelete', 'emptyNotDeleted', 'emptyRead503'].includes(state.mode)) return new Response(null, { status: 200 })
+      if (state.mode === 'malformedDelete') return response({ unexpected: true })
+      return response({ data: null })
+    }
     if (state.mode === 'badReceipt') return response({ data: { ...asset, size_bytes: -1 } }, options.method === 'POST' ? 201 : 200)
     return response({ data: { ...asset, url: state.mode === 'nullUrl' ? null : asset.url } }, options.method === 'POST' ? 201 : 200)
   }
@@ -122,6 +128,32 @@ await check('delete confirms receipt and authoritative 404', async () => {
 await check('delete receipt without absence remains uncertain', async () => {
   const f = fixture('notDeleted'); await assert.rejects(client.mutatePlatformAsset(f.id, 'delete', f.session, undefined, ref))
   assert.equal(f.attempt().phase, 'uncertain')
+})
+await check('empty HTTP 200 delete receipt still requires authoritative absence', async () => {
+  const f = fixture('emptyDelete')
+  assert.equal(await client.mutatePlatformAsset(f.id, 'delete', f.session, undefined, ref), null)
+  assert.equal(f.attempt().phase, 'confirmed')
+  assert.deepEqual(f.seen.map(x => x.method), ['DELETE', 'GET'])
+  const present = fixture('emptyNotDeleted')
+  await assert.rejects(client.mutatePlatformAsset(present.id, 'delete', present.session, undefined, ref))
+  assert.equal(present.attempt().phase, 'uncertain')
+  assert.equal(present.seen.filter(x => x.method === 'DELETE').length, 1)
+})
+await check('unexpected delete body cannot be confirmed by absence alone', async () => {
+  const f = fixture('malformedDelete')
+  await assert.rejects(client.mutatePlatformAsset(f.id, 'delete', f.session, undefined, ref))
+  await assert.rejects(client.reconcilePlatformAsset(f.id, f.session))
+  assert.equal(f.attempt().phase, 'uncertain')
+  assert.equal(f.seen.filter(x => x.method === 'DELETE').length, 1)
+})
+await check('empty delete receipt survives failed readback and GET-only recovery', async () => {
+  const f = fixture('emptyRead503')
+  await assert.rejects(client.mutatePlatformAsset(f.id, 'delete', f.session, undefined, ref))
+  assert.equal(f.attempt().phase, 'uncertain'); assert.equal(f.attempt().receipt, true)
+  f.state.mode = 'normal'
+  assert.equal(await client.reconcilePlatformAsset(f.id, f.session), null)
+  assert.equal(f.attempt().phase, 'confirmed')
+  assert.deepEqual(f.seen.map(x => x.method), ['DELETE', 'GET', 'GET'])
 })
 await check('partial and multiline web composites preserve exact strings and extensions', () => {
   const quick = { sideSubtitle: '  Texto\n' + 'x'.repeat(4001), future: { value: null } }

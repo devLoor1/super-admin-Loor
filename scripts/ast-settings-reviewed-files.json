@@ -104,7 +104,7 @@
     },
     "src/features/whitelabel-settings/platformAssetClient.ts": {
       "before": null,
-      "after": "f1368add5e44c17034d99519dcf1915b849984fec8937f58a4846962ac82bc38"
+      "after": "734681bcab9c62b605d9c5cfb87a3c2eabf4cbb752181b2316fbc4287fc988db"
     },
     "src/features/whitelabel-settings/settingsReadApi.ts": {
       "before": "192e8c5997e7d2577f30a52b322ae0ffe3acd80c7880f5f759b84605fbe041a4",

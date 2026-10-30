@@ -93,7 +93,9 @@ export async function mutatePlatformAsset(tenant: string, operation: AssetAttemp
     // Retain a trustworthy returned identity immediately, even if other fields are malformed.
     if (operation === 'upload' && record(raw) && record(raw.data) && raw.data.wtlb_id === Number(tenant) && raw.data.slot === 'main_area' && assetReference(raw.data.asset_ref)) publish(tenant, { ...ledger.get(tenant)!, ref: raw.data.asset_ref, status })
     if (operation === 'delete') {
-      if (!record(raw) || raw.data !== null) throw new ApiError(200, {}, { kind: 'malformed' })
+      // Core may return an empty HTTP 200 (transport null) or { data: null }.
+      // Neither receipt confirms deletion until the scoped GET returns 404.
+      if (raw !== null && (!record(raw) || raw.data !== null)) throw new ApiError(200, {}, { kind: 'malformed' })
       publish(tenant, { ...ledger.get(tenant)!, receipt: true, status })
     } else {
       const receipt = parsePlatformAsset(raw, tenant, ref)

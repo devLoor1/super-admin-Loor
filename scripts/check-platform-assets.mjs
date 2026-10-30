@@ -28,7 +28,7 @@ function fixture(mode = 'normal', roles = ['SUPER_ADMIN']) {
       if (state.mode === 'read404' || state.deleted) return response({}, 404)
       if (state.mode === 'read503') return response({}, 503)
       if (state.mode === 'foreign') return response({ data: { ...asset, wtlb_id: Number(id) + 1 } })
-      return response({ data: { ...asset, url: state.mode === 'nullUrl' ? null : 'https://images.example.invalid/a.png?signature=rotated' } })
+      return response({ data: { ...asset, ...(state.readStamp ? { updated_at: state.readStamp } : {}), url: state.mode === 'nullUrl' ? null : 'https://images.example.invalid/a.png?signature=rotated' } })
     }
     if (state.mode === 'rejected') return response({}, 422)
     if (state.mode === 'lost') throw new TypeError('Synthetic network loss')
@@ -58,6 +58,26 @@ await check('accepted upload then 404 stays uncertain with exact orphan ref', as
   f.state.mode = 'normal'; const recovered = await client.reconcilePlatformAsset(f.id, f.session)
   assert.equal(recovered.ref, ref); assert.equal(f.attempt().phase, 'confirmed')
   assert.deepEqual(f.seen.map(item => item.method), ['POST', 'GET', 'GET'])
+})
+await check('receipt milliseconds truncated by storage confirm without another mutation', async () => {
+  const f = fixture()
+  f.asset.updated_at = '2026-10-30T00:14:34.355-03:00'
+  f.state.readStamp = '2026-10-30T03:14:34.000Z'
+  const result = await client.mutatePlatformAsset(f.id, 'upload', f.session, file)
+  assert.equal(result.ref, ref); assert.equal(f.attempt().phase, 'confirmed')
+  assert.deepEqual(f.seen.map(x => x.method), ['POST', 'GET'])
+})
+await check('timestamp drift, invalid timestamps and nonzero unequal precision stay uncertain', async () => {
+  for (const stamp of ['2026-10-30T03:14:33.000Z', '2026-10-30T03:14:35.000Z', '2026-10-30T03:14:34.200Z', 'not-a-date']) {
+    const f = fixture(); f.asset.updated_at = '2026-10-30T00:14:34.355-03:00'; f.state.readStamp = stamp
+    await assert.rejects(client.mutatePlatformAsset(f.id, 'upload', f.session, file))
+    assert.equal(f.attempt().phase, 'uncertain'); assert.equal(f.seen.filter(x => x.method === 'POST').length, 1)
+  }
+})
+await check('equivalent timezone timestamp is accepted without precision loss', async () => {
+  const f = fixture(); f.asset.updated_at = '2026-10-30T00:14:34.355-03:00'; f.state.readStamp = '2026-10-30T03:14:34.355Z'
+  await client.mutatePlatformAsset(f.id, 'upload', f.session, file)
+  assert.equal(f.attempt().phase, 'confirmed')
 })
 await check('network failure before receipt never retries or guesses an identity', async () => {
   const f = fixture('lost'); await assert.rejects(client.mutatePlatformAsset(f.id, 'upload', f.session, file))
@@ -120,6 +140,8 @@ await check('rendered role boundary and explicit absent preview', () => {
   for (const roles of [['SUPER_ADMIN'], ['READ_ONLY']]) {
     const f = fixture('normal', roles), html = render(h(ui.PlatformAssetEditor, { id: f.id, cell: 'login.main_area_image', baseline, onReload() {} }))
     assert.equal(html.includes('Selecionar imagem PNG'), roles.includes('SUPER_ADMIN'))
+    assert.equal(html.includes('Retomar arquivo já enviado'), roles.includes('SUPER_ADMIN'))
+    assert.equal(html.includes('Consultar arquivo existente'), roles.includes('SUPER_ADMIN'))
     assert.match(html, /Sem imagem configurada/); assert.match(html, /Não comprova aplicação/)
   }
 })

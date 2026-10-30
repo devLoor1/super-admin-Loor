@@ -24,6 +24,8 @@
 .details { color: var(--text-secondary, #b7b2c7); border-top: 1px solid #ffffff18; padding-top: 14px; font-size: 12px; min-width: 0; }
 .details summary { cursor: pointer; width: fit-content; margin-bottom: 10px; }
 .details p + p { margin-top: 8px; }
+.recovery { display: grid; gap: 6px; margin: 12px 0; min-width: 0; }
+.recovery input { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px; border: 1px solid #ffffff28; border-radius: 8px; background: #171321; color: var(--text-primary, #f3efff); font: inherit; }
 .details code, .notice code, .dialog code { font-size: 11px; overflow-wrap: anywhere; }
 .dialog { display: grid; gap: 12px; min-width: 0; font-size: 13px; line-height: 1.6; }
 .editor :focus-visible { outline: 2px solid #c4a4fb; outline-offset: 3px; }

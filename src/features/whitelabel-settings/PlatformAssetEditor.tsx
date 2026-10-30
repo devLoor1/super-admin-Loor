@@ -55,6 +55,7 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
   const [action, setAction] = useState<Action | null>(null)
   const [confirm, setConfirm] = useState<'unlink' | 'reset' | null>(null)
   const [discard, setDiscard] = useState(false)
+  const [recoveryRef, setRecoveryRef] = useState('')
   const [, update] = useState(0)
   const active = useRef(true), fileInput = useRef<HTMLInputElement>(null)
   const fileId = useId()
@@ -156,6 +157,21 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
     } catch { if (alive()) setError('Não foi possível qualificar o arquivo e todas as dependências. Imagens herdadas não podem ser removidas ou substituídas aqui.') }
     finally { if (alive()) setWorking(false) }
   }
+  async function recoverExisting() {
+    if (!writable || working || locked || file || candidate || currentRef || !assetReference(recoveryRef)) return
+    setWorking(true); setError(null); setNotice(null)
+    try {
+      const image = await getPlatformAsset(id, recoveryRef)
+      const checked = await dependencies(recoveryRef)
+      if (checked.dependencies.length) throw new Error('already associated')
+      const own = checked.all.find(item => item.cell === cell)?.origin
+      if (!own || !sameJson(own, origin)) throw new Error('baseline changed')
+      if (!alive()) return
+      keepCandidate(image); setRecoveryRef('')
+      setNotice('Arquivo existente confirmado por GET neste Whitelabel, sem associação nas páginas de entrada. Nenhum envio foi repetido. Revise antes de associar ou limpar.')
+    } catch { if (alive()) setError('Não foi possível recuperar um arquivo próprio sem associações. Confira a referência e a configuração; nenhum envio ou alteração foi realizado.') }
+    finally { if (alive()) setWorking(false) }
+  }
   async function executeAction() {
     if (!action || !writable || working || locked) return
     const selected = action
@@ -220,6 +236,12 @@ function AssetEditor({ id, cell, baseline, onReload, onPreview, onState, session
           {file && currentRef && origin.stored && asset && !candidate && <OutlineButton onClick={() => { void inspect('replace', currentRef) }}>Substituir arquivo atual…</OutlineButton>}
         </div>
       </fieldset>
+      {!file && !candidate && !currentRef && <details className={styles.details}>
+        <summary>Retomar arquivo já enviado</summary>
+        <p>Use a referência preservada de um envio anterior. A consulta verifica o Whitelabel e as três páginas de entrada; não envia nem associa um arquivo.</p>
+        <label className={styles.recovery}>Referência do arquivo<input value={recoveryRef} onChange={e => setRecoveryRef(e.target.value.trim())} disabled={working || locked} autoComplete="off" spellCheck={false} /></label>
+        <OutlineButton disabled={working || locked || !assetReference(recoveryRef)} onClick={() => { void recoverExisting() }}>Consultar arquivo existente</OutlineButton>
+      </details>}
       <div className={styles.actions}>
         {currentRef && <OutlineButton disabled={working || locked || !compatible || !!candidate} onClick={() => setConfirm('unlink')}>Retirar desta página…</OutlineButton>}
         <OutlineButton disabled={working || locked || !origin.stored || !!candidate} onClick={() => setConfirm('reset')}>Restaurar origem…</OutlineButton>

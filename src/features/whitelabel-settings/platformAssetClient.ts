@@ -42,8 +42,17 @@ function currentSession(token: string, session: number) {
   if (getSessionVersion() !== session || getAccessToken() !== token) throw new ApiError(0, {}, { kind: 'network' })
 }
 // Signed URL tokens may change between reads. Compare the durable asset metadata.
+function matchesUpdatedAt(current: string | null, receipt: string | null) {
+  if (current === receipt) return true
+  if (!current || !receipt) return false
+  const readTime = Date.parse(current), writeTime = Date.parse(receipt)
+  if (!Number.isFinite(readTime) || !Number.isFinite(writeTime)) return false
+  // Core's immediate receipt retains milliseconds; persisted GET truncates them.
+  // Accept only that one-way precision loss (or an equivalent timezone), not drift.
+  return readTime === writeTime || readTime % 1000 === 0 && readTime === Math.floor(writeTime / 1000) * 1000
+}
 function matchesReceipt(asset: PlatformAsset, receipt: PlatformAsset) {
-  return asset.ref === receipt.ref && asset.tenantId === receipt.tenantId && asset.mime === receipt.mime && asset.size === receipt.size && asset.updatedAt === receipt.updatedAt
+  return asset.ref === receipt.ref && asset.tenantId === receipt.tenantId && asset.mime === receipt.mime && asset.size === receipt.size && matchesUpdatedAt(asset.updatedAt, receipt.updatedAt)
 }
 async function readOutcome(tenant: string, attempt: AssetAttempt): Promise<PlatformAsset | null> {
   if (!attempt.ref) throw new ApiError(409, { code: 'ASSET_ID_UNKNOWN' })

@@ -14,6 +14,8 @@ type Operation = { key: string; payload: Readonly<ParticipantPayload>; accepted:
 export type DeliveryState = { phase: 'sending' | 'reported' | 'verified' | 'limited' | 'uncertain' | 'rejected'; sent?: boolean; until?: number; status?: number; code?: string; correlationId?: string }
 const EMPTY: CreationState = Object.freeze({ draft: EMPTY_PARTICIPANT, attempt: null })
 const FOREIGN: CreationState = Object.freeze({ draft: EMPTY_PARTICIPANT, attempt: { phase: 'uncertain' } })
+// Creation has a 60s Control Plane budget; allow its response to arrive before local abort.
+const CREATION_TIMEOUT_MS = 70_000
 const states = new Map<string, CreationState>(), operations = new Map<string, Operation>(), deliveries = new Map<string, DeliveryState>()
 const heldScopes = new Set<string>(), listeners = new Set<() => void>()
 // Navigation can preserve the in-memory operation; a reload cannot. Warn even after the modal closes.
@@ -71,7 +73,7 @@ export async function createParticipant(s: ParticipantScope, version: number) {
   } catch (e) { if (current(version, token)) setAttempt(s, { phase: 'rejected', ...metadata(e) }); return }
   setAttempt(s, { phase: 'sending' })
   try {
-    const raw = await apiRequest<unknown>(`/whitelabels/${s.tenant}/${participantPath(s.kind)}`, { method: 'POST', token, body: operation.payload, idempotencyKey: operation.key, successStatus: 201, timeoutMs: 20_000 })
+    const raw = await apiRequest<unknown>(`/whitelabels/${s.tenant}/${participantPath(s.kind)}`, { method: 'POST', token, body: operation.payload, idempotencyKey: operation.key, successStatus: 201, timeoutMs: CREATION_TIMEOUT_MS })
     if (!current(version, token)) return
     // Capture the scoped id even if another receipt field is malformed; GET can still reconcile it.
     const id = returnedParticipantId(raw, s.tenant, s.kind)

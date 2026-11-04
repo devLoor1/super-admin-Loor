@@ -24,7 +24,7 @@
     },
     "src/features/whitelabel-accounts/creation/participantCreationClient.ts": {
       "before": null,
-      "after": "3cbe9c222ff6ccd00324a178b56ca803256b96caea725f0510217f4f0e37cf89"
+      "after": "dcd18c70f4ef1b5e36e1c29e6fbf231534bf0f5c96e466cde79118d4d16e0001"
     },
     "src/features/whitelabel-accounts/creation/ParticipantCreateAction.tsx": {
       "before": null,

@@ -28,7 +28,7 @@ function fixture(kind='investor',mode='normal'){
    if(state.mode==='getWrong')return response({data:{...rows[0],whitelabelId:Number(tenant)+1}})
    return response({data:rows[0]||row(model.participantInput(kind,draft).payload)})
   }
-  if(state.mode==='deferred')await new Promise(r=>{state.release=r})
+  if(state.mode==='deferred')await new Promise((r,reject)=>{state.release=r;options.signal.addEventListener('abort',()=>reject(new DOMException('Synthetic abort','AbortError')),{once:true})})
   if(state.mode==='network')throw new TypeError('synthetic disconnect')
   if(state.mode==='timeout')throw new api.ApiError(0,{}, {kind:'timeout'})
   if(/^\d+$/.test(state.mode))return response({code:state.mode==='422'?'E_EMAIL_TAKEN':'SYNTHETIC_ERROR',message:'NEVER_EXPOSE'},Number(state.mode))
@@ -52,6 +52,31 @@ await check('PF/PJ and invalid type',()=>{assert.equal(model.participantInput('i
 for(const patch of [{full_name:''},{email:'bad'},{phone:'letters'},{full_name:'x'.repeat(257)}])await check('invalid input rejected before write',async()=>{const f=fixture();client.saveParticipantDraft(f.scope,patch);await assert.rejects(f.create());assert.equal(f.seen.length,0)})
 for(const kind of ['investor','entrepreneur'])for(const sent of [true,false])await check(`${kind} persistence independent from reported email ${sent}`,async()=>{const f=fixture(kind);f.state.sent=sent;await f.create();assert.equal(f.attempt().phase,'confirmed');assert.equal(f.attempt().receipt.sent,sent);assert.equal(f.attempt().id,String(f.createdId));assert.doesNotMatch(JSON.stringify(f.attempt()),/resetToken|NEVER_EXPOSE|password|email|phone/);const writes=f.seen.filter(x=>x.method==='POST');assert.equal(writes.length,1);assert.match(writes[0].key,/^[a-f0-9-]{36}$/);assert.equal(writes[0].path,`/api/whitelabels/${f.scope.tenant}/${kind==='investor'?'investors':'entrepreneurs'}`);await f.create();assert.equal(f.seen.filter(x=>x.method==='POST').length,1);assert.equal(client.creationState(f.scope).draft.email,'')})
 await check('double click before preflight and in-flight mutation sends once',async()=>{const f=fixture('investor','deferred'),first=f.create();await f.create();while(!f.state.release)await new Promise(r=>setTimeout(r,0));await f.create();f.state.release();await first;assert.equal(f.seen.filter(x=>x.method==='POST').length,1)})
+async function withRequestClock(run){
+ const original={setTimeout:window.setTimeout,clearTimeout:window.clearTimeout},timers=new Map();let now=0,id=0
+ window.setTimeout=(fn,delay)=>{const key=++id;timers.set(key,{fn,at:now+delay});return key};window.clearTimeout=key=>timers.delete(key)
+ const advance=ms=>{now+=ms;for(const[key,timer]of [...timers])if(timer.at<=now){timers.delete(key);timer.fn()}}
+ try{await run(advance,timers)}finally{Object.assign(window,original)}
+}
+for(const kind of ['investor','entrepreneur'])await check(`${kind} waits beyond old 20s and Core 60s budget, one async-email creation`,()=>withRequestClock(async(advance,timers)=>{
+ const f=fixture(kind,'deferred');f.state.sent=false;const pending=f.create();while(!f.state.release)await new Promise(r=>setTimeout(r,0))
+ const originalPost=structuredClone(f.seen.find(x=>x.method==='POST'))
+ for(const elapsed of [20_000,40_000,9_999]){advance(elapsed);await Promise.resolve();assert.equal(f.attempt().phase,'sending');await f.create()}
+ client.saveParticipantDraft(f.scope,{email:'different@example.invalid'});assert.equal(client.creationState(f.scope).draft.email,draft.email)
+ f.state.release();await pending;assert.equal(f.attempt().phase,'confirmed');assert.equal(f.attempt().receipt.sent,false)
+ assert.deepEqual(f.seen.filter(x=>x.method==='POST'),[originalPost]);assert.equal(timers.size,0);advance(100_000);assert.equal(f.attempt().phase,'confirmed')
+}))
+for(const kind of ['investor','entrepreneur'])await check(`${kind} real transport deadline aborts uncertain with GET-only reconciliation`,()=>withRequestClock(async(advance,timers)=>{
+ const f=fixture(kind,'deferred'),pending=f.create();while(!f.state.release)await new Promise(r=>setTimeout(r,0))
+ const originalPost=structuredClone(f.seen.find(x=>x.method==='POST'));advance(70_000);await pending
+ assert.equal(f.attempt().phase,'uncertain');assert.equal(client.creationState(f.scope).draft.email,draft.email)
+ await f.create();await client.reconcileParticipant(f.scope,f.version);assert.deepEqual(f.seen.filter(x=>x.method==='POST'),[originalPost]);assert.equal(timers.size,0)
+}))
+await check('resend retains its independent 20s deadline and never retries an uncertain send',()=>withRequestClock(async(advance,timers)=>{
+ const f=fixture('investor','deferred'),pending=f.resend();while(!f.state.release)await new Promise(r=>setTimeout(r,0))
+ advance(20_000);await pending;assert.equal(client.deliveryState(f.scope,String(f.createdId)).phase,'uncertain');await f.resend()
+ assert.equal(f.seen.filter(x=>x.method==='POST').length,1);assert.equal(timers.size,0)
+}))
 for(const code of ['400','401','403','404','409','422','429'])await check(`HTTP ${code} no false success or automatic replay`,async()=>{const f=fixture('investor',code);await f.create();assert.notEqual(f.attempt()?.phase,'confirmed');assert.equal(f.seen.filter(x=>x.method==='POST').length,1);if(code==='422')assert.equal(f.attempt().code,'E_EMAIL_TAKEN')})
 for(const mode of ['network','timeout','500commit','badBody','wrongKind','getFailure','getWrong'])await check(`${mode} reconcile only GET, uncertain locked`,async()=>{const f=fixture('entrepreneur',mode);await f.create();assert.ok(['uncertain','readback_matches'].includes(f.attempt().phase));if(['500commit','badBody','wrongKind'].includes(mode))assert.equal(f.attempt().phase,'readback_matches');const count=f.seen.filter(x=>x.method==='POST').length;client.saveParticipantDraft(f.scope,{email:'changed@example.invalid'});assert.equal(client.creationState(f.scope).draft.email,draft.email);await f.create();await client.reconcileParticipant(f.scope,f.version);assert.equal(f.seen.filter(x=>x.method==='POST').length,count)})
 await check('201 known id retained despite bad receipt',async()=>{const f=fixture('investor','badBody');await f.create();assert.equal(f.attempt().id,String(f.createdId));assert.equal(f.attempt().receipt,undefined)})

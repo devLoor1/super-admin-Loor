@@ -1,0 +1,17 @@
+.title { display: inline-flex; align-items: center; gap: 6px; }
+.slot { display: inline-grid; align-items: center; }
+.sizer { grid-area: 1 / 1; display: grid; visibility: hidden; padding-inline: 6px; }
+.sizer > span { grid-area: 1 / 1; }
+.badge {
+  grid-area: 1 / 1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgb(118 98 203 / 0.12);
+  color: #dfdbff;
+}
+.content { display: inline-flex; white-space: nowrap; }
+.char { display: inline-block; }

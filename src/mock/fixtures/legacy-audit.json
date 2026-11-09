@@ -1,0 +1,622 @@
+{
+  "PROTOTYPE_AUDIT_EVENTS": [
+    {
+      "id": "AUD-000151",
+      "actorId": "USR-SA-02",
+      "ip": "198.51.100.24",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Navegador-Exemplo/125.0",
+      "action": "kyc_case.decision_recorded",
+      "module": "compliance",
+      "result": "success",
+      "resourceType": "kyc_case",
+      "resourceId": "kyc_proto_0001",
+      "resourceLabel": "João Carvalho",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "status": "Em análise",
+        "note": null
+      },
+      "newValue": {
+        "status": "Aprovado",
+        "note": "Documentação conferida no protótipo (exemplo ilustrativo)."
+      },
+      "summary": "Caso KYC aprovado. Somente status e observação são registrados; documentos e payloads de KYC não entram na auditoria.",
+      "createdAt": "2026-03-16T16:20:00-03:00",
+      "correlationId": "corr-3b91c0d2"
+    },
+    {
+      "id": "AUD-000152",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel.activated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel",
+      "resourceId": "wl_proto_01",
+      "resourceLabel": "Finapop",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "status": "Em configuração"
+      },
+      "newValue": {
+        "status": "Ativo"
+      },
+      "summary": "Whitelabel Finapop ativado.",
+      "createdAt": "2026-09-10T09:30:00-03:00",
+      "correlationId": "corr-5e07a1f4"
+    },
+    {
+      "id": "AUD-000153",
+      "actorId": "USR-SA-02",
+      "ip": "198.51.100.24",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Navegador-Exemplo/125.0",
+      "action": "kyc_case.decision_recorded",
+      "module": "compliance",
+      "result": "success",
+      "resourceType": "kyc_case",
+      "resourceId": "kyc_proto_e106",
+      "resourceLabel": "Daniela Pires",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "status": "Em análise",
+        "note": null
+      },
+      "newValue": {
+        "status": "Reprovado",
+        "note": "Documentos da empresa divergentes do cadastro (exemplo ilustrativo)."
+      },
+      "summary": "Caso KYC reprovado. Documentos da empresa não são exibidos na auditoria.",
+      "createdAt": "2026-09-12T16:40:00-03:00",
+      "correlationId": "corr-8a42d6e1"
+    },
+    {
+      "id": "AUD-000154",
+      "actorId": "USR-SA-03",
+      "ip": "192.0.2.55",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Navegador-Exemplo/126.0",
+      "action": "gateway.created",
+      "module": "financeiro",
+      "result": "success",
+      "resourceType": "gateway",
+      "resourceId": "gw_finapop_gama",
+      "resourceLabel": "Provedor Gama",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": null,
+      "newValue": {
+        "provider": "Provedor Gama",
+        "gatewayRole": "Contingência",
+        "environment": "Produção",
+        "active": true,
+        "clientId": "••••M3X8",
+        "apiKey": "[REDACTED]",
+        "webhookSecret": "[REDACTED]"
+      },
+      "summary": "Configuração de gateway criada. Credenciais foram registradas apenas como “configuradas”, nunca o valor.",
+      "createdAt": "2026-09-14T11:10:00-03:00",
+      "correlationId": "corr-0c5f93b8"
+    },
+    {
+      "id": "AUD-000155",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel.deactivated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel",
+      "resourceId": "wl_proto_02",
+      "resourceLabel": "Loor",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "status": "Em configuração"
+      },
+      "newValue": {
+        "status": "Inativo"
+      },
+      "summary": "Whitelabel Loor desativado.",
+      "createdAt": "2026-09-18T15:00:00-03:00",
+      "correlationId": "corr-d1e8b274"
+    },
+    {
+      "id": "AUD-000156",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel.activated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel",
+      "resourceId": "wl_proto_02",
+      "resourceLabel": "Loor",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "status": "Inativo"
+      },
+      "newValue": {
+        "status": "Em configuração"
+      },
+      "summary": "Whitelabel Loor reativado (volta para “Em configuração”).",
+      "createdAt": "2026-09-19T09:20:00-03:00",
+      "correlationId": "corr-4f6a0e55"
+    },
+    {
+      "id": "AUD-000157",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "admin.paused",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "admin",
+      "resourceId": "adm_proto_005",
+      "resourceLabel": "Otávio Lima",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "access": "Ativa"
+      },
+      "newValue": {
+        "access": "Pausada"
+      },
+      "summary": "Acesso do administrador pausado.",
+      "createdAt": "2026-09-20T17:45:00-03:00",
+      "correlationId": "corr-a93c7b02"
+    },
+    {
+      "id": "AUD-000158",
+      "actorId": "USR-SA-03",
+      "ip": "192.0.2.55",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Navegador-Exemplo/126.0",
+      "action": "gateway.deactivated",
+      "module": "financeiro",
+      "result": "success",
+      "resourceType": "gateway",
+      "resourceId": "gw_finapop_gama",
+      "resourceLabel": "Provedor Gama",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "active": true
+      },
+      "newValue": {
+        "active": false
+      },
+      "summary": "Gateway de contingência desativado.",
+      "createdAt": "2026-09-21T10:00:00-03:00",
+      "correlationId": "corr-6b20f9cd"
+    },
+    {
+      "id": "AUD-000159",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "account.paused",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "account",
+      "resourceId": "inv_proto_003",
+      "resourceLabel": "Ricardo Pereira",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "access": "Ativa"
+      },
+      "newValue": {
+        "access": "Pausada"
+      },
+      "summary": "Acesso da conta de investidor pausado.",
+      "createdAt": "2026-09-26T11:50:00-03:00",
+      "correlationId": "corr-f2d4815a"
+    },
+    {
+      "id": "AUD-000160",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "opportunity.status_changed",
+      "module": "operacao",
+      "result": "success",
+      "resourceType": "opportunity",
+      "resourceId": "opp_proto_004",
+      "resourceLabel": "Rede de Clínicas",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "status": "Ativa"
+      },
+      "newValue": {
+        "status": "Pausada"
+      },
+      "summary": "Status da oportunidade Rede de Clínicas alterado de Ativa para Pausada.",
+      "createdAt": "2026-09-27T14:26:00-03:00",
+      "correlationId": "corr-19ce57a3"
+    },
+    {
+      "id": "AUD-000161",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "admin.invited",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "admin",
+      "resourceId": "adm_proto_003",
+      "resourceLabel": "Sofia Azevedo",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": null,
+      "newValue": {
+        "name": "Sofia Azevedo",
+        "email": "sofia.azevedo@example.com",
+        "role": "Somente leitura",
+        "invitation": "Pendente"
+      },
+      "summary": "Administrador convidado para o Whitelabel Finapop.",
+      "createdAt": "2026-09-29T11:40:00-03:00",
+      "correlationId": "corr-7d83e0b6"
+    },
+    {
+      "id": "AUD-000162",
+      "actorId": "USR-SA-02",
+      "ip": "198.51.100.24",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Navegador-Exemplo/125.0",
+      "action": "kyc_case.decision_recorded",
+      "module": "compliance",
+      "result": "success",
+      "resourceType": "kyc_case",
+      "resourceId": "kyc_proto_0102",
+      "resourceLabel": "Maria Silva",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "status": "Em análise",
+        "note": null
+      },
+      "newValue": {
+        "status": "Reprovado",
+        "note": "Documento de identificação ilegível; nova submissão tratada em outro caso."
+      },
+      "summary": "Caso KYC reprovado. O conteúdo do documento não é registrado.",
+      "createdAt": "2026-09-30T11:18:00-03:00",
+      "correlationId": "corr-2a6f4c19"
+    },
+    {
+      "id": "AUD-000163",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel_settings.updated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel_settings",
+      "resourceId": "wl_proto_02",
+      "resourceLabel": "Loor · Experiência",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "ctaLabel": "Ver oportunidades"
+      },
+      "newValue": {
+        "ctaLabel": "Explorar oportunidades"
+      },
+      "summary": "Texto do botão principal do Whitelabel Loor atualizado.",
+      "createdAt": "2026-10-01T09:12:00-03:00",
+      "correlationId": "corr-c48b1e70"
+    },
+    {
+      "id": "AUD-000164",
+      "actorId": "USR-SA-03",
+      "ip": "192.0.2.55",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Navegador-Exemplo/126.0",
+      "action": "gateway.activated",
+      "module": "financeiro",
+      "result": "success",
+      "resourceType": "gateway",
+      "resourceId": "gw_loor_alfa",
+      "resourceLabel": "Provedor Alfa",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": {
+        "active": false
+      },
+      "newValue": {
+        "active": true
+      },
+      "summary": "Gateway principal do Whitelabel Loor ativado (Sandbox).",
+      "createdAt": "2026-10-02T10:30:00-03:00",
+      "correlationId": "corr-91f2a6d8"
+    },
+    {
+      "id": "AUD-000165",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "opportunity.status_changed",
+      "module": "operacao",
+      "result": "success",
+      "resourceType": "opportunity",
+      "resourceId": "opp_proto_001",
+      "resourceLabel": "Expansão Sul",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "status": "Rascunho"
+      },
+      "newValue": {
+        "status": "Ativa"
+      },
+      "summary": "Status da oportunidade Expansão Sul alterado de Rascunho para Ativa.",
+      "createdAt": "2026-10-03T14:32:00-03:00",
+      "correlationId": "corr-5c0d82fe"
+    },
+    {
+      "id": "AUD-000166",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "opportunity.classification_updated",
+      "module": "operacao",
+      "result": "success",
+      "resourceType": "opportunity",
+      "resourceId": "opp_proto_007",
+      "resourceLabel": "Modernização Fabril",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "modality": "Equity",
+        "resourceUses": [
+          "Modernização"
+        ]
+      },
+      "newValue": {
+        "modality": "Debt",
+        "resourceUses": [
+          "Modernização",
+          "Capital de Giro"
+        ]
+      },
+      "summary": "Modalidade (Equity → Debt) e usos dos recursos da oportunidade atualizados. Segmentos sem alteração.",
+      "createdAt": "2026-10-03T17:02:00-03:00",
+      "correlationId": "corr-e7a3940b"
+    },
+    {
+      "id": "AUD-000167",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel.created",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel",
+      "resourceId": "wl_proto_03",
+      "resourceLabel": "Nova Plataforma",
+      "whitelabelId": "wl_proto_03",
+      "oldValue": null,
+      "newValue": {
+        "name": "Nova Plataforma",
+        "domain": "plataforma.com.br",
+        "slug": "nova-plataforma",
+        "status": "Rascunho"
+      },
+      "summary": "Whitelabel criado como Rascunho.",
+      "createdAt": "2026-10-04T10:12:00-03:00",
+      "correlationId": "corr-0f9b6c31"
+    },
+    {
+      "id": "AUD-000168",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "admin.invited",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "admin",
+      "resourceId": "adm_proto_006",
+      "resourceLabel": "Isabela Fonseca",
+      "whitelabelId": "wl_proto_03",
+      "oldValue": null,
+      "newValue": {
+        "name": "Isabela Fonseca",
+        "email": "isabela.fonseca@example.com",
+        "role": "Administrador do Whitelabel",
+        "invitation": "Pendente"
+      },
+      "summary": "Administrador convidado para o Whitelabel Nova Plataforma.",
+      "createdAt": "2026-10-04T10:31:00-03:00",
+      "correlationId": "corr-b25e7d44"
+    },
+    {
+      "id": "AUD-000169",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "smtp.test_sent",
+      "module": "plataformas",
+      "result": "failure",
+      "resourceType": "smtp",
+      "resourceId": "wl_proto_02",
+      "resourceLabel": "Loor SMTP",
+      "whitelabelId": "wl_proto_02",
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Teste de envio recusado: falha de autenticação no servidor SMTP (mensagem sanitizada; nenhuma credencial registrada).",
+      "createdAt": "2026-10-05T16:05:00-03:00",
+      "correlationId": "corr-3e1a9f60"
+    },
+    {
+      "id": "AUD-000170",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "whitelabel_settings.updated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "whitelabel_settings",
+      "resourceId": "wl_proto_01",
+      "resourceLabel": "Finapop · Identidade e textos",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "slogan": "Invista com simplicidade.",
+        "primaryColor": "#4F46E5"
+      },
+      "newValue": {
+        "slogan": "Seu dinheiro, mais oportunidades.",
+        "primaryColor": "#6366F1"
+      },
+      "summary": "Slogan e cor primária do Whitelabel Finapop atualizados.",
+      "createdAt": "2026-10-06T15:20:00-03:00",
+      "correlationId": "corr-8c47d2a9"
+    },
+    {
+      "id": "AUD-000171",
+      "actorId": "USR-SA-03",
+      "ip": "192.0.2.55",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Navegador-Exemplo/126.0",
+      "action": "gateway.credentials_updated",
+      "module": "financeiro",
+      "result": "success",
+      "resourceType": "gateway",
+      "resourceId": "gw_finapop_alfa",
+      "resourceLabel": "Provedor Alfa",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "apiKey": "[REDACTED]",
+        "webhookSecret": "[REDACTED]"
+      },
+      "newValue": {
+        "apiKey": "[REDACTED]",
+        "webhookSecret": "[REDACTED]"
+      },
+      "summary": "Credenciais do gateway substituídas. Os valores nunca são exibidos.",
+      "createdAt": "2026-10-06T16:20:00-03:00",
+      "correlationId": "corr-61b0e8f3"
+    },
+    {
+      "id": "AUD-000172",
+      "actorId": "USR-SA-02",
+      "ip": "198.51.100.24",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Navegador-Exemplo/125.0",
+      "action": "auth.login_succeeded",
+      "module": "sistema",
+      "result": "success",
+      "resourceType": "session",
+      "resourceId": null,
+      "resourceLabel": "Control Plane",
+      "whitelabelId": null,
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Login no Control Plane. Tokens e cabeçalhos de autorização não são registrados.",
+      "createdAt": "2026-10-07T08:30:00-03:00",
+      "correlationId": "corr-a07c3b5e"
+    },
+    {
+      "id": "AUD-000173",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "smtp.updated",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "smtp",
+      "resourceId": "wl_proto_01",
+      "resourceLabel": "Finapop SMTP",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": {
+        "host": "smtp-antigo.example.com",
+        "port": 465,
+        "security": "SSL/TLS",
+        "password": "[REDACTED]"
+      },
+      "newValue": {
+        "host": "smtp.example.com",
+        "port": 587,
+        "security": "STARTTLS",
+        "password": "[REDACTED]"
+      },
+      "summary": "Servidor SMTP do Whitelabel Finapop atualizado. A senha foi substituída e nunca é exibida.",
+      "createdAt": "2026-10-07T09:47:00-03:00",
+      "correlationId": "corr-4d92f61c"
+    },
+    {
+      "id": "AUD-000174",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "smtp.test_sent",
+      "module": "plataformas",
+      "result": "success",
+      "resourceType": "smtp",
+      "resourceId": "wl_proto_01",
+      "resourceLabel": "Finapop SMTP",
+      "whitelabelId": "wl_proto_01",
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Mensagem de teste aceita pelo servidor SMTP (ilustrativo).",
+      "createdAt": "2026-10-07T09:52:00-03:00",
+      "correlationId": "corr-4d92f61c"
+    },
+    {
+      "id": "AUD-000175",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "auth.logout",
+      "module": "sistema",
+      "result": "success",
+      "resourceType": "session",
+      "resourceId": null,
+      "resourceLabel": "Control Plane",
+      "whitelabelId": null,
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Sessão encerrada pelo operador.",
+      "createdAt": "2026-10-07T19:02:00-03:00",
+      "correlationId": "corr-c3f81d07"
+    },
+    {
+      "id": "AUD-000176",
+      "actorId": null,
+      "ip": "203.0.113.77",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "auth.login_failed",
+      "module": "sistema",
+      "result": "failure",
+      "resourceType": "session",
+      "resourceId": null,
+      "resourceLabel": "Control Plane",
+      "whitelabelId": null,
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Credenciais inválidas. O identificador e a senha informados não são registrados.",
+      "createdAt": "2026-10-08T08:57:00-03:00",
+      "correlationId": "corr-e5b6a2d9"
+    },
+    {
+      "id": "AUD-000177",
+      "actorId": "USR-SA-01",
+      "ip": "203.0.113.10",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Navegador-Exemplo/126.0",
+      "action": "auth.login_succeeded",
+      "module": "sistema",
+      "result": "success",
+      "resourceType": "session",
+      "resourceId": null,
+      "resourceLabel": "Control Plane",
+      "whitelabelId": null,
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Login no Control Plane. Tokens e cabeçalhos de autorização não são registrados.",
+      "createdAt": "2026-10-08T08:58:00-03:00",
+      "correlationId": "corr-17d0c4ab"
+    },
+    {
+      "id": "AUD-000178",
+      "actorId": "USR-SA-03",
+      "ip": "192.0.2.55",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Navegador-Exemplo/126.0",
+      "action": "auth.login_succeeded",
+      "module": "sistema",
+      "result": "success",
+      "resourceType": "session",
+      "resourceId": null,
+      "resourceLabel": "Control Plane",
+      "whitelabelId": null,
+      "oldValue": null,
+      "newValue": null,
+      "summary": "Login no Control Plane. Tokens e cabeçalhos de autorização não são registrados.",
+      "createdAt": "2026-10-08T09:15:00-03:00",
+      "correlationId": "corr-9a2e5f18"
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+.figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.body {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 177px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
+  margin-top: 18px;
+  padding: 0 0 0 4px;
+}
+
+.donut {
+  position: relative;
+  width: 177px;
+  height: 177px;
+  margin: 0;
+}
+
+.donut svg {
+  width: 100%;
+  height: 100%;
+}
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.centerValue {
+  max-width: 112px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-on-dark);
+}
+
+.centerLabel {
+  font-size: 11.5px;
+  line-height: 15px;
+  color: var(--text-on-dark-muted);
+}
+
+.legendViewport {
+  min-width: 0;
+  max-height: 177px;
+  overflow: auto;
+  scrollbar-width: thin;
+  padding: 4px;
+}
+
+.legendViewport:focus-visible {
+  outline: 2px solid var(--accent, #a89aff);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.legend {
+  display: grid;
+  align-content: center;
+  width: 100%;
+  max-width: 360px;
+  min-width: 0;
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  min-height: 39px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.legendRow:last-child {
+  border-bottom: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legendName {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-on-dark);
+}
+
+.legendValue {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+}
+
+.message {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  color: var(--text-on-dark-secondary);
+}
+
+.message p { margin: 8px 0; }
+.message code { font-size: 10px; }
+
+.caption {
+  margin-top: 12px;
+  font-size: 10.5px;
+  line-height: 15px;
+  color: var(--text-on-dark-muted);
+}
+
+/* Narrow panel: donut above the legend. */
+@container (max-width: 360px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    row-gap: 18px;
+    padding: 0;
+  }
+
+  .legend {
+    width: 100%;
+  }
+}

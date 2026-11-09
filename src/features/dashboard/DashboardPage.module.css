@@ -1,0 +1,163 @@
+/*
+ * Grid follows the approved image at 1:1 (1672px viewport):
+ *   KPI row        5 equal cards
+ *   overview       full width
+ *   middle row     527 / 422 / 359 (status keeps ≥344px)
+ *   bottom row     765 / 558 (quick actions keep ≥560px)
+ * Below 1360px the middle and bottom rows restack instead of shrinking.
+ */
+.dashboard {
+  display: grid;
+  gap: 15px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.kpiCell {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .dashboard[data-operational] .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dashboard[data-operational] .middle { grid-template-columns: minmax(0, 527fr) minmax(0, 422fr); }
+  .dashboard[data-operational] .activity { grid-column: auto; }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .dashboard[data-operational] .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard[data-operational] .kpiCell { grid-column: auto; }
+  .dashboard[data-operational] .distribution { grid-column: 1 / -1; }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .dashboard[data-operational] .kpiCell:last-child { grid-column: auto; }
+}
+
+/* `GET /dashboard` failed: the cards show "—"; this row explains why and offers a retry. */
+.kpiError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.kpiError > svg {
+  flex: none;
+  color: #e8cf9c;
+}
+
+.kpiErrorText {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.kpiErrorText strong {
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.kpiErrorCode {
+  font-size: 11.5px;
+  color: var(--text-on-dark);
+}
+
+.kpiRetry {
+  flex: none;
+}
+
+.middle {
+  display: grid;
+  grid-template-columns: minmax(0, 527fr) minmax(0, 422fr) minmax(344px, 359fr);
+  gap: 15px;
+  min-height: 276px;
+}
+
+.bottom {
+  display: grid;
+  /* Quick actions keep ≥560px so tile titles and descriptions stay on one line. */
+  grid-template-columns: minmax(0, 765fr) minmax(560px, 558fr);
+  gap: 16px;
+}
+
+/* Laptop: activity gets the full row; events and quick actions stack. */
+@media (max-width: 1359px) {
+  .middle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activity {
+    grid-column: 1 / -1;
+  }
+
+  .bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tablet: KPI cards 3 + 2. */
+@media (max-width: 1199px) {
+  .kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .kpiCell {
+    grid-column: span 2;
+  }
+
+  .kpiCell:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 899px) {
+  .middle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile: two KPI columns, then one. */
+@media (max-width: 767px) {
+  .dashboard,
+  .kpis {
+    gap: 12px;
+  }
+
+  .middle,
+  .bottom {
+    gap: 12px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpiCell,
+  .kpiCell:nth-child(n + 4) {
+    grid-column: auto;
+  }
+
+  .kpiCell:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 479px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

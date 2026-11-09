@@ -1,0 +1,511 @@
+/*
+ * Finance Core V1 (Investimentos, Pagamentos / PIX, Wallet) — shared pieces.
+ * Page frame, filters, table, hero, tabs, notes and domain-navigation styles
+ * come from the Operation stylesheet (shared/Operation.module.css) and the
+ * shared Finance surfaces (finance-gateways/sections/FinanceSections.module.css).
+ */
+
+/* ---------- Values ---------- */
+
+/* An amount the Control Plane did not provide: an explicit state, never "R$ 0,00". */
+.moneyUnavailable {
+  font-size: 12px;
+  font-style: italic;
+  white-space: nowrap;
+  color: var(--text-on-dark-muted);
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-on-dark);
+}
+
+.methodTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-on-dark);
+}
+
+.methodTag svg {
+  flex: none;
+  color: var(--tone-teal-fg);
+}
+
+.directionTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 1px 9px 1px 7px;
+  border: 1px solid var(--tone-teal-border);
+  border-radius: 7px;
+  background: var(--tone-teal-bg);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--tone-teal-fg);
+}
+
+.directionTag[data-direction='debit'],
+.directionTag[data-kind='out'] {
+  border-color: rgb(240 120 145 / 0.4);
+  background: rgb(232 92 120 / 0.1);
+  color: #f6b3c0;
+}
+
+.dateStack {
+  display: grid;
+  font-size: 12.5px;
+  line-height: 17px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-on-dark-secondary);
+}
+
+.dateStack > :last-child {
+  color: var(--text-on-dark-muted);
+}
+
+/* ---------- References ---------- */
+
+.refAvatar {
+  flex: none;
+}
+
+.refLink,
+.refName {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.refLink {
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.refLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.refLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.gatewayTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--text-on-dark);
+}
+
+.gatewayMark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 7px;
+  background: var(--tone-indigo-bg);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tone-indigo-fg);
+}
+
+/* ---------- Key / value list (detail cards) ---------- */
+
+.kv {
+  display: grid;
+  margin: 12px 0 0;
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 34px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.kvRow:last-child {
+  border-bottom: 0;
+}
+
+.kv dt {
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.kv dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+@container (max-width: 360px) {
+  .kvRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+/* ---------- Detail hero ---------- */
+
+.heroCard {
+  container-type: inline-size;
+  min-width: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.02) 0%, rgb(255 255 255 / 0) 40%),
+    #131a28;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.025),
+    0 14px 32px -22px rgb(0 0 0 / 0.7);
+}
+
+.heroAvatar {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid #474f8a;
+  border-radius: 50%;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.1) 0%, rgb(255 255 255 / 0) 60%),
+    #2a2f58;
+  box-shadow: 0 0 0 3px rgb(139 129 255 / 0.12);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #e6e9f8;
+}
+
+@media (max-width: 479px) {
+  .heroAvatar {
+    width: 44px;
+    height: 44px;
+    font-size: 13px;
+  }
+}
+
+/* ---------- Detail cards ---------- */
+
+/* Inactive tab panels stay out of the layout and out of the focus order. */
+.panel[hidden] {
+  display: none;
+}
+
+.cardActions {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.primaryLink {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  width: 100%;
+  height: auto;
+  min-height: 42px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  white-space: normal;
+  text-decoration: none;
+}
+
+.emptyLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.emptyLine svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.tableWrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* `.optional` columns hide in narrow cards; their data is repeated in `.inline`. */
+.inline {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+@container (max-width: 560px) {
+  .miniTable thead,
+  .optional {
+    display: none;
+  }
+
+  .inline {
+    display: flex;
+  }
+}
+
+.viaTag {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 7px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.pendingButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: #c3bfff;
+  text-align: left;
+  text-decoration: underline dashed;
+  text-decoration-color: rgb(195 191 255 / 0.45);
+  text-underline-offset: 3px;
+}
+
+.pendingButton:hover {
+  color: #dedbff;
+}
+
+.pendingButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* ---------- Lists ---------- */
+
+/* Wide list card with four selects (e.g. 1672px viewport): search, selects and "Limpar filtros" on one row,
+   as in the approved images. Lists with five selects keep the shared rule (one row from 1500px). */
+@container (min-width: 1280px) {
+  .filtersWide.filtersWide {
+    grid-template-columns: minmax(240px, var(--search-fr, 1.5fr)) minmax(0, 3.6fr) auto;
+    grid-template-areas: 'search selects clear';
+  }
+}
+
+/* Sort select: hidden by default; each list shows it once sortable columns collapse. */
+.sortBar {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+}
+
+.sortLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-on-dark-muted);
+}
+
+.sortField {
+  flex: 0 1 290px;
+  height: 36px;
+}
+
+.sortField select {
+  font-size: 12.5px;
+}
+
+/* ---------- Finance Read V1: read states ---------- */
+
+.ignoredNote,
+.scopeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.ignoredNote {
+  color: #e8cf9c;
+}
+
+.scopeNote {
+  color: var(--text-on-dark-secondary);
+}
+
+.ignoredNote svg,
+.scopeNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.skeletonRow td {
+  cursor: default;
+}
+
+.skeleton {
+  display: block;
+  width: min(100%, 110px);
+  height: 10px;
+  border-radius: 6px;
+  background: var(--surface-track);
+  opacity: 0.55;
+  animation: fc-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeletonRow:nth-child(even) .skeleton {
+  width: min(100%, 80px);
+}
+
+.skeletonWide {
+  width: min(100%, 170px);
+  height: 12px;
+}
+
+@keyframes fc-skeleton {
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.feedback,
+.feedbackCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.feedback {
+  padding: 34px 16px 26px;
+}
+
+.feedbackCompact {
+  padding: 18px 8px 10px;
+}
+
+.diagnostic {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+.pageGap {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 34px;
+  font-size: 12.5px;
+  color: var(--text-on-dark-muted);
+}
+
+.detailLoading {
+  display: grid;
+  gap: 14px;
+  min-height: 180px;
+  align-content: start;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.partialTag {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-on-dark-muted);
+}
+
+.dataNote {
+  color: var(--text-on-dark-muted);
+}
+
+.filterInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text-on-dark-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.filterInline:hover {
+  color: var(--text-on-dark);
+}
+
+.filterInline:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--focus-ring-dark);
+}

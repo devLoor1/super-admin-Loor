@@ -1,0 +1,10 @@
+/* Simulated public page frame (mock only). Scoped to .wl-public-shell. */
+.wl-public-shell { min-height: 100vh; background: #fff; color: #0f1729; }
+.wl-public-shell .wl-public-bar { margin: 0; padding: 8px 16px; background: #fff7e0; border-bottom: 1px solid #f0d58a; color: #4a3a0b; font: 500 13px/1.5 'Inter Variable', 'Inter', system-ui, sans-serif; text-align: center; }
+.wl-public-shell .wl-public-bar a { color: #0a1e85; text-decoration: underline; text-underline-offset: 3px; }
+.wl-public-shell .wl-public-unavailable { max-width: 720px; margin: 0 auto; padding: 72px 24px; font-family: 'Inter Variable', 'Inter', system-ui, sans-serif; }
+.wl-public-shell .wl-public-unavailable h1 { margin: 0 0 16px; font-size: 28px; line-height: 1.2; }
+.wl-public-shell .wl-public-unavailable p { margin: 0; color: #536079; line-height: 1.6; }
+.wl-public-shell .wl-public-unavailable a { color: #0a1e85; text-decoration: underline; }
+/* Saved projection while a draft exists in this tab: states which version is shown (B2). */
+.wl-public-shell .wl-public-bar--draft { background: #eef3ff; border-bottom-color: #c7d4fb; color: #1d2a55; }

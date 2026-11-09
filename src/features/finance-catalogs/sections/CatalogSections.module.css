@@ -1,0 +1,316 @@
+/*
+ * Segmentos e usos dos recursos — catalog-specific pieces. Card, table,
+ * search/filter, summary and activity primitives come from the shared Finance
+ * stylesheet (finance-gateways/sections/FinanceSections.module.css).
+ */
+
+/* ---------- Catalog panel ---------- */
+
+.panel {
+  gap: 0;
+}
+
+.panelHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 14px;
+}
+
+.panelHeading {
+  min-width: 0;
+}
+
+.tealButton {
+  border-color: rgb(95 227 221 / 0.45);
+  background: linear-gradient(180deg, #15806f 0%, #0f6f61 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    0 10px 26px -12px rgb(40 200 170 / 0.7);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 180px) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.count {
+  font-size: 12.5px;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.colName {
+  min-width: 0;
+}
+
+.name {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 19px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.colDesc {
+  font-size: 12.5px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.colStatus {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.colActions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.empty {
+  font-style: italic;
+  color: var(--text-on-dark-faint);
+}
+
+.descInline,
+.statusInline {
+  display: none;
+}
+
+.actionButton {
+  border-color: var(--surface-border);
+  background: rgb(255 255 255 / 0.02);
+}
+
+.deleteButton {
+  color: #f07890;
+}
+
+.deleteButton:hover {
+  border-color: rgb(240 120 145 / 0.5);
+  background: rgb(232 92 120 / 0.1);
+}
+
+.table tr[data-recent] td {
+  background: rgb(98 90 230 / 0.08);
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+.sortButton:hover {
+  color: var(--text-on-dark);
+}
+
+.sortButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.sortIcon {
+  color: var(--text-on-dark-muted);
+}
+
+.sortIcon[data-active] {
+  color: var(--color-accent-glow);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.range {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-on-dark-muted);
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+}
+
+.pageButton {
+  display: grid;
+  place-items: center;
+  min-width: 33px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #262f45;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.015);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-on-dark-secondary);
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: var(--surface-border-strong);
+  color: var(--text-on-dark);
+}
+
+.pageButton[aria-current='page'] {
+  border-color: #5d58e6;
+  background: rgb(96 88 240 / 0.2);
+  box-shadow: 0 0 14px -5px rgb(116 104 255 / 0.8);
+  color: var(--text-on-dark);
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pageButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* Narrower catalog cards (container queries on the card). */
+@container (max-width: 600px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 170px);
+  }
+
+  .count {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 540px) {
+  .colDesc {
+    display: none;
+  }
+
+  .descInline {
+    display: block;
+    margin-top: 2px;
+    font-size: 11.5px;
+    line-height: 16px;
+    color: var(--text-on-dark-muted);
+    overflow-wrap: anywhere;
+  }
+}
+
+@container (max-width: 420px) {
+  .panelHeader {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .panelHeader > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .colStatus,
+  .table thead {
+    display: none;
+  }
+
+  .statusInline {
+    display: flex;
+    margin-top: 6px;
+  }
+}
+
+/* ---------- Notes + session activity ---------- */
+
+.bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 14px 15px;
+  min-width: 0;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.notesIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tone-blue-border);
+  border-radius: 50%;
+  background: var(--tone-blue-bg);
+  color: var(--tone-blue-fg);
+}
+
+.notesList {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.notesList li {
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--text-on-dark-secondary);
+}
+
+.notesList li::marker {
+  color: var(--text-on-dark-muted);
+}
+
+.catalogTag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  vertical-align: 1px;
+}
+
+.catalogTag[data-catalog='segment'] {
+  border-color: var(--tone-violet-border);
+  color: var(--tone-violet-fg);
+}
+
+.catalogTag[data-catalog='resource_use'] {
+  border-color: var(--tone-teal-border);
+  color: var(--tone-teal-fg);
+}
+
+@media (max-width: 1199px) {
+  .bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,720 @@
+/*
+ * Desktop geometry follows the approved Dashboard image at 1:1
+ * (1672px viewport → 262px sidebar). Breakpoints:
+ *   ≥1200px  full sidebar
+ *   768–1199 icon rail (labels become tooltips)
+ *   <768     off-canvas drawer
+ */
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding: 30px 17px 40px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid var(--shell-sidebar-border);
+  background:
+    radial-gradient(ellipse 90% 40% at 0% 0%, rgb(56 66 112 / 0.28), transparent 70%),
+    linear-gradient(180deg, #151b2c 0%, var(--shell-sidebar-bg) 40%, #121726 100%);
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border-strong) transparent;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---------- Brand ---------- */
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  margin-bottom: 32px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 19px;
+  padding: 2px 4px 2px 13px;
+  border-radius: 8px;
+  color: var(--text-on-dark);
+  text-decoration: none;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--color-accent-glow);
+  outline-offset: 2px;
+}
+
+.brandIcon {
+  flex: none;
+  color: #dfe3ff;
+  filter: drop-shadow(0 0 6px rgb(139 129 255 / 0.65));
+}
+
+.brandText {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.closeButton {
+  display: none;
+}
+
+.visibilityNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 8px;
+  color: var(--text-on-dark-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+.visibilityNotice > svg { flex: none; margin-top: 1px; }
+.visibilityText { min-width: 0; overflow-wrap: anywhere; }
+.visibilityRetry {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-on-dark);
+  cursor: pointer;
+}
+.visibilityRetry:focus-visible { outline: 2px solid var(--color-accent-glow); outline-offset: 2px; }
+@media (min-width: 768px) and (max-width: 1199px) {
+  .visibilityNotice { flex-wrap: wrap; justify-content: center; padding: 4px; }
+  .visibilityText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+
+@media (max-width: 1599px) {
+  .brandText {
+    letter-spacing: 0.2em;
+  }
+}
+
+/* ---------- Navigation ---------- */
+
+.primary,
+.utility {
+  position: relative;
+}
+
+.list,
+.listCompact {
+  display: grid;
+  gap: 4px;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 29px;
+  width: 100%;
+  height: 52px;
+  padding: 0 14px 0 22px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-tile);
+  background: transparent;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-on-dark-secondary);
+  text-align: left;
+  text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.listCompact .item {
+  height: 44px;
+  font-size: 14px;
+}
+
+.itemIcon {
+  flex: none;
+  color: var(--icon-on-dark);
+  transition: color var(--transition-fast);
+}
+
+.itemLabel {
+  white-space: nowrap;
+}
+
+.item:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text-on-dark);
+}
+
+.item:hover .itemIcon {
+  color: #dfe5f7;
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--color-accent-glow);
+  outline-offset: -2px;
+}
+
+.item[data-active] {
+  border-color: rgb(150 145 255 / 0.16);
+  background: linear-gradient(90deg, rgb(102 94 232 / 0.22) 0%, rgb(58 62 140 / 0.12) 60%, rgb(40 46 96 / 0.08) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 0 26px -10px rgb(116 104 255 / 0.55);
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+.item[data-active]::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: -1px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-accent-glow);
+  box-shadow: 0 0 10px rgb(139 129 255 / 0.9);
+}
+
+.item[data-active] .itemIcon {
+  color: #cfc9ff;
+  filter: drop-shadow(0 0 5px rgb(139 129 255 / 0.55));
+}
+
+/* ---------- Nested screens (shown under the active domain) ---------- */
+
+.subList {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 6px 33px;
+  padding-left: 9px;
+}
+
+/* Guide line aligned with the parent icon. */
+.subList::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 1px;
+  background: rgb(150 160 210 / 0.18);
+}
+
+.subItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px 0 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-on-dark-secondary);
+  text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.subItem:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text-on-dark);
+}
+
+.subItem:focus-visible {
+  outline: 2px solid var(--color-accent-glow);
+  outline-offset: -2px;
+}
+
+.subItem[data-active] {
+  border-color: rgb(150 145 255 / 0.14);
+  background: rgb(102 94 232 / 0.16);
+  font-weight: 600;
+  color: var(--text-on-dark);
+}
+
+/* Current marker sits on the guide line. */
+.subItem[data-active]::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -11px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-accent-glow);
+  box-shadow: 0 0 8px rgb(139 129 255 / 0.8);
+}
+
+/* Full sidebar and drawer: text only, as in the approved direction. */
+.subIcon {
+  display: none;
+  flex: none;
+  color: var(--icon-on-dark);
+}
+
+.subLabel {
+  white-space: nowrap;
+}
+
+/* Long screen names (e.g. "Segmentos e usos dos recursos") wrap instead of
+   overflowing the full sidebar / drawer; short labels keep the fixed row. The
+   icon rail (768–1199px) keeps its own fixed entries. */
+@media (min-width: 1200px), (max-width: 767px) {
+  .subItem:has(> .subLabel[data-long]) {
+    height: auto;
+    min-height: 36px;
+  }
+
+  .subLabel[data-long] {
+    padding: 8px 0;
+    line-height: 17px;
+    white-space: normal;
+  }
+}
+
+/* ---------- Bottom: utility + concept lines ---------- */
+
+.bottom {
+  display: grid;
+  gap: 40px;
+  margin-top: auto;
+  padding-top: 32px;
+}
+
+.footer {
+  padding-left: 23px;
+}
+
+.footerDash {
+  display: block;
+  width: 15px;
+  height: 2px;
+  margin-bottom: 17px;
+  background: rgb(255 255 255 / 0.65);
+}
+
+.pillars {
+  display: grid;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-on-dark-muted);
+}
+
+@media (max-height: 760px) and (min-width: 1200px) {
+  .footer {
+    display: none;
+  }
+}
+
+/* Nested screens add rows: drop the decorative lines a little earlier and
+   tighten the nested entries so four screens fit common laptop heights. */
+@media (max-height: 860px) and (min-width: 1200px) {
+  .sidebar:has(.subList) .footer {
+    display: none;
+  }
+
+  .subItem {
+    height: 34px;
+  }
+
+  .subLabel[data-long] {
+    padding: 7px 0;
+  }
+}
+
+/* ---------- Icon rail (tablet / small laptop) ---------- */
+
+@media (max-width: 1199px) and (min-width: 768px) {
+  .sidebar {
+    align-items: center;
+    padding: 22px 12px 24px;
+    overflow: visible;
+  }
+
+  .brandRow {
+    margin-bottom: 28px;
+  }
+
+  .brand {
+    padding: 4px;
+  }
+
+  .brandText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .item,
+  .listCompact .item {
+    justify-content: center;
+    width: 50px;
+    height: 48px;
+    padding: 0;
+  }
+
+  .itemLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  /* Tooltip: the visible label moves next to the icon on hover/focus. */
+  .item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 12px);
+    z-index: 2;
+    padding: 6px 10px;
+    border: 1px solid var(--surface-border-strong);
+    border-radius: 6px;
+    background: #1d2337;
+    box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.8);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-on-dark);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-4px, -50%);
+    transition:
+      opacity var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .item:hover::after,
+  .item:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+
+  .item[data-active]::before {
+    top: 10px;
+    bottom: 10px;
+  }
+
+  .bottom {
+    gap: 0;
+  }
+
+  .footer {
+    display: none;
+  }
+}
+
+/* Icon rail: nested screens become compact icon entries with tooltips. */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .subList {
+    justify-items: center;
+    margin: 4px 0 2px;
+    padding: 4px 0 0;
+  }
+
+  .subList::before {
+    top: 0;
+    right: 14px;
+    bottom: auto;
+    left: 14px;
+    width: auto;
+    height: 1px;
+  }
+
+  .subItem {
+    justify-content: center;
+    width: 42px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .subIcon {
+    display: block;
+  }
+
+  .subLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .subItem[data-active]::before {
+    top: 9px;
+    bottom: 9px;
+    left: -1px;
+  }
+
+  .subItem::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 16px);
+    z-index: 2;
+    padding: 6px 10px;
+    border: 1px solid var(--surface-border-strong);
+    border-radius: 6px;
+    background: #1d2337;
+    box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.8);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-on-dark);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-4px, -50%);
+    transition:
+      opacity var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .subItem:hover::after,
+  .subItem:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+/* Icon rail on short screens with nested screens: compact rows so the
+   utility entries stay reachable (domains without nested screens are unchanged). */
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 800px) {
+  .sidebar:has(.subList) .brandRow {
+    margin-bottom: 18px;
+  }
+
+  .sidebar:has(.subList) .item {
+    height: 42px;
+  }
+
+  .sidebar:has(.subList) .subItem {
+    height: 32px;
+  }
+}
+
+/* Short icon rail: keep all four nested entries and both utilities visible. */
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 650px) {
+  .sidebar:has(.subList) {
+    padding-top: 14px;
+    padding-bottom: 16px;
+  }
+
+  .sidebar:has(.subList) .brandRow {
+    margin-bottom: 8px;
+  }
+
+  .sidebar:has(.subList) .item {
+    height: 36px;
+  }
+
+  .sidebar:has(.subList) .subItem {
+    height: 28px;
+  }
+
+  .sidebar:has(.subList) .bottom {
+    padding-top: 12px;
+  }
+}
+
+/* ---------- Mobile drawer ---------- */
+
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    width: min(300px, 86vw);
+    height: auto;
+    padding: 20px 16px 28px;
+    box-shadow: 24px 0 48px -24px rgb(0 0 0 / 0.8);
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform 220ms ease,
+      visibility 0s linear 220ms;
+  }
+
+  .sidebar[data-open] {
+    visibility: visible;
+    transform: none;
+    transition: transform 220ms ease;
+  }
+
+  .brandRow {
+    margin-bottom: 24px;
+  }
+
+  .brand {
+    gap: 14px;
+    padding-left: 8px;
+  }
+
+  .brandIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brandText {
+    font-size: 14px;
+  }
+
+  .closeButton {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.02);
+    color: var(--text-on-dark-secondary);
+  }
+
+  .closeButton:focus-visible {
+    outline: 2px solid var(--color-accent-glow);
+    outline-offset: 2px;
+  }
+
+  .item {
+    height: 48px;
+    gap: 18px;
+    padding-left: 16px;
+  }
+
+  .bottom {
+    gap: 28px;
+  }
+
+  .footer {
+    padding-left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar[data-open] {
+    transition: none;
+  }
+}
+
+/* Drawer: nested screens align with the narrower drawer rows. */
+@media (max-width: 767px) {
+  .subList {
+    margin-left: 27px;
+  }
+
+  .subItem {
+    height: 40px;
+  }
+}
+
+/* Financeiro lists six nested screens (three tenant-first + three global
+   Finance Core lists). Same approach as above, one step denser and only when
+   the active domain has five or more entries: the decorative lines go first,
+   then laptop heights tighten the rows so the utility entries stay visible
+   (shorter windows keep the sidebar's own scroll, as before). */
+@media (max-height: 1020px) and (min-width: 1200px) {
+  .sidebar:has(.subList > li:nth-child(5)) .footer {
+    display: none;
+  }
+}
+
+@media (max-height: 860px) and (min-width: 1200px) {
+  .sidebar:has(.subList > li:nth-child(5)) {
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .brandRow {
+    margin-bottom: 20px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .item {
+    height: 44px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .listCompact .item {
+    height: 40px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 30px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem:has(> .subLabel[data-long]) {
+    height: auto;
+    min-height: 30px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subLabel[data-long] {
+    padding: 5px 0;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .bottom {
+    padding-top: 16px;
+  }
+}
+
+/* Short icon rail with five or more nested entries: slightly shorter rows. */
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 650px) {
+  .sidebar:has(.subList > li:nth-child(5)) .subList {
+    margin: 2px 0 0;
+    padding-top: 2px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 26px;
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) and (max-height: 580px) {
+  .sidebar:has(.subList > li:nth-child(5)) .item {
+    height: 32px;
+  }
+
+  .sidebar:has(.subList > li:nth-child(5)) .subItem {
+    height: 24px;
+  }
+}

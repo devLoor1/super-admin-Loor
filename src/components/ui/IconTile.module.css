@@ -1,0 +1,69 @@
+.tile {
+  --tile-fg: var(--text-on-dark);
+  --tile-bg: #1d2333;
+  --tile-border: var(--surface-border);
+
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 41px;
+  height: 41px;
+  border: 1px solid var(--tile-border);
+  border-radius: 9px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0) 55%),
+    var(--tile-bg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  color: var(--tile-fg);
+}
+
+.tile[data-size='lg'] {
+  width: 50px;
+  height: 50px;
+  border-radius: 11px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 6px 18px -10px var(--tile-border);
+}
+
+.tile[data-size='sm'] {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.tile[data-tone='blue'] {
+  --tile-fg: var(--tone-blue-fg);
+  --tile-bg: var(--tone-blue-bg);
+  --tile-border: var(--tone-blue-border);
+}
+
+.tile[data-tone='violet'] {
+  --tile-fg: var(--tone-violet-fg);
+  --tile-bg: var(--tone-violet-bg);
+  --tile-border: var(--tone-violet-border);
+}
+
+.tile[data-tone='teal'] {
+  --tile-fg: var(--tone-teal-fg);
+  --tile-bg: var(--tone-teal-bg);
+  --tile-border: var(--tone-teal-border);
+}
+
+.tile[data-tone='amber'] {
+  --tile-fg: var(--tone-amber-fg);
+  --tile-bg: var(--tone-amber-bg);
+  --tile-border: var(--tone-amber-border);
+}
+
+.tile[data-tone='indigo'] {
+  --tile-fg: var(--tone-indigo-fg);
+  --tile-bg: var(--tone-indigo-bg);
+  --tile-border: var(--tone-indigo-border);
+}
+
+.tile[data-tone='plum'] {
+  --tile-fg: var(--tone-plum-fg);
+  --tile-bg: var(--tone-plum-bg);
+  --tile-border: var(--tone-plum-border);
+}

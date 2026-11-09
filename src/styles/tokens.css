@@ -1,0 +1,133 @@
+/*
+ * Prototype visual tokens — Super Admin (Login V1 + App Shell / Dashboard V1).
+ *
+ * These values were sampled from the approved concept images. They are NOT the
+ * final Loor brand system; treat them as placeholders that a later
+ * design-system phase can replace in one place.
+ */
+:root {
+  /* Typography */
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Institutional (dark) panel */
+  --color-panel-bg: #14161d;
+  --color-panel-bg-top: #1b1d27;
+  --color-panel-bg-bottom: #121419;
+  --color-panel-text: #ffffff;
+  --color-panel-text-muted: #979cac;
+  --color-panel-text-subtle: #7a7f8d;
+
+  /* Light surface */
+  --color-page-bg: #f7f8fa;
+  --color-card-bg: #fbfcfd;
+  --color-border: #e5e7ec;
+  --color-border-control: #dfe2e8;
+  --color-border-control-hover: #c9cdd6;
+  --color-divider: #eaebf0;
+  --color-surface-muted: #eff0f4;
+
+  /* Text hierarchy on light surface */
+  --color-text-strong: #111218;
+  --color-text: #2d3141;
+  --color-text-muted: #6b7184;
+  --color-text-placeholder: #6b7184;
+  --color-icon: #5a5f70;
+
+  /* Restrained indigo / violet accent */
+  --color-accent: #4f47c9;
+  --color-accent-hover: #463ebd;
+  --color-accent-active: #3e36ad;
+  --color-accent-text: #3f37bd;
+  --color-accent-ring: rgb(79 71 201 / 0.2);
+  --color-accent-glow: #8b81ff;
+
+  /* Feedback */
+  --color-danger: #c0344f;
+  --color-danger-ring: rgb(192 52 79 / 0.16);
+
+  /* Shape */
+  --radius-card: 18px;
+  --radius-control: 8px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(17 18 24 / 0.03), 0 18px 48px -18px rgb(17 18 24 / 0.1);
+  --shadow-button: 0 1px 2px rgb(40 34 140 / 0.16);
+
+  /* Motion */
+  --motion-duration-micro: 150ms;
+  --motion-duration-panel: 210ms;
+  --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --transition-fast: var(--motion-duration-micro) var(--motion-ease);
+
+  /* ---------- Authenticated app shell (dark, navy-tinted) ----------
+     Sampled from the approved Dashboard V1 image. The accent tokens above
+     (--color-accent*, --color-accent-glow) are shared with the login. */
+  --shell-bg: #0f131d;
+  --shell-bg-top: #141826;
+  --shell-sidebar-bg: #141a2b;
+  --shell-sidebar-border: #222842;
+
+  --surface: #161c29;
+  --surface-raised: #1a1f2f;
+  --surface-hover: #1f2537;
+  --surface-control: #181d2d;
+  --surface-border: #252c3e;
+  --surface-border-strong: #313a52;
+  --surface-divider: #212837;
+  --surface-track: #2b3348;
+
+  --text-on-dark: #f4f6fb;
+  --text-on-dark-secondary: #a8b4ca;
+  --text-on-dark-muted: #8f9cb4;
+  --text-on-dark-faint: #7d8aa1;
+  --icon-on-dark: #b3bfd8;
+
+  --radius-panel: 12px;
+  --radius-tile: 10px;
+
+  --focus-ring-dark: 0 0 0 2px var(--shell-bg), 0 0 0 4px var(--color-accent-glow);
+
+  /* Module identity tones (icon tiles only — never used to signal status). */
+  --tone-blue-fg: #b9dcfb;
+  --tone-blue-bg: #1c2b4a;
+  --tone-blue-border: #284884;
+  --tone-violet-fg: #d8deff;
+  --tone-violet-bg: #2a2962;
+  --tone-violet-border: #4b51b4;
+  --tone-teal-fg: #5fe3dd;
+  --tone-teal-bg: #1a3540;
+  --tone-teal-border: #23646d;
+  --tone-amber-fg: #f8c565;
+  --tone-amber-bg: #342d2a;
+  --tone-amber-border: #6a5032;
+  --tone-indigo-fg: #d4e0fd;
+  --tone-indigo-bg: #28295a;
+  --tone-indigo-border: #3c4082;
+  --tone-plum-fg: #eedff9;
+  --tone-plum-bg: #241d38;
+  --tone-plum-border: #473b6c;
+
+  /* Record status pills (Whitelabels V1). Always shown with a text label —
+     colour is never the only signal. Prototype states, not backend contracts. */
+  --status-success-fg: #8fe6cf;
+  --status-success-dot: #53f2c5;
+  --status-success-bg: rgb(43 196 150 / 0.12);
+  --status-success-border: rgb(83 242 197 / 0.22);
+  --status-warning-fg: #f2c983;
+  --status-warning-dot: #f7bf6d;
+  --status-warning-bg: rgb(247 191 109 / 0.1);
+  --status-warning-border: rgb(247 191 109 / 0.24);
+  --status-neutral-fg: #c9cdf3;
+  --status-neutral-dot: #a4b0ec;
+  --status-neutral-bg: rgb(164 176 236 / 0.08);
+  --status-neutral-border: rgb(164 176 236 / 0.2);
+  --status-muted-fg: #a8b0c2;
+  --status-muted-dot: #7d8597;
+  --status-muted-bg: rgb(125 133 151 / 0.1);
+  --status-muted-border: rgb(125 133 151 / 0.22);
+  --status-danger-fg: #f6b3c0;
+  --status-danger-dot: #f07890;
+  --status-danger-bg: rgb(232 92 120 / 0.1);
+  --status-danger-border: rgb(240 120 145 / 0.28);
+}

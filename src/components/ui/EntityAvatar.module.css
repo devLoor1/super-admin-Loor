@@ -1,0 +1,40 @@
+.avatar {
+  --avatar-fg: #dfe3f0;
+  --avatar-bg: #232a3d;
+  --avatar-border: #343d55;
+
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid var(--avatar-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.07) 0%, rgb(255 255 255 / 0) 60%),
+    var(--avatar-bg);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--avatar-fg);
+}
+
+.avatar[data-size='lg'] {
+  width: 51px;
+  height: 51px;
+  border-radius: 11px;
+  font-size: 23px;
+  box-shadow: 0 8px 22px -12px var(--avatar-border);
+}
+
+.avatar[data-tone='blue'] {
+  --avatar-fg: #a9cbff;
+  --avatar-bg: #1b2f66;
+  --avatar-border: #2d4ea3;
+}
+
+.avatar[data-tone='violet'] {
+  --avatar-fg: #c8c3ff;
+  --avatar-bg: #2b2867;
+  --avatar-border: #4a46ad;
+}

@@ -1,0 +1,516 @@
+/*
+ * Same panel/table language as the Whitelabels list. The panel is a size
+ * container: columns drop out as it narrows (activity/invitation → e-mail →
+ * states move under the name) instead of squeezing the table.
+ * Container widths are the panel's content box.
+ */
+.panel {
+  --bleed: 20px;
+
+  container-type: inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px 20px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.018) 0%, rgb(255 255 255 / 0) 40%),
+    #131a28;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.025),
+    0 14px 32px -22px rgb(0 0 0 / 0.7);
+}
+
+/* ---------- Search + filters ---------- */
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(176px, 192px) minmax(190px, 214px);
+  gap: 12px;
+}
+
+.search {
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.legend strong {
+  font-weight: 600;
+  color: var(--text-on-dark-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendDot,
+.legendSquare {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid #8f9cc4;
+}
+
+.legendDot {
+  border-radius: 50%;
+}
+
+.legendSquare {
+  border-radius: 2px;
+}
+
+/* ---------- Table ---------- */
+
+.tableArea {
+  flex: 1 1 auto;
+  margin-top: 12px;
+  border-top: 1px solid var(--surface-divider);
+}
+
+.table {
+  width: calc(100% + var(--bleed) * 2);
+  margin: 0 calc(var(--bleed) * -1);
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  position: relative;
+  padding: 0 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--bleed);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--bleed);
+}
+
+.table th {
+  height: 44px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
+.table td {
+  height: 56px;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--text-on-dark-muted);
+  white-space: nowrap;
+}
+
+/* Row dividers, inset to the panel content edges. */
+.table td::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--surface-divider);
+}
+
+.table td:first-child::after {
+  left: var(--bleed);
+}
+
+.table td:last-child::after {
+  right: var(--bleed);
+}
+
+/* Column widths (fixed layout; percentages of the table width). */
+.colName {
+  width: 22%;
+}
+
+.colEmail {
+  width: 24%;
+}
+
+.colAccess {
+  width: 11.5%;
+}
+
+.colBusiness {
+  width: 19%;
+}
+
+.colExtra {
+  width: 15%;
+}
+
+.colActions {
+  width: calc(var(--bleed) + 34px);
+  text-align: right;
+}
+
+.table td.colEmail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Admins: longer role/invitation labels, no activity column. */
+.table[data-type='admin'] .colEmail {
+  width: 22%;
+}
+
+.table[data-type='admin'] .colAccess {
+  width: 11%;
+}
+
+.table[data-type='admin'] .colBusiness {
+  width: 23%;
+}
+
+.table[data-type='admin'] .colExtra {
+  width: 15%;
+}
+
+/* Long state labels wrap inside their cell instead of overlapping the next column. */
+.table td.colBusiness > span,
+.table td.colExtra > span {
+  white-space: normal;
+}
+
+/* Rows: hover, active (shown in the detail panel). */
+.row {
+  cursor: pointer;
+}
+
+.row td {
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover td {
+  background: rgb(255 255 255 / 0.025);
+}
+
+.row[data-active] td {
+  border-top: 1px solid rgb(126 118 255 / 0.2);
+  border-bottom: 1px solid rgb(126 118 255 / 0.2);
+  background: linear-gradient(180deg, rgb(86 80 214 / 0.2), rgb(70 66 180 / 0.16));
+}
+
+.row[data-active] td::after {
+  display: none;
+}
+
+.row[data-active] td:first-child {
+  border-left: 1px solid rgb(126 118 255 / 0.2);
+  border-radius: 11px 0 0 11px;
+}
+
+.row[data-active] td:last-child {
+  border-right: 1px solid rgb(126 118 255 / 0.2);
+  border-radius: 0 11px 11px 0;
+}
+
+/* Name cell */
+.nameButton {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  max-width: 100%;
+  margin-left: -4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-on-dark);
+  text-align: left;
+}
+
+.nameButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.row[data-active] .nameButton > span:first-child {
+  border-color: rgb(150 140 255 / 0.5);
+}
+
+.nameText {
+  display: grid;
+  min-width: 0;
+  white-space: normal;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 17px;
+  overflow-wrap: anywhere;
+}
+
+.subline {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.nameEmail {
+  display: none;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.nameStates {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 2px 51px;
+}
+
+.activity {
+  display: grid;
+  color: var(--text-on-dark-secondary);
+}
+
+/* Sortable headers */
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+.sortButton:hover {
+  color: var(--text-on-dark);
+}
+
+.sortButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.sortIcon {
+  color: var(--text-on-dark-muted);
+}
+
+.sortIcon[data-active] {
+  color: var(--color-accent-glow);
+}
+
+/* Row actions */
+.moreButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #d2d9ea;
+}
+
+.moreButton:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.moreButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 16px 24px;
+  text-align: center;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.count {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-on-dark-muted);
+}
+
+.illustrative {
+  color: var(--text-on-dark-faint);
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+}
+
+.pageButton {
+  display: grid;
+  place-items: center;
+  min-width: 33px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #262f45;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.015);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-on-dark-secondary);
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: var(--surface-border-strong);
+  color: var(--text-on-dark);
+}
+
+.pageButton[aria-current='page'] {
+  border-color: #5d58e6;
+  background: rgb(96 88 240 / 0.2);
+  box-shadow: 0 0 14px -5px rgb(116 104 255 / 0.8);
+  color: var(--text-on-dark);
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pageButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* ---------- Narrow panels (container queries on .panel) ---------- */
+
+@container (max-width: 780px) {
+  .colExtra {
+    display: none;
+  }
+
+  .colName,
+  .table[data-type='admin'] .colName {
+    width: 28%;
+  }
+
+  .colEmail,
+  .table[data-type='admin'] .colEmail {
+    width: 26%;
+  }
+
+  .colAccess,
+  .table[data-type='admin'] .colAccess {
+    width: 13%;
+  }
+
+  .colBusiness,
+  .table[data-type='admin'] .colBusiness {
+    width: 25%;
+  }
+}
+
+@container (max-width: 660px) {
+  .colEmail {
+    display: none;
+  }
+
+  .nameEmail {
+    display: block;
+  }
+
+  .nameText .subline {
+    display: none;
+  }
+
+  .colName,
+  .table[data-type='admin'] .colName {
+    width: 44%;
+  }
+
+  .colAccess,
+  .table[data-type='admin'] .colAccess {
+    width: 18%;
+  }
+
+  .colBusiness,
+  .table[data-type='admin'] .colBusiness {
+    width: 30%;
+  }
+
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .search {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 440px) {
+  .colAccess,
+  .colBusiness {
+    display: none;
+  }
+
+  .colName,
+  .table[data-type='admin'] .colName {
+    width: auto;
+  }
+
+  .nameStates {
+    display: flex;
+  }
+
+  .table td {
+    height: auto;
+    padding-block: 9px;
+  }
+
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .panel {
+    --bleed: 14px;
+
+    padding: 14px;
+  }
+}

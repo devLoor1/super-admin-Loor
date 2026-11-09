@@ -1,0 +1,261 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 11px 12px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-tile);
+  background: #171e2e;
+}
+
+.assetPreview {
+  display: grid;
+  place-items: center;
+  height: 78px;
+  padding: 8px;
+  border: 1px dashed #333c55;
+  border-radius: 9px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.02), rgb(255 255 255 / 0)),
+    #10151f;
+}
+
+.assetImage {
+  max-width: 100%;
+  max-height: 58px;
+  object-fit: contain;
+}
+
+.assetPreview[data-kind='favicon'] .assetImage {
+  width: 48px;
+  height: 48px;
+}
+
+.monogram {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
+  background: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.assetMeta {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.tileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin: -2px 0 0 -6px;
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.swatch {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+
+.colorPicker {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 3px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 8px;
+  background: #121826;
+  cursor: pointer;
+}
+
+.colorPicker:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.hex {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.hexInput {
+  max-width: 130px;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+/* ---------- Preview ---------- */
+.preview {
+  margin: 12px 0 0;
+}
+
+.previewCaption {
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-on-dark-muted);
+}
+
+.previewFrame {
+  overflow: hidden;
+  border: 1px solid #2a3248;
+  border-radius: 10px;
+  background: #f6f7fb;
+  color: #1b1f2c;
+}
+
+.previewTab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  background: #e4e7ef;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.previewFavicon,
+.previewFaviconMono {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.previewFaviconMono {
+  display: grid;
+  place-items: center;
+  background: var(--p-primary);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--p-on-primary);
+}
+
+.previewTabTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 44px;
+  padding: 0 14px;
+  /* Dark app bar: placeholder logos are drawn for dark backgrounds. */
+  background: #141b2c;
+  color: #f4f6fb;
+}
+
+.previewLogo {
+  max-width: 120px;
+  max-height: 28px;
+  object-fit: contain;
+}
+
+.previewLogoMono {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.previewLogoMono span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--p-primary);
+  font-size: 12px;
+  color: var(--p-on-primary);
+}
+
+.previewNav {
+  display: flex;
+  gap: 8px;
+}
+
+.previewNav span {
+  width: 34px;
+  height: 7px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.2);
+}
+
+.previewHero {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 14px;
+}
+
+.previewBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-accent) 18%, #ffffff);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--p-accent) 70%, #0b0d12);
+}
+
+.previewLine,
+.previewLineShort {
+  height: 8px;
+  border-radius: 4px;
+  background: #d9dde7;
+}
+
+.previewLine {
+  width: 72%;
+}
+
+.previewLineShort {
+  width: 46%;
+}
+
+.previewCta {
+  margin-top: 4px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: var(--p-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p-on-primary);
+}
+
+@container (max-width: 360px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

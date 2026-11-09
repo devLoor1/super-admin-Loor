@@ -1,0 +1,385 @@
+/*
+ * Compliance › KYC V1. Page frame, filters, table, hero, tabs, notes and
+ * domain navigation come from the Operation stylesheet
+ * (operation/shared/Operation.module.css), the shared Finance surfaces
+ * (finance-gateways/sections/FinanceSections.module.css) and the Finance
+ * Core detail pieces (finance-core/shared/FinanceCore.module.css).
+ */
+
+/* ---------- Shared values ---------- */
+
+.typeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-on-dark);
+}
+
+.typeTag svg {
+  flex: none;
+  color: var(--tone-indigo-fg);
+}
+
+.avatar {
+  flex: none;
+}
+
+.refLink,
+.refName {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.refLink {
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.refLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.refLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: var(--text-on-dark-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- List ---------- */
+
+.ignoredNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #e8cf9c;
+}
+
+.ignoredNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.table {
+  table-layout: auto;
+}
+
+.colId {
+  min-width: 128px;
+}
+
+.colParticipant {
+  min-width: 190px;
+}
+
+.colType,
+.colWl,
+.colStatus,
+.colPending,
+.colAccount,
+.colUpdated {
+  white-space: nowrap;
+}
+
+.issueCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-dark-secondary);
+  white-space: nowrap;
+}
+
+.issueCount[data-open] {
+  border-color: rgb(247 191 109 / 0.45);
+  background: rgb(247 191 109 / 0.08);
+  color: #f1d39a;
+}
+
+.accountId {
+  font-size: 13px;
+  color: var(--text-on-dark);
+}
+
+.metaParticipant,
+.metaContext,
+.metaAccount,
+.metaUpdated {
+  display: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.metaStates {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 7px;
+}
+
+/* Columns collapse by the list card's container width; their data moves under the case id. */
+@container (max-width: 1240px) {
+  .sortVisible.sortVisible {
+    display: flex;
+  }
+
+  .colUpdated {
+    display: none;
+  }
+
+  .metaUpdated {
+    display: block;
+  }
+}
+
+@container (max-width: 1100px) {
+  .colAccount {
+    display: none;
+  }
+
+  .metaAccount {
+    display: block;
+  }
+}
+
+@container (max-width: 900px) {
+  .colType,
+  .colWl {
+    display: none;
+  }
+
+  .metaContext {
+    display: block;
+  }
+}
+
+@container (max-width: 720px) {
+  .colStatus,
+  .colPending {
+    display: none;
+  }
+
+  .metaStates {
+    display: flex;
+  }
+}
+
+@container (max-width: 520px) {
+  .table thead,
+  .colParticipant {
+    display: none;
+  }
+
+  .metaParticipant {
+    display: block;
+  }
+
+  .colId {
+    min-width: 0;
+  }
+}
+
+/* ---------- Detail: evidences and pending issues ---------- */
+
+.evidenceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 14px 15px;
+  align-items: start;
+  min-width: 0;
+}
+
+.evidenceList,
+.issueList {
+  display: grid;
+  margin-top: 10px;
+}
+
+.evidenceRow,
+.issueRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--surface-divider);
+}
+
+.issueRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.evidenceRow:last-child,
+.issueRow:last-child {
+  border-bottom: 0;
+}
+
+.evidenceIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tone-indigo-border);
+  border-radius: 9px;
+  background: var(--tone-indigo-bg);
+  color: var(--tone-indigo-fg);
+}
+
+.evidenceMain,
+.issueMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.evidenceLabel,
+.issueText {
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.evidenceLabel:focus {
+  outline: none;
+}
+
+.evidenceLabel:focus-visible {
+  box-shadow: var(--focus-ring-dark);
+}
+
+.evidenceMeta {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.evidenceSide {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.sideNote {
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+  white-space: nowrap;
+}
+
+.smallButton {
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Narrow cards: status and action move under the text. */
+@container (max-width: 440px) {
+  .evidenceRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .issueRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .evidenceSide {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .evidenceRow .evidenceSide {
+    grid-column: 2;
+  }
+}
+
+/* ---------- Detail: decision ---------- */
+
+.decisionActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.decisionButton {
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.decisionButton[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.decisionHint {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--text-on-dark-muted);
+}
+
+.calloutSpaced {
+  margin-top: 12px;
+}
+
+.shortTextarea {
+  min-height: 96px;
+}
+
+/* ---------- Session activity ---------- */
+
+.auditPointer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-divider);
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--text-on-dark-secondary);
+}
+
+.auditPointer svg {
+  margin-top: 1px;
+  color: var(--icon-on-dark);
+}

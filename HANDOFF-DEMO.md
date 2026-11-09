@@ -6,6 +6,8 @@ Branch temporária: `demo/whitelabel-showcase-handoff`
 
 Link: https://github.com/devLoor1/super-admin-Loor/tree/demo/whitelabel-showcase-handoff
 
+**SHA do snapshot de código, assets e inicializador validado:** `e393b397cddde076a8f01aa181095b53b968be68`. O commit seguinte registra somente esta referência documental. Confira o HEAD da branch clonada com `git rev-parse HEAD` e compare com o SHA final informado na entrega.
+
 Esta branch contém a aplicação mock completa: renderer público, editor, fontes e imagens locais. Não é necessário clonar FRONT-WEB. A fonte é o protótipo de `feature/mock-whitelabel-showcase-config-v1`, baseline `405bd704468c12b1e21bc88d5f3372bcd3418cf7`, incluindo os 12 arquivos modificados e 66 novos que estavam fora do commit.
 
 O transporte usa um snapshot sem ancestrais operacionais. Documentos históricos/evidências de contas foram omitidos exclusivamente desta cópia; a fonte e seus worktrees foram preservados. Não fazer merge desta branch em main/dev. O SHA do checkout pode ser conferido com `git rev-parse HEAD`; o recibo da preparação acompanha esta documentação.

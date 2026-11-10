@@ -9,7 +9,7 @@ import ts from 'typescript'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(resolve(root, 'package.json'))
 const data = code => `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-const react = data('export const useSyncExternalStore = (_, get) => get();')
+const react = data('export const useSyncExternalStore = (_, get) => get(); export const useEffect = effect => effect();')
 const BASE = 'https://backend-super-admin-loor.onrender.com/api'
 async function environment(flag, base = BASE) {
   const cache = new Map(), env = { VITE_API_BASE_URL: base, VITE_SHOWCASE_ENABLED: flag }
@@ -64,6 +64,7 @@ const store = await e.load(prefix + 'showcaseStore.ts')
 const lookup = await e.load(prefix + 'showcaseSourceLookup.ts')
 const client = await e.load(prefix + 'showcaseClient.ts')
 const validation = await e.load(prefix + 'showcaseValidation.ts')
+const { useShowcaseMedia } = await e.load(prefix + 'public/useShowcaseMedia.ts')
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 function validDocument() {
   const card = model.createCardInstance({ source: { whitelabelId: '12', slug: 'source-tenant', name: 'Source', logical: null } })
@@ -74,6 +75,11 @@ function validDocument() {
 const emptyWire = () => ({ data: { configured: false, revision: null, schemaVersion: 1, document: null, owner: { whitelabelId: 6, slug: 'homologacao' } } })
 const storedWire = (document, revision = 1) => ({ data: { configured: true, revision, schemaVersion: 1, document: codec.encodeShowcaseDocument(document), owner: { whitelabelId: 6, slug: 'homologacao' } } })
 const assetWire = ref => ({ data: { asset_ref: ref, slot: 'showcase', wtlb_id: 6, original_name: 'image.png', mime: 'image/png', size_bytes: 9, url: 'https://assets.example.invalid/image.png' } })
+const enrichedWire = (document, revision = 1, tag = 'initial') => {
+  const wire = storedWire(document, revision), raw = wire.data.document
+  for (const item of [...raw.banner.images, ...raw.cards.flatMap(card => [card.logo, ...card.images])]) item.url = `https://assets.example.invalid/${tag}/${item.assetRef}.png`
+  return wire
+}
 const mutations = () => calls.filter(call => call.options.method !== 'GET')
 await check('real owner six, exact slug, no fixture owner; same source creates independent cards', () => {
   e.session()
@@ -226,6 +232,117 @@ await check('display-only auth hydration preserves draft, media and uncertain at
   assert.equal(await e.auth.validateSession(), 'valid')
   assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.equal(store.getShowcaseState().draft.cards.length, 1)
   assert.equal(media.hasMedia(uuid(2)), true); assert.equal((await store.saveDraft(actor())).status, 'blocked')
+})
+await check('validated owner enrichment hydrates transient media only; null/unsafe URLs do not fan out', async () => {
+  e.session(); calls = []; const doc = validDocument(), wire = enrichedWire(doc)
+  wire.data.document.cards[0].logo.url = null
+  wire.data.document.cards[0].images[0].url = 'javascript:alert(1)'
+  answer = () => response(200, wire)
+  await store.loadShowcase(actor()); useShowcaseMedia(media.documentAssetRefs(doc))
+  assert.equal(calls.length, 1); assert.equal(media.mediaUrl(uuid(2)), wire.data.document.banner.images[0].url)
+  assert.equal(media.resolveMedia(uuid(3)).url, ''); assert.equal(media.resolveMedia(uuid(4)).url, '')
+  for (const value of [repo.readStoredShowcase(), store.getShowcaseState(), codec.encodeShowcaseDocument(store.getShowcaseState().draft)]) {
+    assert.equal(JSON.stringify(value).includes('"url"'), false)
+    assert.equal(JSON.stringify(value).includes('assets.example.invalid'), false)
+  }
+})
+await check('owner or document validation failure never partially imports enriched media', async () => {
+  for (const corrupt of [wire => { wire.data.owner.whitelabelId = 4 }, wire => { wire.data.document.cards[0].logo.assetRef = 'invalid' }]) {
+    e.session(); calls = []; const wire = enrichedWire(validDocument()); corrupt(wire); answer = () => response(200, wire)
+    await assert.rejects(repo.fetchStoredShowcase(actor()))
+    for (const ref of [uuid(2), uuid(3), uuid(4)]) assert.equal(media.resolveMedia(ref), undefined)
+  }
+})
+await check('real media hook coalesces images and mounts into one document GET without changing editorial state', async () => {
+  e.session(); calls = []; const doc = validDocument(); answer = () => response(200, enrichedWire(doc))
+  await store.loadShowcase(actor()); store.updateDraft(actor(), draft => { draft.cards[0].displayName = 'Unsaved local edit'; return draft })
+  const before = structuredClone(store.getShowcaseState()), storedBefore = repo.readStoredShowcase()
+  const firstMount = useShowcaseMedia([uuid(2), uuid(3)]), secondMount = useShowcaseMedia([uuid(2), uuid(4)])
+  const failed = media.mediaUrl(uuid(2)); let release; calls = []
+  answer = () => new Promise(resolve => { release = resolve })
+  firstMount(uuid(2)); firstMount(uuid(3)); secondMount(uuid(4)); secondMount(uuid(2))
+  const pending = repo.refreshShowcaseMedia(uuid(2), failed)
+  assert.equal(calls.length, 1); assert.equal(calls[0].url.pathname, '/api/whitelabels/6/showcase')
+  const changed = structuredClone(doc); changed.cards[0].displayName = 'Concurrent editorial update'
+  release(response(200, enrichedWire(changed, 9, 'renewed'))); await pending
+  assert.deepEqual(store.getShowcaseState(), before); assert.deepEqual(repo.readStoredShowcase(), storedBefore)
+  for (const ref of [uuid(2), uuid(3), uuid(4)]) assert.match(media.mediaUrl(ref), /\/renewed\//)
+  const remounted = useShowcaseMedia([uuid(3), uuid(4)]); remounted(uuid(3)); remounted(uuid(4))
+  await repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2)))
+  assert.equal(calls.length, 1); assert.equal(mutations().length, 0)
+})
+await check('same revision renews URLs; stale hook errors cannot consume a new explicit-load budget', async () => {
+  e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc))
+  await store.loadShowcase(actor()); const oldRender = useShowcaseMedia([uuid(2)])
+  answer = () => response(200, enrichedWire(doc, 1, 'explicit')); await store.loadShowcase(actor()); calls = []
+  oldRender(uuid(2)); assert.equal(calls.length, 0)
+  answer = () => response(200, enrichedWire(doc, 1, 'same-revision'))
+  const currentRender = useShowcaseMedia([uuid(2)]), failed = media.mediaUrl(uuid(2)); currentRender(uuid(2))
+  await repo.refreshShowcaseMedia(uuid(2), failed)
+  assert.equal(calls.length, 1); assert.match(media.mediaUrl(uuid(2)), /\/same-revision\//)
+  assert.equal(store.getShowcaseState().baseRevision, 1)
+})
+await check('failed media recovery consumes the shared budget with no retry or state loss', async () => {
+  e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc)); await store.loadShowcase(actor())
+  const before = structuredClone(store.getShowcaseState()), url = media.mediaUrl(uuid(2)); calls = []; answer = () => response(503, {})
+  await assert.rejects(repo.refreshShowcaseMedia(uuid(2), url))
+  await repo.refreshShowcaseMedia(uuid(3), media.mediaUrl(uuid(3)))
+  useShowcaseMedia([uuid(2)])(uuid(2))
+  assert.equal(calls.length, 1); assert.equal(media.mediaUrl(uuid(2)), url); assert.deepEqual(store.getShowcaseState(), before)
+})
+await check('confirmed PUT may refresh enriched URLs without an owner echo or a new recovery budget', async () => {
+  e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc)); await store.loadShowcase(actor())
+  answer = () => response(503, {}); await assert.rejects(repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2))))
+  store.updateDraft(actor(), draft => { draft.cards[0].displayName = 'Saved edit'; return draft })
+  const wire = enrichedWire(store.getShowcaseState().draft, 2, 'put-enrichment'); delete wire.data.owner
+  calls = []; answer = () => response(200, wire); await store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'saved'); assert.equal(store.getShowcaseState().baseRevision, 2)
+  assert.match(media.mediaUrl(uuid(2)), /\/put-enrichment\//)
+  await repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2)))
+  assert.equal(calls.length, 1); assert.equal(mutations()[0].options.method, 'PUT')
+  assert.equal(JSON.stringify(store.getShowcaseState()).includes('assets.example.invalid'), false)
+})
+await check('late media recovery cannot populate a replacement session', async () => {
+  e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc)); await store.loadShowcase(actor())
+  let release; answer = () => new Promise(resolve => { release = resolve })
+  const pending = repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2))).catch(() => undefined)
+  e.session(['READ_ONLY']); release(response(200, enrichedWire(doc, 1, 'obsolete'))); await pending
+  assert.equal(media.resolveMedia(uuid(2)), undefined); assert.equal(store.getShowcaseState().loadPhase, 'idle')
+})
+await check('a newer explicit GET supersedes pending media recovery and its old URL result', async () => {
+  e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc)); await store.loadShowcase(actor())
+  let release; answer = () => new Promise(resolve => { release = resolve })
+  const pending = repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2)))
+  answer = () => response(200, enrichedWire(doc, 2, 'new-load')); await store.loadShowcase(actor())
+  release(response(200, enrichedWire(doc, 1, 'obsolete'))); await pending
+  assert.equal(store.getShowcaseState().baseRevision, 2); assert.match(media.mediaUrl(uuid(2)), /\/new-load\//)
+})
+await check('an older asset GET cannot overwrite document enrichment', async () => {
+  e.session(); let release; answer = () => new Promise(resolve => { release = resolve })
+  const pending = media.ensureMedia(uuid(2))
+  answer = () => response(200, enrichedWire(validDocument(), 1, 'new-document')); await repo.fetchStoredShowcase(actor())
+  release(response(200, assetWire(uuid(2)))); const resolved = await pending
+  assert.match(resolved.url, /\/new-document\//); assert.match(media.mediaUrl(uuid(2)), /\/new-document\//)
+})
+await check('unsaved uploads get at most one requested asset fallback; upload uncertainty remains latched', async () => {
+  e.session(); answer = () => response(200, emptyWire()); await store.loadShowcase(actor())
+  const file = new File([new Uint8Array([137,80,78,71,13,10,26,10,0])], 'image.png', { type: 'image/png' })
+  for (const ref of [uuid(8), uuid(9)]) { answer = () => response(201, assetWire(ref)); assert.equal((await media.ingestUpload(actor(), file, 'foto')).ok, true) }
+  answer = () => response(503, {}); await media.ingestUpload(actor(), file, 'foto'); assert.equal(media.hasUncertainUpload(), true)
+  const before = structuredClone(store.getShowcaseState()); calls = []
+  answer = url => response(200, url.pathname.endsWith('/showcase') ? emptyWire() : { data: { ...assetWire(uuid(8)).data, url: 'https://assets.example.invalid/renewed-upload.png' } })
+  await Promise.all([repo.refreshShowcaseMedia(uuid(8), media.mediaUrl(uuid(8))), repo.refreshShowcaseMedia(uuid(9), media.mediaUrl(uuid(9)))])
+  assert.equal(calls.length, 2); assert.equal(calls.filter(call => call.url.pathname.includes('/assets/')).length, 1)
+  assert.equal(media.mediaUrl(uuid(8)), 'https://assets.example.invalid/renewed-upload.png')
+  assert.equal(media.resolveMedia(uuid(8)).origin, 'upload')
+  assert.equal(media.mediaUrl(uuid(9)), assetWire(uuid(9)).data.url)
+  assert.deepEqual(store.getShowcaseState(), before); assert.equal(media.hasUncertainUpload(), true); assert.equal(mutations().length, 0)
+})
+await check('missing enrichment preserves the legitimate initial single-asset lookup', async () => {
+  e.session(); calls = []; const doc = validDocument()
+  answer = url => response(200, url.pathname.endsWith('/showcase') ? storedWire(doc) : assetWire(url.pathname.split('/').at(-1)))
+  await repo.fetchStoredShowcase(actor()); useShowcaseMedia([uuid(2)]); await media.ensureMedia(uuid(2))
+  assert.equal(calls.length, 2); assert.equal(media.mediaUrl(uuid(2)), assetWire(uuid(2)).data.url)
 })
 await check('runtime has no seed/simulation/fixture imports or synthetic media reference', async () => {
   const walk = async directory => (await Promise.all((await readdir(directory, { withFileTypes: true })).map(entry => entry.isDirectory() ? walk(resolve(directory, entry.name)) : /\.tsx?$/.test(entry.name) ? [resolve(directory, entry.name)] : []))).flat()

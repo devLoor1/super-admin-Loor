@@ -3,21 +3,22 @@ import { assertCanEdit, showcaseSessionKey, ShowcasePermissionError, type Showca
 import { getSessionVersion, subscribeSession } from '../../lib/authSession'
 import { isUuid, type ShowcaseDocument } from './showcaseModel'
 import { safeHttpUrl } from './showcaseMarkdown'
-import { malformedShowcase, object } from './showcaseCodec'
+import { decodeStoredShowcase, malformedShowcase, object } from './showcaseCodec'
 import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
 
 export type MediaEntry = { assetRef: string; url: string; fileName: string; mime: string; bytes: number | null; width: number | null; height: number | null; origin: 'upload' | 'server' }
 const registry = new Map<string, MediaEntry>()
+const cacheVersions = new Map<string, number>()
 const known = new Set<string>()
 const inflight = new Map<string, Promise<MediaEntry>>()
 const listeners = new Set<() => void>()
-let mediaVersion = 0, sessionEpoch = 0, sessionKey = showcaseSessionKey()
+let mediaVersion = 0, sessionEpoch = 0, cacheGeneration = 0, sessionKey = showcaseSessionKey()
 let uploadUncertain = false
 export const hasUncertainUpload = () => uploadUncertain
 const notify = () => { mediaVersion++; listeners.forEach(listener => listener()) }
 export const getMediaSnapshot = () => mediaVersion
 export const subscribeMedia = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
-subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); known.clear(); inflight.clear(); uploadUncertain = false; notify() })
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); cacheVersions.clear(); known.clear(); inflight.clear(); uploadUncertain = false; notify() })
 export const resolveMedia = (assetRef: string) => registry.get(assetRef)
 export const hasMedia = (assetRef: string) => isUuid(assetRef) && known.has(assetRef)
 export const mediaUrl = (assetRef: string | null | undefined) => assetRef ? resolveMedia(assetRef)?.url || null : null
@@ -26,6 +27,35 @@ export function documentAssetRefs(document: ShowcaseDocument) {
 }
 /** Only a decoded authoritative owner document can qualify existing durable refs. */
 export function rememberDocumentAssets(document: ShowcaseDocument) { documentAssetRefs(document).forEach(ref => known.add(ref)) }
+/** GET requires its owner; an already-confirmed owner PUT may omit that echo. */
+export function hydrateStoredMedia(value: unknown, requireOwner = true) {
+  const stored = decodeStoredShowcase(value, requireOwner)
+  const entries = new Map<string, string>()
+  if (stored.configured) {
+    const document = object(object(object(value).data).document)
+    const read = (value: unknown) => {
+      const item = object(value)
+      // Missing enrichment keeps the existing single-asset lookup available;
+      // explicit null is a known unavailable URL, not a reason for GET fan-out.
+      if (Object.hasOwn(item, 'url')) entries.set(item.assetRef as string, typeof item.url === 'string' ? safeHttpUrl(item.url) ?? '' : '')
+    }
+    const images = object(document.banner).images as unknown[], cards = document.cards as unknown[]
+    images.forEach(read)
+    cards.forEach(value => {
+      const card = object(value)
+      read(card.logo); (card.images as unknown[]).forEach(read)
+    })
+  }
+  cacheGeneration++
+  rememberDocumentAssets(stored.document)
+  for (const [assetRef, url] of entries) {
+    const previous = registry.get(assetRef)
+    registry.set(assetRef, { assetRef, fileName: '', mime: '', bytes: null, width: null, height: null, origin: 'server', ...previous, url })
+    cacheVersions.set(assetRef, cacheGeneration)
+  }
+  if (entries.size) notify()
+  return stored
+}
 function parseAsset(value: unknown): MediaEntry {
   const asset = object(object(value).data)
   if (typeof asset.asset_ref !== 'string' || !isUuid(asset.asset_ref) || asset.wtlb_id !== 6 || asset.slot !== 'showcase') throw malformedShowcase()
@@ -39,12 +69,19 @@ export async function ensureMedia(assetRef: string, force = false): Promise<Medi
   if (cached && !force) return cached
   const pending = inflight.get(assetRef)
   if (pending) return pending
-  const epoch = sessionEpoch
+  const epoch = sessionEpoch, generation = cacheVersions.get(assetRef)
   const operation = (async () => {
     const body = await showcaseRequest(`/whitelabels/6/platform/assets/${assetRef}`)
     if (epoch !== sessionEpoch) throw new ApiError(0, {}, { kind: 'network' })
     const entry = parseAsset(body)
     if (entry.assetRef !== assetRef) throw malformedShowcase()
+    // A document GET may have supplied a fresher URL while this request ran.
+    if (generation !== cacheVersions.get(assetRef)) {
+      const current = resolveMedia(assetRef)
+      if (current) return current
+      throw new ApiError(0, {}, { kind: 'network' })
+    }
+    if (cached?.origin === 'upload') entry.origin = 'upload'
     registry.set(assetRef, entry); known.add(assetRef); notify()
     return entry
   })()

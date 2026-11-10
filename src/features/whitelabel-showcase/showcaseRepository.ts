@@ -4,21 +4,52 @@ import { assertCanEdit, showcaseSessionKey, type ShowcaseActor } from './showcas
 import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
 import { decodeStoredShowcase, encodeShowcaseDocument, malformedShowcase, sameCanonicalDocument } from './showcaseCodec'
 import { cloneDocument, emptyShowcaseDocument, type ShowcaseDocument, type StoredShowcase } from './showcaseModel'
-import { rememberDocumentAssets } from './showcaseMedia'
+import { documentAssetRefs, ensureMedia, hydrateStoredMedia, mediaUrl, rememberDocumentAssets, resolveMedia } from './showcaseMedia'
 
 const empty = (): StoredShowcase => ({ configured: false, revision: null, savedAt: null, document: emptyShowcaseDocument() })
 let snapshot = empty(), sessionEpoch = 0, sessionKey = showcaseSessionKey()
+let mediaGeneration = 0, mediaRecoveryUsed = false, mediaRecovery: Promise<void> | null = null
+function invalidateMediaRecovery(resetBudget: boolean) {
+  mediaGeneration++; mediaRecovery = null
+  if (resetBudget) mediaRecoveryUsed = false
+}
 const listeners = new Set<() => void>()
 function publish(stored: StoredShowcase) { snapshot = cloneDocument(stored); rememberDocumentAssets(snapshot.document); listeners.forEach(listener => listener()); return cloneDocument(snapshot) }
-subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; publish(empty()) })
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; invalidateMediaRecovery(true); publish(empty()) })
 export const readStoredShowcase = () => cloneDocument(snapshot)
 export const getStoredSnapshot = () => snapshot
 export const subscribeStoredShowcase = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
 export async function fetchStoredShowcase(actor?: ShowcaseActor, signal?: AbortSignal): Promise<StoredShowcase> {
-  const epoch = sessionEpoch
+  // Only an explicit authoritative load/reconciliation starts another recovery
+  // budget. Renders, changed URLs and recovery responses never reset it.
+  invalidateMediaRecovery(true)
+  const epoch = sessionEpoch, generation = mediaGeneration
   const body = await showcaseRequest('/whitelabels/6/showcase', { actor, signal })
-  if (epoch !== sessionEpoch) throw new ApiError(0, {}, { kind: 'network' })
-  return publish(decodeStoredShowcase(body))
+  if (epoch !== sessionEpoch || generation !== mediaGeneration) throw new ApiError(0, {}, { kind: 'network' })
+  return publish(hydrateStoredMedia(body))
+}
+/** One shared media recovery per loaded document, including all editor mounts. */
+export async function refreshShowcaseMedia(assetRef: string, failedUrl: string): Promise<void> {
+  if (!failedUrl || mediaUrl(assetRef) !== failedUrl) return
+  if (mediaRecovery) return mediaRecovery
+  if (mediaRecoveryUsed) return
+  mediaRecoveryUsed = true
+  const epoch = sessionEpoch, generation = mediaGeneration
+  const draftUpload = resolveMedia(assetRef)?.origin === 'upload' && !documentAssetRefs(snapshot.document).includes(assetRef)
+  const operation = (async () => {
+    const body = await showcaseRequest('/whitelabels/6/showcase')
+    if (epoch !== sessionEpoch || generation !== mediaGeneration) return
+    // Deliberately do not publish: a media refresh cannot adopt a newer
+    // editorial revision, change the base revision, or overwrite a draft.
+    const stored = hydrateStoredMedia(body)
+    if (draftUpload && !documentAssetRefs(stored.document).includes(assetRef) && mediaUrl(assetRef) === failedUrl) {
+      // An unsaved upload is absent from the document. At most the first
+      // requested ref is resolved; simultaneous failures never fan out.
+      await ensureMedia(assetRef, true)
+    }
+  })()
+  mediaRecovery = operation
+  try { await operation } finally { if (mediaRecovery === operation) mediaRecovery = null }
 }
 export type SaveRequest = { expectedRevision: number | null; document: ShowcaseDocument; actor: ShowcaseActor }
 export type SaveResult =
@@ -35,6 +66,10 @@ export async function saveShowcase(request: SaveRequest): Promise<SaveResult> {
     if (epoch !== sessionEpoch) throw new ApiError(0, {}, { kind: 'network' })
     const stored = decodeStoredShowcase(body, false)
     if (stored.revision !== (request.expectedRevision ?? 0) + 1 || !sameCanonicalDocument(request.document, stored.document)) throw malformedShowcase()
+    invalidateMediaRecovery(false)
+    // The confirmed owner PUT may enrich URLs while omitting the owner echo.
+    // It can refresh media, but does not grant another automatic recovery.
+    hydrateStoredMedia(body, false)
     return { status: 'saved', stored: publish(stored) }
   } catch (error) {
     if (error instanceof ApiError && error.status === 409 && error.code === 'E_SHOWCASE_REVISION_CONFLICT') {

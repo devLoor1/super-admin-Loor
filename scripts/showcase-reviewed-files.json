@@ -216,7 +216,7 @@
     },
     "src/features/whitelabel-showcase/public/useShowcaseMedia.ts": {
       "before": null,
-      "after": "97ee7b3ebedb8b2b857e2dd3c7c3c4d130888c3a4fe0138a6688eab22aad15d6"
+      "after": "eeee2ade04097f30654a862b9e0ed1739c82904d2bb5280e98e2485907f850f9"
     },
     "src/features/whitelabel-showcase/showcaseAccess.ts": {
       "before": null,
@@ -240,7 +240,7 @@
     },
     "src/features/whitelabel-showcase/showcaseMedia.ts": {
       "before": null,
-      "after": "10251f2fdabfc2070210f31c04f866c66f0b780408ccc2a59e6507c304475fec"
+      "after": "cd5e41b4cf40e14ea91449223fa0315c2cecd67c8cd4a8c207e38cd9f7eaccae"
     },
     "src/features/whitelabel-showcase/showcaseModel.ts": {
       "before": null,
@@ -248,7 +248,7 @@
     },
     "src/features/whitelabel-showcase/showcaseRepository.ts": {
       "before": null,
-      "after": "78ffb516ec4f5286875b84faad24d07312f8a7b013428df8e7ce36f84eeff4ac"
+      "after": "2247e038f9ce1cd4da1b0b2a2d1040d87976e63a7d0e1f1a8c4333367aeb2f81"
     },
     "src/features/whitelabel-showcase/showcaseSourceLookup.ts": {
       "before": null,

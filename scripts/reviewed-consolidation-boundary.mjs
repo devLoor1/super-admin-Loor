@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase, showcaseExclusions, withoutShowcase } from './reviewed-showcase-boundary.mjs'
 import { withoutParticipantCreation, reviewedParticipantCreation, participantCreationExclusions } from './reviewed-participant-creation-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { execFileSync as nativeExecFileSync } from 'node:child_process'
@@ -27,6 +28,7 @@ export function testSourceExists(path) {
 
 /** Exact reviewed files only. No directory exemption and no automatic re-pinning. */
 export function reviewedConsolidation(path) {
+  const showcase = reviewedShowcase(path)
   const participant = reviewedParticipantCreation(path)
   const astSettings = reviewedAstSettings(path)
   const operationalUx = reviewedOperationalUx(path)
@@ -34,7 +36,7 @@ export function reviewedConsolidation(path) {
   const accountUx = reviewedAccountUx(path)
   const evolution = reviewedSettingsEvolution(path)
   const pin = manifest.files[path]
-  if (!pin) return participant || evolution || accountUx || setSmtp || astSettings || operationalUx
+  if (!pin) return showcase || participant || evolution || accountUx || setSmtp || astSettings || operationalUx
   const absolute = resolve(root, path)
   if (pin.after === null) assert.equal(existsSync(absolute), false, `Removed prototype returned: ${path}`)
   else assert.equal(hash(beforeSettingsEvolution(path, beforeAccountUx(path, withoutOperationalUx(path, withoutParticipantCreation(path, nativeReadFileSync(absolute, 'utf8')))))), pin.after, `Unreviewed consolidation change: ${path}`)
@@ -46,6 +48,7 @@ export function reviewedConsolidation(path) {
  * separation/presentation suites independently exercise the replacement behavior.
  */
 export function beforeConsolidation(path, source) {
+  source = withoutShowcase(path, source)
   source = withoutParticipantCreation(path, source)
   source = withoutOperationalUx(path, source)
   const pin = manifest.files[path]
@@ -78,7 +81,7 @@ export function execFileSync(command, args, options) {
     const beforePaths = args.slice(1, args.indexOf('--')).filter(a => !a.startsWith('-'))
     if (beforePaths.length <= 1) {
       for (const path of Object.keys(manifest.files)) reviewedConsolidation(path)
-      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions(), ...operationalUxExclusions(), ...participantCreationExclusions()]
+      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions(), ...operationalUxExclusions(), ...participantCreationExclusions(), ...showcaseExclusions()]
     }
   }
   return nativeExecFileSync(command, args, options)

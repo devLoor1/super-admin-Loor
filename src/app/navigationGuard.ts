@@ -11,6 +11,28 @@ export function registerNavigationGuard(next: NavigationGuard) {
   }
 }
 
+type LogoutGuard = (proceed: () => void) => boolean
+let logoutGuard: LogoutGuard | undefined
+let fallbackLogoutGuard: LogoutGuard | undefined
+
+/** Consult the mounted editor before voluntarily clearing its session and draft. */
+export function registerLogoutGuard(next: LogoutGuard) {
+  logoutGuard = next
+  return () => { if (logoutGuard === next) logoutGuard = undefined }
+}
+
+export function requestLogout(proceed: () => void) {
+  if (logoutGuard && !logoutGuard(proceed)) return
+  if (!logoutGuard && fallbackLogoutGuard && !fallbackLogoutGuard(proceed)) return
+  proceed()
+}
+
+/** Covers a retained tab draft after its editor has unmounted. */
+export function registerFallbackLogoutGuard(next: LogoutGuard) {
+  fallbackLogoutGuard = next
+  return () => { if (fallbackLogoutGuard === next) fallbackLogoutGuard = undefined }
+}
+
 /**
  * Keep drafts mounted while a same-document Back/Forward transition is declined.
  * Tagged history entries let us restore the actual entry, not push a duplicate.

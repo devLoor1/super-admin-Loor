@@ -23,6 +23,8 @@ import { WhitelabelActionsMenu } from './crud/WhitelabelActionsMenu'
 import { WRITE_ACCESS_NOTE, type WhitelabelWriteAccess, type LifecycleOperation } from './crud/whitelabelMutationContract'
 import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type WhitelabelRecord } from './whitelabelApi'
 import styles from './WhitelabelDetailPanel.module.css'
+import { useSessionOperator } from '../../lib/authSession'
+import { showcaseSettingsEntryHref } from '../whitelabel-showcase/showcaseAccess'
 
 type DetailTab = 'overview'
 
@@ -163,6 +165,8 @@ function DetailContents({
   onLifecycle?: (record: WhitelabelRecord, operation: LifecycleOperation) => void
 }) {
   const notify = useNotice()
+  const operator = useSessionOperator()
+  const showcaseSettings = showcaseSettingsEntryHref({ tenantId: whitelabel.id, tenantSlug: whitelabel.slug, roles: operator?.roles })
   const [tab, setTab] = useState<DetailTab>('overview')
   const avatar = whitelabelAvatar(whitelabel)
 
@@ -202,6 +206,8 @@ function DetailContents({
           onLifecycle={onLifecycle ? operation => onLifecycle(whitelabel, operation) : undefined}
         />
       </header>
+
+      {showcaseSettings && <a href={showcaseSettings}>Configurações da vitrine</a>}
 
       <Tabs
         idPrefix={ID_PREFIX}

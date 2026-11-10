@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedSettingsEvolution } from './reviewed-settings-evolution-boundary.mjs'
@@ -491,6 +492,23 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
   for (const file of await walk(resolve(root, 'src'))) {
     const source = await readFile(file, 'utf8')
     const runtimePath = file.slice(root.length + 1).replaceAll('\\', '/')
+    if (['showcaseClient.ts', 'showcaseRepository.ts', 'showcaseMedia.ts'].some(name => runtimePath === `src/features/whitelabel-showcase/${name}`)) {
+      assert.equal(reviewedShowcase(runtimePath), true)
+      assert.doesNotMatch(stripComments(source), /method:\s*['"](?:PATCH|DELETE)['"]|fetch\s*\(|sendBeacon|WebSocket|\/admin\/|\/internal\/|main_area/)
+      if (runtimePath.endsWith('/showcaseRepository.ts')) {
+        assert.equal((source.match(/method:\s*'PUT'/g) || []).length, 1)
+        assert.doesNotMatch(stripComments(source), /method:\s*'POST'/)
+        assert.match(source, /\/whitelabels\/6\/showcase/)
+      } else if (runtimePath.endsWith('/showcaseMedia.ts')) {
+        assert.equal((source.match(/method:\s*'POST'/g) || []).length, 1)
+        assert.doesNotMatch(stripComments(source), /method:\s*'PUT'/)
+        assert.match(source, /form\.append\('slot', 'showcase'\)/)
+      } else {
+        assert.match(source, /\/whitelabels\/6\/showcase/)
+        assert.match(source, /\/whitelabels\/6\/platform\/assets/)
+      }
+      continue
+    }
     if (runtimePath === 'src/features/whitelabel-accounts/creation/participantCreationClient.ts') {
       const { reviewedParticipantCreation } = await import('./reviewed-participant-creation-boundary.mjs')
       assert.equal(reviewedParticipantCreation(runtimePath), true)

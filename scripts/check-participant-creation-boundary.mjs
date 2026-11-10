@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
@@ -8,7 +9,7 @@ const manifest=JSON.parse(readFileSync(resolve(root,'scripts/participant-creatio
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n')
 const actualPaths=[...new Set((git('diff','--name-only',participantBaseline,'--','src')+'\n'+git('ls-files','--others','--exclude-standard','--','src')).trim().split(/\r?\n/).filter(Boolean))].sort()
 assert.equal(manifest.finalized,true)
-assert.deepEqual(Object.keys(manifest.files).sort(),actualPaths)
+assert.deepEqual(Object.keys(manifest.files).sort(),actualPaths.filter(path=>Object.hasOwn(manifest.files,path)||!reviewedShowcase(path)))
 for(const [path,pin]of Object.entries(manifest.files)){
  assert.equal(reviewedParticipantCreation(path),true)
  const actual=readFileSync(resolve(root,path),'utf8')

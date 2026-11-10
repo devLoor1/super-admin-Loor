@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { withoutShowcase } from './reviewed-showcase-boundary.mjs'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const participantBaseline = 'd78fc0ab94a1989dbcc73ba58ce62cfb509b8777'
 export const participantReviewPaths = Object.freeze([
@@ -42,8 +43,8 @@ export function createParticipantBoundary(manifest, readCurrent, readBaseline) {
 }
 const manifest = JSON.parse(readFileSync(resolve(root,'scripts/participant-creation-reviewed-files.json'),'utf8'))
 const originals = new Map()
-const boundary = createParticipantBoundary(manifest, path=>readFileSync(resolve(root,path),'utf8'), path=>{if(!originals.has(path))originals.set(path,execFileSync('git',['show',`${participantBaseline}:${path}`],{cwd:root,encoding:'utf8'}));return originals.get(path)})
+const boundary = createParticipantBoundary(manifest, path=>withoutShowcase(path,readFileSync(resolve(root,path),'utf8')), path=>{if(!originals.has(path))originals.set(path,execFileSync('git',['show',`${participantBaseline}:${path}`],{cwd:root,encoding:'utf8'}));return originals.get(path)})
 // Historical freezes consume only this exact reviewed successor; runtime loaders stay physical.
-export const withoutParticipantCreation = boundary.without
+export const withoutParticipantCreation = (path, source) => boundary.without(path, withoutShowcase(path, source))
 export const reviewedParticipantCreation = boundary.reviewed
 export const participantCreationExclusions = boundary.exclusions

@@ -1,4 +1,5 @@
 import type { NavItem } from '../components/shell/navigation'
+import { SHOWCASE_ENABLED } from '../features/whitelabel-showcase/showcaseMapping'
 
 /** Operational eligibility is identical locally and in official homolog; Backend RBAC remains authoritative. */
 export const MOCK_ONLY_VIEWS: ReadonlySet<string> = new Set(['finance', 'finance-modalities', 'finance-catalogs'])
@@ -9,7 +10,10 @@ export const administratorLifecycleAvailable = (roles: readonly string[]) => rol
 /** Participant initial-access acceptance is tracked independently from Administrator lifecycle. */
 export const participantCreationAvailable = (kind: string, roles: readonly string[]) => ['investor', 'entrepreneur'].includes(kind) && roles.includes('SUPER_ADMIN')
 const UNAVAILABLE_MENU_IDS = new Set(['sistema', 'ajuda', 'finance-gateways', 'finance-modalities', 'finance-catalogs'])
-export function viewAvailable(view: string) { return !MOCK_ONLY_VIEWS.has(view) }
+export function viewAvailable(view: string) {
+  if (view === 'settings-showcase' || view === 'settings-showcase-card') return SHOWCASE_ENABLED
+  return !MOCK_ONLY_VIEWS.has(view)
+}
 export function readinessHref(id: string, candidate?: string) {
   if (id === 'financeiro') return '#/finance/investments'
   if (id === 'contas' && (!candidate || candidate.includes('_proto_'))) return '#/whitelabels/select/accounts'

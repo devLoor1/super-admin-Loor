@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type Ref } from 'react'
 import { ChevronDown, ChevronRight, House, Layers, LogOut, Menu } from 'lucide-react'
 import { logout, useSessionOperator } from '../../lib/authSession'
+import { requestLogout } from '../../app/navigationGuard'
 import styles from './TopHeader.module.css'
 
 /** One step of the header trail; the last step is the current page. */
@@ -137,7 +138,7 @@ export function TopHeader({ title, location, breadcrumbs, navOpen, onOpenNav, me
                 role="menuitem"
                 onClick={() => {
                   setUserMenuOpen(false)
-                  logout()
+                  requestLogout(logout)
                 }}
               >
                 <LogOut size={16} strokeWidth={1.8} aria-hidden="true" />

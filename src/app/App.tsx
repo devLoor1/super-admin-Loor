@@ -31,9 +31,12 @@ import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPa
 import { OperatorsListPage } from '../features/control-plane-operators/OperatorsListPage'
 import { OperatorDetailPage } from '../features/control-plane-operators/OperatorDetailPage'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
-import { subscribeNavigation } from './navigationGuard'
+import { subscribeNavigation, registerFallbackLogoutGuard } from './navigationGuard'
 import { viewAvailable } from './presentationAvailability'
 import { ReadinessUnavailablePage } from './ReadinessUnavailablePage'
+import { ShowcaseSettingsPage } from '../features/whitelabel-showcase/editor/ShowcaseSettingsPage'
+import { CardEditorPage } from '../features/whitelabel-showcase/editor/CardEditorPage'
+import { hasPendingDraft, installDraftUnloadProtection } from '../features/whitelabel-showcase/showcaseStore'
 
 type View =
   | 'login'
@@ -41,6 +44,8 @@ type View =
   | 'whitelabels'
   | 'accounts'
   | 'settings'
+  | 'settings-showcase'
+  | 'settings-showcase-card'
   | 'emails'
   | 'finance'
   | 'finance-modalities'
@@ -74,6 +79,8 @@ type Route =
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
   | { view: 'settings'; whitelabelId: string; area?: string; cell?: string }
+  | { view: 'settings-showcase'; whitelabelId: string; tab: 'banner' | 'introducao' | 'cards'; invalid: boolean }
+  | { view: 'settings-showcase-card'; whitelabelId: string; instanceId: string; focusField?: string; invalid: boolean }
   | { view: 'emails'; whitelabelId: string; section?: string }
   | { view: 'finance'; whitelabelId: string }
   | { view: 'finance-modalities'; whitelabelId: string }
@@ -121,6 +128,8 @@ const TITLES: Record<View, string> = {
   whitelabels: 'Super Admin · Whitelabels',
   accounts: 'Super Admin · Contas do Whitelabel',
   settings: 'Super Admin · Configurações do Whitelabel',
+  'settings-showcase': 'Super Admin · Vitrine de White Labels',
+  'settings-showcase-card': 'Super Admin · Card da vitrine',
   emails: 'Super Admin · E-mails do Whitelabel',
   finance: 'Super Admin · Financeiro / Gateways',
   'finance-modalities': 'Super Admin · Financeiro / Modalidades e regras',
@@ -156,6 +165,8 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'whitelabels',
   'accounts',
   'settings',
+  'settings-showcase',
+  'settings-showcase-card',
   'emails',
   'finance',
   'finance-modalities',
@@ -293,6 +304,15 @@ function routeFromHash(): Route {
     const query = new URLSearchParams(search)
     const validQuery = [...query.keys()].every(key => key === 'area' || key === 'cell') && query.getAll('area').length <= 1 && query.getAll('cell').length <= 1
     return { view: 'settings', whitelabelId: settings[1], area: validQuery ? query.get('area') ?? undefined : '__invalid__', cell: validQuery ? query.get('cell') ?? undefined : undefined }
+  }
+  const showcase = /^whitelabels\/([^/]+)\/settings\/plataforma\/vitrine(?:\/cards\/([^/]+))?$/.exec(path)
+  if (showcase) {
+    const query = new URLSearchParams(search)
+    const key = showcase[2] ? 'campo' : 'aba'
+    const invalid = [...query.keys()].some(k => k !== key) || query.getAll(key).length > 1
+    if (showcase[2]) return { view: 'settings-showcase-card', whitelabelId: showcase[1], instanceId: showcase[2], focusField: query.get('campo') ?? undefined, invalid }
+    const tab = query.get('aba') ?? 'banner'
+    return { view: 'settings-showcase', whitelabelId: showcase[1], tab: tab === 'introducao' || tab === 'cards' ? tab : 'banner', invalid: invalid || !['banner', 'introducao', 'cards'].includes(tab) }
   }
   const emails = EMAILS_PATH.exec(path)
   if (emails) {
@@ -435,6 +455,8 @@ function routeFromHash(): Route {
 }
 
 export function App() {
+  useEffect(() => installDraftUnloadProtection(window), [])
+  useEffect(() => registerFallbackLogoutGuard(() => !hasPendingDraft() || window.confirm('Sair da conta remove o rascunho da vitrine e a conferência pendente desta sessão. A configuração salva no servidor permanece. Se houve um envio incerto, confira a versão salva ao entrar novamente antes de reenviar. Deseja sair?')), [])
   const [route, setRoute] = useState<Route>(routeFromHash)
   const [authed, setAuthed] = useState(() => isAuthenticated())
 
@@ -509,6 +531,8 @@ export function App() {
     )
   }
   if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} cell={route.cell} />
+  if (route.view === 'settings-showcase') return route.invalid ? <ReadinessUnavailablePage /> : <ShowcaseSettingsPage tenantId={route.whitelabelId} tab={route.tab} />
+  if (route.view === 'settings-showcase-card') return route.invalid ? <ReadinessUnavailablePage /> : <CardEditorPage tenantId={route.whitelabelId} instanceId={route.instanceId} focusField={route.focusField} />
   if (route.view === 'emails') return <OperationalSmtpPage whitelabelId={route.whitelabelId} section={route.section} />
   if (route.view === 'operation-opportunities') return <OpportunitiesPage {...route.params} />
   if (route.view === 'operation-opportunity-new') return <OpportunityFormPage key="new" mode="create" />

@@ -1,0 +1,270 @@
+{
+  "baseline": "d49815d7fa3decd7f255c94b8826d64822d5b883",
+  "finalized": true,
+  "files": {
+    "src/app/App.tsx": {
+      "before": "bbdeec6fc57b4c11e067e218b42b633353e87bd31b698099f5d1625f4f924185",
+      "after": "b87f00daddd6745c4b0e6d0af779e4e5c389d22cde308cf5863685afd4ba4dd2"
+    },
+    "src/app/navigationGuard.ts": {
+      "before": "a60e870d8dce30cf76363002338c6026c6acb204c7e633432e6a4a82cdd3ea70",
+      "after": "9c3d449f81402cb47a3a59dd13d56f20cf6446b0aca72520e5ce22382ba40173"
+    },
+    "src/app/presentationAvailability.ts": {
+      "before": "0fee101cdb4040fcaa122131bac5532a6256ae5a8f39d47ea9c19ba89c367f62",
+      "after": "c1bf198b1009b3fef5dab32cd61d609b0c7a8b0091b7db57c77602199d19b7bd"
+    },
+    "src/components/shell/TopHeader.tsx": {
+      "before": "8226c91fc785a9abe98cbbde67f09a245bba7e2c0b48c4dba2eaeea49e9e67f5",
+      "after": "373bee4e60bb6f9948738f2a9b130537c79eb7225aefa9aeba738d08bdaa9a45"
+    },
+    "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
+      "before": "85bea41f5704969fdfaf2e4f6a8ab6184e70c528053d8ec283823a98ab4a5ba7",
+      "after": "a5b5eb34d8ced1c02ea8ee4d0e20780725b2a8afd2e5a8bfcdf0a2ebd8e70b2a"
+    },
+    "src/features/whitelabel-showcase/assets/ASSETS.md": {
+      "before": null,
+      "after": "72c0240c23186227c05f98783ada46759940f5108dc144f41edda3259ac745f7"
+    },
+    "src/features/whitelabel-showcase/assets/cards/conecta-community.webp": {
+      "before": null,
+      "after": "2ae68811859ff8656429f5a86c4fa7d4bbd9269581a4c9e541c56f652fab24fd"
+    },
+    "src/features/whitelabel-showcase/assets/cards/conecta-platform.webp": {
+      "before": null,
+      "after": "d75d7abc2c78cf0c28a195e4268240c71cba66f339bb04c6fd46f9797fbb31ef"
+    },
+    "src/features/whitelabel-showcase/assets/cards/conecta-square.webp": {
+      "before": null,
+      "after": "9910638eb378eee46568dbd247ca84d91958b2f219a65c13173bbdb6d3779048"
+    },
+    "src/features/whitelabel-showcase/assets/cards/impulso-collaboration.webp": {
+      "before": null,
+      "after": "14a1479d013fdcf8edfb16dd5279000c93aca0f0ed0ec8cf819e80edc45319da"
+    },
+    "src/features/whitelabel-showcase/assets/cards/impulso-region.webp": {
+      "before": null,
+      "after": "9be990abab6624da58f2063d624fc1faf970f63137f8c72e2f14856a84d7c2b5"
+    },
+    "src/features/whitelabel-showcase/assets/cards/impulso-town.webp": {
+      "before": null,
+      "after": "3dc94f3eb4d765f0bb33c3370cd0e49a8832c897f6948306670cc4a6bb47110c"
+    },
+    "src/features/whitelabel-showcase/assets/conecta-logo.png": {
+      "before": null,
+      "after": "1fff6234796b0d4a4a4e9d500e3501462e5aacf61248656e79cf00f6a92cef1c"
+    },
+    "src/features/whitelabel-showcase/assets/cvm-notice.png": {
+      "before": null,
+      "after": "1d0ca0bb928b9bcda7313260cb608f3f3e8dc4064674e06e2f060eed6e8ef4af"
+    },
+    "src/features/whitelabel-showcase/assets/fonts/inter-OFL.txt": {
+      "before": null,
+      "after": "5dd548d31a85f756e01d63e00d7faf1e324103ed3e9102fcbbabf2cc2db6dd39"
+    },
+    "src/features/whitelabel-showcase/assets/fonts/inter-latin-variable.woff2": {
+      "before": null,
+      "after": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+    },
+    "src/features/whitelabel-showcase/assets/fonts/montserrat-OFL.txt": {
+      "before": null,
+      "after": "861d64229728cd65a98d119612c12769582574d1a092f0b63c8b0fd474e7065f"
+    },
+    "src/features/whitelabel-showcase/assets/fonts/montserrat-latin-variable.woff2": {
+      "before": null,
+      "after": "06b16db7a969135d48d38c49183be7fb88d4452e2a3011957c7851941f4e4879"
+    },
+    "src/features/whitelabel-showcase/assets/fonts/sources.json": {
+      "before": null,
+      "after": "04e155840d8536d1e839bdf50305113a7d1e88dd14eff169d565803ff095e91b"
+    },
+    "src/features/whitelabel-showcase/assets/hero-collaboration.png": {
+      "before": null,
+      "after": "1e63fb1f11ba0fe70b4b71169c1ffa54d3615bddf435bce0e41b25dd408e9a7d"
+    },
+    "src/features/whitelabel-showcase/assets/hero-team.png": {
+      "before": null,
+      "after": "6159c56d57ffb5eec063476845a09cf4fa10f8e220138c748356ba1149eebb95"
+    },
+    "src/features/whitelabel-showcase/assets/impulso-logo.png": {
+      "before": null,
+      "after": "338385b200c51fa0e2704922ad2368b5fd7ac10261496d15050e335dc1646a41"
+    },
+    "src/features/whitelabel-showcase/assets/loor-logo.png": {
+      "before": null,
+      "after": "c2f59575d013103a8cdbd64c06f1c374ee95e72a88229db8b7a96bcea8af8421"
+    },
+    "src/features/whitelabel-showcase/editor/BannerTab.tsx": {
+      "before": null,
+      "after": "4febdb50362866b1b4db5f184217a97e42097d08057dcf606f3eb041c6cc85eb"
+    },
+    "src/features/whitelabel-showcase/editor/CardEditorPage.tsx": {
+      "before": null,
+      "after": "65e90cbc5caa8d94e3fdf70800773378a14db4db9c3949d08f889ea5d5031cd2"
+    },
+    "src/features/whitelabel-showcase/editor/CardsTab.tsx": {
+      "before": null,
+      "after": "93b450eabca3b663f83aa487ce057b9c80fd67735ed3d038b3fea8b827ccc0cb"
+    },
+    "src/features/whitelabel-showcase/editor/ImageListEditor.tsx": {
+      "before": null,
+      "after": "d00684182e118c620ac45fcdfcdec04afb5c826fcfff2bbfd9a389f43692f00a"
+    },
+    "src/features/whitelabel-showcase/editor/IntroTab.tsx": {
+      "before": null,
+      "after": "dbfd902e0b87cb8aeb044cbedbae46eedb9ead890f1941a633ba28232f92a36e"
+    },
+    "src/features/whitelabel-showcase/editor/MarkdownField.tsx": {
+      "before": null,
+      "after": "0eeabe8a0bb5063ffdab809791c166ba7f02da3514731372cf581fd226423993"
+    },
+    "src/features/whitelabel-showcase/editor/MediaPickerDialog.tsx": {
+      "before": null,
+      "after": "63d161a2da5f96e32c54462b0c76af61a4d346f2dc7a9f49a349d78b7802f203"
+    },
+    "src/features/whitelabel-showcase/editor/PreviewPanel.tsx": {
+      "before": null,
+      "after": "de3dcafeeefab34018922f2db3c6c67a2536e15bddd79b0a2bab5012720029f4"
+    },
+    "src/features/whitelabel-showcase/editor/ShowcaseEditor.module.css": {
+      "before": null,
+      "after": "a9f3e60d126ea2f1c2679fb9e7e51789e29cc2eb50f809ed58c095cbef98f052"
+    },
+    "src/features/whitelabel-showcase/editor/ShowcaseEntryCard.module.css": {
+      "before": null,
+      "after": "e5c827d50e2e3d631a084200100baca697da778d1bb42a4e5e0d960f12d3c80e"
+    },
+    "src/features/whitelabel-showcase/editor/ShowcaseEntryCard.tsx": {
+      "before": null,
+      "after": "d8ad1128e9e7315417e084742ac728358433228e9ead3d7ed89604b039983fda"
+    },
+    "src/features/whitelabel-showcase/editor/ShowcaseFrame.tsx": {
+      "before": null,
+      "after": "67690210cc156f225febdd65b53b39c161d950426db14a7975dbbe796b3444c6"
+    },
+    "src/features/whitelabel-showcase/editor/ShowcaseSettingsPage.tsx": {
+      "before": null,
+      "after": "9565ebfea40565c3392e63502e9a3e7b8a2a6673e537fe05f2a7458ed314cd19"
+    },
+    "src/features/whitelabel-showcase/editor/SourceLookupDialog.tsx": {
+      "before": null,
+      "after": "bcfb0e62ed6411022767cedc64bd1f24bbbef1a13dbd30ef80de7fa64ab2b0b1"
+    },
+    "src/features/whitelabel-showcase/editor/editorHooks.ts": {
+      "before": null,
+      "after": "ea48029df83eb930ab587e3778fa426442f3b6c8de7b4d18bc978353718bc1fb"
+    },
+    "src/features/whitelabel-showcase/editor/showcaseCrumbs.ts": {
+      "before": null,
+      "after": "b2094b4d241f95a4f27b4adbd78f6a5ee417626ad05ec5a193a3e376cfc6635d"
+    },
+    "src/features/whitelabel-showcase/editor/showcaseNavigation.ts": {
+      "before": null,
+      "after": "177ba6e5e64d94b88569abdff007c82f41293147aef3ccba9e3ace9ae19f2934"
+    },
+    "src/features/whitelabel-showcase/editor/useShowcaseLeaveGuard.ts": {
+      "before": null,
+      "after": "d701d31a8a7fc6af5d5a7e31f12f3ccd7bb3e270728f7b2cf163c51ac0c5899e"
+    },
+    "src/features/whitelabel-showcase/public/CardImageCarousel.tsx": {
+      "before": null,
+      "after": "0fdedd5c9fe2201a6d4ac5b9f5e2ec6e036825423fe8d67a38f3f1d2179958ff"
+    },
+    "src/features/whitelabel-showcase/public/DemoDialog.tsx": {
+      "before": null,
+      "after": "7eea2958a81ef3ccc8c79a211b563b9a3244f509eb983c4267ff0d7e6822eff3"
+    },
+    "src/features/whitelabel-showcase/public/ImageCarousel.tsx": {
+      "before": null,
+      "after": "d08b03211f30c674ff55c60bd1c25ff81467debef0f97238ac0281351eb6d16c"
+    },
+    "src/features/whitelabel-showcase/public/MarkdownContent.tsx": {
+      "before": null,
+      "after": "307c6f7f1e5c426d5b9733340ecb1a80331acbba18a9ce352dac64e1324e8be3"
+    },
+    "src/features/whitelabel-showcase/public/ShowcaseChrome.tsx": {
+      "before": null,
+      "after": "dce64f7c55217e078a873de381ccc1f23c62f99a2f0c273e0b4ac6d8f46b6107"
+    },
+    "src/features/whitelabel-showcase/public/ShowcaseView.tsx": {
+      "before": null,
+      "after": "e82bda648867ba0756f1b62075648b612734778f980ed78caa17eb4f8377c6b0"
+    },
+    "src/features/whitelabel-showcase/public/autoplay.ts": {
+      "before": null,
+      "after": "ecf0faa139a8dbb1c1e47780a061e2a7230685bd0cdc6eaaa7a8f7df7163b15c"
+    },
+    "src/features/whitelabel-showcase/public/motion.ts": {
+      "before": null,
+      "after": "74ea62d19f9b6af7252c5b46cf4988019a1fa3d2df8e18cd7e05ec5a1b5c4c45"
+    },
+    "src/features/whitelabel-showcase/public/showcase.css": {
+      "before": null,
+      "after": "2ae04630ca82856cd7eb0fcbabfdbdc7d630a994a93e4ab8927bf1d289148bf6"
+    },
+    "src/features/whitelabel-showcase/public/showcaseTypes.ts": {
+      "before": null,
+      "after": "868bcd6687d1cf2c236434a5596b4423ce71b3107a1a9a4e87198dec1e1cda98"
+    },
+    "src/features/whitelabel-showcase/public/useCardAutoplay.ts": {
+      "before": null,
+      "after": "b1c8b6385adcb3be1022c6111e858d666791eb88e1f513a0a7194152fe91241b"
+    },
+    "src/features/whitelabel-showcase/public/usePointerParallax.ts": {
+      "before": null,
+      "after": "25d110e9d857037c2c625a578e151f9c116b430b110d9d971f74b2c671ec6cd5"
+    },
+    "src/features/whitelabel-showcase/public/useShowcaseMedia.ts": {
+      "before": null,
+      "after": "97ee7b3ebedb8b2b857e2dd3c7c3c4d130888c3a4fe0138a6688eab22aad15d6"
+    },
+    "src/features/whitelabel-showcase/showcaseAccess.ts": {
+      "before": null,
+      "after": "cbef689dbaf04327281cd67d0233b34970a0d92cec5eff3bb419f2b3c55f3f05"
+    },
+    "src/features/whitelabel-showcase/showcaseClient.ts": {
+      "before": null,
+      "after": "d45d5a5301addaaa5570a6f3e298a23edeec30ecce5b60389fbf033c99c0ee69"
+    },
+    "src/features/whitelabel-showcase/showcaseCodec.ts": {
+      "before": null,
+      "after": "84ae9917236d06dda23bf1140257a34d28aea3468adc6af50595dbe937a00bc1"
+    },
+    "src/features/whitelabel-showcase/showcaseMapping.ts": {
+      "before": null,
+      "after": "a3f25cffb7f9f8765408f1fad8a7d6b49e37c4274daf1ad650edac7117e84f92"
+    },
+    "src/features/whitelabel-showcase/showcaseMarkdown.ts": {
+      "before": null,
+      "after": "7d474f1931f6cde13dd21cddd02f1bdf79498d53e1903de4e61408911ce36aa3"
+    },
+    "src/features/whitelabel-showcase/showcaseMedia.ts": {
+      "before": null,
+      "after": "10251f2fdabfc2070210f31c04f866c66f0b780408ccc2a59e6507c304475fec"
+    },
+    "src/features/whitelabel-showcase/showcaseModel.ts": {
+      "before": null,
+      "after": "6e45d9a4eedae7acf206b87ca72470657308475f08c5347c68d8620b4b86b99f"
+    },
+    "src/features/whitelabel-showcase/showcaseRepository.ts": {
+      "before": null,
+      "after": "78ffb516ec4f5286875b84faad24d07312f8a7b013428df8e7ce36f84eeff4ac"
+    },
+    "src/features/whitelabel-showcase/showcaseSourceLookup.ts": {
+      "before": null,
+      "after": "ba77bf973d77d61498d50a3c27a01c0799365ecacf7435a89b5ce272a21e0ddb"
+    },
+    "src/features/whitelabel-showcase/showcaseStore.ts": {
+      "before": null,
+      "after": "8126a079d48c9ff0101e3b35b219b913332d34f30dbf18788cb18229997a478e"
+    },
+    "src/features/whitelabel-showcase/showcaseValidation.ts": {
+      "before": null,
+      "after": "62b6055bfebbab443cc45fbf6c56058a59c0173ce14997d8db4415c68df8a231"
+    },
+    "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
+      "before": "e308fdbbc8ccac06f5ba101cb2d0875e589b6346043f1e46d876a6044eadebb6",
+      "after": "4b093babfb177e6cb831d06bb6a94bc9e174e692fa9a7ab7c598bb6a754662ee"
+    }
+  }
+}

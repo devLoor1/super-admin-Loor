@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -21,7 +22,7 @@ check('all runtime changes have individual finalized review pins', () => {
   assert.ok(paths.length > 0)
   // Keep every old SET pin; only exact reviewed successor additions are outside
   // this historical unit. The successor has its own complete-delta assertion.
-  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || (!reviewedAstSettings(path) && !reviewedOperationalUx(path) && !reviewedParticipantCreation(path))))
+  assert.deepEqual(setSmtpFiles().sort(), paths.filter(path => setSmtpFiles().includes(path) || (!reviewedShowcase(path) && !reviewedAstSettings(path) && !reviewedOperationalUx(path) && !reviewedParticipantCreation(path))))
 })
 for (const path of setSmtpFiles()) {
   check(`exact current candidate and mutation rejection: ${path}`, () => {

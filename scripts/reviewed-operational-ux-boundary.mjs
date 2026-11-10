@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { withoutShowcase } from './reviewed-showcase-boundary.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const operationalUxBaseline = 'fe7a9a839c5f5595825661c136aa1107c5071c6f'
@@ -101,6 +102,7 @@ export function beforeOperationalUx(path, source) {
  * that boundary's original assertions. Unknown supplied bytes gain no approval.
  * The physical candidate is still verified on every participating path. */
 export function withoutOperationalUx(path, source) {
+  source = withoutShowcase(path, source)
   const pin = pinFor(path)
   if (!pin) return normalize(source)
   reviewedOperationalUx(path)

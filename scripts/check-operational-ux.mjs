@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase, showcaseExclusions, withoutShowcase } from './reviewed-showcase-boundary.mjs'
 import { reviewedParticipantCreation, participantCreationExclusions } from './reviewed-participant-creation-boundary.mjs'
 import { reviewedAstSettings, astSettingsExclusions, withoutAstSettings } from './reviewed-ast-settings-boundary.mjs'
 import { execFileSync } from 'node:child_process'
@@ -30,14 +31,14 @@ await check('review is finalized and covers the entire exact runtime delta', () 
   assert.equal(operationalUxFinalized(), true, 'Finalize only after review of the completed source diff')
   const changed = [...new Set((git('diff', '--name-only', operationalUxBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split('\n').filter(Boolean))].sort()
   assert.ok(changed.length > 0)
-  assert.deepEqual(operationalUxFiles().sort(), changed.filter(path => operationalUxFiles().includes(path) || !reviewedAstSettings(path) && !reviewedParticipantCreation(path)))
-  assert.ok(changed.every(path => operationalUxReviewPaths.includes(path) || reviewedAstSettings(path) || reviewedParticipantCreation(path)))
+  assert.deepEqual(operationalUxFiles().sort(), changed.filter(path => operationalUxFiles().includes(path) || !reviewedShowcase(path) && !reviewedAstSettings(path) && !reviewedParticipantCreation(path)))
+  assert.ok(changed.every(path => operationalUxReviewPaths.includes(path) || reviewedShowcase(path) || reviewedAstSettings(path) || reviewedParticipantCreation(path)))
 })
 for (const path of operationalUxFiles()) {
   await check(`exact current bytes, baseline and adversarial rejection: ${path}`, () => {
     const current = source(path), previous = git('show', `${operationalUxBaseline}:${path}`)
     assert.equal(manifest.files[path].before, operationalUxDigest(previous))
-    assert.equal(manifest.files[path].after, operationalUxDigest(withoutAstSettings(path, current)))
+    assert.equal(manifest.files[path].after, operationalUxDigest(withoutAstSettings(path, withoutShowcase(path, current))))
     assert.equal(reviewedOperationalUx(path), true)
     assert.equal(verifyOperationalUxSource(path, current), true)
     assert.equal(beforeOperationalUx(path, current), previous)
@@ -65,8 +66,8 @@ await check('previous review manifests remain immutable', () => {
 await check('auth, routing, menu, business clients, models, transport and dependencies remain unchanged', () => {
   // Runtime deltas outside these exact reviewed presentation files cannot hide
   // behind a directory exemption. Models/contracts/clients are not in the list.
-  assert.equal(git('diff', operationalUxBaseline, '--', 'src', ...operationalUxExclusions(), ...astSettingsExclusions(), ...participantCreationExclusions()), '')
-  assert.equal(git('diff', operationalUxBaseline, '--', 'src/lib', 'src/app', 'src/features/menu-visibility', 'src/components/shell/navigation.ts', 'package.json', 'package-lock.json', 'netlify.toml', ...astSettingsExclusions(), ...participantCreationExclusions()), '')
+  assert.equal(git('diff', operationalUxBaseline, '--', 'src', ...operationalUxExclusions(), ...astSettingsExclusions(), ...participantCreationExclusions(), ...showcaseExclusions()), '')
+  assert.equal(git('diff', operationalUxBaseline, '--', 'src/lib', 'src/app', 'src/features/menu-visibility', 'src/components/shell/navigation.ts', 'package.json', 'package-lock.json', 'netlify.toml', ...astSettingsExclusions(), ...participantCreationExclusions(), ...showcaseExclusions()), '')
 })
 await check('native behavior readers and historical two-tree comparisons remain native', () => {
   const adapter = source('scripts/reviewed-consolidation-boundary.mjs')

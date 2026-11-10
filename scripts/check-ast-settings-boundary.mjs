@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { reviewedParticipantCreation } from './reviewed-participant-creation-boundary.mjs'
 import { execFileSync as nativeGit } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -80,7 +81,7 @@ await check('every changed or added runtime file has one exact reviewed pin', ()
   const paths = [...new Set((git('diff', '--name-only', astSettingsBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
   assert.ok(paths.length > 0)
   // Later participant-only files are separately pinned/tested; overlapping AST files stay in this gate.
-  assert.deepEqual(astSettingsFiles().sort(), paths.filter(path => astSettingsFiles().includes(path) || !reviewedParticipantCreation(path)))
+  assert.deepEqual(astSettingsFiles().sort(), paths.filter(path => astSettingsFiles().includes(path) || !reviewedShowcase(path) && !reviewedParticipantCreation(path)))
 })
 for (const path of astSettingsFiles()) {
   await check(`exact physical/supplied source and mutation rejection: ${path}`, () => {

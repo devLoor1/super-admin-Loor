@@ -49,19 +49,25 @@ export function decodeShowcaseDocument(value: unknown): ShowcaseDocument {
 }
 export function encodeShowcaseDocument(document: ShowcaseDocument) {
   if (validateShowcase(document, () => true).length) throw new ApiError(422, { code: 'E_SHOWCASE_VALIDATION' })
-  const association = (item: ImageAssociation) => ({ associationId: item.associationId, assetRef: item.assetRef, alt: item.alt, decorative: item.decorative })
+  // Match Core reqString in the wire projection, without rewriting the draft.
+  // Save acknowledgements and uncertain-result reconciliation use this codec.
+  const text = (value: string) => value.normalize('NFC').trim()
+  const association = (item: ImageAssociation) => ({ associationId: item.associationId, assetRef: text(item.assetRef), alt: text(item.alt), decorative: item.decorative })
   return {
     schemaVersion: 1 as const,
     banner: { images: document.banner.images.map(association) },
-    intro: document.introduction ? { title: document.introduction.title, subtitle: document.introduction.subtitle || null, bodyMarkdown: document.introduction.bodyMarkdown } : null,
-    cards: document.cards.map(item => ({
-      instanceId: item.instanceId,
-      source: { whitelabelId: Number(item.source.whitelabelId), slug: item.source.slug, ...(item.source.baseUrl && safeHttpUrl(item.source.baseUrl) ? { baseUrl: item.source.baseUrl } : {}) },
-      displayName: item.displayName, shortDescription: item.shortDescription,
-      colors: { panel: item.colors.panel, divider: item.colors.divider },
-      logo: { assetRef: item.logo!.assetRef, alt: item.logo!.alt }, images: item.images.map(association),
-      ...(item.internalTitle ? { internalTitle: item.internalTitle } : {}),
-    })),
+    intro: document.introduction ? { title: text(document.introduction.title), subtitle: text(document.introduction.subtitle) || null, bodyMarkdown: text(document.introduction.bodyMarkdown) } : null,
+    cards: document.cards.map(item => {
+      const internalTitle = text(item.internalTitle)
+      return {
+        instanceId: item.instanceId,
+        source: { whitelabelId: Number(item.source.whitelabelId), slug: text(item.source.slug), ...(item.source.baseUrl && safeHttpUrl(item.source.baseUrl) ? { baseUrl: text(item.source.baseUrl) } : {}) },
+        displayName: text(item.displayName), shortDescription: text(item.shortDescription),
+        colors: { panel: item.colors.panel, divider: item.colors.divider },
+        logo: { assetRef: text(item.logo!.assetRef), alt: text(item.logo!.alt) }, images: item.images.map(association),
+        ...(internalTitle ? { internalTitle } : {}),
+      }
+    }),
   }
 }
 export function sameCanonicalDocument(a: ShowcaseDocument, b: ShowcaseDocument): boolean {

@@ -4,17 +4,18 @@ import '@fontsource-variable/inter'
 import '../../../src/styles/tokens.css'
 import '../../../src/styles/global.css'
 import hero from '../../../src/features/whitelabel-showcase/assets/hero-team.png'
+import heroAlternate from '../../../src/features/whitelabel-showcase/assets/hero-collaboration.png'
 import logo from '../../../src/features/whitelabel-showcase/assets/conecta-logo.png'
 import smallLogo from '../../../src/features/whitelabel-showcase/assets/loor-logo.png'
 import photo from '../../../src/features/whitelabel-showcase/assets/cards/conecta-community.webp'
 import photo2 from '../../../src/features/whitelabel-showcase/assets/cards/conecta-square.webp'
 
 const uuid = (n: number) => `10000000-0000-4000-8000-${String(n).padStart(12, '0')}`
-const assets = new Map([[uuid(1), hero], [uuid(2), logo], [uuid(3), photo], [uuid(4), photo2]])
+const assets = new Map([[uuid(1), hero], [uuid(2), logo], [uuid(3), photo], [uuid(4), photo2], [uuid(5), heroAlternate]])
 const image = (n: number) => ({ associationId: uuid(n + 10), assetRef: uuid(n), alt: `Imagem QA ${n}`, decorative: false })
 let stored: Record<string, unknown> = {
   configured: true, revision: 1, schemaVersion: 1, owner: { whitelabelId: 6, slug: 'homologacao' },
-  document: { schemaVersion: 1, banner: { images: [image(1)] }, intro: null, cards: [{
+  document: { schemaVersion: 1, banner: { images: [image(1), image(5)] }, intro: null, cards: [{
     instanceId: uuid(20), source: { whitelabelId: 41, slug: 'origem-qa-41' },
     internalTitle: 'Card QA', displayName: 'Origem QA', shortDescription: 'Conteúdo sintético exclusivo do teste local.',
     colors: { panel: '#0A1E85', divider: '#87DBBE' }, logo: { assetRef: uuid(2), alt: 'Logo QA' }, images: [image(3), image(4)],

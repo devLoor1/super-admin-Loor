@@ -1,5 +1,72 @@
 # White Labels — CRUD e integração da vitrine
 
+## Revisão do candidato — 10/11/2026, 23h UTC−03
+
+O pedido de continuar não reinicia os lotes. GETs reais da revisão2/cópia sanitizada, D3 e uploads do harness permanecem aceitos nos limites registrados. Oito uploads anteriores são simulados; nenhuma gravação real ocorreu. Lote1 e participantes continuam encerrados.
+
+Diff de normalização reexaminado contra `reqString` do Git Core497e93f e envelopes reais salvos: os recibos reais são GETs200, não um PUT que comprovasse a normalização. A evidência causal é fonte exata + reprodução local interceptada. O runtime candidato permanece igual ao build `index-BP83KjWA.js`. Somente os testes foram reforçados para equivalência NFC/trim conhecida e diferenças de texto significativo/Markdown/ordem/IDs/assetRefs, além de revisão exata no repository/store. Não ampliar parsers, ignorar diferenças editoriais ou alterar contrato.
+
+Publicação/reversão detalhadas em `showcase-publication-plan.md`. Refs remotos dev/feature atuais confirmados por leitura; main excluído. O conector Netlify voltou a informar indisponível. GitHub sem statuses/check-runs/workflows não prova ausência de gatilhos; configurações/flags/aliases do painel são históricas até nova leitura. Sem condição nova informada, controlador não foi reinicializado; inicialização DEV rejeitada não foi repetida por nenhum comando/porta/ferramenta ou pedido manual.
+
+Consolidar candidato somente nas features, sem antecipar push/integração dev ou deploy. Continuam necessários: ler revisão corrente antes de qualquer write, alteração controlada/GET/recarga, conflito preservando draft, mídia real/renovação e projeção pública; validação DEV/compilada e destinos qualificados antecedem publicação editor→público. Não voltar a pedir entrega genérica Backend nem tratar ausência de header administrativo como stale read demonstrado.
+
+**Revisão final:**63 checks operacionais PASS (47 preservados +14 diferenças semânticas válidas +2 revisões divergentes com documento equivalente). Os negativos alteram o wire depois do encoder; ambos os documentos são válidos. Texto com caixa/acentos/espaços internos, Markdown com ênfase/link/espaços, ordem de cards/imagens, IDs e assetRefs diferentes produzem comparação falsa, PUT200 interceptado incerto e GET de reconciliação→conflito, preservando draft/base e apenas um PUT. Revisões2/4 quando esperado3 também não são aceitas. Nenhum novo ajuste de runtime foi necessário.
+
+Conferência sem rede dos GETs reais salvos: decode→encode preservou documento/IDs, retirando somente três URLs temporárias; IDs públicos correspondem aos administrativos. Isso não comprova comportamento de PUT real nem revisão atual. Evidências novas em `tmp/whitelabel-showcase-integration-20261110/candidate-review/`, logs63 e `saved-get-codec-review.json`. Lint focado do teste/diff-check aprovados. CodecLFhash276e9fb8b7feec0ab3045f1ecece8dc2f382a647a3de25d2e06ae82ff22d295c e bundleSHA b15793a42e2d785bba4a2347312cb75ca247b98570ed3b1dcef950976605fb96 conferidos iguais ao corte anterior;151/59, TypeScript/lint global/build válidos reaproveitados, sem rebuild.
+
+Candidato consolidado por commits locais nas features, sem push/dev/deploy; recibo com SHAs finais em `candidate-review/consolidation-final.json`. Documentação pública somente; contexto permanente fora desses commits, preservando seu estado preexistente. Nesta revisão:0 leituras operacionais novas,0 gravações/uploads reais,0 uploads de navegador,0 configurações. Novos testes Node têm transporte interceptado; os oito uploads da rodada anterior continuam apenas simulados.
+
+## Estado vigente — retomada dos lotes 2/3 em 10/11/2026, 22h UTC−03
+
+Este adendo supera as próximas ações históricas de aguardar implementação/publicação do Backend. O usuário informou Core AWS `497e93f` e Nest Render homolog `721f617` publicados, gate WL6, upload201, CAS409 e smoke até revisão2. **SHAs de implantação e esses writes são reportados pelo Backend**; não foram certificados como novos testes próprios. Lote1 e participantes permanecem encerrados.
+
+### Leituras próprias e preservação
+
+Sessão publicada restaurada pelo usuário; `/api/auth/me`200 confirmou SUPER_ADMIN. GET do tenant confirmou ID6, `homologacao`, ativo. Leituras explícitas somente, pela aba integrada autenticada; público consultado anonimamente, sem Authorization/cookies. Antes de qualquer edição foram salvos o documento canônico sem URLs temporárias e os envelopes sanitizados.
+
+| Caminho | Horário UTC (UTC−03 em 10/11) | Resultado | Correlação disponível |
+| --- | --- | --- | --- |
+| Admin `/api/whitelabels/6/showcase` | 2026-11-11T01:15:42Z (22:15:42) | 200, `{data}`, configured=true, schema1, owner6/homologacao, revisão2, um card/uma imagem de banner | `f5c1b832-4aba-47ef-a36f-baca8bbcd402` |
+| Público `/service/showcase`, slug homologacao | 2026-11-11T01:17:23Z (22:17:23) | 200, `{data}`, revisão2; sem source/internalTitle/assetRef/warnings | não disponível |
+| Admin `/api/whitelabels/9/showcase` | 2026-11-11T01:19:12Z (22:19:12) | 404 `E_SHOWCASE_NOT_AVAILABLE` | `b9c7c077-24bf-43ca-8796-10dc6fbc614c` |
+| Público `/service/showcase`, slug QA9 | 2026-11-11T01:19:13Z (22:19:13) | 404 `E_SHOWCASE_NOT_AVAILABLE` | não disponível |
+
+Headers reais: público `Cache-Control: private, no-store`; administrativo sem Cache-Control. Ambos sem indicação de disk cache/service worker nesta leitura. Isso comprova a diferença de cabeçalho, **não comprova conteúdo administrativo obsoleto**. Renovação em navegador e leitura após escrita ainda necessárias. O gate Core depende de configuração por deploy e owner/slug; não há teste novo em produção nem garantia inferida de isolamento de todos os ambientes.
+
+Evidências: `C:/Users/User/Desktop/Loor/tmp/whitelabel-showcase-integration-20261110/`. `document-before-revision-2.json` preserva o conteúdo anterior, incluindo refs duráveis; envelopes removem queries assinadas. Não apagar documento para repetir primeira gravação, não substituir por fixtures, não usar QA9 como proprietário.
+
+### Navegador local isolado — resultados novos
+
+Harness recompilado com o código atual. Uma alteração exclusivamente de fixture acrescentou a segunda fotografia aprovada ao banner para permitir conferir seus controles; nenhuma alteração visual de produto ou imagem nova. Transporte interceptado, identidade sintética e zero requests operacionais nesse harness.
+
+- D3 medido: viewport700→`.wl-page`685;701→686;715→700;716→701. Foto/controles ocultos nos três primeiros e visíveis em701 px úteis. Cena oculta tem altura0, sem espaço de foto. Matriz1440/900/768/390/320 sem overflow horizontal; imagens carregadas. Capturas pintadas confirmam a composição, inclusive715/716 e320. Prévia Desktop com foto, Mobile390 sem foto. A dimensão Desktop visual escalada não equivale à largura CSS de layout.
+- A API de viewport do navegador não alterou a aba oculta; medidas reais foram obtidas por emulação CDP suportada e conferidas no DOM. Capturas iniciais `renderer-*` de página inteira podem mudar o breakpoint e **não são prova visual do limite**. Usar `d3-actual-matrix.json` e `d3-painted-*.jpg`, após aguardar dois frames de pintura.
+- Logo válida aplicada; arquivo de assinatura inválida rejeitado com mensagem, controles livres e imagem anterior preservada; nova tentativa válida aplicada. Substituição e adição de fotografia do card exercitadas (terceira posição criada). Novo alt continua obrigatório, conforme UI.
+- Upload retido pelo transporte de teste, com ledger `pendente: sim` e UI Enviando. Escape fechou; X/fechar-reabrir e nova escolha preservaram a imagem mais recente após liberar a resposta antiga; clique no fundo também fechou e preservou a logo. O seletor operacional não oferece exemplos: a corrida usou um upload novo legítimo, não fixtures adicionadas à interface. Escape preservou a imagem observável, mas usou o mesmo arquivo; a identidade interna da associação não foi provada separadamente nesse cenário.
+- Total deste harness: **8 POSTs interceptados de mídia, zero PUT**; inválido barrado antes da rede. Console consultado sem warn/error no corte. Não equivale a upload/persistência/provedor real. Evidência detalhada em `upload-browser-results.json`; aceites anteriores continuam históricos.
+
+### Limites atuais e próxima ação
+
+O controlador voltou a falhar: Netlify tab5 `Input.dispatchMouseEvent` timeout ao abrir configuração; navegação única ao href observado retornou timeout `Runtime.evaluate`; uma leitura do harness ainda funcionou, mas depois o clique de descarte sintético na tab4 também retornou timeout `Input.dispatchMouseEvent`. Interações interrompidas, sem ciclos de recuperação/navegador externo. Não atribuir a aplicação, RAM ou Backend.
+
+Inicialização DEV real proposta em127.0.0.1:5195 foi **rejeitada pela revisão automática**, antes de iniciar processo, com `blocked by policy`, sem justificativa mais específica. Não foi contornada nem delegada ao usuário como execução manual. Preview isolado próprio PID2724/5194 encerrado após conferir command line; outros servidores preservados.
+
+Permanecem sem nova cobertura real: seleção/repetição/personalização/ordem pela UI, PUT/readback/projeção após save, conflito409 preservando draft, renovação de mídia e validação DEV/compilado/publicado. Fonte e testes interceptados continuam evidência complementar. Uma incompatibilidade de normalização NFC/trim foi reproduzida localmente contra a função exata Core497e93f e o consumer atual; correção mínima/testes registrados no complemento seguinte, sem PUT real.
+
+Netlify overview reconfirmou SA publicado em `6aeb0403fa9df580771946fb`, devd49815d; configurações não terminaram de ser reconferidas. Público ainda exige resolver, pelos logs efetivos, a saída `artifacts/loor/dist/public` versus override histórico do painel. Autorização de publicação permanece, condicionada à validação; **zero commit/push/merge/deploy/flags e zero writes reais nesta retomada**. Não afirmar preservação pós-push, pois não houve push.
+
+Próximo: usar a correção local validada, restabelecer uma sessão integrada funcional e resolver o bloqueio específico de execução DEV; então concluir E2E real usando leitura atual da revisão, reconfirmar gatilhos/configuração e publicar editor antes do público. Nenhuma nova entrega genérica ou reimplementação Backend é pré-requisito. Participantes, QA9, mock e outras frentes preservados.
+
+### Correção local concluída — normalização Core497e93f
+
+Reprodução com a função `reqString` extraída do objeto Git exato Core `497e93f5d84e22190875b4f049dfe7665d4805eb` e as funções reais do frontend27138b3: controle canônico salvou; espaços nas pontas e Unicode decomposto produziram PUT200 sintético seguido de `uncertain`/GET→`conflict`. Transporte totalmente interceptado, um PUT por cenário, sem retry. Recibo `tmp/whitelabel-crud-showcase-20261110/normalization-core497-repro.json` preserva a falha pré-correção.
+
+Correção mínima em `showcaseCodec.ts`: projeção NFC+trim nos campos correspondentes do contrato, sem alterar o rascunho antes da confirmação; subtitle vazio→null e internalTitle vazio omitido. Save/GET de reconciliação reutilizam o codec; CAS/revisão/+1 e ausência de reenvio automático preservados. Quatro cenários novos verificam confirmação normalizada, rascunho e divergência real. Revisão independente sem bloqueador. Borda preexistente de UUID maiúsculo não foi ampliada nesta rodada; UI gera UUID minúsculo, e não se afirma canonicalização universal.
+
+**Checks finais:**47 operacionais (43+4),151 navegação,59 fronteira, TypeScript, lint, build e diff-check PASS. Dois avisos de lint legados preservados; aviso de chunk grande no build. Demais checks antigos reutilizados pela ausência de mudanças correspondentes. Somente um hash after do manifesto foi atualizado, com revisão; demais65 e before preservados. Build oficial candidato `dist/assets/index-BP83KjWA.js`, SHA256 `b15793a42e2d785bba4a2347312cb75ca247b98570ed3b1dcef950976605fb96`, flag/API homolog somente no processo. Logs `*-normalization497.log` e `showcase-bundle-normalization497.json` na pasta histórica acima, sem sobrescrever logs anteriores.
+
+Cobertura visual/upload desta retomada precede esse ajuste do codec; CSS, componentes de upload e renderer não mudaram. Não alegar E2E real ou UI pós-correção. HEAD continua27138b3, seis arquivos locais modificados (codec, teste, manifesto, fixture e dois documentos), sem commit/push. Público95fde1f com somente documentação modificada. Próximo build/harness usado em nova integração deverá corresponder a esse candidato.
+
 ## Checkpoint 10/11/2026 — lote 1 encerrado
 
 Esta frente é independente dos testes de participantes, encerrados por decisão do usuário. Não retomar contas, onboarding ou Termos.

@@ -111,6 +111,133 @@ await check('codec allowlist, canonical intro/null/source numeric and strict pub
   assert.deepEqual(codec.decodePublicShowcase({ data: { configured: false, revision: null, document: null } }), { configured: false, revision: null, document: null })
   assert.throws(() => codec.decodeStoredShowcase({ data: { ...emptyWire().data, revision: 0 } }))
 })
+await check('Core NFC/trim wire normalization preserves the editable draft and non-text fields', () => {
+  const doc = validDocument(), raw = '  Cafe\u0301  '
+  doc.banner.images[0].alt = raw
+  doc.introduction = { title: raw, subtitle: raw, bodyMarkdown: '  **Cafe\u0301**  ', markdownVersion: 1 }
+  Object.assign(doc.cards[0], { displayName: raw, shortDescription: raw, internalTitle: raw })
+  doc.cards[0].logo.alt = raw; doc.cards[0].images[0].alt = raw
+  doc.cards[0].source.baseUrl = '  https://tenant.example.invalid/wallet  '
+  const before = structuredClone(doc), wire = codec.encodeShowcaseDocument(doc)
+  for (const value of [wire.banner.images[0].alt, wire.intro.title, wire.intro.subtitle, wire.cards[0].displayName, wire.cards[0].shortDescription, wire.cards[0].internalTitle, wire.cards[0].logo.alt, wire.cards[0].images[0].alt]) assert.equal(value, 'Café')
+  assert.equal(wire.intro.bodyMarkdown, '**Café**'); assert.equal(wire.cards[0].source.baseUrl, 'https://tenant.example.invalid/wallet')
+  assert.equal(wire.cards[0].instanceId, doc.cards[0].instanceId); assert.deepEqual(wire.cards[0].colors, doc.cards[0].colors)
+  assert.equal(wire.banner.images[0].assetRef, doc.banner.images[0].assetRef); assert.deepEqual(doc, before)
+  doc.introduction.subtitle = '   '; doc.cards[0].internalTitle = '   '
+  const optional = codec.encodeShowcaseDocument(doc)
+  assert.equal(optional.intro.subtitle, null); assert.equal(Object.hasOwn(optional.cards[0], 'internalTitle'), false)
+})
+await check('PUT200 with Core-normalized content is acknowledged; draft stays raw until confirmation', async () => {
+  e.session(); calls = []; const baseline = validDocument()
+  answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
+  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
+  const canonical = structuredClone(store.getShowcaseState().draft); canonical.cards[0].displayName = 'Café'
+  let release; answer = () => new Promise(resolve => { release = resolve })
+  const pending = store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().draft.cards[0].displayName, ' Cafe\u0301 ')
+  const sent = JSON.parse(mutations()[0].options.body)
+  assert.equal(sent.document.cards[0].displayName, 'Café'); assert.equal(sent.expectedRevision, 2)
+  const receipt = enrichedWire(canonical, 3); delete receipt.data.owner
+  release(response(200, receipt)); await pending
+  assert.equal(store.getShowcaseState().phase, 'saved'); assert.equal(store.getShowcaseState().baseRevision, 3)
+  assert.equal(store.getShowcaseState().draft.cards[0].displayName, 'Café'); assert.equal(mutations().length, 1)
+})
+for (const [serverName, expectedPhase] of [['Café', 'saved'], ['Outro nome', 'conflict']]) await check('uncertain PUT reconciles normalized content without masking genuine divergence: ' + expectedPhase, async () => {
+  e.session(); calls = []; answer = () => response(200, emptyWire()); await store.loadShowcase(actor())
+  const doc = validDocument(); doc.cards[0].displayName = ' Cafe\u0301 '
+  media.rememberDocumentAssets(doc); store.updateDraft(actor(), () => doc)
+  answer = () => response(503, {}); await store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.equal((await store.saveDraft(actor())).status, 'blocked')
+  const canonical = structuredClone(doc); canonical.cards[0].displayName = serverName
+  answer = () => response(200, enrichedWire(canonical, 1)); await store.reconcileDraft(actor())
+  assert.equal(store.getShowcaseState().phase, expectedPhase); assert.equal(mutations().length, 1)
+  assert.equal(store.getShowcaseState().draft.cards[0].displayName, expectedPhase === 'saved' ? 'Café' : ' Cafe\u0301 ')
+  assert.equal(store.getShowcaseState().baseRevision, expectedPhase === 'saved' ? 1 : null)
+})
+function comparisonDocument() {
+  const doc = validDocument()
+  doc.introduction = { title: 'Introdução', subtitle: '', bodyMarkdown: 'Texto com **ênfase** e [destino](https://example.invalid/a).', markdownVersion: 1 }
+  doc.cards[0].shortDescription = 'Descrição com espaços internos'
+  doc.banner.images.push(model.newImageAssociation(uuid(5), 'second-banner.png', 'Second banner'))
+  doc.cards[0].images.push(model.newImageAssociation(uuid(6), 'second-card.png', 'Second card photo'))
+  const second = structuredClone(doc.cards[0])
+  second.instanceId = model.newUuid(); second.displayName = 'Segundo card'
+  second.images = [model.newImageAssociation(uuid(7), 'other-card.png', 'Other card photo')]
+  doc.cards.push(second)
+  return doc
+}
+// Mutate the returned wire AFTER encoding the attempt. Expected differences
+// are never passed through the encoder before becoming the server response.
+const meaningfulWireChanges = [
+  ['text letter case', doc => { doc.cards[0].displayName = 'CAFÉ' }],
+  ['text accent', doc => { doc.cards[0].displayName = 'Cafe' }],
+  ['text internal spaces', doc => { doc.cards[0].shortDescription = 'Descrição com  espaços internos' }],
+  ['Markdown emphasis', doc => { doc.intro.bodyMarkdown = 'Texto com *ênfase* e [destino](https://example.invalid/a).' }],
+  ['Markdown link destination', doc => { doc.intro.bodyMarkdown = 'Texto com **ênfase** e [destino](https://example.invalid/b).' }],
+  ['Markdown internal spaces', doc => { doc.intro.bodyMarkdown = 'Texto  com **ênfase** e [destino](https://example.invalid/a).' }],
+  ['card order', doc => { doc.cards.reverse() }],
+  ['banner image order', doc => { doc.banner.images.reverse() }],
+  ['card image order', doc => { doc.cards[0].images.reverse() }],
+  ['card instance ID', doc => { doc.cards[0].instanceId = uuid(40) }],
+  ['image association ID', doc => { doc.banner.images[0].associationId = uuid(41) }],
+  ['source Whitelabel ID', doc => { doc.cards[0].source.whitelabelId = 13 }],
+  ['photo assetRef', doc => { doc.banner.images[0].assetRef = uuid(42) }],
+  ['logo assetRef', doc => { doc.cards[0].logo.assetRef = uuid(43) }],
+]
+for (const [name, change] of meaningfulWireChanges) await check('valid meaningful difference survives comparator, acknowledgement and reconciliation: ' + name, async () => {
+  e.session(); calls = []; const baseline = comparisonDocument()
+  answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
+  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
+  const attempted = structuredClone(store.getShowcaseState().draft), storedBefore = repo.readStoredShowcase()
+  const receipt = enrichedWire(attempted, 3), beforeChange = structuredClone(receipt.data.document)
+  change(receipt.data.document)
+  assert.notDeepEqual(receipt.data.document, beforeChange)
+  const different = codec.decodeStoredShowcase(receipt).document
+  // Both operands are valid; false must not come from sameCanonicalDocument's
+  // validation catch. All Markdown variants stay in the permitted subset.
+  assert.deepEqual(validation.validateShowcase(attempted, () => true), [])
+  assert.deepEqual(validation.validateShowcase(different, () => true), [])
+  assert.doesNotThrow(() => codec.encodeShowcaseDocument(attempted))
+  assert.doesNotThrow(() => codec.encodeShowcaseDocument(different))
+  assert.equal(codec.sameCanonicalDocument(attempted, different), false)
+  answer = (url, options) => {
+    assert.equal(url.pathname, '/api/whitelabels/6/showcase'); assert.equal(options.method, 'PUT')
+    return response(200, receipt)
+  }
+  await store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.deepEqual(repo.readStoredShowcase(), storedBefore)
+  assert.deepEqual(store.getShowcaseState().draft, attempted); assert.equal(store.getShowcaseState().baseRevision, 2)
+  assert.equal((await store.saveDraft(actor())).status, 'blocked')
+  assert.equal(JSON.parse(mutations()[0].options.body).expectedRevision, 2)
+  answer = (url, options) => {
+    assert.equal(url.pathname, '/api/whitelabels/6/showcase'); assert.equal(options.method, 'GET')
+    return response(200, receipt)
+  }
+  await store.reconcileDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'conflict'); assert.equal(store.getShowcaseState().conflictRevision, 3)
+  assert.equal(store.getShowcaseState().baseRevision, 2); assert.deepEqual(store.getShowcaseState().draft, attempted)
+  assert.equal(mutations().length, 1); assert.equal(calls.filter(call => call.options.method === 'GET').length, 2)
+})
+for (const revision of [2, 4]) await check('matching canonical document cannot acknowledge the wrong revision: ' + revision, async () => {
+  e.session(); calls = []; const baseline = comparisonDocument()
+  answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
+  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
+  const attempted = structuredClone(store.getShowcaseState().draft), storedBefore = repo.readStoredShowcase()
+  const receipt = enrichedWire(attempted, revision), same = codec.decodeStoredShowcase(receipt).document
+  assert.deepEqual(validation.validateShowcase(attempted, () => true), [])
+  assert.deepEqual(validation.validateShowcase(same, () => true), [])
+  assert.doesNotThrow(() => codec.encodeShowcaseDocument(attempted)); assert.doesNotThrow(() => codec.encodeShowcaseDocument(same))
+  assert.equal(codec.sameCanonicalDocument(attempted, same), true)
+  answer = () => response(200, receipt); await store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.deepEqual(repo.readStoredShowcase(), storedBefore)
+  assert.deepEqual(store.getShowcaseState().draft, attempted); assert.equal(store.getShowcaseState().baseRevision, 2)
+  assert.equal((await store.saveDraft(actor())).status, 'blocked')
+  await store.reconcileDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'conflict'); assert.equal(store.getShowcaseState().conflictRevision, revision)
+  assert.equal(store.getShowcaseState().baseRevision, 2); assert.deepEqual(store.getShowcaseState().draft, attempted)
+  assert.equal(mutations().length, 1); assert.equal(JSON.parse(mutations()[0].options.body).expectedRevision, 2)
+  assert.equal(calls.filter(call => call.options.method === 'GET').length, 2)
+})
 await check('save validation rejects foreign owner, synthetic refs, decorative alt, duplicate IDs and forbidden markdown', () => {
   for (const change of [doc => { doc.owner.whitelabelId = 4 }, doc => { doc.banner.images[0].assetRef = 'blob:local' }, doc => { doc.banner.images[0].decorative = true }, doc => { doc.cards[0].images[0].associationId = doc.banner.images[0].associationId }, doc => { doc.introduction = { title: 'Title', subtitle: '', bodyMarkdown: '`code`', markdownVersion: 1 } }]) {
     const doc = validDocument(); change(doc); assert.ok(validation.validateShowcase(doc, () => true).length); assert.throws(() => codec.encodeShowcaseDocument(doc))

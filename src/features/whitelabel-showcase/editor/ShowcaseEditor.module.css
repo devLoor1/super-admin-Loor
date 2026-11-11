@@ -178,6 +178,18 @@
 .pickerSection { display: grid; justify-items: start; gap: 10px; padding: 4px 0 16px; }
 .pickerSection + .pickerSection { padding-top: 16px; border-top: 1px solid var(--surface-divider); }
 .pickerTitle { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-on-dark); }
+.logoModes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.logoModes button[aria-pressed='true'] { border-color: #8b84ed; background: #49428b55; }
+.logoChoices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; }
+.logoChoice { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 10px; border: 1px solid var(--surface-border-strong); border-radius: 9px; font-size: 12px; color: var(--text-on-dark-secondary); cursor: pointer; overflow-wrap: anywhere; }
+.logoChoice:has(input:checked) { border-color: #a49fff; background: #49428b33; }
+.logoChoice:focus-within { outline: 2px solid #a49fff; outline-offset: 2px; }
+.logoChoice strong { color: var(--text-on-dark); }
+.logoChoice small { line-height: 1.45; }
+.logoChoice input { justify-self: start; accent-color: #a49fff; }
+.logoThumbnail { display: grid; place-items: center; width: 100%; height: 94px; padding: 10px; border-radius: 6px; background: #0b1f33; }
+.logoThumbnail[data-background='light'] { background: #fff; }
+.logoThumbnail img { display: block; max-width: 100%; max-height: 74px; object-fit: contain; }
 .exampleGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; width: 100%; margin: 0; padding: 0; list-style: none; }
 .exampleButton { display: grid; gap: 6px; width: 100%; padding: 6px; border: 1px solid var(--surface-border-strong); border-radius: 9px; background: #12182680; color: var(--text-on-dark-secondary); font-size: 11px; text-align: left; overflow-wrap: anywhere; }
 .exampleButton:hover:not(:disabled) { border-color: #6f68c9; }

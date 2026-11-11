@@ -16,7 +16,7 @@ export const showcaseReviewPaths = Object.freeze([
   'src/features/whitelabels/WhitelabelDetailPanel.tsx',
   ...[
     'showcaseAccess.ts', 'showcaseClient.ts', 'showcaseCodec.ts', 'showcaseMapping.ts',
-    'showcaseMarkdown.ts', 'showcaseMedia.ts', 'showcaseModel.ts', 'showcaseRepository.ts',
+    'showcaseMarkdown.ts', 'showcaseMedia.ts', 'showcaseLogoCatalog.ts', 'showcaseModel.ts', 'showcaseRepository.ts',
     'showcaseSourceLookup.ts', 'showcaseStore.ts', 'showcaseValidation.ts',
     'editor/BannerTab.tsx', 'editor/CardEditorPage.tsx', 'editor/CardsTab.tsx',
     'editor/editorHooks.ts', 'editor/ImageListEditor.tsx', 'editor/IntroTab.tsx',
@@ -30,7 +30,7 @@ export const showcaseReviewPaths = Object.freeze([
     'public/showcase.css', 'public/ShowcaseChrome.tsx', 'public/showcaseTypes.ts',
     'public/ShowcaseView.tsx', 'public/useCardAutoplay.ts', 'public/usePointerParallax.ts',
     'public/useShowcaseMedia.ts',
-    'assets/ASSETS.md', 'assets/loor-logo.png', 'assets/cvm-notice.png',
+    'assets/ASSETS.md', 'assets/loor-logo.png', 'assets/loor-logo-white-solid.png', 'assets/cvm-notice.png',
     'assets/conecta-logo.png', 'assets/impulso-logo.png',
     'assets/hero-team.png', 'assets/hero-collaboration.png',
     'assets/cards/conecta-community.webp', 'assets/cards/conecta-platform.webp', 'assets/cards/conecta-square.webp',

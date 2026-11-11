@@ -219,10 +219,12 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
         </PreviewPanel>
       </div>
 
-      {logoPicker && <MediaPickerDialog purpose="logo" title={card.logo ? 'Substituir logotipo' : 'Adicionar logotipo'} onClose={() => setLogoPicker(false)} onPicked={media => {
+      {logoPicker && <MediaPickerDialog purpose="logo" logoSource={card.source} title={card.logo ? 'Substituir logotipo' : 'Adicionar logotipo'} onClose={() => setLogoPicker(false)} onPicked={media => {
         setLogoPicker(false)
         setLogoWarnings(media.warnings)
-        update({ logo: { assetRef: media.assetRef, fileName: media.fileName, alt: card.logo?.alt || card.displayName, origin: 'upload' } })
+        if (card.logo?.assetRef !== media.assetRef) {
+          update({ logo: { assetRef: media.assetRef, fileName: media.fileName, alt: card.logo?.alt || media.suggestedAlt || card.displayName, origin: 'upload' } })
+        }
         window.requestAnimationFrame(() => document.getElementById(fieldIds.cardLogoAlt)?.focus())
       }} />}
 

@@ -24,7 +24,7 @@
     },
     "src/features/whitelabel-showcase/assets/ASSETS.md": {
       "before": null,
-      "after": "72c0240c23186227c05f98783ada46759940f5108dc144f41edda3259ac745f7"
+      "after": "ec44f7f8f57407c2e2445f8f85a0a47db42b101cf41b86acb64ca8412d957729"
     },
     "src/features/whitelabel-showcase/assets/cards/conecta-community.webp": {
       "before": null,
@@ -100,7 +100,7 @@
     },
     "src/features/whitelabel-showcase/editor/CardEditorPage.tsx": {
       "before": null,
-      "after": "65e90cbc5caa8d94e3fdf70800773378a14db4db9c3949d08f889ea5d5031cd2"
+      "after": "ce1d24fa41383ab454385dc655549a05b5ad079199731dd93ef3f666f09073dd"
     },
     "src/features/whitelabel-showcase/editor/CardsTab.tsx": {
       "before": null,
@@ -120,7 +120,7 @@
     },
     "src/features/whitelabel-showcase/editor/MediaPickerDialog.tsx": {
       "before": null,
-      "after": "63d161a2da5f96e32c54462b0c76af61a4d346f2dc7a9f49a349d78b7802f203"
+      "after": "b90c009940ecb6fe3174d8f1ce3fd1ae49876658294a6184a38c43252fac2302"
     },
     "src/features/whitelabel-showcase/editor/PreviewPanel.tsx": {
       "before": null,
@@ -128,7 +128,7 @@
     },
     "src/features/whitelabel-showcase/editor/ShowcaseEditor.module.css": {
       "before": null,
-      "after": "a9f3e60d126ea2f1c2679fb9e7e51789e29cc2eb50f809ed58c095cbef98f052"
+      "after": "e4526c2981cc33e4ab9b07cc2568ec4379ac2b5f337b18c9f335c2cca4e9676e"
     },
     "src/features/whitelabel-showcase/editor/ShowcaseEntryCard.module.css": {
       "before": null,
@@ -265,6 +265,14 @@
     "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
       "before": "e308fdbbc8ccac06f5ba101cb2d0875e589b6346043f1e46d876a6044eadebb6",
       "after": "4b093babfb177e6cb831d06bb6a94bc9e174e692fa9a7ab7c598bb6a754662ee"
+    },
+    "src/features/whitelabel-showcase/showcaseLogoCatalog.ts": {
+      "before": null,
+      "after": "b947c92134819d86da7245abb2dbd4f22885d31482cf99c60302cce5741b9c62"
+    },
+    "src/features/whitelabel-showcase/assets/loor-logo-white-solid.png": {
+      "before": null,
+      "after": "b27dedf3aea07f367fac6f8616043118778b313364d1b696bc2474cf0a8d2957"
     }
   }
 }

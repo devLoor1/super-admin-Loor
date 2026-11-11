@@ -27,3 +27,12 @@ Uso: demonstração offline da vitrine configurável. CONECTA e IMPULSO são ide
 | `fonts/sources.json` | 04e155840d8536d1e839bdf50305113a7d1e88dd14eff169d565803ff095e91b | URLs de origem das fontes |
 
 Ícones: os componentes usam `lucide-react` (dependência existente). Os três glifos sociais do footer (Instagram, LinkedIn, YouTube) reproduzem os contornos Feather (licença MIT) usados pela vitrine aprovada via `react-icons/fi`, porque o `lucide-react` 1.x instalado não inclui ícones de marca.
+
+## Reutilização de logos identificadas — complemento 11/11/2026
+
+O seletor operacional oferece um catálogo limitado de arquivos reais identificados, além de refs já vinculadas como logos no documento WL6. Não é catálogo global de branding, nem infere logo institucional de imagem de login/e-mail/PWA.
+
+- `loor-logo.png`: versão escura do site LOØR; 236×64 RGBA, 2.896 bytes, SHA256 `c2f59575d013103a8cdbd64c06f1c374ee95e72a88229db8b7a96bcea8af8421`. Cópia já presente no SA, idêntica à fonte `loor-capital-suite/artifacts/loor/src/assets/loor-logo.png`, usada por `config/brand.ts`/`AppLogo`.
+- `loor-logo-white-solid.png`: variante clara existente, aceita pelo usuário na vitrine WL6/revisão7; 1152×576 RGBA, 224.502 bytes, SHA256 `b27dedf3aea07f367fac6f8616043118778b313364d1b696bc2474cf0a8d2957`. Cópia binária do arquivo de mesmo nome em `loor-capital-suite/artifacts/loor/src/assets/`, fonte atual d35507d; origem histórica commit297e808. Não é a variante `white-official` e não se apresenta como aprovação institucional geral.
+
+As fontes originais foram preservadas. As opções de arquivo são servidas pelo próprio SA e copiadas para um novo assetRef WL6/slotshowcase apenas após seleção explícita. Refs elegíveis já vinculadas à vitrine são reutilizadas sem upload; outras instâncias e originais não são alterados. Nenhuma variante CONECTA/IMPULSO entra neste catálogo operacional.

@@ -18,7 +18,9 @@ const dataModule = code => `data:text/javascript;base64,${Buffer.from(code).toSt
 let checks = 0
 async function check(name, run) { try { await run(); checks++ } catch (cause) { throw Error(name, { cause }) } }
 function resolveImport(from, specifier) {
-  const base = resolve(root, dirname(from), specifier)
+  // Vite's explicit no-inline asset modifier keeps binary logos out of data URLs.
+  // Resolve its physical file without excluding that file from the import graph.
+  const base = resolve(root, dirname(from), specifier.replace(/\?no-inline$/, ''))
   const found = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, resolve(base, 'index.ts'), resolve(base, 'index.tsx')]
     .find(p => existsSync(p) && statSync(p).isFile())
   assert.ok(found, `Unresolved current import: ${from} -> ${specifier}`)

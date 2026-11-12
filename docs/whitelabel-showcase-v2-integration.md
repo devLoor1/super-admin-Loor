@@ -94,3 +94,11 @@ Leitor público `27a879e4eff899138fb4212940b704a853cedad7` integrado e enviado a
 O candidato do editor passou pelas 52 suítes mantidas, typecheck, lint, build e diff-check. O assert legado de contagem de POST de mídia foi atualizado para exigir exatamente upload e copy autorizados da WL6; não foi relaxado para aceitar outros writes. Há dois warnings legados de lint e aviso de tamanho de bundle, sem falhas. Recibos em `tmp/showcase-v2-integration-20261112/editor-checks/`. A checagem DEV local não foi repetida: conforme autorização explícita do usuário, a validação real usa o build publicado em homologação, com escrita bloqueada até leitura dos dois leitores. A validação Node/SSR não é rotulada como navegador real.
 
 O leitor do editor neste commit mantém SHOWCASE_V2_WRITES_ENABLED=false. Após verificar sua leitura publicada, uma mudança separada habilitará escrita e passará pelos checks afetados. Esta versão V2 com escrita bloqueada é a referência mínima para uma reversão segura do editor após migração; registrar seu SHA/deploy no próximo marco. Main e demais referências históricas permanecem preservados.
+
+## Liberação coordenada da escrita — condição verificada
+
+Antes desta mudança, ambos os leitores foram conferidos no navegador integrado com schema2/revisão8: público27a879e e editor57e306f. Editor publicado no deploy6af600564952647fa9e7e51f em2026-11-12T18:07:49.506Z. A primeira leitura de contexto terminou abortada sem resposta HTTP; uma nova leitura pelo botão normal concluiu HTTP200, sem mutação e sem causa atribuída. Consulta WL6/logo-options HTTP200 retornou variants[] vazio; variantesLOOR e referência atual permaneceram; abrir/fechar o diálogo não fez POST.
+
+Este segundo commit altera somente o latch de escrita e seu pin revisado. Passaram os6checks afetados(readiness,boundary,navegação,operacional,logos,CRUD), tipagem,lint,build,diff; as52suítes da versão anterior permanecem válidas para o runtime inalterado. Recibos em editor-checks/writer-cutover. Escrita real e copy seguem pendentes até confirmar o deploy deste commit; reler revisão antes do primeiroPUT.
+
+Referência concreta de reversão compatível: editor57e306f7a1c729d7131cdb2398bfcf5046421fd2(latchfalse), público27a879e4eff899138fb4212940b704a853cedad7. Mitigação será novo commit sobredev repondo latchfalse e seu pin, mantendo o leitorV2, nunca reset/downgradeV1.

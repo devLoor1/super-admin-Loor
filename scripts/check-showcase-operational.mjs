@@ -11,11 +11,12 @@ const require = createRequire(resolve(root, 'package.json'))
 const data = code => `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
 const react = data('export const useSyncExternalStore = (_, get) => get(); export const useEffect = effect => effect();')
 const BASE = 'https://backend-super-admin-loor.onrender.com/api'
-async function environment(flag, base = BASE) {
+async function environment(flag, base = BASE, writesEnabled = true) {
   const cache = new Map(), env = { VITE_API_BASE_URL: base, VITE_SHOWCASE_ENABLED: flag }
   async function url(path) {
     if (cache.has(path)) return cache.get(path)
     let code = ts.transpileModule(await readFile(path, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText.replaceAll('import.meta.env', `(${JSON.stringify(env)})`)
+    if (path.endsWith('showcaseRelease.ts')) code = code.replace(/SHOWCASE_V2_WRITES_ENABLED = (?:false|true)/, 'SHOWCASE_V2_WRITES_ENABLED = ' + writesEnabled)
     for (const match of [...code.matchAll(/from\s+(['"])([^'"]+)\1/g)]) {
       const spec = match[2]
       const target = spec === 'react' ? react : spec.startsWith('.') ? await url(resolve(dirname(path), spec + '.ts')) : pathToFileURL(require.resolve(spec)).href
@@ -70,14 +71,14 @@ function validDocument() {
   const card = model.createCardInstance({ source: { whitelabelId: '12', slug: 'source-tenant', name: 'Source', logical: null } })
   card.shortDescription = 'Manual description'; card.logo = { assetRef: uuid(3), alt: 'Logo', fileName: 'logo.png', origin: 'upload' }
   card.images = [model.newImageAssociation(uuid(4), 'card.jpg', 'Card photo')]
-  return { ...model.emptyShowcaseDocument(), banner: { images: [model.newImageAssociation(uuid(2), 'banner.png', 'Banner photo')] }, cards: [card] }
+  return { ...model.emptyShowcaseDocument(), banner: { images: [model.newImageAssociation(uuid(2), 'banner.png', 'Banner photo')] }, sections: [{ type: 'card', ...card }] }
 }
-const emptyWire = () => ({ data: { configured: false, revision: null, schemaVersion: 1, document: null, owner: { whitelabelId: 6, slug: 'homologacao' } } })
-const storedWire = (document, revision = 1) => ({ data: { configured: true, revision, schemaVersion: 1, document: codec.encodeShowcaseDocument(document), owner: { whitelabelId: 6, slug: 'homologacao' } } })
+const emptyWire = () => ({ data: { configured: false, revision: null, schemaVersion: 2, document: null, owner: { whitelabelId: 6, slug: 'homologacao' } } })
+const storedWire = (document, revision = 1) => ({ data: { configured: true, revision, schemaVersion: 2, document: codec.encodeShowcaseDocument(document), owner: { whitelabelId: 6, slug: 'homologacao' } } })
 const assetWire = ref => ({ data: { asset_ref: ref, slot: 'showcase', wtlb_id: 6, original_name: 'image.png', mime: 'image/png', size_bytes: 9, url: 'https://assets.example.invalid/image.png' } })
 const enrichedWire = (document, revision = 1, tag = 'initial') => {
   const wire = storedWire(document, revision), raw = wire.data.document
-  for (const item of [...raw.banner.images, ...raw.cards.flatMap(card => [card.logo, ...card.images])]) item.url = `https://assets.example.invalid/${tag}/${item.assetRef}.png`
+  for (const item of [...raw.banner.images, ...raw.sections.filter(s => s.type === 'card').flatMap(card => [card.logo, ...card.images])]) item.url = `https://assets.example.invalid/${tag}/${item.assetRef}.png`
   return wire
 }
 const mutations = () => calls.filter(call => call.options.method !== 'GET')
@@ -86,108 +87,108 @@ await check('real owner six, exact slug, no fixture owner; same source creates i
   assert.equal(access.showcaseAvailableFor({ tenantId: '4', tenantSlug: 'homologacao' }), false)
   assert.equal(access.showcaseAvailableFor({ tenantId: '6', tenantSlug: 'other' }), false)
   assert.equal(access.showcaseAvailableFor({ tenantId: '6', tenantSlug: 'homologacao' }), true)
-  const a = validDocument(), b = model.createCardInstance({ source: a.cards[0].source })
-  assert.notEqual(a.cards[0].instanceId, b.instanceId); assert.equal(b.logo, null); assert.equal(b.shortDescription, '')
+  const a = validDocument(), b = model.createCardInstance({ source: a.sections[0].source })
+  assert.notEqual(a.sections[0].instanceId, b.instanceId); assert.equal(b.logo, null); assert.equal(b.shortDescription, '')
 })
 await check('unconfigured GET is async empty revision null; failed read never supplies an example', async () => {
   e.session(); calls = []; answer = () => response(200, emptyWire())
   assert.equal(store.getShowcaseState().loadPhase, 'idle')
   await store.loadShowcase(actor())
   assert.equal(store.getShowcaseState().loadPhase, 'ready'); assert.equal(store.getShowcaseState().baseRevision, null)
-  assert.deepEqual(store.getShowcaseState().draft.cards, []); assert.deepEqual(store.getShowcaseState().draft.banner.images, [])
+  assert.deepEqual(store.getShowcaseState().draft.sections, []); assert.deepEqual(store.getShowcaseState().draft.banner.images, [])
   e.session(); answer = () => response(404, { code: 'E_SHOWCASE_NOT_AVAILABLE' }); await store.loadShowcase(actor())
-  assert.equal(store.getShowcaseState().loadPhase, 'error'); assert.equal(store.getShowcaseState().draft.cards.length, 0)
+  assert.equal(store.getShowcaseState().loadPhase, 'error'); assert.equal(store.getShowcaseState().draft.sections.length, 0)
 })
 await check('codec allowlist, canonical intro/null/source numeric and strict public projection', () => {
-  const doc = validDocument(); doc.secret = 'never'; doc.cards[0].source.secret = 'never'
+  const doc = validDocument(); doc.secret = 'never'; doc.sections[0].source.secret = 'never'
   const wire = codec.encodeShowcaseDocument(doc), serialized = JSON.stringify(wire)
   for (const forbidden of ['fileName', 'copiedDefaults', 'logical', 'origin', 'owner', 'never', 'introduction']) assert.equal(serialized.includes('"' + forbidden + '"'), false)
-  assert.equal(wire.intro, null); assert.equal(wire.cards[0].source.whitelabelId, 12)
+  assert.equal(Object.hasOwn(wire, 'intro'), false); assert.equal(wire.sections[0].source.whitelabelId, 12)
   assert.deepEqual(codec.encodeShowcaseDocument(codec.decodeShowcaseDocument(wire)), wire)
-  const publicDoc = { banner: { images: wire.banner.images.map(i => ({ ...i, url: 'https://assets.example.invalid/banner.png' })) }, intro: null, cards: wire.cards.map(c => ({ ...c, logo: { ...c.logo, url: 'javascript:alert(1)' }, images: c.images.map(i => ({ ...i, url: 'https://assets.example.invalid/card.png' })) })) }
-  const parsed = codec.decodePublicShowcase({ data: { configured: true, revision: 1, schemaVersion: 1, document: publicDoc, warnings: ['secret'] } })
-  assert.equal(parsed.document.cards[0].logo.url, null)
+  const publicDoc = { banner: { images: wire.banner.images.map(i => ({ ...i, url: 'https://assets.example.invalid/banner.png' })) }, sections: wire.sections.map(c => ({ ...c, logo: { ...c.logo, url: 'javascript:alert(1)' }, images: c.images.map(i => ({ ...i, url: 'https://assets.example.invalid/card.png' })) })) }
+  const parsed = codec.decodePublicShowcase({ data: { configured: true, revision: 1, schemaVersion: 2, document: publicDoc, warnings: ['secret'] } })
+  assert.equal(parsed.document.sections[0].logo.url, null)
   for (const forbidden of ['assetRef', 'internalTitle', 'source', 'warnings']) assert.equal(JSON.stringify(parsed).includes('"' + forbidden + '"'), false)
-  assert.deepEqual(codec.decodePublicShowcase({ data: { configured: false, revision: null, document: null } }), { configured: false, revision: null, document: null })
+  assert.deepEqual(codec.decodePublicShowcase({ data: { configured: false, revision: null, schemaVersion: 2, document: null } }), { configured: false, revision: null, document: null })
   assert.throws(() => codec.decodeStoredShowcase({ data: { ...emptyWire().data, revision: 0 } }))
 })
 await check('Core NFC/trim wire normalization preserves the editable draft and non-text fields', () => {
   const doc = validDocument(), raw = '  Cafe\u0301  '
   doc.banner.images[0].alt = raw
-  doc.introduction = { title: raw, subtitle: raw, bodyMarkdown: '  **Cafe\u0301**  ', markdownVersion: 1 }
-  Object.assign(doc.cards[0], { displayName: raw, shortDescription: raw, internalTitle: raw })
-  doc.cards[0].logo.alt = raw; doc.cards[0].images[0].alt = raw
-  doc.cards[0].source.baseUrl = '  https://tenant.example.invalid/wallet  '
+  doc.sections.push({ type: 'text', instanceId: uuid(100), title: raw, subtitle: raw, bodyMarkdown: '  **Cafe\u0301**  ', markdownVersion: 1 })
+  Object.assign(doc.sections[0], { displayName: raw, shortDescription: raw, internalTitle: raw })
+  doc.sections[0].logo.alt = raw; doc.sections[0].images[0].alt = raw
+  doc.sections[0].source.baseUrl = '  https://tenant.example.invalid/wallet  '
   const before = structuredClone(doc), wire = codec.encodeShowcaseDocument(doc)
-  for (const value of [wire.banner.images[0].alt, wire.intro.title, wire.intro.subtitle, wire.cards[0].displayName, wire.cards[0].shortDescription, wire.cards[0].internalTitle, wire.cards[0].logo.alt, wire.cards[0].images[0].alt]) assert.equal(value, 'Café')
-  assert.equal(wire.intro.bodyMarkdown, '**Café**'); assert.equal(wire.cards[0].source.baseUrl, 'https://tenant.example.invalid/wallet')
-  assert.equal(wire.cards[0].instanceId, doc.cards[0].instanceId); assert.deepEqual(wire.cards[0].colors, doc.cards[0].colors)
+  for (const value of [wire.banner.images[0].alt, wire.sections.find(s => s.type === 'text').title, wire.sections.find(s => s.type === 'text').subtitle, wire.sections[0].displayName, wire.sections[0].shortDescription, wire.sections[0].internalTitle, wire.sections[0].logo.alt, wire.sections[0].images[0].alt]) assert.equal(value, 'Café')
+  assert.equal(wire.sections.find(s => s.type === 'text').bodyMarkdown, '**Café**'); assert.equal(wire.sections[0].source.baseUrl, 'https://tenant.example.invalid/wallet')
+  assert.equal(wire.sections[0].instanceId, doc.sections[0].instanceId); assert.deepEqual(wire.sections[0].colors, doc.sections[0].colors)
   assert.equal(wire.banner.images[0].assetRef, doc.banner.images[0].assetRef); assert.deepEqual(doc, before)
-  doc.introduction.subtitle = '   '; doc.cards[0].internalTitle = '   '
+  doc.sections.find(s => s.type === 'text').subtitle = '   '; doc.sections[0].internalTitle = '   '
   const optional = codec.encodeShowcaseDocument(doc)
-  assert.equal(optional.intro.subtitle, null); assert.equal(Object.hasOwn(optional.cards[0], 'internalTitle'), false)
+  assert.equal(optional.sections.find(s => s.type === 'text').subtitle, null); assert.equal(Object.hasOwn(optional.sections[0], 'internalTitle'), false)
 })
 await check('PUT200 with Core-normalized content is acknowledged; draft stays raw until confirmation', async () => {
   e.session(); calls = []; const baseline = validDocument()
   answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
-  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
-  const canonical = structuredClone(store.getShowcaseState().draft); canonical.cards[0].displayName = 'Café'
+  store.updateDraft(actor(), draft => { draft.sections[0].displayName = ' Cafe\u0301 '; return draft })
+  const canonical = structuredClone(store.getShowcaseState().draft); canonical.sections[0].displayName = 'Café'
   let release; answer = () => new Promise(resolve => { release = resolve })
   const pending = store.saveDraft(actor())
-  assert.equal(store.getShowcaseState().draft.cards[0].displayName, ' Cafe\u0301 ')
+  assert.equal(store.getShowcaseState().draft.sections[0].displayName, ' Cafe\u0301 ')
   const sent = JSON.parse(mutations()[0].options.body)
-  assert.equal(sent.document.cards[0].displayName, 'Café'); assert.equal(sent.expectedRevision, 2)
+  assert.equal(sent.document.sections[0].displayName, 'Café'); assert.equal(sent.expectedRevision, 2)
   const receipt = enrichedWire(canonical, 3); delete receipt.data.owner
   release(response(200, receipt)); await pending
   assert.equal(store.getShowcaseState().phase, 'saved'); assert.equal(store.getShowcaseState().baseRevision, 3)
-  assert.equal(store.getShowcaseState().draft.cards[0].displayName, 'Café'); assert.equal(mutations().length, 1)
+  assert.equal(store.getShowcaseState().draft.sections[0].displayName, 'Café'); assert.equal(mutations().length, 1)
 })
 for (const [serverName, expectedPhase] of [['Café', 'saved'], ['Outro nome', 'conflict']]) await check('uncertain PUT reconciles normalized content without masking genuine divergence: ' + expectedPhase, async () => {
   e.session(); calls = []; answer = () => response(200, emptyWire()); await store.loadShowcase(actor())
-  const doc = validDocument(); doc.cards[0].displayName = ' Cafe\u0301 '
+  const doc = validDocument(); doc.sections[0].displayName = ' Cafe\u0301 '
   media.rememberDocumentAssets(doc); store.updateDraft(actor(), () => doc)
   answer = () => response(503, {}); await store.saveDraft(actor())
   assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.equal((await store.saveDraft(actor())).status, 'blocked')
-  const canonical = structuredClone(doc); canonical.cards[0].displayName = serverName
+  const canonical = structuredClone(doc); canonical.sections[0].displayName = serverName
   answer = () => response(200, enrichedWire(canonical, 1)); await store.reconcileDraft(actor())
   assert.equal(store.getShowcaseState().phase, expectedPhase); assert.equal(mutations().length, 1)
-  assert.equal(store.getShowcaseState().draft.cards[0].displayName, expectedPhase === 'saved' ? 'Café' : ' Cafe\u0301 ')
+  assert.equal(store.getShowcaseState().draft.sections[0].displayName, expectedPhase === 'saved' ? 'Café' : ' Cafe\u0301 ')
   assert.equal(store.getShowcaseState().baseRevision, expectedPhase === 'saved' ? 1 : null)
 })
 function comparisonDocument() {
   const doc = validDocument()
-  doc.introduction = { title: 'Introdução', subtitle: '', bodyMarkdown: 'Texto com **ênfase** e [destino](https://example.invalid/a).', markdownVersion: 1 }
-  doc.cards[0].shortDescription = 'Descrição com espaços internos'
+  doc.sections.push({ type: 'text', instanceId: uuid(100), title: 'Introdução', subtitle: '', bodyMarkdown: 'Texto com **ênfase** e [destino](https://example.invalid/a).', markdownVersion: 1 })
+  doc.sections[0].shortDescription = 'Descrição com espaços internos'
   doc.banner.images.push(model.newImageAssociation(uuid(5), 'second-banner.png', 'Second banner'))
-  doc.cards[0].images.push(model.newImageAssociation(uuid(6), 'second-card.png', 'Second card photo'))
-  const second = structuredClone(doc.cards[0])
+  doc.sections[0].images.push(model.newImageAssociation(uuid(6), 'second-card.png', 'Second card photo'))
+  const second = structuredClone(doc.sections[0])
   second.instanceId = model.newUuid(); second.displayName = 'Segundo card'
   second.images = [model.newImageAssociation(uuid(7), 'other-card.png', 'Other card photo')]
-  doc.cards.push(second)
+  doc.sections.push(second)
   return doc
 }
 // Mutate the returned wire AFTER encoding the attempt. Expected differences
 // are never passed through the encoder before becoming the server response.
 const meaningfulWireChanges = [
-  ['text letter case', doc => { doc.cards[0].displayName = 'CAFÉ' }],
-  ['text accent', doc => { doc.cards[0].displayName = 'Cafe' }],
-  ['text internal spaces', doc => { doc.cards[0].shortDescription = 'Descrição com  espaços internos' }],
-  ['Markdown emphasis', doc => { doc.intro.bodyMarkdown = 'Texto com *ênfase* e [destino](https://example.invalid/a).' }],
-  ['Markdown link destination', doc => { doc.intro.bodyMarkdown = 'Texto com **ênfase** e [destino](https://example.invalid/b).' }],
-  ['Markdown internal spaces', doc => { doc.intro.bodyMarkdown = 'Texto  com **ênfase** e [destino](https://example.invalid/a).' }],
-  ['card order', doc => { doc.cards.reverse() }],
+  ['text letter case', doc => { doc.sections[0].displayName = 'CAFÉ' }],
+  ['text accent', doc => { doc.sections[0].displayName = 'Cafe' }],
+  ['text internal spaces', doc => { doc.sections[0].shortDescription = 'Descrição com  espaços internos' }],
+  ['Markdown emphasis', doc => { doc.sections.find(s => s.type === 'text').bodyMarkdown = 'Texto com *ênfase* e [destino](https://example.invalid/a).' }],
+  ['Markdown link destination', doc => { doc.sections.find(s => s.type === 'text').bodyMarkdown = 'Texto com **ênfase** e [destino](https://example.invalid/b).' }],
+  ['Markdown internal spaces', doc => { doc.sections.find(s => s.type === 'text').bodyMarkdown = 'Texto  com **ênfase** e [destino](https://example.invalid/a).' }],
+  ['card order', doc => { doc.sections.reverse() }],
   ['banner image order', doc => { doc.banner.images.reverse() }],
-  ['card image order', doc => { doc.cards[0].images.reverse() }],
-  ['card instance ID', doc => { doc.cards[0].instanceId = uuid(40) }],
+  ['card image order', doc => { doc.sections[0].images.reverse() }],
+  ['card instance ID', doc => { doc.sections[0].instanceId = uuid(40) }],
   ['image association ID', doc => { doc.banner.images[0].associationId = uuid(41) }],
-  ['source Whitelabel ID', doc => { doc.cards[0].source.whitelabelId = 13 }],
+  ['source Whitelabel ID', doc => { doc.sections[0].source.whitelabelId = 13 }],
   ['photo assetRef', doc => { doc.banner.images[0].assetRef = uuid(42) }],
-  ['logo assetRef', doc => { doc.cards[0].logo.assetRef = uuid(43) }],
+  ['logo assetRef', doc => { doc.sections[0].logo.assetRef = uuid(43) }],
 ]
 for (const [name, change] of meaningfulWireChanges) await check('valid meaningful difference survives comparator, acknowledgement and reconciliation: ' + name, async () => {
   e.session(); calls = []; const baseline = comparisonDocument()
   answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
-  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
+  store.updateDraft(actor(), draft => { draft.sections[0].displayName = ' Cafe\u0301 '; return draft })
   const attempted = structuredClone(store.getShowcaseState().draft), storedBefore = repo.readStoredShowcase()
   const receipt = enrichedWire(attempted, 3), beforeChange = structuredClone(receipt.data.document)
   change(receipt.data.document)
@@ -221,7 +222,7 @@ for (const [name, change] of meaningfulWireChanges) await check('valid meaningfu
 for (const revision of [2, 4]) await check('matching canonical document cannot acknowledge the wrong revision: ' + revision, async () => {
   e.session(); calls = []; const baseline = comparisonDocument()
   answer = () => response(200, enrichedWire(baseline, 2)); await store.loadShowcase(actor())
-  store.updateDraft(actor(), draft => { draft.cards[0].displayName = ' Cafe\u0301 '; return draft })
+  store.updateDraft(actor(), draft => { draft.sections[0].displayName = ' Cafe\u0301 '; return draft })
   const attempted = structuredClone(store.getShowcaseState().draft), storedBefore = repo.readStoredShowcase()
   const receipt = enrichedWire(attempted, revision), same = codec.decodeStoredShowcase(receipt).document
   assert.deepEqual(validation.validateShowcase(attempted, () => true), [])
@@ -239,7 +240,7 @@ for (const revision of [2, 4]) await check('matching canonical document cannot a
   assert.equal(calls.filter(call => call.options.method === 'GET').length, 2)
 })
 await check('save validation rejects foreign owner, synthetic refs, decorative alt, duplicate IDs and forbidden markdown', () => {
-  for (const change of [doc => { doc.owner.whitelabelId = 4 }, doc => { doc.banner.images[0].assetRef = 'blob:local' }, doc => { doc.banner.images[0].decorative = true }, doc => { doc.cards[0].images[0].associationId = doc.banner.images[0].associationId }, doc => { doc.introduction = { title: 'Title', subtitle: '', bodyMarkdown: '`code`', markdownVersion: 1 } }]) {
+  for (const change of [doc => { doc.owner.whitelabelId = 4 }, doc => { doc.banner.images[0].assetRef = 'blob:local' }, doc => { doc.banner.images[0].decorative = true }, doc => { doc.sections[0].images[0].associationId = doc.banner.images[0].associationId }, doc => { doc.sections.push({ type: 'text', instanceId: uuid(100), title: 'Title', subtitle: '', bodyMarkdown: '`code`', markdownVersion: 1 }) }]) {
     const doc = validDocument(); change(doc); assert.ok(validation.validateShowcase(doc, () => true).length); assert.throws(() => codec.encodeShowcaseDocument(doc))
   }
 })
@@ -262,10 +263,10 @@ await check('READ_ONLY can GET but cannot mutate; SUPPORT_ADMIN and missing sess
   e.auth.clearSession(); await assert.rejects(repo.fetchStoredShowcase(actor()), error => error.status === 401)
 })
 await check('409 fetches authoritative current revision and preserves draft without another PUT', async () => {
-  e.session(); calls = []; const doc = validDocument(), current = structuredClone(doc); current.cards[0].displayName = 'Concurrent'
+  e.session(); calls = []; const doc = validDocument(), current = structuredClone(doc); current.sections[0].displayName = 'Concurrent'
   answer = (url, options) => options.method === 'PUT' ? response(409, { code: 'E_SHOWCASE_REVISION_CONFLICT', data: storedWire(current, 2).data }) : url.pathname.endsWith('/showcase') ? response(200, mutations().length ? storedWire(current, 2) : emptyWire()) : response(200, assetWire(url.pathname.split('/').at(-1)))
   await store.loadShowcase(actor()); media.rememberDocumentAssets(doc); store.updateDraft(actor(), () => doc); await store.saveDraft(actor())
-  assert.equal(store.getShowcaseState().phase, 'conflict'); assert.equal(store.getShowcaseState().draft.cards[0].displayName, 'Source')
+  assert.equal(store.getShowcaseState().phase, 'conflict'); assert.equal(store.getShowcaseState().draft.sections[0].displayName, 'Source')
   assert.equal(store.getShowcaseState().conflictRevision, 2); assert.equal((await store.saveDraft(actor())).status, 'blocked'); assert.equal(mutations().length, 1)
 })
 for (const outcome of ['applied', 'not-applied', 'diverged', 'read-failed']) await check('uncertain PUT/manual reconciliation ' + outcome, async () => {
@@ -281,7 +282,7 @@ await check('session replacement clears sensitive drafts/media and ignores late 
   e.session(); calls = []; let release
   answer = () => new Promise(resolve => { release = resolve })
   const pending = store.loadShowcase(actor()); e.session(['READ_ONLY']); release(response(200, storedWire(validDocument()))); await pending
-  assert.equal(store.getShowcaseState().loadPhase, 'idle'); assert.equal(store.getShowcaseState().draft.cards.length, 0); assert.equal(media.resolveMedia(uuid(2)), undefined)
+  assert.equal(store.getShowcaseState().loadPhase, 'idle'); assert.equal(store.getShowcaseState().draft.sections.length, 0); assert.equal(media.resolveMedia(uuid(2)), undefined)
 })
 const row = (id, slug, name = 'Source') => ({ id, idKey: String(id), slug, name, baseUrl: 'https://tenant.example.invalid', isActive: true, status: 'active' })
 await check('active paginated name/slug options, exact slug all-page coverage, direct ID one GET', async () => {
@@ -322,11 +323,11 @@ await check('transport refuses runtime method/path/body smuggling before fetch',
   const form = new FormData(); form.append('slot', 'main_area'); form.append('image', new Blob(['png'], { type: 'image/png' }))
   await assert.rejects(client.showcaseRequest('/whitelabels/6/platform/assets', { method: 'POST', actor: actor(), body: form }))
   assert.equal(calls.length, 0)
-  const doc = validDocument(); doc.cards[0].internalTitle = ''; doc.cards[0].source.baseUrl = 'https://tenant.example.invalid'
+  const doc = validDocument(); doc.sections[0].internalTitle = ''; doc.sections[0].source.baseUrl = 'https://tenant.example.invalid'
   const wire = codec.encodeShowcaseDocument(doc)
   assert.deepEqual(codec.encodeShowcaseDocument(codec.decodeShowcaseDocument(wire)), wire)
   answer = () => response(200, storedWire(doc))
-  await client.showcaseRequest('/whitelabels/6/showcase', { method: 'PUT', actor: actor(), body: { schemaVersion: 1, expectedRevision: null, document: { ...wire, secret: 'drop' }, owner: 4, extra: 'drop' } })
+  await client.showcaseRequest('/whitelabels/6/showcase', { method: 'PUT', actor: actor(), body: { schemaVersion: 2, expectedRevision: null, document: { ...wire, secret: 'drop' }, owner: 4, extra: 'drop' } })
   assert.equal(JSON.stringify(JSON.parse(mutations()[0].options.body)).includes('drop'), false)
 })
 for (const status of [400, 401, 403, 404, 422, 429]) await check('PUT refused ' + status + ' is no success and no retry', async () => {
@@ -357,13 +358,13 @@ await check('display-only auth hydration preserves draft, media and uncertain at
   await store.loadShowcase(actor()); media.rememberDocumentAssets(doc); store.updateDraft(actor(), () => doc); await store.saveDraft(actor())
   answer = () => response(200, { id: 'synthetic', name: 'Updated display', email: 'display@example.invalid', roles: ['SUPER_ADMIN'] })
   assert.equal(await e.auth.validateSession(), 'valid')
-  assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.equal(store.getShowcaseState().draft.cards.length, 1)
+  assert.equal(store.getShowcaseState().phase, 'uncertain'); assert.equal(store.getShowcaseState().draft.sections.length, 1)
   assert.equal(media.hasMedia(uuid(2)), true); assert.equal((await store.saveDraft(actor())).status, 'blocked')
 })
 await check('validated owner enrichment hydrates transient media only; null/unsafe URLs do not fan out', async () => {
   e.session(); calls = []; const doc = validDocument(), wire = enrichedWire(doc)
-  wire.data.document.cards[0].logo.url = null
-  wire.data.document.cards[0].images[0].url = 'javascript:alert(1)'
+  wire.data.document.sections[0].logo.url = null
+  wire.data.document.sections[0].images[0].url = 'javascript:alert(1)'
   answer = () => response(200, wire)
   await store.loadShowcase(actor()); useShowcaseMedia(media.documentAssetRefs(doc))
   assert.equal(calls.length, 1); assert.equal(media.mediaUrl(uuid(2)), wire.data.document.banner.images[0].url)
@@ -374,7 +375,7 @@ await check('validated owner enrichment hydrates transient media only; null/unsa
   }
 })
 await check('owner or document validation failure never partially imports enriched media', async () => {
-  for (const corrupt of [wire => { wire.data.owner.whitelabelId = 4 }, wire => { wire.data.document.cards[0].logo.assetRef = 'invalid' }]) {
+  for (const corrupt of [wire => { wire.data.owner.whitelabelId = 4 }, wire => { wire.data.document.sections[0].logo.assetRef = 'invalid' }]) {
     e.session(); calls = []; const wire = enrichedWire(validDocument()); corrupt(wire); answer = () => response(200, wire)
     await assert.rejects(repo.fetchStoredShowcase(actor()))
     for (const ref of [uuid(2), uuid(3), uuid(4)]) assert.equal(media.resolveMedia(ref), undefined)
@@ -382,7 +383,7 @@ await check('owner or document validation failure never partially imports enrich
 })
 await check('real media hook coalesces images and mounts into one document GET without changing editorial state', async () => {
   e.session(); calls = []; const doc = validDocument(); answer = () => response(200, enrichedWire(doc))
-  await store.loadShowcase(actor()); store.updateDraft(actor(), draft => { draft.cards[0].displayName = 'Unsaved local edit'; return draft })
+  await store.loadShowcase(actor()); store.updateDraft(actor(), draft => { draft.sections[0].displayName = 'Unsaved local edit'; return draft })
   const before = structuredClone(store.getShowcaseState()), storedBefore = repo.readStoredShowcase()
   const firstMount = useShowcaseMedia([uuid(2), uuid(3)]), secondMount = useShowcaseMedia([uuid(2), uuid(4)])
   const failed = media.mediaUrl(uuid(2)); let release; calls = []
@@ -390,7 +391,7 @@ await check('real media hook coalesces images and mounts into one document GET w
   firstMount(uuid(2)); firstMount(uuid(3)); secondMount(uuid(4)); secondMount(uuid(2))
   const pending = repo.refreshShowcaseMedia(uuid(2), failed)
   assert.equal(calls.length, 1); assert.equal(calls[0].url.pathname, '/api/whitelabels/6/showcase')
-  const changed = structuredClone(doc); changed.cards[0].displayName = 'Concurrent editorial update'
+  const changed = structuredClone(doc); changed.sections[0].displayName = 'Concurrent editorial update'
   release(response(200, enrichedWire(changed, 9, 'renewed'))); await pending
   assert.deepEqual(store.getShowcaseState(), before); assert.deepEqual(repo.readStoredShowcase(), storedBefore)
   for (const ref of [uuid(2), uuid(3), uuid(4)]) assert.match(media.mediaUrl(ref), /\/renewed\//)
@@ -420,7 +421,7 @@ await check('failed media recovery consumes the shared budget with no retry or s
 await check('confirmed PUT may refresh enriched URLs without an owner echo or a new recovery budget', async () => {
   e.session(); const doc = validDocument(); answer = () => response(200, enrichedWire(doc)); await store.loadShowcase(actor())
   answer = () => response(503, {}); await assert.rejects(repo.refreshShowcaseMedia(uuid(2), media.mediaUrl(uuid(2))))
-  store.updateDraft(actor(), draft => { draft.cards[0].displayName = 'Saved edit'; return draft })
+  store.updateDraft(actor(), draft => { draft.sections[0].displayName = 'Saved edit'; return draft })
   const wire = enrichedWire(store.getShowcaseState().draft, 2, 'put-enrichment'); delete wire.data.owner
   calls = []; answer = () => response(200, wire); await store.saveDraft(actor())
   assert.equal(store.getShowcaseState().phase, 'saved'); assert.equal(store.getShowcaseState().baseRevision, 2)
@@ -478,4 +479,89 @@ await check('runtime has no seed/simulation/fixture imports or synthetic media r
     assert.equal(/from\s+['"][^'"]*(fixtures|showcaseSimulation)|upload-simulado:|copia-proprietario:/.test(source), false, path)
   }
 })
-console.log(`Showcase operational: ${checks} checks passed (intercepted transport, no live network)`)
+await check('V2 sections retain server text ID, order and content across repeated reads', () => {
+  const wire = storedWire(comparisonDocument(), 8), before = structuredClone(wire)
+  const first = codec.decodeStoredShowcase(wire), second = codec.decodeStoredShowcase(wire)
+  assert.equal(first.revision, 8); assert.equal(first.document.schemaVersion, 2)
+  assert.deepEqual(first.document.sections.map(s => [s.type, s.instanceId]), wire.data.document.sections.map(s => [s.type, s.instanceId]))
+  assert.deepEqual(first, second); assert.deepEqual(wire, before)
+  assert.equal(first.document.sections.filter(s => s.type === 'text').length, 1)
+})
+await check('unsupported version and section types fail explicitly instead of empty configuration', async () => {
+  for (const [change, code] of [
+    [wire => { wire.data.schemaVersion = 99 }, 'E_SHOWCASE_VERSION_UNSUPPORTED'],
+    [wire => { wire.data.document.schemaVersion = 99 }, 'E_SHOWCASE_VERSION_UNSUPPORTED'],
+    [wire => { wire.data.document.sections[0].type = 'video' }, 'E_SHOWCASE_SECTION_UNSUPPORTED'],
+  ]) {
+    const wire = storedWire(validDocument()); change(wire)
+    assert.throws(() => codec.decodeStoredShowcase(wire), error => error.code === code)
+    e.session(); answer = () => response(200, enrichedWire(validDocument())); await store.loadShowcase(actor())
+    store.updateDraft(actor(), draft => { draft.sections[0].displayName = 'Keep draft'; return draft })
+    const before = structuredClone(store.getShowcaseState().draft); calls = []; answer = () => response(200, wire)
+    await store.loadShowcase(actor())
+    assert.equal(store.getShowcaseState().loadPhase, 'error'); assert.deepEqual(store.getShowcaseState().draft, before)
+    assert.match(store.getShowcaseState().message, /não (?:é compatível|suportado)/); assert.equal(mutations().length, 0)
+  }
+})
+await check('V2 technical section limit, at least one card and shared UUID namespace', () => {
+  const doc = validDocument()
+  for (let n = 1; n < 50; n++) doc.sections.push({ ...model.createTextSection(), title: 'Text', bodyMarkdown: 'Body' })
+  assert.equal(validation.validateShowcase(doc, () => true).length, 0)
+  doc.sections.push({ ...model.createTextSection(), title: 'Text', bodyMarkdown: 'Body' })
+  assert.ok(validation.validateShowcase(doc, () => true).length)
+  doc.sections.pop(); doc.sections[1].instanceId = doc.sections[0].instanceId
+  assert.ok(validation.validateShowcase(doc, () => true).some(i => /repetido/.test(i.message)))
+  doc.sections = doc.sections.filter(s => s.type === 'text')
+  assert.ok(validation.validateShowcase(doc, () => true).some(i => /ao menos um card/.test(i.message)))
+})
+await check('V2 text lengths and Markdown are rejected without truncating data', () => {
+  const text = { ...model.createTextSection(), title: 'a'.repeat(240), subtitle: 's'.repeat(500), bodyMarkdown: 'b'.repeat(20000) }
+  assert.equal(validation.validateText(text).length, 0)
+  for (const field of ['title', 'subtitle', 'bodyMarkdown']) {
+    const longer = { ...text, [field]: text[field] + 'x' }, before = structuredClone(longer)
+    assert.ok(validation.validateText(longer).length); assert.deepEqual(longer, before)
+  }
+  assert.ok(validation.validateText({ ...text, bodyMarkdown: '`unsupported`' }).length)
+})
+await check('text ID, section type and interleaving are meaningful comparison dimensions', () => {
+  const original = comparisonDocument()
+  for (const change of [
+    doc => { doc.sections.find(s => s.type === 'text').instanceId = uuid(888) },
+    doc => { const section = doc.sections.splice(1, 1)[0]; doc.sections.unshift(section) },
+    doc => { doc.sections[1] = { ...model.createTextSection(), instanceId: doc.sections[0].instanceId, title: 'Other', bodyMarkdown: 'Body' } },
+    doc => { doc.sections[1].type = 'unknown' },
+  ]) {
+    const changed = structuredClone(original); change(changed)
+    assert.equal(codec.sameCanonicalDocument(original, changed), false)
+  }
+})
+await check('mixed store movement preserves IDs and card media; READ_ONLY guards all mutators', async () => {
+  e.session(); answer = () => response(200, enrichedWire(comparisonDocument())); await store.loadShowcase(actor())
+  const original = structuredClone(store.getShowcaseState().draft), text = original.sections[1]
+  assert.equal(store.moveSectionTo(actor(), text.instanceId, 0), true)
+  assert.deepEqual(store.getShowcaseState().draft.sections.map(s => s.instanceId), [text.instanceId, original.sections[0].instanceId, original.sections[2].instanceId])
+  assert.deepEqual(model.showcaseCards(store.getShowcaseState().draft), model.showcaseCards(original))
+  store.moveSectionTo(actor(), text.instanceId, 1); assert.deepEqual(store.getShowcaseState().draft, original)
+  const readOnly = { ...actor(), roles: ['READ_ONLY'] }, before = structuredClone(store.getShowcaseState())
+  for (const mutation of [
+    () => store.addText(readOnly, model.createTextSection()), () => store.replaceText(readOnly, text),
+    () => store.removeSection(readOnly, text.instanceId), () => store.moveSectionTo(readOnly, text.instanceId, 0),
+    () => store.addCard(readOnly, original.sections[0]), () => store.replaceCard(readOnly, original.sections[0]),
+  ]) assert.throws(mutation)
+  assert.deepEqual(store.getShowcaseState(), before)
+})
+await check('schema downgrade rejection preserves draft and never retries PUT', async () => {
+  e.session(); answer = () => response(200, enrichedWire(validDocument())); await store.loadShowcase(actor())
+  store.updateDraft(actor(), draft => { draft.sections[0].displayName = 'Preserve'; return draft })
+  const before = structuredClone(store.getShowcaseState().draft); calls = []
+  answer = () => response(422, { code: 'E_SHOWCASE_SCHEMA_DOWNGRADE' }); await store.saveDraft(actor())
+  assert.equal(store.getShowcaseState().phase, 'rejected'); assert.match(store.getShowcaseState().message, /versão 2/)
+  assert.deepEqual(store.getShowcaseState().draft, before); assert.equal(mutations().length, 1)
+})
+await check('closed cutover latch blocks repository PUT before transport', async () => {
+  const closed = await environment('true', BASE, false), actor = closed.session()
+  const repository = await closed.load(prefix + 'showcaseRepository.ts'); calls = []
+  const result = await repository.saveShowcase({ actor, expectedRevision: 8, document: validDocument() })
+  assert.equal(result.status, 'rejected'); assert.equal(calls.length, 0)
+})
+console.log(`Showcase operational: ${checks} checks passed (intercepted transport, no live network; write-enabled cases use a test-only cutover latch override)`)

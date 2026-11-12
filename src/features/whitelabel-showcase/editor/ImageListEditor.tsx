@@ -2,7 +2,7 @@ import { useState, type DragEvent } from 'react'
 import { ArrowDown, ArrowUp, GripVertical, ImageOff, Plus, Trash2, Upload } from 'lucide-react'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { mediaUrl, UPLOAD_GUIDANCE, type UploadPurpose } from '../showcaseMedia'
-import { addImage, MAX_IMAGES, moveItem, newImageAssociation, removeImage, replaceImage, type ImageAssociation } from '../showcaseModel'
+import { addImage, MAX_IMAGES, moveItem, newImageAssociation, removeImage, replaceImage, type ImageAssociation, type CardSource } from '../showcaseModel'
 import { fieldIds } from '../showcaseValidation'
 import { MediaPickerDialog, type PickedMedia } from './MediaPickerDialog'
 import styles from './ShowcaseEditor.module.css'
@@ -15,7 +15,8 @@ type Picker = { mode: 'add' } | { mode: 'replace'; associationId: string; positi
  * Add, replace and remove act only on this list; drag-and-drop has accessible
  * "move up/down" alternatives with announced positions.
  */
-export function ImageListEditor({ images, onChange, purpose, listId, readOnly, showErrors }: {
+export function ImageListEditor({ images, onChange, purpose, listId, readOnly, showErrors, logoSource }: {
+  logoSource?: CardSource
   images: readonly ImageAssociation[]
   onChange: (images: ImageAssociation[]) => void
   purpose: Exclude<UploadPurpose, 'logo'>
@@ -138,9 +139,10 @@ export function ImageListEditor({ images, onChange, purpose, listId, readOnly, s
       {!readOnly && <button type="button" className={styles.addDashed} disabled={full} onClick={() => setPicker({ mode: 'add' })}>
         <Plus size={18} aria-hidden="true" />{full ? `Limite de ${MAX_IMAGES} imagens atingido` : 'Adicionar imagem'}
       </button>}
+      {readOnly && logoSource && <OutlineButton onClick={() => setPicker({ mode: 'add' })}>Consultar imagens da origem</OutlineButton>}
       <p className={styles.hint}>{UPLOAD_GUIDANCE[purpose].summary}</p>
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">{announcement}</p>
-      {picker && <MediaPickerDialog
+      {picker && <MediaPickerDialog logoSource={logoSource}
         purpose={purpose}
         title={picker.mode === 'add' ? 'Adicionar imagem' : `Substituir imagem ${String(picker.position + 1).padStart(2, '0')}`}
         onPicked={picked}

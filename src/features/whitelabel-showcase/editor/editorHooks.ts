@@ -4,13 +4,14 @@ import { getSessionVersion, useSessionOperator } from '../../../lib/authSession'
 import { canEditShowcase, canViewShowcase, showcaseSettingsEntryHref, type ShowcaseActor } from '../showcaseAccess'
 import type { CardSource } from '../showcaseModel'
 import { readSource, type SourceStatus } from '../showcaseSourceLookup'
+import { SHOWCASE_V2_WRITES_ENABLED } from '../showcaseRelease'
 
 /** Presentation permissions; Backend authorization remains authoritative. */
 export function useShowcaseActor(): { actor: ShowcaseActor; canEdit: boolean; canView: boolean } {
   const operator = useSessionOperator()
   const roles = operator?.roles
   const sessionVersion = getSessionVersion()
-  return useMemo(() => ({ actor: { roles, sessionVersion }, canEdit: canEditShowcase(roles), canView: canViewShowcase(roles) }), [roles, sessionVersion])
+  return useMemo(() => ({ actor: { roles, sessionVersion }, canEdit: SHOWCASE_V2_WRITES_ENABLED && canEditShowcase(roles), canView: canViewShowcase(roles) }), [roles, sessionVersion])
 }
 
 export function useShowcaseSettingsEntry(record: { id: string; slug: string }) {

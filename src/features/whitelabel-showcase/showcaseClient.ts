@@ -1,8 +1,9 @@
 import { ApiError, apiRequest, type ApiQuery } from '../../lib/api'
 import { getAccessToken, getSessionVersion, handleUnauthorized } from '../../lib/authSession'
 import { decodeShowcaseDocument, encodeShowcaseDocument, object } from './showcaseCodec'
-import { isUuid } from './showcaseModel'
+import { isUuid, SHOWCASE_SCHEMA_VERSION } from './showcaseModel'
 import { assertCanEdit, assertCanRead, type ShowcaseActor } from './showcaseAccess'
+import { SHOWCASE_V2_WRITES_ENABLED } from './showcaseRelease'
 
 /** Only fixed owner-scoped showcase paths and existing Whitelabel reads are reachable. */
 export async function showcaseRequest(path: string, options: { actor?: ShowcaseActor; method?: 'GET' | 'PUT' | 'POST'; body?: unknown; query?: ApiQuery; signal?: AbortSignal } = {}) {
@@ -11,16 +12,23 @@ export async function showcaseRequest(path: string, options: { actor?: ShowcaseA
   if (method === 'GET') assertCanRead(options.actor)
   else if (options.actor) assertCanEdit(options.actor)
   else throw new ApiError(403, { code: 'E_FORBIDDEN' })
+  if (method !== 'GET' && !SHOWCASE_V2_WRITES_ENABLED) throw new ApiError(409, { code: 'E_SHOWCASE_READER_ROLLOUT', message: 'Gravação temporariamente indisponível durante a atualização dos leitores.' })
   const documentPath = path === '/whitelabels/6/showcase'
   const assetPath = path === '/whitelabels/6/platform/assets'
+  const copyPath = path === '/whitelabels/6/platform/assets/copy'
   const assetRead = path.startsWith('/whitelabels/6/platform/assets/') && isUuid(path.slice('/whitelabels/6/platform/assets/'.length))
   const registryRead = /^\/whitelabels(?:\/[1-9]\d*)?$/.test(path)
-  if (!(method === 'GET' ? documentPath || assetRead || registryRead : method === 'PUT' ? documentPath : assetPath)) throw new ApiError(400, { code: 'INVALID_SHOWCASE_PATH' })
+  const sourceOptionsRead = /^\/whitelabels\/[1-9]\d*\/logo-options$/.test(path)
+  if (!(method === 'GET' ? documentPath || assetRead || registryRead || sourceOptionsRead : method === 'PUT' ? documentPath : assetPath || copyPath)) throw new ApiError(400, { code: 'INVALID_SHOWCASE_PATH' })
   let body: unknown
   if (method === 'PUT') {
     const requested = object(options.body)
-    if (requested.schemaVersion !== 1 || (requested.expectedRevision !== null && (typeof requested.expectedRevision !== 'number' || !Number.isSafeInteger(requested.expectedRevision) || requested.expectedRevision <= 0))) throw new ApiError(422, { code: 'E_SHOWCASE_VALIDATION' })
-    body = { schemaVersion: 1, expectedRevision: requested.expectedRevision, document: encodeShowcaseDocument(decodeShowcaseDocument(requested.document)) }
+    if (requested.schemaVersion !== SHOWCASE_SCHEMA_VERSION || (requested.expectedRevision !== null && (typeof requested.expectedRevision !== 'number' || !Number.isSafeInteger(requested.expectedRevision) || requested.expectedRevision <= 0))) throw new ApiError(422, { code: 'E_SHOWCASE_VALIDATION' })
+    body = { schemaVersion: SHOWCASE_SCHEMA_VERSION, expectedRevision: requested.expectedRevision, document: encodeShowcaseDocument(decodeShowcaseDocument(requested.document)) }
+  } else if (method === 'POST' && copyPath) {
+    const requested = object(options.body)
+    if (typeof requested.sourceWhitelabelId !== 'number' || !Number.isSafeInteger(requested.sourceWhitelabelId) || requested.sourceWhitelabelId <= 0 || typeof requested.sourceAssetRef !== 'string' || !isUuid(requested.sourceAssetRef)) throw new ApiError(422, { code: 'E_SHOWCASE_ASSET_INVALID' })
+    body = { sourceWhitelabelId: requested.sourceWhitelabelId, sourceAssetRef: requested.sourceAssetRef }
   } else if (method === 'POST') {
     if (!(options.body instanceof FormData) || options.body.get('slot') !== 'showcase') throw new ApiError(422, { code: 'E_SHOWCASE_ASSET_INVALID' })
     const file = options.body.get('image')

@@ -34,6 +34,7 @@ function loader({ environment = {}, overrides = {} } = {}) {
     if (path.endsWith('.css')) return dataModule('export default new Proxy({}, {get:(_,key)=>String(key)})')
     let code = ts.transpileModule(source(path), { fileName: path, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
       .replaceAll('import.meta.env', `(${JSON.stringify(environment)})`)
+      .replace(/import\s*['"][^'"]+\.css['"];?/g, '') // SSR does not execute global CSS imports.
     for (const match of [...code.matchAll(/from\s+(['"])([^'"]+)\1/g)]) {
       const target = match[2].startsWith('.') ? await url(resolveImport(path, match[2])) : pathToFileURL(require.resolve(match[2])).href
       code = code.replace(match[0], `from ${JSON.stringify(target)}`)
@@ -354,6 +355,46 @@ await check('23 persisted IDs and existing permissions remain byte-identical', (
   for (const path of ['src/features/menu-visibility/menuRegistry.ts', 'src/features/menu-visibility/visibilityPolicy.ts', 'src/features/menu-visibility/visibilityResolver.ts', 'src/lib/authSession.ts']) {
     assert.equal(source(path), execFileSync('git', ['show', `d49815d:${path}`], { cwd: root, encoding: 'utf8' }).replaceAll('\r\n', '\n'))
   }
+})
+// Focused V2 SSR: physical list and renderer; transport, auth and media effects
+// are isolated. These assertions do not prove a pointer gesture or carousel state.
+const sequenceLoader = loader({ overrides: {
+  'src/features/whitelabel-showcase/editor/editorHooks.ts': `export const useShowcaseActor=()=>({actor:{roles:[globalThis.__sequenceEditable?'SUPER_ADMIN':'READ_ONLY']},canEdit:globalThis.__sequenceEditable});export const useSourceStates=()=>()=>({status:'active'});export const SOURCE_STATUS_MESSAGES={};`,
+  'src/features/whitelabel-showcase/showcaseStore.ts': `export const addCard=()=>{throw Error('Unexpected write')};export const addText=addCard;export const replaceText=addCard;export const moveSectionTo=addCard;export const removeSection=addCard;`,
+  'src/features/whitelabel-showcase/editor/SourceLookupDialog.tsx': `export const SourceLookupDialog=()=>null;`,
+  'src/features/whitelabel-showcase/showcaseMedia.ts': `export const mediaUrl=()=>null;export const resolveMedia=()=>undefined;`,
+  'src/features/whitelabel-showcase/public/useShowcaseMedia.ts': `export const useShowcaseMedia=()=>()=>{};`,
+  'src/features/whitelabel-showcase/public/ImageCarousel.tsx': `export const ImageCarousel=()=>null;`,
+  'src/features/whitelabel-showcase/public/CardImageCarousel.tsx': `export const CardImageCarousel=()=>null;`,
+  'src/features/whitelabel-showcase/public/ShowcaseChrome.tsx': `import {createElement as h} from ${JSON.stringify(reactUrl)};export const Heading=({level,children,...props})=>h('h'+Math.min(6,level),props,children);export const regulatoryNotice='';export const ShowcaseHeader=()=>null;export const ShowcaseFooter=()=>null;`,
+} })
+const sequenceModel = await sequenceLoader('src/features/whitelabel-showcase/showcaseModel.ts')
+const { SectionsTab } = await sequenceLoader('src/features/whitelabel-showcase/editor/SectionsTab.tsx')
+const { ShowcaseView } = await sequenceLoader('src/features/whitelabel-showcase/public/ShowcaseView.tsx')
+const makeText = title => ({ ...sequenceModel.createTextSection(), title, bodyMarkdown: 'Body with **emphasis**' })
+const makeCard = name => ({ ...sequenceModel.createCardInstance({ source: { whitelabelId: '6', slug: 'homologacao', name, logical: null } }), type: 'card', displayName: name, shortDescription: 'Description' })
+const sequence = [makeText('Before'), makeCard('Card one'), makeText('Between'), makeCard('Card two'), makeText('After')]
+for (const editable of [true, false]) await check(`V2 ordered list renders consultable rows and write controls according to edit permission ${editable}`, () => {
+  globalThis.__sequenceEditable = editable
+  const html = render(h(SectionsTab, { sections: sequence, tenantId: '6', issues: [], onNavigate() {}, onLocalEdit() {} }))
+  assert.deepEqual([...html.matchAll(/data-element-id="([^"]+)"/g)].map(match => match[1]), sequence.map(section => section.instanceId))
+  const buttons = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map(match => match[0])
+  const writeButtons = buttons.filter(button => /Adicionar elemento|aria-label="(?:Arrastar|Mover|Remover)/.test(button))
+  assert.ok(writeButtons.length > 0)
+  if (!editable) {
+    assert.ok(writeButtons.every(button => /\sdisabled(?:="")?/.test(button)))
+    assert.equal((html.match(/draggable="false"/g) || []).length, sequence.length)
+    const consult = buttons.filter(button => /aria-label="Consultar /.test(button))
+    assert.equal(consult.length, sequence.length); assert.ok(consult.every(button => !/\sdisabled/.test(button)))
+  } else assert.equal((html.match(/draggable="true"/g) || []).length, sequence.length)
+})
+for (const [name, sections] of [['original', sequence], ['reordered', [sequence[2], sequence[0], sequence[3], sequence[1], sequence[4]]]]) await check(`V2 renderer preserves the exact mixed sequence ${name}`, () => {
+  const document = { ...sequenceModel.emptyShowcaseDocument(), sections }
+  const html = render(h(ShowcaseView, { document, sections: ['intro', 'portfolio'], idPrefix: 'v2-check', embedded: true, portfolioHeading: false, portfolioNote: false }))
+  assert.deepEqual([...html.matchAll(/data-content-id="([^"]+)"/g)].map(match => match[1]), sections.map(section => section.instanceId))
+  assert.deepEqual([...html.matchAll(/data-content-type="([^"]+)"/g)].map(match => match[1]), sections.map(section => section.type))
+  assert.equal((html.match(/<strong>emphasis<\/strong>/g) || []).length, 3)
+  assert.equal((html.match(/<main\b/g) || []).length, 0)
 })
 const registry = await guardLoad('src/features/menu-visibility/menuRegistry.ts')
 assert.equal(registry.MENU_VISIBILITY_IDS.length, 23)

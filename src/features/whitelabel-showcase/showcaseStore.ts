@@ -2,21 +2,21 @@ import { useSyncExternalStore } from 'react'
 import { getSessionVersion, subscribeSession } from '../../lib/authSession'
 import { assertCanEdit, assertCanRead, showcaseSessionKey, type ShowcaseActor } from './showcaseAccess'
 import { documentAssetRefs, ensureMedia, hasMedia, hasUncertainUpload } from './showcaseMedia'
-import { cloneDocument, moveItem, sameDocument, APPROVED_INTRODUCTION, type CardInstance, type ShowcaseDocument, type ShowcaseIntroduction, type StoredShowcase } from './showcaseModel'
+import { cloneDocument, moveItem, sameDocument, MAX_SECTIONS, type CardInstance, type ShowcaseDocument, type TextSection, type StoredShowcase } from './showcaseModel'
 import { readStoredShowcase, fetchStoredShowcase, saveShowcase } from './showcaseRepository'
-import { sameCanonicalDocument } from './showcaseCodec'
+import { sameCanonicalDocument, showcaseReadError } from './showcaseCodec'
 import { validateShowcase } from './showcaseValidation'
+import { SHOWCASE_V2_WRITES_ENABLED } from './showcaseRelease'
 
 export type SavePhase = 'idle' | 'saving' | 'saved' | 'failed' | 'rejected' | 'conflict' | 'uncertain' | 'reconciling'
 export type ShowcaseState = {
   stored: StoredShowcase; draft: ShowcaseDocument; baseRevision: number | null
   loadPhase: 'idle' | 'loading' | 'ready' | 'error'
   phase: SavePhase; message: string; conflictRevision: number | null
-  removedIntroduction: ShowcaseIntroduction | null
 }
 const initial = (): ShowcaseState => {
   const stored = readStoredShowcase()
-  return { stored, draft: cloneDocument(stored.document), baseRevision: stored.revision, loadPhase: 'idle', phase: 'idle', message: '', conflictRevision: null, removedIntroduction: null }
+  return { stored, draft: cloneDocument(stored.document), baseRevision: stored.revision, loadPhase: 'idle', phase: 'idle', message: '', conflictRevision: null }
 }
 let state = initial(), generation = 0, sessionKey = showcaseSessionKey()
 let uncertainAttempt: { document: ShowcaseDocument; revision: number | null; baseline: StoredShowcase } | null = null
@@ -42,8 +42,8 @@ export async function loadShowcase(actor: ShowcaseActor) {
     const preserve = wasDirty
     set({ ...state, stored, loadPhase: 'ready', ...(preserve ? {} : { draft: cloneDocument(stored.document), baseRevision: stored.revision, phase: 'idle' as const }) })
     hydrateMedia(stored.document)
-  } catch {
-    if (request === generation && version === getSessionVersion()) set({ ...state, loadPhase: 'error', message: 'Não foi possível carregar a vitrine. Nenhum exemplo substitui os dados do servidor.' })
+  } catch (error) {
+    if (request === generation && version === getSessionVersion()) set({ ...state, loadPhase: 'error', message: showcaseReadError(error) })
   }
 }
 export function updateDraft(actor: ShowcaseActor, recipe: (draft: ShowcaseDocument) => ShowcaseDocument) {
@@ -52,21 +52,23 @@ export function updateDraft(actor: ShowcaseActor, recipe: (draft: ShowcaseDocume
   set({ ...state, draft: recipe(cloneDocument(state.draft)), phase: state.phase === 'conflict' ? 'conflict' : 'idle', message: state.phase === 'conflict' ? state.message : '' })
   return true
 }
-export const addCard = (actor: ShowcaseActor, card: CardInstance) => updateDraft(actor, draft => ({ ...draft, cards: [...draft.cards, card] }))
-export const replaceCard = (actor: ShowcaseActor, card: CardInstance) => updateDraft(actor, draft => ({ ...draft, cards: draft.cards.map(item => item.instanceId === card.instanceId ? cloneDocument(card) : item) }))
-export const removeCard = (actor: ShowcaseActor, instanceId: string) => updateDraft(actor, draft => ({ ...draft, cards: draft.cards.filter(card => card.instanceId !== instanceId) }))
-export const moveCardTo = (actor: ShowcaseActor, from: number, to: number) => updateDraft(actor, draft => ({ ...draft, cards: moveItem(draft.cards, from, to) }))
-export function removeIntroduction(actor: ShowcaseActor) {
-  const previous = state.draft.introduction
-  if (!previous) return false
-  const changed = updateDraft(actor, draft => ({ ...draft, introduction: null }))
-  if (changed) set({ ...state, removedIntroduction: previous })
-  return changed
+export function addCard(actor: ShowcaseActor, card: CardInstance) {
+  assertCanEdit(actor)
+  if (state.draft.sections.length >= MAX_SECTIONS || state.draft.sections.some(section => section.instanceId === card.instanceId)) return false
+  return updateDraft(actor, draft => ({ ...draft, sections: [...draft.sections, { type: 'card', ...cloneDocument(card) }] }))
 }
-export function restoreIntroduction(actor: ShowcaseActor) {
-  const previous = state.removedIntroduction ?? state.stored.document.introduction ?? APPROVED_INTRODUCTION
-  return updateDraft(actor, draft => ({ ...draft, introduction: cloneDocument(previous) }))
+export const replaceCard = (actor: ShowcaseActor, card: CardInstance) => updateDraft(actor, draft => ({ ...draft, sections: draft.sections.map(item => item.type === 'card' && item.instanceId === card.instanceId ? { ...cloneDocument(card), type: 'card' } : item) }))
+export const removeCard = (actor: ShowcaseActor, instanceId: string) => updateDraft(actor, draft => ({ ...draft, sections: draft.sections.filter(section => section.type !== 'card' || section.instanceId !== instanceId) }))
+export const moveSectionTo = (actor: ShowcaseActor, instanceId: string | number, to: number) => updateDraft(actor, draft => ({ ...draft, sections: moveItem(draft.sections, typeof instanceId === 'string' ? draft.sections.findIndex(section => section.instanceId === instanceId) : instanceId, to) }))
+/** Indices always address the shared ordered sections, never a filtered card array. */
+export const moveCardTo = moveSectionTo
+export function addText(actor: ShowcaseActor, text: TextSection) {
+  assertCanEdit(actor)
+  if (state.draft.sections.length >= MAX_SECTIONS || state.draft.sections.some(section => section.instanceId === text.instanceId)) return false
+  return updateDraft(actor, draft => ({ ...draft, sections: [...draft.sections, cloneDocument(text)] }))
 }
+export const replaceText = (actor: ShowcaseActor, text: TextSection) => updateDraft(actor, draft => ({ ...draft, sections: draft.sections.map(section => section.type === 'text' && section.instanceId === text.instanceId ? cloneDocument(text) : section) }))
+export const removeSection = (actor: ShowcaseActor, instanceId: string) => updateDraft(actor, draft => ({ ...draft, sections: draft.sections.filter(section => section.instanceId !== instanceId) }))
 /** Explicitly discards the draft only after a fresh authoritative GET succeeds. */
 export async function discardDraft(actor: ShowcaseActor) {
   assertCanEdit(actor)
@@ -76,7 +78,7 @@ export async function discardDraft(actor: ShowcaseActor) {
   try {
     const stored = await fetchStoredShowcase({ ...actor, sessionVersion: version })
     if (version !== getSessionVersion() || request !== generation) return false
-    set({ ...state, stored, draft: cloneDocument(stored.document), baseRevision: stored.revision, phase: 'idle', message: '', conflictRevision: null, removedIntroduction: null })
+    set({ ...state, stored, draft: cloneDocument(stored.document), baseRevision: stored.revision, phase: 'idle', message: '', conflictRevision: null })
     hydrateMedia(stored.document); return true
   } catch {
     if (version === getSessionVersion() && request === generation) set({ ...state, phase: 'conflict', message: 'A leitura falhou. O rascunho foi preservado; tente conferir novamente.' })
@@ -89,6 +91,7 @@ export function acknowledgeSaveMessage() {
 export type SaveAttempt = { status: 'blocked'; reason: string } | { status: 'started' }
 export async function saveDraft(actor: ShowcaseActor): Promise<SaveAttempt> {
   try { assertCanEdit(actor) } catch { return { status: 'blocked', reason: 'A sessão ou o ambiente não permite salvar.' } }
+  if (!SHOWCASE_V2_WRITES_ENABLED) return { status: 'blocked', reason: 'A vitrine está em consulta durante a atualização dos leitores.' }
   if (state.loadPhase !== 'ready' || busy() || state.phase === 'uncertain' || state.phase === 'conflict') return { status: 'blocked', reason: 'Confira a versão atual antes de salvar.' }
   if (!isDraftDirty()) return { status: 'blocked', reason: 'Não há alterações para salvar.' }
   if (draftIssues().length) return { status: 'blocked', reason: 'A configuração ainda está incompleta.' }
@@ -102,7 +105,7 @@ export async function saveDraft(actor: ShowcaseActor): Promise<SaveAttempt> {
   }
   if (version !== getSessionVersion() || request !== generation) return { status: 'started' }
   if (result.status === 'saved') {
-    set({ ...state, stored: result.stored, draft: cloneDocument(result.stored.document), baseRevision: result.stored.revision, phase: 'saved', message: `Configuração confirmada pelo servidor na revisão ${result.stored.revision}.`, conflictRevision: null, removedIntroduction: null })
+    set({ ...state, stored: result.stored, draft: cloneDocument(result.stored.document), baseRevision: result.stored.revision, phase: 'saved', message: `Configuração confirmada pelo servidor na revisão ${result.stored.revision}.`, conflictRevision: null })
     hydrateMedia(result.stored.document)
   } else if (result.status === 'conflict') {
     set({ ...state, stored: result.current ?? state.stored, phase: 'conflict', conflictRevision: result.current?.revision ?? null, message: 'A versão do servidor mudou. Seu rascunho foi preservado; confira a versão atual antes de descartar ou revisar.' })

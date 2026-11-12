@@ -1,7 +1,7 @@
 import { ApiError } from '../../lib/api'
 import { assertCanEdit, showcaseSessionKey, ShowcasePermissionError, type ShowcaseActor } from './showcaseAccess'
 import { getSessionVersion, subscribeSession } from '../../lib/authSession'
-import { isUuid, type ShowcaseDocument } from './showcaseModel'
+import { isUuid, showcaseCards, type ShowcaseDocument } from './showcaseModel'
 import { safeHttpUrl } from './showcaseMarkdown'
 import { decodeStoredShowcase, malformedShowcase, object } from './showcaseCodec'
 import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
@@ -11,6 +11,7 @@ const registry = new Map<string, MediaEntry>()
 const cacheVersions = new Map<string, number>()
 const known = new Set<string>()
 const inflight = new Map<string, Promise<MediaEntry>>()
+const copiesInProgress = new Set<string>()
 const listeners = new Set<() => void>()
 let mediaVersion = 0, sessionEpoch = 0, cacheGeneration = 0, sessionKey = showcaseSessionKey()
 let uploadUncertain = false
@@ -18,12 +19,12 @@ export const hasUncertainUpload = () => uploadUncertain
 const notify = () => { mediaVersion++; listeners.forEach(listener => listener()) }
 export const getMediaSnapshot = () => mediaVersion
 export const subscribeMedia = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
-subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); cacheVersions.clear(); known.clear(); inflight.clear(); uploadUncertain = false; notify() })
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); cacheVersions.clear(); known.clear(); inflight.clear(); copiesInProgress.clear(); uploadUncertain = false; notify() })
 export const resolveMedia = (assetRef: string) => registry.get(assetRef)
 export const hasMedia = (assetRef: string) => isUuid(assetRef) && known.has(assetRef)
 export const mediaUrl = (assetRef: string | null | undefined) => assetRef ? resolveMedia(assetRef)?.url || null : null
 export function documentAssetRefs(document: ShowcaseDocument) {
-  return [...new Set([...document.banner.images.map(image => image.assetRef), ...document.cards.flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])]
+  return [...new Set([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])]
 }
 /** Only a decoded authoritative owner document can qualify existing durable refs. */
 export function rememberDocumentAssets(document: ShowcaseDocument) { documentAssetRefs(document).forEach(ref => known.add(ref)) }
@@ -39,7 +40,7 @@ export function hydrateStoredMedia(value: unknown, requireOwner = true) {
       // explicit null is a known unavailable URL, not a reason for GET fan-out.
       if (Object.hasOwn(item, 'url')) entries.set(item.assetRef as string, typeof item.url === 'string' ? safeHttpUrl(item.url) ?? '' : '')
     }
-    const images = object(document.banner).images as unknown[], cards = document.cards as unknown[]
+    const images = object(document.banner).images as unknown[], cards = (document.sections as unknown[]).filter(value => object(value).type === 'card')
     images.forEach(read)
     cards.forEach(value => {
       const card = object(value)
@@ -130,6 +131,33 @@ export function uploadWarnings(purpose: UploadPurpose, mime: string, bytes: numb
 
 
 export type IngestResult = { ok: true; entry: MediaEntry; warnings: string[] } | { ok: false; message: string; uncertain?: boolean }
+/** One explicit server-side copy; no source bytes/ref enter the owner document before qualification. */
+export async function copySourceMedia(actor: ShowcaseActor, sourceWhitelabelId: number, sourceAssetRef: string): Promise<IngestResult> {
+  assertCanEdit(actor)
+  if (uploadUncertain) return { ok: false, uncertain: true, message: 'Há uma operação de mídia com resultado incerto nesta sessão. Confira o ocorrido antes de uma nova cópia ou envio.' }
+  if (!Number.isSafeInteger(sourceWhitelabelId) || sourceWhitelabelId <= 0 || !isUuid(sourceAssetRef)) throw malformedShowcase()
+  const key = `${sourceWhitelabelId}:${sourceAssetRef.toLowerCase()}`, epoch = sessionEpoch
+  if (copiesInProgress.has(key)) return { ok: false, message: 'Esta cópia já está em andamento. Aguarde o resultado; nenhuma nova solicitação foi enviada.' }
+  const scoped = { ...actor, sessionVersion: getSessionVersion() }
+  copiesInProgress.add(key)
+  try {
+    // Do not abort a dispatched write on UI close: a local abort cannot prove server cancellation.
+    const response = await showcaseRequest('/whitelabels/6/platform/assets/copy', { method: 'POST', actor: scoped, body: { sourceWhitelabelId, sourceAssetRef } })
+    if (epoch !== sessionEpoch) return { ok: false, message: 'A sessão mudou durante a cópia. O resultado não foi associado nesta sessão.' }
+    assertCanEdit(scoped)
+    // Legacy local-origin marker means newly ingested media (upload OR copy).
+    // It keeps the bounded single-asset URL renewal available before the first document save.
+    const entry = { ...parseAsset(response), origin: 'upload' as const }
+    if (entry.assetRef.toLowerCase() === sourceAssetRef.toLowerCase()) throw malformedShowcase()
+    registry.set(entry.assetRef, entry); known.add(entry.assetRef); notify()
+    return { ok: true, entry, warnings: [] }
+  } catch (error) {
+    if (epoch !== sessionEpoch) return { ok: false, message: 'A sessão mudou durante a cópia. O resultado não foi associado nesta sessão.' }
+    const uncertain = uncertainShowcaseError(error)
+    if (uncertain) { uploadUncertain = true; notify() }
+    return { ok: false, uncertain, message: uncertain ? 'Resultado da cópia incerto. A imagem anterior foi preservada. Não repita a cópia sem conferir o ocorrido; não há repetição automática.' : 'A cópia foi recusada. A imagem anterior foi preservada.' }
+  } finally { if (epoch === sessionEpoch) copiesInProgress.delete(key) }
+}
 async function imageSize(file: Blob) {
   try {
     const bitmap = await createImageBitmap(file)

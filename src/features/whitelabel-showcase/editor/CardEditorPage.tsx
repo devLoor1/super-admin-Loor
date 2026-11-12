@@ -6,6 +6,7 @@ import { isShowcaseFamilyHash, showcaseEditorHref } from '../showcaseMapping'
 import { hasMedia, hasUncertainUpload, mediaUrl, releaseRefs, resolveMedia, retainRefs, UPLOAD_GUIDANCE } from '../showcaseMedia'
 import {
   cloneDocument,
+  showcaseCards,
   isHexColor,
   sameDocument,
   sourceLabel,
@@ -30,8 +31,8 @@ const order = (index: number) => String(index + 1).padStart(2, '0')
 
 export function CardEditorPage({ tenantId, instanceId, focusField }: { tenantId: string; instanceId: string; focusField?: string }) {
   const state = useShowcaseState()
-  const index = state.draft.cards.findIndex(card => card.instanceId === instanceId)
-  const card = index >= 0 ? state.draft.cards[index] : null
+  const index = showcaseCards(state.draft).findIndex(card => card.instanceId === instanceId)
+  const card = index >= 0 ? showcaseCards(state.draft)[index] : null
   const listHref = showcaseEditorHref(tenantId, 'cards')
   return (
     <ShowcaseFrame
@@ -177,7 +178,7 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
                   <div className={styles.logoPreview} style={{ background: isHexColor(card.colors.panel) ? card.colors.panel : undefined }} id={fieldIds.cardLogo} tabIndex={-1}>
                     {logoUrl ? <img src={logoUrl} onError={() => card.logo && refreshMedia(card.logo.assetRef)} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>Sem logotipo</span>}
                   </div>
-                  {canEdit && <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>}
+                  <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{!canEdit ? 'Consultar imagens existentes' : card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>
                   <small className={styles.hint}>{UPLOAD_GUIDANCE.logo.summary}</small>
                   {card.logo && <small className={styles.hint}>{card.logo.fileName}</small>}
                   {logoWarnings.length ? <ul className={styles.warningList}>{logoWarnings.map(text => <li key={text}>{text}</li>)}</ul> : null}
@@ -199,7 +200,7 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
 
           <section className={styles.panel} aria-labelledby="card-fotos-titulo">
             <header className={styles.panelHead}><h2 className={styles.panelTitle} id="card-fotos-titulo">Fotografias</h2></header>
-            <ImageListEditor images={card.images} purpose="foto" listId={fieldIds.cardImages} readOnly={!canEdit} showErrors={issues.some(issue => issue.fieldId === fieldIds.cardImages)} onChange={images => update({ images })} />
+            <ImageListEditor logoSource={card.source} images={card.images} purpose="foto" listId={fieldIds.cardImages} readOnly={!canEdit} showErrors={issues.some(issue => issue.fieldId === fieldIds.cardImages)} onChange={images => update({ images })} />
           </section>
 
           {issues.length > 0 && <section className={styles.cardIssues} aria-labelledby="card-pendencias">
@@ -214,7 +215,7 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
           <span className={styles.infoBox}><Info size={16} aria-hidden="true" />Substituir afeta somente este card. Remover daqui não apaga imagens usadas em outros lugares.</span>
         </>}>
           <PreviewFrame viewport={viewport} label="Prévia do card">
-            <ShowcaseView document={{ ...pageState.draft, cards: [card] }} sections={['portfolio']} idPrefix="previa-card" embedded headingOffset={2} portfolioHeading={false} portfolioNote={false} editorPlaceholders />
+            <ShowcaseView document={{ ...pageState.draft, sections: [{ ...card, type: 'card' }] }} sections={['portfolio']} idPrefix="previa-card" embedded headingOffset={2} portfolioHeading={false} portfolioNote={false} editorPlaceholders />
           </PreviewFrame>
         </PreviewPanel>
       </div>

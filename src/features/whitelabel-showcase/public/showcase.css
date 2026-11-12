@@ -301,3 +301,7 @@
   :where(.wl-showcase) .wl-intro-body { margin-top: 16px; font-size: 16px; line-height: 1.5; }
   :where(.wl-showcase) .wl-brand-fallback { font-size: 28px; }
 }
+
+/* Ordered V2 composition reuses the approved Card/Texto spacing. */
+.wl-content-sequence > .wl-portfolio { padding-block: 24px; }
+.wl-content-sequence > .wl-intro { padding-block: 32px 20px; }

@@ -10,9 +10,10 @@ import { acknowledgeSaveMessage, discardDraft, draftIssues, isDraftDirty, saveDr
 import { issuesForTab, type ShowcaseIssue, type ShowcaseTab } from '../showcaseValidation'
 import { ShowcaseView } from '../public/ShowcaseView'
 import { BannerTab } from './BannerTab'
-import { CardsTab } from './CardsTab'
+import { SectionsTab, type LocalSectionEdit } from './SectionsTab'
+import { showcaseCards } from '../showcaseModel'
+import { SHOWCASE_V2_WRITES_ENABLED } from '../showcaseRelease'
 import { useShowcaseActor } from './editorHooks'
-import { IntroTab } from './IntroTab'
 import { PreviewFrame, PreviewPanel, type PreviewViewport } from './PreviewPanel'
 import { showcaseCrumbs } from './showcaseCrumbs'
 import { ScopeBar, ShowcaseFrame } from './ShowcaseFrame'
@@ -58,21 +59,35 @@ function ShowcaseEditor({ tenantId, tab }: { tenantId: string; tab: ShowcaseTab 
   const [fullPreview, setFullPreview] = useState(false)
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
   const busy = state.phase === 'saving' || state.phase === 'reconciling'
+  const localEdit = useRef<LocalSectionEdit | null>(null)
+  const [localDirty, setLocalDirty] = useState(false)
+  const onLocalEdit = useCallback((edit: LocalSectionEdit | null) => { localEdit.current = edit; setLocalDirty(!!edit?.dirty) }, [])
+  const assessLeave = (hash: string): LeavePrompt | null => {
+    const outer = leavePrompt(hash, actor)
+    if (!localEdit.current?.dirty) return outer
+    return {
+      title: outer?.title ?? 'Descartar a edição deste texto?',
+      description: outer ? `${outer.description} Os campos de texto ainda não aplicados também serão descartados.` : 'Os campos ainda não aplicados serão descartados. O rascunho já aplicado à lista permanece nesta aba.',
+      confirmLabel: outer?.confirmLabel ?? 'Descartar edição e sair',
+      onConfirm: async () => { const result = await outer?.onConfirm(); if (result === false) return false; localEdit.current?.discard(); return true },
+    }
+  }
   // The session draft is also protected by the global unload guard.
-  const guard = useShowcaseLeaveGuard(hash => leavePrompt(hash, actor), false, () => logoutPrompt(actor))
+  const guard = useShowcaseLeaveGuard(assessLeave, localDirty, () => logoutPrompt(actor, !!localEdit.current?.dirty))
   const navigate = useCallback((hash: string) => guard.request(hash), [guard])
 
   function goToIssue(issue: ShowcaseIssue) {
-    if (issue.instanceId && issue.tab === 'cards' && state.draft.cards.some(card => card.instanceId === issue.instanceId)) {
+    if (issue.instanceId && issue.tab === 'cards' && showcaseCards(state.draft).some(card => card.instanceId === issue.instanceId)) {
       navigate(`${showcaseCardHref(tenantId, issue.instanceId)}${issue.fieldId ? `?campo=${issue.fieldId}` : ''}`)
       return
     }
     if (issue.tab !== tab) navigate(showcaseEditorHref(tenantId, issue.tab))
+    if (issue.instanceId) window.setTimeout(() => document.getElementById(`section-edit-${issue.instanceId}`)?.click(), 60)
     window.setTimeout(() => document.getElementById(issue.fieldId ?? '')?.focus(), 120)
   }
 
   async function save() {
-    if (!canEdit || busy || !dirty || state.phase === 'uncertain' || state.phase === 'conflict') return
+    if (!canEdit || busy || localDirty || !dirty || state.phase === 'uncertain' || state.phase === 'conflict') return
     if (issues.length) {
       setShowErrors(true)
       window.requestAnimationFrame(() => document.getElementById('vitrine-pendencias')?.focus())
@@ -83,7 +98,7 @@ function ShowcaseEditor({ tenantId, tab }: { tenantId: string; tab: ShowcaseTab 
   }
 
   const statusLabel = !canEdit ? 'Somente leitura' : busy ? (state.phase === 'reconciling' ? 'Conferindo…' : 'Salvando…') : state.phase === 'conflict' ? 'Conflito de versão' : state.phase === 'uncertain' ? 'Salvamento sem confirmação' : dirty ? 'Alterações não salvas' : state.stored.configured ? `Salvo · revisão ${state.stored.revision}` : 'Ainda não configurada'
-  const saveBlocked = !dirty || busy || state.phase === 'conflict' || state.phase === 'uncertain'
+  const saveBlocked = !dirty || busy || localDirty || state.phase === 'conflict' || state.phase === 'uncertain'
 
   const preview = (() => {
     if (tab === 'banner') return {
@@ -98,21 +113,13 @@ function ShowcaseEditor({ tenantId, tab }: { tenantId: string; tab: ShowcaseTab 
         </div>}
       </>,
     }
-    if (tab === 'introducao') return {
-      title: 'Prévia da seção',
-      subtitle: dirty ? 'Rascunho · alterações ainda não salvas' : 'Conteúdo atual do editor',
-      footer: state.draft.introduction ? 'Entre o banner principal e os cards.' : 'Seção removida · banner seguido diretamente pelos cards.',
-      body: state.draft.introduction
-        ? <PreviewFrame viewport={viewport} label="Prévia da seção introdutória"><ShowcaseView document={state.draft} sections={['intro']} idPrefix="previa-intro" embedded headingOffset={1} /></PreviewFrame>
-        : <PreviewFrame viewport={viewport} label="Prévia sem seção introdutória"><ShowcaseView document={{ ...state.draft, cards: state.draft.cards.slice(0, 1) }} sections={['hero', 'portfolio']} idPrefix="previa-sem-intro" embedded headingOffset={2} portfolioNote={false} editorPlaceholders /></PreviewFrame>,
-    }
     return {
       title: 'Prévia da vitrine',
-      subtitle: `${dirty ? 'Rascunho' : 'Versão salva'} · ${state.draft.cards.length === 1 ? '1 card na lista' : `${state.draft.cards.length} cards na lista`}`,
-      footer: 'Conteúdo configurado para a vitrine.',
-      body: state.draft.cards.length
-        ? <PreviewFrame viewport={viewport} label="Prévia dos cards"><ShowcaseView document={state.draft} sections={['portfolio']} idPrefix="previa-cards" embedded headingOffset={2} portfolioHeading={false} portfolioNote={false} editorPlaceholders /></PreviewFrame>
-        : <p className={styles.hint}>Sem cards no rascunho. {state.stored.configured ? `A versão salva continua com ${state.stored.document.cards.length} card(s).` : 'A vitrine ainda não tem configuração salva.'}</p>,
+      subtitle: `${dirty ? 'Rascunho' : 'Versão salva'} · ${state.draft.sections.length} elementos`,
+      footer: 'A mesma ordem da lista, em Desktop e Mobile.',
+      body: state.draft.sections.length
+        ? <PreviewFrame viewport={viewport} label="Prévia do conteúdo"><ShowcaseView document={state.draft} sections={['intro', 'portfolio']} idPrefix="previa-conteudo" embedded headingOffset={2} portfolioHeading={false} portfolioNote={false} editorPlaceholders /></PreviewFrame>
+        : <p className={styles.hint}>Sem elementos no rascunho. A versão salva permanece preservada.</p>,
     }
   })()
 
@@ -128,7 +135,7 @@ function ShowcaseEditor({ tenantId, tab }: { tenantId: string; tab: ShowcaseTab 
         </div>
       </div>
 
-      {!canEdit && <p className={styles.readOnly} role="note">Perfil somente leitura: campos, inclusão, ordenação, uploads e salvamento estão bloqueados.</p>}
+      {!SHOWCASE_V2_WRITES_ENABLED ? <p className={styles.readOnly} role="note">Atualização de compatibilidade: consulta e prévias disponíveis. A edição será liberada após a verificação dos leitores publicados.</p> : !canEdit && <p className={styles.readOnly} role="note">Perfil somente leitura: campos, inclusão, ordenação, uploads e salvamento estão bloqueados.</p>}
       {canEdit && dirty && issues.length > 0 && !showErrors && <p className={styles.blockedNote}><CircleAlert size={16} aria-hidden="true" />{issues.length === 1 ? '1 pendência impede' : `${issues.length} pendências impedem`} o salvamento. <button type="button" className={styles.linkButton} onClick={() => { setShowErrors(true); window.requestAnimationFrame(() => document.getElementById('vitrine-pendencias')?.focus()) }}>Ver pendências</button></p>}
       {showErrors && issues.length > 0 && <IssuesSummary issues={issues} onGo={goToIssue} />}
       <SaveFeedback />
@@ -147,8 +154,7 @@ function ShowcaseEditor({ tenantId, tab }: { tenantId: string; tab: ShowcaseTab 
       <div role="tabpanel" id={tabPanelId('vitrine', tab)} aria-labelledby={`vitrine-tab-${tab}`} className={styles.workspace}>
         <fieldset className={styles.editorColumn} disabled={busy || state.phase === 'uncertain'} style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }} aria-label="Conteúdo da configuração">
           {tab === 'banner' && <BannerTab images={state.draft.banner.images} showErrors={showErrors} />}
-          {tab === 'introducao' && <IntroTab introduction={state.draft.introduction} issues={issues} showErrors={showErrors} />}
-          {tab === 'cards' && <CardsTab cards={state.draft.cards} issues={issues} tenantId={tenantId} onNavigate={navigate} showErrors={showErrors} />}
+          {tab !== 'banner' && <SectionsTab sections={state.draft.sections} issues={issues} tenantId={tenantId} onNavigate={navigate} onLocalEdit={onLocalEdit} />}
         </fieldset>
         <PreviewPanel title={preview.title} subtitle={preview.subtitle} viewport={viewport} onViewport={setViewport} footer={preview.footer}>
           {preview.body}
@@ -181,7 +187,7 @@ export function SaveFeedback() {
       <section className={styles.conflict} role="alert" aria-labelledby="vitrine-conflito">
         <h2 id="vitrine-conflito"><AlertTriangle size={18} aria-hidden="true" />Conflito de versão</h2>
         <p>{state.message}</p>
-        <p className={styles.hint}>Sem sobrescrita forçada nesta V1: revise o rascunho (a prévia continua disponível) e recarregue a versão atual para reaplicar as mudanças.</p>
+        <p className={styles.hint}>Sem sobrescrita forçada: revise o rascunho (a prévia continua disponível) e recarregue a versão atual para reaplicar as mudanças.</p>
         <div className={styles.inlineActions}>
           <OutlineButton disabled={!canEdit} onClick={() => discardDraft(actor)}>Descartar meu rascunho e carregar a versão atual</OutlineButton>
         </div>

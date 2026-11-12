@@ -15,6 +15,8 @@ async function moduleUrl(path) {
   if (cache.has(path)) return cache.get(path)
   if (path.endsWith('.css')) return data('export default new Proxy({}, {get:(_,key)=>String(key)})')
   let code = ts.transpileModule(readFileSync(path, 'utf8'), { fileName: path, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText.replaceAll('import.meta.env', JSON.stringify(env))
+  // Exercise the post-cutover writer variant only in intercepted Node transport.
+  if (path.endsWith('showcaseRelease.ts')) code = code.replace(/SHOWCASE_V2_WRITES_ENABLED = false/, 'SHOWCASE_V2_WRITES_ENABLED = true')
   for (const match of [...code.matchAll(/from\s+(['"])([^'"]+)\1/g)]) {
     const spec = match[2]
     let target
@@ -45,11 +47,11 @@ function document() {
   const card = model.createCardInstance({source}); card.shortDescription = 'Synthetic test only'
   card.logo={assetRef:uuid(3),alt:'LOØR',fileName:'logo.png',origin:'upload'}
   card.images=[model.newImageAssociation(uuid(4),'photo.png','Photo')]
-  return {...model.emptyShowcaseDocument(),banner:{images:[model.newImageAssociation(uuid(2),'banner.png','Banner')]},cards:[card]}
+  return {...model.emptyShowcaseDocument(),banner:{images:[model.newImageAssociation(uuid(2),'banner.png','Banner')]},sections:[{...card,type:'card'}]}
 }
 function wire(doc) {
-  const value={data:{configured:true,revision:7,schemaVersion:1,owner:{whitelabelId:6,slug:'homologacao'},document:codec.encodeShowcaseDocument(doc)}}
-  for(const image of [...value.data.document.banner.images,...value.data.document.cards.flatMap(c=>[c.logo,...c.images])]) image.url=`https://assets.example.invalid/${image.assetRef}.png?temporary=not-persisted`
+  const value={data:{configured:true,revision:7,schemaVersion:2,owner:{whitelabelId:6,slug:'homologacao'},document:codec.encodeShowcaseDocument(doc)}}
+  for(const image of [...value.data.document.banner.images,...value.data.document.sections.flatMap(c=>[c.logo,...c.images])]) image.url=`https://assets.example.invalid/${image.assetRef}.png?temporary=not-persisted`
   return value
 }
 const png=readFileSync(resolve(root,prefix+'assets/loor-logo.png'))
@@ -77,14 +79,14 @@ await check('Opening catalogue is read-only and identifies real limited variants
  assert.deepEqual(doc,before);assert.equal(calls.length,0)
 })
 await check('Preferred source wins over duplicate refs and other sources; not institutional inference',()=>{
- const doc=setup(),other=structuredClone(doc.cards[0]);other.instanceId=uuid(6);other.source={...source,whitelabelId:'4',slug:'another',name:'Another'}
- doc.cards.unshift(other);const options=catalog.existingLogoOptions(doc,source)
+ const doc=setup(),other=structuredClone(doc.sections[0]);other.instanceId=uuid(6);other.source={...source,whitelabelId:'4',slug:'another',name:'Another'}
+ doc.sections.unshift(other);const options=catalog.existingLogoOptions(doc,source)
  assert.equal(options[0].sourceId,'6');assert.equal(options.filter(o=>o.kind==='reference').length,1)
  assert.match(options[0].provenance,/não define a marca institucional/)
 })
 await check('Foreign owner and unknown durable refs do not qualify for reuse',()=>{
  const doc=setup();doc.owner.whitelabelId=4;assert.deepEqual(catalog.existingLogoOptions(doc,source),[])
- doc.owner.whitelabelId=6;doc.cards[0].logo.assetRef=uuid(99)
+ doc.owner.whitelabelId=6;doc.sections[0].logo.assetRef=uuid(99)
  assert.equal(catalog.existingLogoOptions(doc,source).filter(o=>o.kind==='reference').length,0)
 })
 await check('Existing qualified logo reuses reference with zero upload',async()=>{
@@ -146,10 +148,10 @@ await check('Session replacement during file read blocks subsequent POST',async(
  await assert.rejects(pending);assert.equal(uploads().length,0)
 })
 await check('Applying reused logo changes only selected instance and wire persists no URL/blob/file',async()=>{
- const doc=setup(),second=structuredClone(doc.cards[0]);second.instanceId=uuid(6);second.images[0].associationId=uuid(20);doc.cards.push(second)
+ const doc=setup(),second=structuredClone(doc.sections[0]);second.instanceId=uuid(6);second.images[0].associationId=uuid(20);doc.sections.push(second)
  reply=()=>json(200,wire(doc));await store.loadShowcase(actor());const before=structuredClone(store.getShowcaseState().draft)
- const changed=structuredClone(before.cards[0]);changed.logo.assetRef=uuid(4);store.replaceCard(actor(),changed)
- const after=store.getShowcaseState().draft;assert.deepEqual(after.cards[1],before.cards[1]);assert.deepEqual(after.cards[0].source,before.cards[0].source)
+ const changed=structuredClone(before.sections[0]);changed.logo.assetRef=uuid(4);store.replaceCard(actor(),changed)
+ const after=store.getShowcaseState().draft;assert.deepEqual(after.sections[1],before.sections[1]);assert.deepEqual(after.sections[0].source,before.sections[0].source)
  const encoded=JSON.stringify(codec.encodeShowcaseDocument(after));for(const key of ['"url"','"fileName"','"blob"','temporary='])assert.equal(encoded.includes(key),false)
 })
 await check('Actual card logo callback preserves same-ref fileName and stays clean',async()=>{
@@ -165,7 +167,7 @@ await check('Actual card logo callback preserves same-ref fileName and stays cle
  visit(tree);assert.ok(callback,'Exercise the actual JSX callback, not a duplicate implementation')
  const executable=ts.transpileModule(`const picked = ${callback.getText(tree)}`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText
  for(const fileName of [undefined,'','keep-this-original-name.png']){
-  let card=structuredClone(store.getShowcaseState().draft.cards[0]);card.logo.fileName=fileName
+  let card=structuredClone(store.getShowcaseState().draft.sections[0]);card.logo.fileName=fileName
   const before=structuredClone(card)
   const picked=new Function('card','update','setLogoPicker','setLogoWarnings','window','document','fieldIds',`${executable}; return picked`)(card,patch=>{card={...card,...patch}},()=>{},()=>{},{requestAnimationFrame(){}},{},{cardLogoAlt:'unused'})
   picked({assetRef:result.entry.assetRef,fileName:result.entry.fileName||selected.variant,suggestedAlt:selected.suggestedAlt,warnings:[]})
@@ -178,9 +180,91 @@ await check('Actual picker SSR exposes two modes and labelled thumbnails, never 
  const {createElement:h}=await import('react'),{renderToStaticMarkup:render}=await import('react-dom/server')
  const {MediaPickerDialog}=await load(prefix+'editor/MediaPickerDialog.tsx')
  const html=render(h(MediaPickerDialog,{purpose:'logo',logoSource:source,title:'Logo',onPicked(){},onClose(){}}))
- for(const text of ['Usar logo existente','Enviar nova logo','Site · escura','Vitrine · clara','type="radio"','Usar logo selecionada'])assert.ok(html.includes(text),text)
+ for(const text of ['Imagens existentes','Enviar nova logo','Site · escura','Vitrine · clara','type="radio"','Usar imagem selecionada'])assert.ok(html.includes(text),text)
  assert.equal(calls.length,0)
  session(['READ_ONLY']);const readonly=render(h(MediaPickerDialog,{purpose:'logo',logoSource:source,title:'Logo',onPicked(){},onClose(){}}))
  assert.match(readonly,/<fieldset[^>]*disabled/);assert.equal(calls.length,0)
 })
-console.log(`Showcase logo selection: ${checks} checks passed (physical code, intercepted binary/API transport and SSR; no live network).`)
+const optionsWire = (variants = [{kind:'main_area',page:'login',pages:['login','register'],assetRef:uuid(90),slot:'main_area',previewUrl:'https://assets.example.invalid/source.png',mime:'image/png',originalName:'login-image.png'}]) => ({data:{whitelabelId:6,slug:'homologacao',name:'LOØR Homologação',variants}})
+const sourceOption = () => catalog.decodeSourceImageOptions(optionsWire(),source)[0]
+await check('Discovery reads actual source and labels main_area provenance, never copies on lookup',async()=>{
+ setup();reply=(url,options)=>{assert.equal(url.pathname,'/api/whitelabels/6/logo-options');assert.equal(options.method,'GET');return json(200,optionsWire())}
+ const options=await catalog.loadSourceImageOptions(actor(),source)
+ assert.equal(options[0].kind,'source');assert.equal(options[0].sourceId,'6');assert.deepEqual(options[0].pages,['login','register'])
+ assert.match(options[0].provenance,/Não classificado como logo institucional/);assert.equal(options[0].suggestedAlt,'');assert.equal(uploads().length,0)
+})
+await check('READ_ONLY reads source images but cannot copy, send or reuse',async()=>{
+ setup();session(['READ_ONLY']);calls=[];reply=()=>json(200,optionsWire())
+ assert.equal((await catalog.loadSourceImageOptions(actor(),source)).length,1)
+ await assert.rejects(catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal));assert.equal(uploads().length,0)
+})
+await check('Empty source options preserve curated choices and existing owner references',async()=>{
+ const doc=setup(),before=catalog.existingLogoOptions(doc,source);reply=()=>json(200,optionsWire([]))
+ assert.deepEqual(await catalog.loadSourceImageOptions(actor(),source),[]);assert.deepEqual(catalog.existingLogoOptions(doc,source),before);assert.equal(uploads().length,0)
+})
+await check('Unavailable preview remains a valid option; mismatched source and duplicate assets fail clearly',()=>{
+ setup();const value=optionsWire();value.data.variants[0].previewUrl=null;value.data.variants[0].mime=null;value.data.variants[0].originalName=null
+ const missingMetadata=catalog.decodeSourceImageOptions(value,source)[0]
+ assert.equal(missingMetadata.previewUrl,null);assert.equal(missingMetadata.originalName,'');assert.equal(missingMetadata.mime,'');assert.equal(missingMetadata.variant,'Imagem existente da origem')
+ for(const invalid of [{data:{...value.data,whitelabelId:4}},{data:{...value.data,slug:'other'}},{data:{...value.data,variants:[...value.data.variants,...value.data.variants]}}])assert.throws(()=>catalog.decodeSourceImageOptions(invalid,source))
+})
+await check('Source discovery error is recoverable by a new explicit read with no copy',async()=>{
+ setup();reply=()=>json(500,{code:'QA_READ_FAILURE'});await assert.rejects(catalog.loadSourceImageOptions(actor(),source))
+ reply=()=>json(200,optionsWire());assert.equal((await catalog.loadSourceImageOptions(actor(),source)).length,1);assert.equal(uploads().length,0)
+})
+await check('Explicit source selection copies once to WL6 and qualifies new owner ref',async()=>{
+ const doc=setup(),before=structuredClone(doc),result=await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)
+ assert.equal(result.ok,true);assert.equal(result.entry.assetRef,uuid(9));assert.notEqual(result.entry.assetRef,uuid(90));assert.equal(uploads().length,1)
+ assert.equal(uploads()[0].url.pathname,'/api/whitelabels/6/platform/assets/copy')
+ assert.deepEqual(JSON.parse(uploads()[0].options.body),{sourceWhitelabelId:6,sourceAssetRef:uuid(90)});assert.deepEqual(doc,before)
+})
+await check('Copy cannot be submitted twice while pending, including reopened picker',async()=>{
+ setup();let release;reply=()=>new Promise(resolve=>{release=resolve})
+ const pending=catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)
+ while(!release)await new Promise(resolve=>setImmediate(resolve))
+ const duplicate=await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)
+ assert.equal(duplicate.ok,false);assert.match(duplicate.message,/já está em andamento/);assert.equal(uploads().length,1)
+ release(json(201,{data:{asset_ref:uuid(11),wtlb_id:6,slot:'showcase',url:null}}));assert.equal((await pending).ok,true)
+})
+await check('Unsaved copied media renews by owner asset GET without a repeated copy or draft mutation',async()=>{
+ const doc=setup();reply=()=>json(200,wire(doc));await store.loadShowcase(actor())
+ reply=()=>json(201,{data:{asset_ref:uuid(13),wtlb_id:6,slot:'showcase',url:'https://assets.example.invalid/old-copy.png'}})
+ const copied=await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal);assert.equal(copied.ok,true)
+ const changed=structuredClone(store.getShowcaseState().draft.sections[0]);changed.logo.assetRef=copied.entry.assetRef;store.replaceCard(actor(),changed)
+ const before=structuredClone(store.getShowcaseState()),repo=await load(prefix+'showcaseRepository.ts');calls=[]
+ reply=url=>json(200,url.pathname.endsWith('/showcase')?wire(doc):{data:{asset_ref:uuid(13),wtlb_id:6,slot:'showcase',url:'https://assets.example.invalid/renewed-copy.png'}})
+ await repo.refreshShowcaseMedia(uuid(13),'https://assets.example.invalid/old-copy.png')
+ assert.equal(media.mediaUrl(uuid(13)),'https://assets.example.invalid/renewed-copy.png');assert.equal(media.resolveMedia(uuid(13)).origin,'upload')
+ assert.deepEqual(store.getShowcaseState(),before);assert.equal(uploads().length,0);assert.equal(calls.length,2)
+ assert.equal(calls.filter(call=>call.url.pathname==='/api/whitelabels/6/platform/assets/'+uuid(13)).length,1)
+})
+await check('Close does not assert server cancellation and late copy cannot replace newer selection',async()=>{
+ const doc=setup(),attempts=media.createUploadAttempts(),controller=new AbortController();let release
+ reply=()=>new Promise(resolve=>{release=resolve})
+ const pending=media.runUploadAttempt(attempts,()=>catalog.selectExistingLogo(actor(),sourceOption(),controller.signal))
+ while(!release)await new Promise(resolve=>setImmediate(resolve))
+ attempts.close();controller.abort();const newer=await catalog.selectExistingLogo(actor(),option(doc,'reference'),new AbortController().signal)
+ release(json(201,{data:{asset_ref:uuid(12),wtlb_id:6,slot:'showcase',url:null}}))
+ assert.equal((await pending).status,'ignored');assert.equal(newer.entry.assetRef,uuid(3));assert.equal(uploads().length,1)
+ assert.equal(uploads()[0].options.signal.aborted,false,'UI close must not abort a dispatched copy and imply cancellation')
+})
+await check('Uncertain copy blocks additional media mutations and never retries or deletes',async()=>{
+ setup();reply=()=>json(503,{code:'QA_UNCERTAIN'})
+ const first=await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)
+ assert.equal(first.ok,false);assert.equal(first.uncertain,true);assert.equal(media.hasUncertainUpload(),true)
+ assert.equal((await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)).ok,false);assert.equal(uploads().length,1)
+ assert.equal(calls.some(call=>call.options.method==='DELETE'),false)
+})
+await check('Malformed copy owner, slot and reused source ref are uncertain and never become eligible',async()=>{
+ for(const asset of [{asset_ref:uuid(99),wtlb_id:4,slot:'showcase'},{asset_ref:uuid(99),wtlb_id:6,slot:'main_area'},{asset_ref:uuid(90),wtlb_id:6,slot:'showcase'}]){
+  setup();reply=()=>json(201,{data:{...asset,url:null}})
+  const result=await catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal)
+  assert.equal(result.ok,false);assert.equal(result.uncertain,true);assert.equal(media.hasMedia(asset.asset_ref),false);assert.equal(uploads().length,1)
+ }
+})
+await check('Malformed copy input and destination outside WL6 never reach transport',async()=>{
+ setup();const client=await load(prefix+'showcaseClient.ts')
+ for(const [path,body] of [['/whitelabels/4/platform/assets/copy',{sourceWhitelabelId:6,sourceAssetRef:uuid(90)}],['/whitelabels/6/platform/assets/copy',{sourceWhitelabelId:0,sourceAssetRef:uuid(90)}],['/whitelabels/6/platform/assets/copy',{sourceWhitelabelId:6,sourceAssetRef:'not-uuid'}]])await assert.rejects(client.showcaseRequest(path,{method:'POST',actor:actor(),body}))
+ assert.equal(calls.length,0)
+})
+console.log(`Showcase logo selection: ${checks} checks passed (physical code, simulated post-cutover latch, intercepted binary/API transport and SSR; no live network).`)

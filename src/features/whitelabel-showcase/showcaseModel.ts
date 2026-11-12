@@ -1,12 +1,14 @@
 /**
- * Vitrine de White Labels — editorial model for the canonical V1 contract. Pure data and pure operations only: no
+ * Vitrine de White Labels — editorial model for the canonical V2 contract. Pure data and pure operations only: no
  * React, assets, transport or browser storage, so the offline checks can load it.
  */
 
-export const SHOWCASE_SCHEMA_VERSION = 1
+export const SHOWCASE_SCHEMA_VERSION = 2
 export const MARKDOWN_VERSION = 1
 export const MIN_IMAGES = 1
 export const MAX_IMAGES = 4
+/** Technical contract bound; not a commercial plan/entitlement limit. */
+export const MAX_SECTIONS = 50
 
 /** Logical owner of the configuration (WL6 / homologacao in the homolog environment). */
 export type ShowcaseOwner = { environmentKey: 'homolog'; whitelabelId: 6; slug: 'homologacao' }
@@ -66,12 +68,15 @@ export type ShowcaseIntroduction = {
   markdownVersion: typeof MARKDOWN_VERSION
 }
 
+export type TextSection = ShowcaseIntroduction & { type: 'text'; instanceId: string }
+export type CardSection = CardInstance & { type: 'card' }
+export type ShowcaseSection = TextSection | CardSection
+
 export type ShowcaseDocument = {
   schemaVersion: typeof SHOWCASE_SCHEMA_VERSION
   owner: ShowcaseOwner
   banner: { images: ImageAssociation[] }
-  introduction: ShowcaseIntroduction | null
-  cards: CardInstance[]
+  sections: ShowcaseSection[]
 }
 
 export type StoredShowcase = {
@@ -87,7 +92,14 @@ export const SHOWCASE_OWNER: ShowcaseOwner = { environmentKey: 'homolog', whitel
 /** Optional section starts blank; editorial content is entered by the operator. */
 export const APPROVED_INTRODUCTION: ShowcaseIntroduction = { title: '', subtitle: '', bodyMarkdown: '', markdownVersion: MARKDOWN_VERSION }
 export function emptyShowcaseDocument(): ShowcaseDocument {
-  return { schemaVersion: 1, owner: { ...SHOWCASE_OWNER }, banner: { images: [] }, introduction: null, cards: [] }
+  return { schemaVersion: SHOWCASE_SCHEMA_VERSION, owner: { ...SHOWCASE_OWNER }, banner: { images: [] }, sections: [] }
+}
+
+export const showcaseCards = (document: ShowcaseDocument): CardSection[] => document.sections.filter((section): section is CardSection => section.type === 'card')
+
+/** Only an explicit new text action allocates an ID. Reads always retain the server ID. */
+export function createTextSection(): TextSection {
+  return { type: 'text', instanceId: newUuid(), ...APPROVED_INTRODUCTION }
 }
 
 /* ---------- identity ---------- */

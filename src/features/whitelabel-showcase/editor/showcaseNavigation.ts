@@ -7,12 +7,11 @@ import type { LeavePrompt } from './useShowcaseLeaveGuard'
 
 export const SHOWCASE_TABS: { value: ShowcaseTab; label: string }[] = [
   { value: 'banner', label: 'Banner principal' },
-  { value: 'introducao', label: 'Conteúdo introdutório' },
-  { value: 'cards', label: 'Cards de White Labels' },
+  { value: 'cards', label: 'Conteúdo da vitrine' },
 ]
 
 export function parseShowcaseTab(value: string | null | undefined): ShowcaseTab {
-  return value === 'banner' || value === 'introducao' || value === 'cards' ? value : 'cards'
+  return value === 'banner' ? 'banner' : 'cards'
 }
 
 /**

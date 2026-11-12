@@ -5,6 +5,7 @@ import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
 import { decodeStoredShowcase, encodeShowcaseDocument, malformedShowcase, sameCanonicalDocument } from './showcaseCodec'
 import { cloneDocument, emptyShowcaseDocument, type ShowcaseDocument, type StoredShowcase } from './showcaseModel'
 import { documentAssetRefs, ensureMedia, hydrateStoredMedia, mediaUrl, rememberDocumentAssets, resolveMedia } from './showcaseMedia'
+import { SHOWCASE_V2_WRITES_ENABLED } from './showcaseRelease'
 
 const empty = (): StoredShowcase => ({ configured: false, revision: null, savedAt: null, document: emptyShowcaseDocument() })
 let snapshot = empty(), sessionEpoch = 0, sessionKey = showcaseSessionKey()
@@ -59,10 +60,11 @@ export type SaveResult =
   | { status: 'uncertain'; correlationId?: string }
 export async function saveShowcase(request: SaveRequest): Promise<SaveResult> {
   assertCanEdit(request.actor)
+  if (!SHOWCASE_V2_WRITES_ENABLED) return { status: 'rejected', reason: 'invalida', message: 'A vitrine está em consulta durante a atualização dos leitores. O rascunho foi preservado.' }
   if (request.expectedRevision !== null && (!Number.isSafeInteger(request.expectedRevision) || request.expectedRevision <= 0)) throw new ApiError(422, { code: 'E_SHOWCASE_VALIDATION' })
   const document = encodeShowcaseDocument(request.document), epoch = sessionEpoch
   try {
-    const body = await showcaseRequest('/whitelabels/6/showcase', { method: 'PUT', actor: request.actor, body: { schemaVersion: 1, expectedRevision: request.expectedRevision, document } })
+    const body = await showcaseRequest('/whitelabels/6/showcase', { method: 'PUT', actor: request.actor, body: { schemaVersion: 2, expectedRevision: request.expectedRevision, document } })
     if (epoch !== sessionEpoch) throw new ApiError(0, {}, { kind: 'network' })
     const stored = decodeStoredShowcase(body, false)
     if (stored.revision !== (request.expectedRevision ?? 0) + 1 || !sameCanonicalDocument(request.document, stored.document)) throw malformedShowcase()
@@ -79,6 +81,7 @@ export async function saveShowcase(request: SaveRequest): Promise<SaveResult> {
     }
     if (uncertainShowcaseError(error)) return { status: 'uncertain', correlationId: error instanceof ApiError ? error.correlationId : undefined }
     const api = error as ApiError
+    if (api.code === 'E_SHOWCASE_SCHEMA_DOWNGRADE') return { status: 'rejected', reason: 'invalida', message: 'A vitrine já utiliza a versão 2. O servidor recusou uma versão antiga; o rascunho foi preservado. Atualize o editor antes de tentar novamente.', correlationId: api.correlationId }
     return { status: 'rejected', reason: api.status === 401 || api.status === 403 ? 'permissao' : api.status === 404 ? 'proprietario' : 'invalida', message: api.status === 404 ? 'Vitrine indisponível neste ambiente ou proprietário.' : api.status === 401 || api.status === 403 ? 'A sessão não permite salvar a vitrine.' : 'O servidor recusou a configuração. Revise os campos; o rascunho foi preservado.', correlationId: api.correlationId }
   }
 }

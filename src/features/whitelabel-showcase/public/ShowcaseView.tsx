@@ -9,7 +9,7 @@
 import { useState, type CSSProperties, type MouseEvent } from 'react'
 import { ArrowRight, ImageOff } from 'lucide-react'
 import { mediaUrl, resolveMedia } from '../showcaseMedia'
-import { lowerPanelColor, type CardInstance, type ImageAssociation, type ShowcaseDocument } from '../showcaseModel'
+import { lowerPanelColor, showcaseCards, type CardInstance, type ImageAssociation, type ShowcaseDocument } from '../showcaseModel'
 import { CardImageCarousel } from './CardImageCarousel'
 import { DemoDialog, type DemoContent } from './DemoDialog'
 import { ImageCarousel } from './ImageCarousel'
@@ -54,7 +54,7 @@ function MissingMedia({ label }: { label: string }) {
 
 export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embedded = false, headingOffset = 0, portfolioHeading = true, portfolioNote = true, editorPlaceholders = false, parallax = true }: Props) {
   const [dialog, setDialog] = useState<DemoContent | null>(null)
-  const refreshMedia = useShowcaseMedia([...document.banner.images.map(image => image.assetRef), ...document.cards.flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])
+  const refreshMedia = useShowcaseMedia([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])
   const show = (section: ShowcaseSection) => sections.includes(section)
   const level = (base: number) => base + headingOffset
   const ids = { hero: `${idPrefix}-inicio`, portfolio: `${idPrefix}-plataformas`, main: `${idPrefix}-conteudo` }
@@ -82,7 +82,6 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
   const bannerSlides = slidesFor(document.banner.images, refreshMedia)
   // Only the full page owns a main landmark; editor previews live inside the Super Admin <main>.
   const Main = embedded ? 'div' : 'main'
-  const intro = document.introduction
 
   return (
     <div className={`wl-page${embedded ? ' wl-page--embedded' : ''}`}>
@@ -108,20 +107,22 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
               </div>
             </div>
           </section>}
-          {show('intro') && intro && <section className="wl-container wl-intro" aria-labelledby={`${idPrefix}-intro-title`}>
-            <Heading level={level(2)} className="wl-intro-title" id={`${idPrefix}-intro-title`}>{intro.title}</Heading>
-            {intro.subtitle.trim() ? <p className="wl-intro-subtitle">{intro.subtitle}</p> : null}
-            <MarkdownContent className="wl-intro-body" source={intro.bodyMarkdown} />
-          </section>}
-          {show('portfolio') && <section id={ids.portfolio} className="wl-container wl-portfolio" aria-labelledby={portfolioHeading ? `${idPrefix}-portfolio-title` : undefined} aria-label={portfolioHeading ? undefined : 'Cards de White Labels'}>
-            {portfolioHeading && <Heading level={level(2)} className="wl-portfolio-title" id={`${idPrefix}-portfolio-title`}>Uma tecnologia. Diferentes identidades.</Heading>}
-            <div className="wl-platforms">
-              {document.cards.map(card => {
+          {(show('intro') || show('portfolio')) && <div id={ids.portfolio} className="wl-content-sequence" role="group" aria-label="Conteúdo da vitrine na ordem configurada">
+            {document.sections.map(section => {
+              if (section.type === 'text') return show('intro') ? <section key={section.instanceId} data-content-id={section.instanceId} data-content-type="text" className="wl-container wl-intro" aria-labelledby={`${idPrefix}-${section.instanceId}-title`}>
+                <Heading level={level(2)} className="wl-intro-title" id={`${idPrefix}-${section.instanceId}-title`}>{section.title}</Heading>
+                {section.subtitle.trim() ? <p className="wl-intro-subtitle">{section.subtitle}</p> : null}
+                <MarkdownContent className="wl-intro-body" source={section.bodyMarkdown} />
+              </section> : null
+              if (!show('portfolio')) return null
+              const card = section
                 const slides = slidesFor(card.images, refreshMedia)
                 const logoUrl = mediaUrl(card.logo?.assetRef)
                 const logoEntry = card.logo ? resolveMedia(card.logo.assetRef) : undefined
                 const nameId = `${idPrefix}-card-${card.instanceId}-name`
-                return <article key={card.instanceId} className="wl-platform" style={cardStyle(card)} aria-labelledby={nameId}>
+                return <section key={card.instanceId} data-content-id={card.instanceId} data-content-type="card" className="wl-container wl-portfolio">
+                  {portfolioHeading && card.instanceId === showcaseCards(document)[0]?.instanceId && <Heading level={level(2)} className="wl-portfolio-title" id={`${idPrefix}-portfolio-title`}>Uma tecnologia. Diferentes identidades.</Heading>}
+                  <div className="wl-platforms"><article className="wl-platform" style={cardStyle(card)} aria-labelledby={nameId}>
                   {slides.length
                     ? <CardImageCarousel key={slides.map(slide => slide.id).join('|')} id={`${idPrefix}-card-${card.instanceId}`} label={card.displayName} slides={slides} parallax={parallax} />
                     : <div className="wl-carousel wl-carousel--card">{editorPlaceholders ? <MissingMedia label="Adicione ao menos uma fotografia" /> : null}</div>}
@@ -136,11 +137,10 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
                       <button type="button" className="wl-platform-link" aria-label={`Conhecer plataforma ${card.displayName}`} onClick={() => openPlatform(card, slides)}>Conhecer plataforma <ArrowRight aria-hidden="true" /></button>
                     </div>
                   </div>
-                </article>
-              })}
-            </div>
-            {portfolioNote && <p className="wl-portfolio-note">Marcas e segmentos ilustrativos.</p>}
-          </section>}
+                </article></div></section>
+            })}
+            {portfolioNote && show('portfolio') && <p className="wl-container wl-portfolio-note">Marcas e segmentos ilustrativos.</p>}
+          </div>}
           {show('closing') && <section className="wl-closing" aria-labelledby={`${idPrefix}-closing-title`}>
             <div className="wl-container wl-closing-inner">
               <div>

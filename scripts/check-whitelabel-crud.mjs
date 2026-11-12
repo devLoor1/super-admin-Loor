@@ -500,7 +500,9 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
         assert.doesNotMatch(stripComments(source), /method:\s*'POST'/)
         assert.match(source, /\/whitelabels\/6\/showcase/)
       } else if (runtimePath.endsWith('/showcaseMedia.ts')) {
-        assert.equal((source.match(/method:\s*'POST'/g) || []).length, 1)
+        // V2 adds exactly the reviewed owner-scoped copy; no other transport is exempted.
+        assert.equal((source.match(/method:\s*'POST'/g) || []).length, 2)
+        assert.deepEqual([...source.matchAll(/showcaseRequest\('([^']+)',\s*\{\s*method:\s*'POST'/g)].map(match => match[1]).sort(), ['/whitelabels/6/platform/assets', '/whitelabels/6/platform/assets/copy'])
         assert.doesNotMatch(stripComments(source), /method:\s*'PUT'/)
         assert.match(source, /form\.append\('slot', 'showcase'\)/)
       } else {

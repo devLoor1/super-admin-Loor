@@ -3,15 +3,19 @@ import {
   isHexColor,
   isUuid,
   MAX_IMAGES,
+  MAX_SECTIONS,
   MIN_IMAGES,
+  MARKDOWN_VERSION,
+  showcaseCards,
   whiteTextContrast,
   type CardInstance,
   type ImageAssociation,
   type ShowcaseDocument,
+  type TextSection,
 } from './showcaseModel'
 
 /**
- * Canonical showcase V1 save rules: complete
+ * Canonical showcase V2 save rules: complete
  * configuration, 1–4 images per context, essential content, informative text
  * alternatives, safe Markdown and at least one valid card. Incomplete drafts stay
  * editable; these issues only explain why saving is blocked.
@@ -45,6 +49,10 @@ export const fieldIds = {
   cardLogoAlt: 'vitrine-card-logo-alt',
   cardColors: 'vitrine-card-cores',
   cardImages: 'vitrine-card-imagens',
+  sectionsList: 'vitrine-conteudo-lista',
+  textTitle: 'vitrine-texto-titulo',
+  textSubtitle: 'vitrine-texto-subtitulo',
+  textBody: 'vitrine-texto-corpo',
 }
 
 function imageIssues(images: readonly ImageAssociation[], tab: ShowcaseTab, context: string, resolve: AssetResolver, listField: string, instanceId?: string): ShowcaseIssue[] {
@@ -85,26 +93,36 @@ export function cardWarnings(card: CardInstance): ShowcaseWarning[] {
   return warnings
 }
 
+/** Limits mirror the V2 contract; no truncation or Markdown stripping. */
+export function validateText(section: TextSection): ShowcaseIssue[] {
+  const issues: ShowcaseIssue[] = []
+  const add = (message: string, fieldId?: string) => issues.push({ tab: 'cards', instanceId: section.instanceId, fieldId, message })
+  const title = section.title.normalize('NFC').trim(), subtitle = section.subtitle.normalize('NFC').trim(), body = section.bodyMarkdown.normalize('NFC').trim()
+  if (!title || title.length > 240) add('Texto: informe um título de até 240 caracteres.', fieldIds.textTitle)
+  if (subtitle.length > 500) add('Texto: o subtítulo admite até 500 caracteres.', fieldIds.textSubtitle)
+  if (!body || body.length > 20000) add('Texto: informe conteúdo de até 20000 caracteres.', fieldIds.textBody)
+  if (section.markdownVersion !== MARKDOWN_VERSION) add('Versão de Markdown não suportada.', fieldIds.textBody)
+  for (const issue of parseShowcaseMarkdown(section.bodyMarkdown).issues) add(`Texto em Markdown, linha ${issue.line}: ${issue.message}`, fieldIds.textBody)
+  return issues
+}
+
 export function validateShowcase(document: ShowcaseDocument, resolve: AssetResolver): ShowcaseIssue[] {
   const issues: ShowcaseIssue[] = []
-  if (document.schemaVersion !== 1 || document.owner.whitelabelId !== 6 || document.owner.slug !== 'homologacao' || document.owner.environmentKey !== 'homolog') issues.push({ tab: 'banner', message: 'Proprietário ou versão inválidos.' })
-  const associations = [...document.banner.images, ...document.cards.flatMap(card => card.images)].map(image => image.associationId)
+  if (document.schemaVersion !== 2 || document.owner.whitelabelId !== 6 || document.owner.slug !== 'homologacao' || document.owner.environmentKey !== 'homolog') issues.push({ tab: 'banner', message: 'Proprietário ou versão inválidos.' })
+  if (!Array.isArray(document.sections)) return [...issues, { tab: 'cards', message: 'A sequência de conteúdo é inválida; os dados foram preservados.' }]
+  const cards = showcaseCards(document)
+  const associations = [...document.banner.images, ...cards.flatMap(card => card.images)].map(image => image.associationId)
   if (new Set(associations).size !== associations.length) issues.push({ tab: 'banner', message: 'Identificadores de associação repetidos.' })
   issues.push(...imageIssues(document.banner.images, 'banner', 'Banner principal', resolve, fieldIds.bannerList))
-  const intro = document.introduction
-  if (intro) {
-    if (!intro.title.trim()) issues.push({ tab: 'introducao', fieldId: fieldIds.introTitle, message: 'Conteúdo introdutório: informe o título ou remova a seção.' })
-    if (!intro.bodyMarkdown.trim()) issues.push({ tab: 'introducao', fieldId: fieldIds.introBody, message: 'Conteúdo introdutório: informe o texto ou remova a seção.' })
-    for (const issue of parseShowcaseMarkdown(intro.bodyMarkdown).issues) {
-      issues.push({ tab: 'introducao', fieldId: fieldIds.introBody, message: `Texto em Markdown, linha ${issue.line}: ${issue.message}` })
-    }
-  }
-  if (document.cards.length === 0) issues.push({ tab: 'cards', fieldId: fieldIds.cardsList, message: 'Adicione ao menos um card válido para salvar a vitrine.' })
+  if (document.sections.length < 1 || document.sections.length > MAX_SECTIONS) issues.push({ tab: 'cards', fieldId: fieldIds.sectionsList, message: `O contrato admite de 1 a ${MAX_SECTIONS} seções de conteúdo.` })
+  if (cards.length === 0) issues.push({ tab: 'cards', fieldId: fieldIds.sectionsList, message: 'Adicione ao menos um card válido para salvar a vitrine.' })
   const seen = new Set<string>()
-  document.cards.forEach((card, index) => {
-    if (seen.has(card.instanceId)) issues.push({ tab: 'cards', instanceId: card.instanceId, message: `Card ${index + 1}: identificador de instância repetido.` })
-    seen.add(card.instanceId)
-    issues.push(...validateCard(card, resolve, `Card ${String(index + 1).padStart(2, '0')} · ${card.displayName.trim() || 'sem nome'}`))
+  document.sections.forEach((section, index) => {
+    if (!isUuid(section.instanceId) || seen.has(section.instanceId)) issues.push({ tab: 'cards', instanceId: section.instanceId, message: `Seção ${index + 1}: identificador de instância inválido ou repetido.` })
+    seen.add(section.instanceId)
+    if (section.type === 'text') issues.push(...validateText(section))
+    else if (section.type === 'card') issues.push(...validateCard(section, resolve, `Card · ${section.displayName.trim() || 'sem nome'}`))
+    else issues.push({ tab: 'cards', message: `Seção ${index + 1}: tipo não suportado; conteúdo preservado.` })
   })
   return issues
 }

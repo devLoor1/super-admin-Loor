@@ -100,7 +100,7 @@
     },
     "src/features/whitelabel-showcase/editor/CardEditorPage.tsx": {
       "before": null,
-      "after": "ce1d24fa41383ab454385dc655549a05b5ad079199731dd93ef3f666f09073dd"
+      "after": "6fe7cd0af7dd02cda12123b6a51817be86583650cf2ea8287f5195cdeb2e4470"
     },
     "src/features/whitelabel-showcase/editor/CardsTab.tsx": {
       "before": null,
@@ -108,11 +108,7 @@
     },
     "src/features/whitelabel-showcase/editor/ImageListEditor.tsx": {
       "before": null,
-      "after": "d00684182e118c620ac45fcdfcdec04afb5c826fcfff2bbfd9a389f43692f00a"
-    },
-    "src/features/whitelabel-showcase/editor/IntroTab.tsx": {
-      "before": null,
-      "after": "dbfd902e0b87cb8aeb044cbedbae46eedb9ead890f1941a633ba28232f92a36e"
+      "after": "6c7495d36d6c208ded698f08edace8ac256a7147b0a228ca4571796d0b947d7b"
     },
     "src/features/whitelabel-showcase/editor/MarkdownField.tsx": {
       "before": null,
@@ -120,7 +116,7 @@
     },
     "src/features/whitelabel-showcase/editor/MediaPickerDialog.tsx": {
       "before": null,
-      "after": "b90c009940ecb6fe3174d8f1ce3fd1ae49876658294a6184a38c43252fac2302"
+      "after": "d5905aeaef7758ae661cb3a4584c1bc852e3476dd27ef9a686766eaf3a72d20d"
     },
     "src/features/whitelabel-showcase/editor/PreviewPanel.tsx": {
       "before": null,
@@ -144,7 +140,7 @@
     },
     "src/features/whitelabel-showcase/editor/ShowcaseSettingsPage.tsx": {
       "before": null,
-      "after": "9565ebfea40565c3392e63502e9a3e7b8a2a6673e537fe05f2a7458ed314cd19"
+      "after": "86727c0b628ad2e19231406ea01ba1a49a2dd86d981dc07bf017ab40ac438127"
     },
     "src/features/whitelabel-showcase/editor/SourceLookupDialog.tsx": {
       "before": null,
@@ -152,7 +148,7 @@
     },
     "src/features/whitelabel-showcase/editor/editorHooks.ts": {
       "before": null,
-      "after": "ea48029df83eb930ab587e3778fa426442f3b6c8de7b4d18bc978353718bc1fb"
+      "after": "cd6cada636a3a755c1cc2e8d15707c259f63d33dc21a33d2662d559dbfc3b426"
     },
     "src/features/whitelabel-showcase/editor/showcaseCrumbs.ts": {
       "before": null,
@@ -160,7 +156,7 @@
     },
     "src/features/whitelabel-showcase/editor/showcaseNavigation.ts": {
       "before": null,
-      "after": "177ba6e5e64d94b88569abdff007c82f41293147aef3ccba9e3ace9ae19f2934"
+      "after": "f88dcc002add2b213494a18dd06b32a30ead0009727122eadbec2eb6dab924f1"
     },
     "src/features/whitelabel-showcase/editor/useShowcaseLeaveGuard.ts": {
       "before": null,
@@ -188,7 +184,7 @@
     },
     "src/features/whitelabel-showcase/public/ShowcaseView.tsx": {
       "before": null,
-      "after": "e82bda648867ba0756f1b62075648b612734778f980ed78caa17eb4f8377c6b0"
+      "after": "90a41a0d42fb9efd536f81ce57dcba5b726594100de1d0646ba6256e9fa96fa1"
     },
     "src/features/whitelabel-showcase/public/autoplay.ts": {
       "before": null,
@@ -200,7 +196,7 @@
     },
     "src/features/whitelabel-showcase/public/showcase.css": {
       "before": null,
-      "after": "2ae04630ca82856cd7eb0fcbabfdbdc7d630a994a93e4ab8927bf1d289148bf6"
+      "after": "34102b8af2b778facbc4ae0e2f3b3175b3e886b68c4d80a0dc1d087b7b1dae18"
     },
     "src/features/whitelabel-showcase/public/showcaseTypes.ts": {
       "before": null,
@@ -224,11 +220,11 @@
     },
     "src/features/whitelabel-showcase/showcaseClient.ts": {
       "before": null,
-      "after": "d45d5a5301addaaa5570a6f3e298a23edeec30ecce5b60389fbf033c99c0ee69"
+      "after": "b1fb205dd7b114d8df42cd6e9f3471cb9739addbfc8cea991ae0466dd12b4e87"
     },
     "src/features/whitelabel-showcase/showcaseCodec.ts": {
       "before": null,
-      "after": "276e9fb8b7feec0ab3045f1ecece8dc2f382a647a3de25d2e06ae82ff22d295c"
+      "after": "fad01e1aba23c1ceb018c5c15a5947784ef750f73908c0da6fdd390ed4679059"
     },
     "src/features/whitelabel-showcase/showcaseMapping.ts": {
       "before": null,
@@ -240,15 +236,15 @@
     },
     "src/features/whitelabel-showcase/showcaseMedia.ts": {
       "before": null,
-      "after": "cd5e41b4cf40e14ea91449223fa0315c2cecd67c8cd4a8c207e38cd9f7eaccae"
+      "after": "94954c08885ca9f351d04b52a68619b035b7ef96c8e1bbdfc3076cedb5b776d8"
     },
     "src/features/whitelabel-showcase/showcaseModel.ts": {
       "before": null,
-      "after": "6e45d9a4eedae7acf206b87ca72470657308475f08c5347c68d8620b4b86b99f"
+      "after": "c6d18326ba7038fc86348596d05f1a83f0a7752856486eefc3229a0bb9e0b9e6"
     },
     "src/features/whitelabel-showcase/showcaseRepository.ts": {
       "before": null,
-      "after": "2247e038f9ce1cd4da1b0b2a2d1040d87976e63a7d0e1f1a8c4333367aeb2f81"
+      "after": "22742a9bc669a02aa7f16807e06963879eb497e5bd79cd339418ff026cc83201"
     },
     "src/features/whitelabel-showcase/showcaseSourceLookup.ts": {
       "before": null,
@@ -256,11 +252,11 @@
     },
     "src/features/whitelabel-showcase/showcaseStore.ts": {
       "before": null,
-      "after": "8126a079d48c9ff0101e3b35b219b913332d34f30dbf18788cb18229997a478e"
+      "after": "9fb099408c5fd511b1845b0a7867f0c334d8bf2ef1ef6ec9cf699c6c6609e21d"
     },
     "src/features/whitelabel-showcase/showcaseValidation.ts": {
       "before": null,
-      "after": "62b6055bfebbab443cc45fbf6c56058a59c0173ce14997d8db4415c68df8a231"
+      "after": "3bae71d46de1377c50e650221ca6da24e7ab6e3f358911745c91928e1c1cf936"
     },
     "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
       "before": "e308fdbbc8ccac06f5ba101cb2d0875e589b6346043f1e46d876a6044eadebb6",
@@ -268,11 +264,23 @@
     },
     "src/features/whitelabel-showcase/showcaseLogoCatalog.ts": {
       "before": null,
-      "after": "b947c92134819d86da7245abb2dbd4f22885d31482cf99c60302cce5741b9c62"
+      "after": "3c5c668c6901aa2ce54169f436aaba34a8869c9f9f4492b917b978dadc61919d"
     },
     "src/features/whitelabel-showcase/assets/loor-logo-white-solid.png": {
       "before": null,
       "after": "b27dedf3aea07f367fac6f8616043118778b313364d1b696bc2474cf0a8d2957"
+    },
+    "src/features/whitelabel-showcase/editor/Sections.module.css": {
+      "before": null,
+      "after": "188916bdd270f02222c025e5f745e05c973928e471ea4af9a6ea174122817d1e"
+    },
+    "src/features/whitelabel-showcase/editor/SectionsTab.tsx": {
+      "before": null,
+      "after": "30ddf510c4c89aeb99520ccd93d97d2139d2934dab95dde7d0b4d4f5871e2eae"
+    },
+    "src/features/whitelabel-showcase/showcaseRelease.ts": {
+      "before": null,
+      "after": "c63f1e7909552ec26b11e368099f7b8fe1b7f955f88ffa263e0423d07bcc1c8f"
     }
   }
 }

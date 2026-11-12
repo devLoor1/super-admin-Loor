@@ -166,7 +166,7 @@ async function imageSize(file: Blob) {
   } catch { return null }
 }
 /** One request per explicit upload. Replacement always allocates a new durable ref. */
-export async function ingestUpload(actor: ShowcaseActor, file: File, purpose: UploadPurpose): Promise<IngestResult> {
+export async function ingestUpload(actor: ShowcaseActor, file: File, purpose: UploadPurpose, beforeSend?: () => boolean): Promise<IngestResult> {
   assertCanEdit(actor)
   if (uploadUncertain) return { ok: false, uncertain: true, message: 'Há um envio com resultado incerto nesta sessão. Confira o ocorrido com o suporte antes de um novo envio.' }
   const scoped = { ...actor, sessionVersion: getSessionVersion() }, epoch = sessionEpoch
@@ -175,6 +175,7 @@ export async function ingestUpload(actor: ShowcaseActor, file: File, purpose: Up
   if (!checked.ok) return checked
   const dimensions = await imageSize(file)
   if (!dimensions) return { ok: false, message: 'Não foi possível decodificar a imagem. O arquivo anterior foi preservado.' }
+  if (beforeSend && !beforeSend()) return { ok: false, message: 'Seleção encerrada ou fonte atualizada. O arquivo anterior foi preservado.' }
   assertCanEdit(scoped)
   const form = new FormData(); form.append('image', file); form.append('slot', 'showcase')
   try {

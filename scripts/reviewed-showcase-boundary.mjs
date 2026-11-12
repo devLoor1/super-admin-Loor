@@ -16,7 +16,7 @@ export const showcaseReviewPaths = Object.freeze([
   'src/features/whitelabels/WhitelabelDetailPanel.tsx',
   ...[
     'showcaseAccess.ts', 'showcaseClient.ts', 'showcaseCodec.ts', 'showcaseMapping.ts',
-    'showcaseMarkdown.ts', 'showcaseMedia.ts', 'showcaseLogoCatalog.ts', 'showcaseModel.ts', 'showcaseRepository.ts',
+    'showcaseMarkdown.ts', 'showcaseMedia.ts', 'showcaseLogoCatalog.ts', 'showcaseOfficialLogos.ts', 'showcaseModel.ts', 'showcaseRepository.ts',
     'showcaseSourceLookup.ts', 'showcaseStore.ts', 'showcaseValidation.ts', 'showcaseRelease.ts',
     'editor/BannerTab.tsx', 'editor/CardEditorPage.tsx', 'editor/CardsTab.tsx',
     'editor/editorHooks.ts', 'editor/ImageListEditor.tsx', 'editor/IntroTab.tsx',

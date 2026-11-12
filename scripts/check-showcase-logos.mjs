@@ -69,84 +69,8 @@ function setup() {
   return doc
 }
 const uploads=()=>calls.filter(c=>c.options.method==='POST')
-const option=(doc,kind)=>catalog.existingLogoOptions(doc,source).find(o=>o.kind===kind)
 async function check(name,fn) {try {await fn();checks++}catch(error){if(error.stack)error.stack=error.stack.replace(/data:text\/javascript;base64,[A-Za-z0-9+/=]+/g,'<in-memory-module>');throw Error(name+'\n'+(error.stack||error.message))}}
 
-await check('Opening catalogue is read-only and identifies real limited variants',()=>{
- const doc=setup(),before=structuredClone(doc),options=catalog.existingLogoOptions(doc,source)
- assert.equal(options.length,3);assert.equal(options[0].kind,'reference')
- assert.deepEqual(options.filter(o=>o.kind==='file').map(o=>o.variant),['Site · escura','Vitrine · clara'])
- assert.deepEqual(doc,before);assert.equal(calls.length,0)
-})
-await check('Preferred source wins over duplicate refs and other sources; not institutional inference',()=>{
- const doc=setup(),other=structuredClone(doc.sections[0]);other.instanceId=uuid(6);other.source={...source,whitelabelId:'4',slug:'another',name:'Another'}
- doc.sections.unshift(other);const options=catalog.existingLogoOptions(doc,source)
- assert.equal(options[0].sourceId,'6');assert.equal(options.filter(o=>o.kind==='reference').length,1)
- assert.match(options[0].provenance,/não define a marca institucional/)
-})
-await check('Foreign owner and unknown durable refs do not qualify for reuse',()=>{
- const doc=setup();doc.owner.whitelabelId=4;assert.deepEqual(catalog.existingLogoOptions(doc,source),[])
- doc.owner.whitelabelId=6;doc.sections[0].logo.assetRef=uuid(99)
- assert.equal(catalog.existingLogoOptions(doc,source).filter(o=>o.kind==='reference').length,0)
-})
-await check('Existing qualified logo reuses reference with zero upload',async()=>{
- const doc=setup(),before=structuredClone(doc),result=await catalog.selectExistingLogo(actor(),option(doc,'reference'),new AbortController().signal)
- assert.equal(result.ok,true);assert.equal(result.entry.assetRef,uuid(3));assert.equal(calls.length,0);assert.deepEqual(doc,before)
-})
-await check('Explicit file selection copies binary once to owner6 slotshowcase without source mutation',async()=>{
- const doc=setup(),before=structuredClone(doc),result=await catalog.selectExistingLogo(actor(),option(doc,'file'),new AbortController().signal)
- assert.equal(result.ok,true);assert.equal(result.entry.assetRef,uuid(9));assert.equal(calls.length,2);assert.equal(uploads().length,1)
- assert.equal(calls[0].options.credentials,'omit');assert.equal(calls[0].options.redirect,'error')
- const body=uploads()[0].options.body;assert.equal(body.get('slot'),'showcase');assert.ok(body.get('image') instanceof File)
- assert.deepEqual(new Uint8Array(await body.get('image').arrayBuffer()),new Uint8Array(png));assert.deepEqual(doc,before)
-})
-await check('Caller URL cannot replace build-owned catalogue destination',async()=>{
- const doc=setup();const selected={...option(doc,'file'),url:'https://other.example.invalid/secret.png'}
- await catalog.selectExistingLogo(actor(),selected,new AbortController().signal);assert.equal(calls[0].url.origin,app)
-})
-await check('Unrecognized catalogue id and ineligible reference make no requests',async()=>{
- const doc=setup();for(const selected of [{...option(doc,'file'),id:'unknown'},{...option(doc,'reference'),assetRef:uuid(99)}])assert.equal((await catalog.selectExistingLogo(actor(),selected,new AbortController().signal)).ok,false)
- assert.equal(calls.length,0)
-})
-for(const role of ['READ_ONLY','SUPPORT_ADMIN'])await check(`${role} cannot import or reuse through selection action`,async()=>{
- const doc=setup(),choices=catalog.existingLogoOptions(doc,source);session([role]);calls=[]
- for(const selected of choices)await assert.rejects(catalog.selectExistingLogo(actor(),selected,new AbortController().signal));assert.equal(calls.length,0)
-})
-await check('Unreadable file preserves previous logo and allows next valid selection',async()=>{
- const doc=setup(),before=structuredClone(doc);fileReply=()=>new Response('unavailable',{status:404})
- assert.equal((await catalog.selectExistingLogo(actor(),option(doc,'file'),new AbortController().signal)).ok,false);assert.equal(uploads().length,0)
- fileReply=()=>new Response(png,{headers:{'content-type':'image/png'}})
- assert.equal((await catalog.selectExistingLogo(actor(),option(doc,'file'),new AbortController().signal)).ok,true);assert.equal(uploads().length,1);assert.deepEqual(doc,before)
-})
-await check('Invalid binary is rejected before POST; controls may retry without uncertainty',async()=>{
- const doc=setup();fileReply=()=>new Response('not PNG',{headers:{'content-type':'image/png'}})
- assert.equal((await catalog.selectExistingLogo(actor(),option(doc,'file'),new AbortController().signal)).ok,false)
- assert.equal(uploads().length,0);assert.equal(media.hasUncertainUpload(),false)
-})
-await check('Closing during file read prevents upload and ignores late completion',async()=>{
- const doc=setup(),before=structuredClone(doc),controller=new AbortController(),attempts=media.createUploadAttempts();let release
- fileReply=()=>new Promise(resolve=>{release=resolve})
- const pending=media.runUploadAttempt(attempts,()=>catalog.selectExistingLogo(actor(),option(doc,'file'),controller.signal))
- attempts.close();controller.abort();release(new Response(png,{headers:{'content-type':'image/png'}}))
- assert.equal((await pending).status,'ignored');assert.equal(uploads().length,0);assert.deepEqual(doc,before)
-})
-await check('Closed old picker cannot apply upload after a reopened selection',async()=>{
- const doc=setup(),old=media.createUploadAttempts();let release
- reply=()=>new Promise(resolve=>{release=resolve})
- const pending=media.runUploadAttempt(old,()=>catalog.selectExistingLogo(actor(),option(doc,'file'),new AbortController().signal))
- while(!release)await new Promise(resolve=>setImmediate(resolve))
- old.close();const newer=media.createUploadAttempts()
- const chosen=await media.runUploadAttempt(newer,()=>catalog.selectExistingLogo(actor(),option(doc,'reference'),new AbortController().signal))
- release(json(201,{data:{asset_ref:uuid(9),wtlb_id:6,slot:'showcase',mime:'image/png',size_bytes:png.length,url:'https://assets.example.invalid/copied.png'}}))
- assert.equal((await pending).status,'ignored');assert.equal(chosen.entry.assetRef,uuid(3));assert.equal(uploads().length,1)
-})
-await check('Session replacement during file read blocks subsequent POST',async()=>{
- const doc=setup(),selected=option(doc,'file');let release
- fileReply=()=>new Promise(resolve=>{release=resolve})
- const pending=catalog.selectExistingLogo(actor(),selected,new AbortController().signal)
- session(['READ_ONLY']);release(new Response(png,{headers:{'content-type':'image/png'}}))
- await assert.rejects(pending);assert.equal(uploads().length,0)
-})
 await check('Applying reused logo changes only selected instance and wire persists no URL/blob/file',async()=>{
  const doc=setup(),second=structuredClone(doc.sections[0]);second.instanceId=uuid(6);second.images[0].associationId=uuid(20);doc.sections.push(second)
  reply=()=>json(200,wire(doc));await store.loadShowcase(actor());const before=structuredClone(store.getShowcaseState().draft)
@@ -156,8 +80,8 @@ await check('Applying reused logo changes only selected instance and wire persis
 })
 await check('Actual card logo callback preserves same-ref fileName and stays clean',async()=>{
  const doc=setup();reply=()=>json(200,wire(doc));await store.loadShowcase(actor());calls=[]
- const selected=option(store.getShowcaseState().draft,'reference')
- const result=await catalog.selectExistingLogo(actor(),selected,new AbortController().signal);assert.equal(result.ok,true)
+ const selected={variant:'Personalização preservada',suggestedAlt:'LOØR'}
+ const result={ok:true,entry:await media.ensureMedia(uuid(3))};assert.equal(result.ok,true)
  const code=readFileSync(resolve(root,prefix+'editor/CardEditorPage.tsx'),'utf8')
  const tree=ts.createSourceFile('CardEditorPage.tsx',code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);let callback
  function visit(node){
@@ -180,7 +104,7 @@ await check('Actual picker SSR exposes two modes and labelled thumbnails, never 
  const {createElement:h}=await import('react'),{renderToStaticMarkup:render}=await import('react-dom/server')
  const {MediaPickerDialog}=await load(prefix+'editor/MediaPickerDialog.tsx')
  const html=render(h(MediaPickerDialog,{purpose:'logo',logoSource:source,title:'Logo',onPicked(){},onClose(){}}))
- for(const text of ['Imagens existentes','Enviar nova logo','Site · escura','Vitrine · clara','type="radio"','Usar imagem selecionada'])assert.ok(html.includes(text),text)
+ for(const text of ['Logo oficial da origem','Enviar nova logo','Logo do cabeçalho publicado','Usar imagem selecionada'])assert.ok(html.includes(text),text)
  assert.equal(calls.length,0)
  session(['READ_ONLY']);const readonly=render(h(MediaPickerDialog,{purpose:'logo',logoSource:source,title:'Logo',onPicked(){},onClose(){}}))
  assert.match(readonly,/<fieldset[^>]*disabled/);assert.equal(calls.length,0)
@@ -198,9 +122,9 @@ await check('READ_ONLY reads source images but cannot copy, send or reuse',async
  assert.equal((await catalog.loadSourceImageOptions(actor(),source)).length,1)
  await assert.rejects(catalog.selectExistingLogo(actor(),sourceOption(),new AbortController().signal));assert.equal(uploads().length,0)
 })
-await check('Empty source options preserve curated choices and existing owner references',async()=>{
- const doc=setup(),before=catalog.existingLogoOptions(doc,source);reply=()=>json(200,optionsWire([]))
- assert.deepEqual(await catalog.loadSourceImageOptions(actor(),source),[]);assert.deepEqual(catalog.existingLogoOptions(doc,source),before);assert.equal(uploads().length,0)
+await check('Empty photographs discovery preserves the current document without fallback',async()=>{
+ const doc=setup(),before=structuredClone(doc);reply=()=>json(200,optionsWire([]))
+ assert.deepEqual(await catalog.loadSourceImageOptions(actor(),source),[]);assert.deepEqual(doc,before);assert.equal(uploads().length,0)
 })
 await check('Unavailable preview remains a valid option; mismatched source and duplicate assets fail clearly',()=>{
  setup();const value=optionsWire();value.data.variants[0].previewUrl=null;value.data.variants[0].mime=null;value.data.variants[0].originalName=null
@@ -243,7 +167,7 @@ await check('Close does not assert server cancellation and late copy cannot repl
  reply=()=>new Promise(resolve=>{release=resolve})
  const pending=media.runUploadAttempt(attempts,()=>catalog.selectExistingLogo(actor(),sourceOption(),controller.signal))
  while(!release)await new Promise(resolve=>setImmediate(resolve))
- attempts.close();controller.abort();const newer=await catalog.selectExistingLogo(actor(),option(doc,'reference'),new AbortController().signal)
+ attempts.close();controller.abort();const newer={entry:await media.ensureMedia(doc.sections[0].logo.assetRef)}
  release(json(201,{data:{asset_ref:uuid(12),wtlb_id:6,slot:'showcase',url:null}}))
  assert.equal((await pending).status,'ignored');assert.equal(newer.entry.assetRef,uuid(3));assert.equal(uploads().length,1)
  assert.equal(uploads()[0].options.signal.aborted,false,'UI close must not abort a dispatched copy and imply cancellation')

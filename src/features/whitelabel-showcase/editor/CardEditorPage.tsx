@@ -178,7 +178,7 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
                   <div className={styles.logoPreview} style={{ background: isHexColor(card.colors.panel) ? card.colors.panel : undefined }} id={fieldIds.cardLogo} tabIndex={-1}>
                     {logoUrl ? <img src={logoUrl} onError={() => card.logo && refreshMedia(card.logo.assetRef)} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>Sem logotipo</span>}
                   </div>
-                  <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{!canEdit ? 'Consultar imagens existentes' : card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>
+                  <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{!canEdit ? 'Consultar logo da origem' : card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>
                   <small className={styles.hint}>{UPLOAD_GUIDANCE.logo.summary}</small>
                   {card.logo && <small className={styles.hint}>{card.logo.fileName}</small>}
                   {logoWarnings.length ? <ul className={styles.warningList}>{logoWarnings.map(text => <li key={text}>{text}</li>)}</ul> : null}

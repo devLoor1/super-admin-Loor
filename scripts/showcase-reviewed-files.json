@@ -100,7 +100,7 @@
     },
     "src/features/whitelabel-showcase/editor/CardEditorPage.tsx": {
       "before": null,
-      "after": "0e77073cf8b76ab465cd8862acd4b138d6d20ec919f376b0f1db26a0ea688597"
+      "after": "17f2f1d2b4070d2ca8d8596869a0ab452b278ebd48d0fe74de1e72ccea57162d"
     },
     "src/features/whitelabel-showcase/editor/CardsTab.tsx": {
       "before": null,
@@ -116,7 +116,7 @@
     },
     "src/features/whitelabel-showcase/editor/MediaPickerDialog.tsx": {
       "before": null,
-      "after": "cecf35c6a4657d5e7c1eb8229b8e1dc970b4f18685203a482e3b1a6eb528bc4f"
+      "after": "e80c3f8b9bac6c524122ed238cacdceefb85a5558f2ec526f4195fb03ddc0967"
     },
     "src/features/whitelabel-showcase/editor/PreviewPanel.tsx": {
       "before": null,
@@ -184,7 +184,7 @@
     },
     "src/features/whitelabel-showcase/public/ShowcaseView.tsx": {
       "before": null,
-      "after": "90a41a0d42fb9efd536f81ce57dcba5b726594100de1d0646ba6256e9fa96fa1"
+      "after": "9952564a0026a80b33f9f2021c88fc96083ec31576b29205a0d281aef1a1ec78"
     },
     "src/features/whitelabel-showcase/public/autoplay.ts": {
       "before": null,
@@ -212,7 +212,7 @@
     },
     "src/features/whitelabel-showcase/public/useShowcaseMedia.ts": {
       "before": null,
-      "after": "eeee2ade04097f30654a862b9e0ed1739c82904d2bb5280e98e2485907f850f9"
+      "after": "88e09093022e0a958f972456a5d4bb92e300c74a0c32e5dddf39864885f0a80b"
     },
     "src/features/whitelabel-showcase/showcaseAccess.ts": {
       "before": null,
@@ -224,7 +224,7 @@
     },
     "src/features/whitelabel-showcase/showcaseCodec.ts": {
       "before": null,
-      "after": "fad01e1aba23c1ceb018c5c15a5947784ef750f73908c0da6fdd390ed4679059"
+      "after": "92666b4a6c291281400caa5cc526941901100c9d1712910c5a352e7a792f8c8b"
     },
     "src/features/whitelabel-showcase/showcaseMapping.ts": {
       "before": null,
@@ -236,15 +236,15 @@
     },
     "src/features/whitelabel-showcase/showcaseMedia.ts": {
       "before": null,
-      "after": "d636d1869113b9c976af9bfb2a1226b01bd60136fd900a02b84333094bf3899f"
+      "after": "a341e1f6b5c3d6e15751be5bc36058374404ab7062c1217939c29d28289472bd"
     },
     "src/features/whitelabel-showcase/showcaseModel.ts": {
       "before": null,
-      "after": "c6d18326ba7038fc86348596d05f1a83f0a7752856486eefc3229a0bb9e0b9e6"
+      "after": "4ef6ffe0a4b04870cceb23d79eaca151dc3ce0e08a35a03a59ebe935b3937bd1"
     },
     "src/features/whitelabel-showcase/showcaseRepository.ts": {
       "before": null,
-      "after": "22742a9bc669a02aa7f16807e06963879eb497e5bd79cd339418ff026cc83201"
+      "after": "3a84c588d0a7e10bcef03747c45881c8e74f34cf23afd762edb9a77f0c4761cc"
     },
     "src/features/whitelabel-showcase/showcaseSourceLookup.ts": {
       "before": null,
@@ -256,7 +256,7 @@
     },
     "src/features/whitelabel-showcase/showcaseValidation.ts": {
       "before": null,
-      "after": "3bae71d46de1377c50e650221ca6da24e7ab6e3f358911745c91928e1c1cf936"
+      "after": "f55c205dbd0ffc94f28b4f92e11ea02ad3e2c1f37b49a3955f96b928014d7ab0"
     },
     "src/features/whitelabels/WhitelabelDetailPanel.tsx": {
       "before": "e308fdbbc8ccac06f5ba101cb2d0875e589b6346043f1e46d876a6044eadebb6",
@@ -264,7 +264,7 @@
     },
     "src/features/whitelabel-showcase/showcaseLogoCatalog.ts": {
       "before": null,
-      "after": "6a3304246e1600e590fcf32bb1ccefb5769dcf794fe68e2e6c52dffd6b1a0264"
+      "after": "d89855ac9590e50b8ffa660874705b18fcb928957249670613ee447854a6a6c2"
     },
     "src/features/whitelabel-showcase/assets/loor-logo-white-solid.png": {
       "before": null,
@@ -284,7 +284,7 @@
     },
     "src/features/whitelabel-showcase/showcaseOfficialLogos.ts": {
       "before": null,
-      "after": "6de419118c17f182dae3f6945737f6ccfdc899fc9e4cfc8d62c16887e12e0edd"
+      "after": "6169919d84d12e34acb6d9ef9a422318ce0266f4e8c8e203b3475f6dd85f5dc2"
     }
   }
 }

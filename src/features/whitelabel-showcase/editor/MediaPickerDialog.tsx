@@ -4,9 +4,9 @@ import { Dialog } from '../../../components/ui/Dialog'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { createUploadAttempts, hasUncertainUpload, ingestUpload, runUploadAttempt, UPLOAD_GUIDANCE, type UploadPurpose } from '../showcaseMedia'
 import { loadSourceImageOptions, selectExistingLogo, type ExistingLogoOption } from '../showcaseLogoCatalog'
-import { canImportOfficialLogo, loadOfficialLogoOptions } from '../showcaseOfficialLogos'
+import { loadOfficialLogoOptions, selectOfficialLogo } from '../showcaseOfficialLogos'
 import { SHOWCASE_V2_WRITES_ENABLED } from '../showcaseRelease'
-import type { CardSource } from '../showcaseModel'
+import type { CardSource, OfficialCardLogo } from '../showcaseModel'
 import { useShowcaseActor } from './editorHooks'
 import styles from './ShowcaseEditor.module.css'
 
@@ -26,6 +26,7 @@ type MediaPickerProps = {
   title: string
   logoSource?: CardSource
   onPicked: (media: PickedMedia) => void
+  onOfficialPicked?: (logo: OfficialCardLogo) => void
   onClose: () => void
 }
 
@@ -36,7 +37,7 @@ export function MediaPickerDialog(props: MediaPickerProps) {
   return <ScopedMediaPickerDialog key={key} {...props} />
 }
 
-function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onClose }: MediaPickerProps) {
+function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onOfficialPicked, onClose }: MediaPickerProps) {
   const { actor, canEdit: actorCanEdit } = useShowcaseActor()
   const canEdit = actorCanEdit && SHOWCASE_V2_WRITES_ENABLED
   const input = useRef<HTMLInputElement>(null)
@@ -66,7 +67,7 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onClose
   }, [purpose, sourceId, sourceSlug, sourceName, sourceBaseUrl, rolesKey, sessionVersion, discoveryKey])
   const logos = sourceOptions
   const selected = logos.find(option => option.id === selectedId)
-  const selectedCompatible = selected && (selected.kind !== 'official' || canImportOfficialLogo(selected))
+  const selectedCompatible = selected && (selected.kind !== 'official' || !!onOfficialPicked)
   const [state, setState] = useState<{ phase: 'idle' | 'sending' | 'error' | 'uncertain'; message: string }>(() => hasUncertainUpload() ? { phase: 'uncertain', message: 'Há um envio sem confirmação nesta sessão. Confira o ocorrido antes de enviar outro arquivo.' } : { phase: 'idle', message: '' })
   const [attempts] = useState(createUploadAttempts)
   // Closing the picker (unmount) abandons a pending attempt; reopening the effect (StrictMode) reopens it.
@@ -93,7 +94,13 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onClose
 
   async function applySelectedLogo() {
     const option = logos.find(item => item.id === selectedId)
-    if (!option || !canEdit || inProgress.current || hasUncertainUpload() || (option.kind === 'official' && !canImportOfficialLogo(option))) return
+    if (!option || !canEdit || inProgress.current || hasUncertainUpload()) return
+    if (option.kind === 'official') {
+      if (purpose !== 'logo' || !logoSource || !onOfficialPicked) return
+      try { onOfficialPicked(selectOfficialLogo(actor, option, logoSource, new AbortController().signal)) }
+      catch { setState({ phase: 'error', message: 'A fonte ou a sessão mudou. Consulte novamente; a logo atual foi preservada.' }) }
+      return
+    }
     inProgress.current = true
     const controller = new AbortController(); download.current = controller
     setState({ phase: 'sending', message: 'Preparando uma cópia desta imagem para a WL6…' })
@@ -122,7 +129,7 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onClose
       </div>}
       {hasExisting && mode === 'existing' && <div className={styles.pickerSection}>
         <h3 className={styles.pickerTitle}>{purpose === 'logo' ? 'Logo do cabeçalho publicado' : 'Imagens disponíveis'}</h3>
-        <p className={styles.hint}>{purpose === 'logo' ? 'Somente a marca da origem deste card. A consulta usa a mesma fonte do cabeçalho; ao confirmar, uma cópia independente é criada na WL6. A cópia salva não acompanha automaticamente mudanças futuras da marca. A logo personalizada atual permanece até uma substituição explícita.' : 'As imagens da origem são arquivos de áreas de página (main_area); não são necessariamente logos institucionais. Confira a miniatura e a procedência antes de usar.'}</p>
+        <p className={styles.hint}>{purpose === 'logo' ? 'Somente a marca da origem deste card. A seleção vincula a variante oficial ao rascunho, sem copiar ou enviar arquivo. Após salvar, a leitura acompanha a fonte publicada; o cache pode durar até 60 segundos. A logo personalizada atual permanece até uma escolha explícita.' : 'As imagens da origem são arquivos de áreas de página (main_area); não são necessariamente logos institucionais. Confira a miniatura e a procedência antes de usar.'}</p>
         {logoSource && discovery === 'loading' && <p role="status">Consultando imagens de {logoSource.name || logoSource.slug}…</p>}
         {logoSource && discovery === 'empty' && <p className={styles.hint}>{purpose === 'logo' ? 'A fonte oficial desta origem ainda não disponibiliza uma logo compatível com esta consulta. Isso não significa ausência da marca. Nenhuma logo de outra origem será oferecida; a logo atual foi preservada.' : 'A origem não retornou imagens main_area. A imagem atual foi preservada.'}</p>}
         {logoSource && discovery === 'error' && <div role="alert"><p>Não foi possível consultar a fonte desta origem. A imagem atual foi preservada; nenhuma outra marca a substitui.</p><OutlineButton disabled={state.phase === 'sending'} onClick={() => { setSelectedId(null); setReloadOptions(value => value + 1) }}>Consultar novamente</OutlineButton></div>}
@@ -132,7 +139,7 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onClose
             <input type="radio" name="existing-logo" value={option.id} checked={selectedId === option.id} onChange={() => setSelectedId(option.id)} />
             <OptionThumbnail option={option} />
             <strong>{option.whitelabel}</strong><span>{option.variant}</span><small>{option.provenance}</small>
-            <small>{option.kind === 'official' && !canImportOfficialLogo(option) ? 'Prévia disponível. A cópia deste formato depende de compatibilidade contratual; nenhum upload foi realizado.' : 'Cria uma nova referência na WL6 somente ao confirmar o uso.'}</small>
+            <small>{option.kind === 'official' ? 'Vincula a marca e a variante ao rascunho. Nenhum asset ou upload é criado.' : 'Cria uma nova referência na WL6 somente ao confirmar o uso.'}</small>
           </label>)}
         </fieldset>
         {!logos.length && discovery !== 'loading' && <p className={styles.hint}>Nenhuma opção disponível neste contexto.</p>}

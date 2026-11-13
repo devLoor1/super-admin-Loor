@@ -28,7 +28,12 @@ export type ImageAssociation = {
   fileName: string
 }
 
-export type CardLogo = { assetRef: string; alt: string; fileName: string; origin: 'upload' }
+export type CustomCardLogo = { kind: 'custom'; assetRef: string; alt: string; fileName: string; origin: 'upload' }
+export type OfficialCardLogo = { kind: 'official'; source: { whitelabelId: number; slug: string }; variantId: string; alt: string }
+/** Resolved URLs/versions are transient media, never editorial content. */
+export type CardLogo = CustomCardLogo | OfficialCardLogo
+export const logoMediaKey = (logo: CardLogo | null | undefined): string | null => !logo ? null : logo.kind === 'official'
+  ? JSON.stringify(['official', 'homolog', logo.source.whitelabelId, logo.source.slug, logo.variantId]) : logo.assetRef
 export type CardColors = { panel: string; divider: string }
 export type CardSource = {
   whitelabelId: string
@@ -84,7 +89,7 @@ export type StoredShowcase = {
   revision: number | null
   savedAt: string | null
   document: ShowcaseDocument
-  warnings?: { code: 'SOURCE_INACTIVE'; instanceId: string; sourceWhitelabelId: number }[]
+  warnings?: ({ code: 'SOURCE_INACTIVE'; instanceId: string; sourceWhitelabelId: number } | { code: 'OFFICIAL_LOGO_UNAVAILABLE'; instanceId: string; sourceWhitelabelId: number; variantId: string })[]
 }
 
 export const SHOWCASE_OWNER: ShowcaseOwner = { environmentKey: 'homolog', whitelabelId: 6, slug: 'homologacao' }

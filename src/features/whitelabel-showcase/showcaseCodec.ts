@@ -1,5 +1,5 @@
 import { ApiError } from '../../lib/api'
-import { emptyShowcaseDocument, isUuid, MARKDOWN_VERSION, SHOWCASE_OWNER, MAX_SECTIONS, type ShowcaseDocument, type StoredShowcase, type ImageAssociation, type CardInstance, type ShowcaseSection, type TextSection } from './showcaseModel'
+import { emptyShowcaseDocument, isUuid, MARKDOWN_VERSION, SHOWCASE_OWNER, MAX_SECTIONS, type ShowcaseDocument, type StoredShowcase, type ImageAssociation, type CardInstance, type CardLogo, type ShowcaseSection, type TextSection } from './showcaseModel'
 import { safeHttpUrl, parseShowcaseMarkdown } from './showcaseMarkdown'
 import { validateShowcase } from './showcaseValidation'
 
@@ -34,6 +34,15 @@ function textSection(value: unknown): TextSection {
 function card(value: unknown): CardInstance {
   const item = object(value), source = object(item.source), colors = object(item.colors), logo = object(item.logo)
   const name = text(item.displayName)
+  let decodedLogo: CardLogo
+  if (logo.kind === 'official') {
+    const logoSource = object(logo.source), variantId = text(logo.variantId)
+    if (Object.hasOwn(logo, 'assetRef') || positive(logoSource.whitelabelId) !== source.whitelabelId || text(logoSource.slug) !== source.slug || !variantId.trim() || variantId.length > 80) throw malformedShowcase()
+    decodedLogo = { kind: 'official', source: { whitelabelId: logoSource.whitelabelId as number, slug: logoSource.slug as string }, variantId, alt: text(logo.alt) }
+  } else {
+    if (logo.kind !== undefined && logo.kind !== 'custom') throw malformedShowcase()
+    decodedLogo = { kind: 'custom', assetRef: uuid(logo.assetRef), alt: text(logo.alt), fileName: '', origin: 'upload' }
+  }
   return {
     instanceId: uuid(item.instanceId),
     source: { whitelabelId: String(positive(source.whitelabelId)), slug: text(source.slug), name, logical: null, baseUrl: typeof source.baseUrl === 'string' && safeHttpUrl(source.baseUrl) ? source.baseUrl : null },
@@ -41,7 +50,7 @@ function card(value: unknown): CardInstance {
     internalTitle: item.internalTitle === undefined ? '' : text(item.internalTitle),
     copiedDefaults: { fields: [], missing: [], sourceVersion: null, copiedAt: '', provenance: 'manual' },
     colors: { panel: text(colors.panel), divider: text(colors.divider) },
-    logo: { assetRef: uuid(logo.assetRef), alt: text(logo.alt), fileName: '', origin: 'upload' },
+    logo: decodedLogo,
     images: list(item.images).map(image),
   }
 }
@@ -76,7 +85,9 @@ export function encodeShowcaseDocument(document: ShowcaseDocument) {
         source: { whitelabelId: Number(item.source.whitelabelId), slug: text(item.source.slug), ...(item.source.baseUrl && safeHttpUrl(item.source.baseUrl) ? { baseUrl: text(item.source.baseUrl) } : {}) },
         displayName: text(item.displayName), shortDescription: text(item.shortDescription),
         colors: { panel: item.colors.panel, divider: item.colors.divider },
-        logo: { assetRef: text(item.logo!.assetRef), alt: text(item.logo!.alt) }, images: item.images.map(association),
+        logo: item.logo!.kind === 'official'
+          ? { kind: 'official' as const, source: { whitelabelId: item.logo!.source.whitelabelId, slug: text(item.logo!.source.slug) }, variantId: text(item.logo!.variantId), alt: text(item.logo!.alt) }
+          : { kind: 'custom' as const, assetRef: text(item.logo!.assetRef), alt: text(item.logo!.alt) }, images: item.images.map(association),
         ...(internalTitle ? { internalTitle } : {}),
       }
     }),
@@ -97,10 +108,12 @@ export function decodeStoredShowcase(value: unknown, requireOwner = true): Store
     return { configured: false, revision: null, savedAt: null, document: emptyShowcaseDocument() }
   }
   if (data.configured !== true) throw malformedShowcase()
-  const warnings = Array.isArray(data.warnings) ? data.warnings.flatMap(value => {
+  const warnings = Array.isArray(data.warnings) ? data.warnings.flatMap<NonNullable<StoredShowcase['warnings']>[number]>(value => {
     const row = object(value)
-    return row.code === 'SOURCE_INACTIVE' && typeof row.instanceId === 'string' && isUuid(row.instanceId) && typeof row.sourceWhitelabelId === 'number' && Number.isSafeInteger(row.sourceWhitelabelId) && row.sourceWhitelabelId > 0
-      ? [{ code: 'SOURCE_INACTIVE' as const, instanceId: row.instanceId, sourceWhitelabelId: row.sourceWhitelabelId }] : []
+    if (typeof row.instanceId !== 'string' || !isUuid(row.instanceId) || typeof row.sourceWhitelabelId !== 'number' || !Number.isSafeInteger(row.sourceWhitelabelId) || row.sourceWhitelabelId <= 0) return []
+    if (row.code === 'SOURCE_INACTIVE') return [{ code: 'SOURCE_INACTIVE' as const, instanceId: row.instanceId, sourceWhitelabelId: row.sourceWhitelabelId }]
+    if (row.code === 'OFFICIAL_LOGO_UNAVAILABLE' && typeof row.variantId === 'string' && row.variantId.trim() && row.variantId.length <= 80) return [{ code: 'OFFICIAL_LOGO_UNAVAILABLE' as const, instanceId: row.instanceId, sourceWhitelabelId: row.sourceWhitelabelId, variantId: row.variantId }]
+    return []
   }) : []
   return { configured: true, revision: positive(data.revision), savedAt: null, document: decodeShowcaseDocument(data.document), warnings }
 }

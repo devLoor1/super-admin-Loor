@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { ensureMedia, getMediaSnapshot, mediaUrl, subscribeMedia } from '../showcaseMedia'
 import { refreshShowcaseMedia } from '../showcaseRepository'
+import { isUuid } from '../showcaseModel'
 
 /** Resolve durable references for this document; URL renewal never changes its revision. */
 export function useShowcaseMedia(refs: readonly string[]) {
@@ -11,7 +12,7 @@ export function useShowcaseMedia(refs: readonly string[]) {
   const displayedUrls = new Map(refs.map(ref => [ref, mediaUrl(ref)]))
   useEffect(() => {
     const references = JSON.parse(key) as string[]
-    for (const ref of references) void ensureMedia(ref).catch(() => undefined)
+    for (const ref of references) if (isUuid(ref)) void ensureMedia(ref).catch(() => undefined)
   }, [key])
   return (assetRef: string) => {
     const failedUrl = displayedUrls.get(assetRef)

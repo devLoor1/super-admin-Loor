@@ -9,7 +9,7 @@
 import { useState, type CSSProperties, type MouseEvent } from 'react'
 import { ArrowRight, ImageOff } from 'lucide-react'
 import { mediaUrl, resolveMedia } from '../showcaseMedia'
-import { lowerPanelColor, showcaseCards, type CardInstance, type ImageAssociation, type ShowcaseDocument } from '../showcaseModel'
+import { lowerPanelColor, logoMediaKey, showcaseCards, type CardInstance, type ImageAssociation, type ShowcaseDocument } from '../showcaseModel'
 import { CardImageCarousel } from './CardImageCarousel'
 import { DemoDialog, type DemoContent } from './DemoDialog'
 import { ImageCarousel } from './ImageCarousel'
@@ -54,7 +54,8 @@ function MissingMedia({ label }: { label: string }) {
 
 export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embedded = false, headingOffset = 0, portfolioHeading = true, portfolioNote = true, editorPlaceholders = false, parallax = true }: Props) {
   const [dialog, setDialog] = useState<DemoContent | null>(null)
-  const refreshMedia = useShowcaseMedia([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])
+  const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, string>>({})
+  const refreshMedia = useShowcaseMedia([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [logoMediaKey(card.logo)!] : [])])])
   const show = (section: ShowcaseSection) => sections.includes(section)
   const level = (base: number) => base + headingOffset
   const ids = { hero: `${idPrefix}-inicio`, portfolio: `${idPrefix}-plataformas`, main: `${idPrefix}-conteudo` }
@@ -117,8 +118,9 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
               if (!show('portfolio')) return null
               const card = section
                 const slides = slidesFor(card.images, refreshMedia)
-                const logoUrl = mediaUrl(card.logo?.assetRef)
-                const logoEntry = card.logo ? resolveMedia(card.logo.assetRef) : undefined
+                const logoUrl = mediaUrl(logoMediaKey(card.logo))
+                const logoFailed = !!logoUrl && failedLogoUrls[card.instanceId] === logoUrl
+                const logoEntry = card.logo ? resolveMedia(logoMediaKey(card.logo)!) : undefined
                 const nameId = `${idPrefix}-card-${card.instanceId}-name`
                 return <section key={card.instanceId} data-content-id={card.instanceId} data-content-type="card" className="wl-container wl-portfolio">
                   {portfolioHeading && card.instanceId === showcaseCards(document)[0]?.instanceId && <Heading level={level(2)} className="wl-portfolio-title" id={`${idPrefix}-portfolio-title`}>Uma tecnologia. Diferentes identidades.</Heading>}
@@ -128,8 +130,8 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
                     : <div className="wl-carousel wl-carousel--card">{editorPlaceholders ? <MissingMedia label="Adicione ao menos uma fotografia" /> : null}</div>}
                   <div className="wl-platform-info">
                     <Heading level={level(3)} className="wl-platform-name" id={nameId}>
-                      {logoUrl
-                        ? <img className="wl-brand-logo" src={logoUrl} alt={card.logo?.alt ?? card.displayName} width={logoEntry?.width ?? 2172} height={logoEntry?.height ?? 724} loading="lazy" onError={() => card.logo && refreshMedia(card.logo.assetRef)} />
+                      {logoUrl && !logoFailed
+                        ? <img className="wl-brand-logo" src={logoUrl} alt={card.logo?.alt ?? card.displayName} width={logoEntry?.width ?? 2172} height={logoEntry?.height ?? 724} loading="lazy" onError={() => { setFailedLogoUrls(current => ({ ...current, [card.instanceId]: logoUrl })); if (card.logo) refreshMedia(logoMediaKey(card.logo)!) }} />
                         : <span className="wl-brand-fallback">{card.displayName || (editorPlaceholders ? 'Logo ausente' : '')}</span>}
                     </Heading>
                     <div className="wl-platform-details">

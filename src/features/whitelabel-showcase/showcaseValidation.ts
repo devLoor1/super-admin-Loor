@@ -77,8 +77,10 @@ export function validateCard(card: CardInstance, resolve: AssetResolver, label =
   if (!card.shortDescription.trim()) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardDescription, message: `${label}: informe a descrição curta.` })
   if (!card.logo) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogo, message: `${label}: adicione o logotipo.` })
   else {
-    if (!isUuid(card.logo.assetRef) || !resolve(card.logo.assetRef)) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogo, message: `${label}: logotipo indisponível nesta sessão; substitua o arquivo.` })
-    if (!card.logo.alt.trim()) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogoAlt, message: `${label}: informe o texto alternativo do logotipo.` })
+    if (card.logo.kind === 'official') {
+      if ('assetRef' in card.logo || card.logo.source.whitelabelId !== Number(card.source.whitelabelId) || card.logo.source.slug !== card.source.slug || !card.logo.variantId.trim() || card.logo.variantId.length > 80) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogo, message: `${label}: o vínculo da logo deve corresponder exatamente à origem deste card.` })
+    } else if ((card.logo.kind !== undefined && card.logo.kind !== 'custom') || !isUuid(card.logo.assetRef) || !resolve(card.logo.assetRef)) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogo, message: `${label}: logotipo indisponível nesta sessão; substitua o arquivo.` })
+    if (!card.logo.alt.trim() || card.logo.alt.length > 500) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardLogoAlt, message: `${label}: informe o texto alternativo do logotipo (até 500 caracteres).` })
   }
   if (!isHexColor(card.colors.panel) || !isHexColor(card.colors.divider)) issues.push({ tab: 'cards', instanceId: id, fieldId: fieldIds.cardColors, message: `${label}: use cores no formato #RRGGBB.` })
   issues.push(...imageIssues(card.images, 'cards', label, resolve, fieldIds.cardImages, id))

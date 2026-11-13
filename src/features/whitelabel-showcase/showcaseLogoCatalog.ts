@@ -5,7 +5,7 @@ import { isUuid, type CardSource } from './showcaseModel'
 import { malformedShowcase, object } from './showcaseCodec'
 import { showcaseRequest } from './showcaseClient'
 import { safeHttpUrl } from './showcaseMarkdown'
-import { importOfficialLogo, type OfficialLogoOption } from './showcaseOfficialLogos'
+import { type OfficialLogoOption } from './showcaseOfficialLogos'
 
 export type ExistingLogoOption = ({
   id: string
@@ -46,11 +46,11 @@ export async function loadSourceImageOptions(actor: ShowcaseActor, source: CardS
   return decodeSourceImageOptions(body, source)
 }
 
-/** Explicit selection only. Neither photographs nor official snapshots change their source. */
+/** Existing photographs may be copied; official logos must use a draft binding. */
 export async function selectExistingLogo(actor: ShowcaseActor, option: ExistingLogoOption, signal: AbortSignal): Promise<IngestResult> {
   assertCanEdit(actor)
   const scoped = { ...actor, sessionVersion: getSessionVersion() }
   if (signal.aborted) return { ok: false, message: 'Seleção encerrada.' }
   if (option.kind === 'source') return copySourceMedia(scoped, Number(option.sourceId), option.sourceAssetRef)
-  return importOfficialLogo(scoped, option, signal)
+  return { ok: false, message: 'Logo oficial exige vínculo explícito; nenhum arquivo foi copiado.' }
 }

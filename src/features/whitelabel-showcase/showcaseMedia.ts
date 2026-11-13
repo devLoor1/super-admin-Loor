@@ -1,13 +1,28 @@
 import { ApiError } from '../../lib/api'
 import { assertCanEdit, showcaseSessionKey, ShowcasePermissionError, type ShowcaseActor } from './showcaseAccess'
 import { getSessionVersion, subscribeSession } from '../../lib/authSession'
-import { isUuid, showcaseCards, type ShowcaseDocument } from './showcaseModel'
+import { isUuid, logoMediaKey, showcaseCards, type CardInstance, type CardLogo, type CustomCardLogo, type ShowcaseDocument } from './showcaseModel'
 import { safeHttpUrl } from './showcaseMarkdown'
 import { decodeStoredShowcase, malformedShowcase, object } from './showcaseCodec'
 import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
 
 export type MediaEntry = { assetRef: string; url: string; fileName: string; mime: string; bytes: number | null; width: number | null; height: number | null; origin: 'upload' | 'server' }
 const registry = new Map<string, MediaEntry>()
+const previousCustomLogos = new Map<string, CustomCardLogo>()
+const customKey = (card: Pick<CardInstance, 'instanceId' | 'source'>) => JSON.stringify([card.instanceId, card.source.whitelabelId, card.source.slug])
+export const previousCustomLogo = (card: Pick<CardInstance, 'instanceId' | 'source'>) => {
+  const logo = previousCustomLogos.get(customKey(card)); return logo ? structuredClone(logo) : null
+}
+/** Session-local explicit alternative, never another brand's official catalogue. */
+export function rememberCustomLogo(card: Pick<CardInstance, 'instanceId' | 'source'>, logo: CardLogo | null) {
+  if (logo && logo.kind !== 'official' && hasMedia(logo.assetRef)) previousCustomLogos.set(customKey(card), { ...logo, kind: 'custom' })
+}
+export function rememberOfficialPreview(logo: CardLogo, url: string | null) {
+  if (logo.kind !== 'official') return
+  const key = logoMediaKey(logo)!
+  registry.set(key, { assetRef: key, url: url ? safeHttpUrl(url) ?? '' : '', fileName: '', mime: '', bytes: null, width: null, height: null, origin: 'server' })
+  notify()
+}
 const cacheVersions = new Map<string, number>()
 const known = new Set<string>()
 const inflight = new Map<string, Promise<MediaEntry>>()
@@ -19,12 +34,12 @@ export const hasUncertainUpload = () => uploadUncertain
 const notify = () => { mediaVersion++; listeners.forEach(listener => listener()) }
 export const getMediaSnapshot = () => mediaVersion
 export const subscribeMedia = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
-subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); cacheVersions.clear(); known.clear(); inflight.clear(); copiesInProgress.clear(); uploadUncertain = false; notify() })
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; registry.clear(); previousCustomLogos.clear(); cacheVersions.clear(); known.clear(); inflight.clear(); copiesInProgress.clear(); uploadUncertain = false; notify() })
 export const resolveMedia = (assetRef: string) => registry.get(assetRef)
 export const hasMedia = (assetRef: string) => isUuid(assetRef) && known.has(assetRef)
 export const mediaUrl = (assetRef: string | null | undefined) => assetRef ? resolveMedia(assetRef)?.url || null : null
 export function documentAssetRefs(document: ShowcaseDocument) {
-  return [...new Set([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])])]
+  return [...new Set([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo && card.logo.kind !== 'official' ? [card.logo.assetRef] : [])])])]
 }
 /** Only a decoded authoritative owner document can qualify existing durable refs. */
 export function rememberDocumentAssets(document: ShowcaseDocument) { documentAssetRefs(document).forEach(ref => known.add(ref)) }
@@ -44,11 +59,17 @@ export function hydrateStoredMedia(value: unknown, requireOwner = true) {
     images.forEach(read)
     cards.forEach(value => {
       const card = object(value)
-      read(card.logo); (card.images as unknown[]).forEach(read)
+      const logo = object(card.logo)
+      if (logo.kind === 'official') {
+        const decoded = showcaseCards(stored.document).find(item => item.instanceId === card.instanceId)!
+        entries.set(logoMediaKey(decoded.logo)!, typeof logo.url === 'string' ? safeHttpUrl(logo.url) ?? '' : '')
+      } else read(logo);
+      (card.images as unknown[]).forEach(read)
     })
   }
   cacheGeneration++
   rememberDocumentAssets(stored.document)
+  showcaseCards(stored.document).forEach(card => rememberCustomLogo(card, card.logo))
   for (const [assetRef, url] of entries) {
     const previous = registry.get(assetRef)
     registry.set(assetRef, { assetRef, fileName: '', mime: '', bytes: null, width: null, height: null, origin: 'server', ...previous, url })

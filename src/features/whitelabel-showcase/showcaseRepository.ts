@@ -31,7 +31,9 @@ export async function fetchStoredShowcase(actor?: ShowcaseActor, signal?: AbortS
 }
 /** One shared media recovery per loaded document, including all editor mounts. */
 export async function refreshShowcaseMedia(assetRef: string, failedUrl: string): Promise<void> {
-  if (!failedUrl || mediaUrl(assetRef) !== failedUrl) return
+  // Official keys are not asset references. Unavailable official URLs may be
+  // re-read explicitly, within the same single-document recovery budget.
+  if ((!failedUrl && !assetRef.startsWith('["official",')) || mediaUrl(assetRef) !== (failedUrl || null)) return
   if (mediaRecovery) return mediaRecovery
   if (mediaRecoveryUsed) return
   mediaRecoveryUsed = true
@@ -81,6 +83,7 @@ export async function saveShowcase(request: SaveRequest): Promise<SaveResult> {
     }
     if (uncertainShowcaseError(error)) return { status: 'uncertain', correlationId: error instanceof ApiError ? error.correlationId : undefined }
     const api = error as ApiError
+    if (api.code === 'E_SHOWCASE_OFFICIAL_LOGO_DOWNGRADE') return { status: 'rejected', reason: 'invalida', message: 'O servidor protege uma logo oficial contra substituição por um formato antigo. O rascunho foi preservado. Atualize o editor; para personalizar, escolha explicitamente uma logo personalizada.', correlationId: api.correlationId }
     if (api.code === 'E_SHOWCASE_SCHEMA_DOWNGRADE') return { status: 'rejected', reason: 'invalida', message: 'A vitrine já utiliza a versão 2. O servidor recusou uma versão antiga; o rascunho foi preservado. Atualize o editor antes de tentar novamente.', correlationId: api.correlationId }
     return { status: 'rejected', reason: api.status === 401 || api.status === 403 ? 'permissao' : api.status === 404 ? 'proprietario' : 'invalida', message: api.status === 404 ? 'Vitrine indisponível neste ambiente ou proprietário.' : api.status === 401 || api.status === 403 ? 'A sessão não permite salvar a vitrine.' : 'O servidor recusou a configuração. Revise os campos; o rascunho foi preservado.', correlationId: api.correlationId }
   }

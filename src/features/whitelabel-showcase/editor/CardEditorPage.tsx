@@ -3,11 +3,13 @@ import { ArrowLeft, CircleAlert, Info, Save, Upload } from 'lucide-react'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../../components/ui/PrimaryButton'
 import { isShowcaseFamilyHash, showcaseEditorHref } from '../showcaseMapping'
-import { hasMedia, hasUncertainUpload, mediaUrl, releaseRefs, resolveMedia, retainRefs, UPLOAD_GUIDANCE } from '../showcaseMedia'
+import { hasMedia, hasUncertainUpload, mediaUrl, previousCustomLogo, rememberCustomLogo, releaseRefs, resolveMedia, retainRefs, UPLOAD_GUIDANCE } from '../showcaseMedia'
+import { refreshShowcaseMedia } from '../showcaseRepository'
 import {
   cloneDocument,
   showcaseCards,
   isHexColor,
+  logoMediaKey,
   sameDocument,
   sourceLabel,
   type CardInstance,
@@ -73,7 +75,7 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
 
   // Unapplied local media stay alive while this editor is open.
   useEffect(() => {
-    retainRefs(`card-editor:${card.instanceId}`, [...card.images.map(image => image.assetRef), ...(card.logo ? [card.logo.assetRef] : [])])
+    retainRefs(`card-editor:${card.instanceId}`, [...card.images.map(image => image.assetRef), ...(card.logo && card.logo.kind !== 'official' ? [card.logo.assetRef] : [])])
   }, [card])
   useEffect(() => () => releaseRefs(`card-editor:${draftCard.instanceId}`), [draftCard.instanceId])
 
@@ -110,9 +112,14 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
   }
 
   const sourceWarning = sourceState.status !== 'loading' && sourceState.status !== 'active' ? SOURCE_STATUS_MESSAGES[sourceState.status] : undefined
-  const refreshMedia = useShowcaseMedia(card.logo ? [card.logo.assetRef] : [])
-  const logoUrl = mediaUrl(card.logo?.assetRef)
-  const logoEntry = card.logo ? resolveMedia(card.logo.assetRef) : undefined
+  const logoKey = logoMediaKey(card.logo)
+  const refreshMedia = useShowcaseMedia(logoKey ? [logoKey] : [])
+  const logoUrl = mediaUrl(logoKey)
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
+  const logoFailed = !!logoUrl && failedLogoUrl === logoUrl
+  const logoEntry = logoKey ? resolveMedia(logoKey) : undefined
+  const previousCustom = previousCustomLogo(card)
+  const [officialRecovery, setOfficialRecovery] = useState<'idle' | 'loading' | 'complete'>('idle')
   const invalid = (fieldId: string) => issues.some(issue => issue.fieldId === fieldId) || undefined
 
   return (
@@ -176,11 +183,21 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
                 <div className={styles.logoField}>
                   <span className={styles.fieldLabel}>Logotipo</span>
                   <div className={styles.logoPreview} style={{ background: isHexColor(card.colors.panel) ? card.colors.panel : undefined }} id={fieldIds.cardLogo} tabIndex={-1}>
-                    {logoUrl ? <img src={logoUrl} onError={() => card.logo && refreshMedia(card.logo.assetRef)} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>Sem logotipo</span>}
+                    {logoUrl && !logoFailed ? <img src={logoUrl} onError={() => { setFailedLogoUrl(logoUrl); if (logoKey) refreshMedia(logoKey) }} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>{card.logo?.kind === 'official' ? 'Logo oficial indisponível' : 'Sem logotipo'}</span>}
                   </div>
                   <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{!canEdit ? 'Consultar logo da origem' : card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>
                   <small className={styles.hint}>{UPLOAD_GUIDANCE.logo.summary}</small>
-                  {card.logo && <small className={styles.hint}>{card.logo.fileName}</small>}
+                  {card.logo?.kind === 'official' ? <>
+                    <small className={styles.hint}>Logo oficial vinculada · {card.logo.variantId}. Atualizações são resolvidas na leitura, com cache de até 60 segundos.</small>
+                    {(!logoUrl || logoFailed) && <p className={styles.warningBox} role="status">A fonte oficial está indisponível. O vínculo e o conteúdo foram preservados; nenhuma outra marca será usada.</p>}
+                    <OutlineButton disabled={officialRecovery !== 'idle'} onClick={() => {
+                      if (!logoKey || officialRecovery !== 'idle') return
+                      setOfficialRecovery('loading')
+                      void refreshShowcaseMedia(logoKey, logoUrl || '').catch(() => undefined).finally(() => setOfficialRecovery('complete'))
+                    }}>{officialRecovery === 'loading' ? 'Conferindo resolução…' : 'Conferir resolução da logo'}</OutlineButton>
+                    {officialRecovery === 'complete' && <small className={styles.hint} role="status">Conferência encerrada: há uma recuperação de mídia por documento. Uma nova leitura exige recarregar a página; preserve antes as alterações não salvas.</small>}
+                    {canEdit && previousCustom && <OutlineButton onClick={() => update({ logo: previousCustom })}>Usar última logo personalizada desta sessão</OutlineButton>}
+                  </> : card.logo && <small className={styles.hint}>Logo personalizada · {card.logo.fileName}</small>}
                   {logoWarnings.length ? <ul className={styles.warningList}>{logoWarnings.map(text => <li key={text}>{text}</li>)}</ul> : null}
                 </div>
               </div>
@@ -220,11 +237,17 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
         </PreviewPanel>
       </div>
 
-      {logoPicker && <MediaPickerDialog purpose="logo" logoSource={card.source} title={card.logo ? 'Substituir logotipo' : 'Adicionar logotipo'} onClose={() => setLogoPicker(false)} onPicked={media => {
+      {logoPicker && <MediaPickerDialog purpose="logo" logoSource={card.source} title={card.logo ? 'Substituir logotipo' : 'Adicionar logotipo'} onClose={() => setLogoPicker(false)} onOfficialPicked={logo => {
+        rememberCustomLogo(card, card.logo)
+        setLogoPicker(false); setLogoWarnings([])
+        update({ logo: { ...logo, alt: card.logo?.alt || logo.alt || card.displayName } })
+      }} onPicked={media => {
         setLogoPicker(false)
         setLogoWarnings(media.warnings)
-        if (card.logo?.assetRef !== media.assetRef) {
-          update({ logo: { assetRef: media.assetRef, fileName: media.fileName, alt: card.logo?.alt || media.suggestedAlt || card.displayName, origin: 'upload' } })
+        if (card.logo?.kind === 'official' || card.logo?.assetRef !== media.assetRef) {
+          const logo = { kind: 'custom' as const, assetRef: media.assetRef, fileName: media.fileName, alt: card.logo?.alt || media.suggestedAlt || card.displayName, origin: 'upload' as const }
+          rememberCustomLogo(card, logo)
+          update({ logo })
         }
         window.requestAnimationFrame(() => document.getElementById(fieldIds.cardLogoAlt)?.focus())
       }} />}

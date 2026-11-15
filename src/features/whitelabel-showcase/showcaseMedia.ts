@@ -45,6 +45,13 @@ export function documentAssetRefs(document: ShowcaseDocument) {
 export function rememberDocumentAssets(document: ShowcaseDocument) { documentAssetRefs(document).forEach(ref => known.add(ref)) }
 /** GET requires its owner; an already-confirmed owner PUT may omit that echo. */
 export function hydrateStoredMedia(value: unknown, requireOwner = true) {
+  return hydrateMedia(value, requireOwner, false)
+}
+/** Automatic brand reads cannot replace custom media or the remembered custom choice. */
+export function hydrateOfficialMedia(value: unknown) {
+  return hydrateMedia(value, true, true)
+}
+function hydrateMedia(value: unknown, requireOwner: boolean, officialOnly: boolean) {
   const stored = decodeStoredShowcase(value, requireOwner)
   const entries = new Map<string, string>()
   if (stored.configured) {
@@ -56,20 +63,22 @@ export function hydrateStoredMedia(value: unknown, requireOwner = true) {
       if (Object.hasOwn(item, 'url')) entries.set(item.assetRef as string, typeof item.url === 'string' ? safeHttpUrl(item.url) ?? '' : '')
     }
     const images = object(document.banner).images as unknown[], cards = (document.sections as unknown[]).filter(value => object(value).type === 'card')
-    images.forEach(read)
+    if (!officialOnly) images.forEach(read)
     cards.forEach(value => {
       const card = object(value)
       const logo = object(card.logo)
       if (logo.kind === 'official') {
         const decoded = showcaseCards(stored.document).find(item => item.instanceId === card.instanceId)!
         entries.set(logoMediaKey(decoded.logo)!, typeof logo.url === 'string' ? safeHttpUrl(logo.url) ?? '' : '')
-      } else read(logo);
-      (card.images as unknown[]).forEach(read)
+      } else if (!officialOnly) read(logo);
+      if (!officialOnly) (card.images as unknown[]).forEach(read)
     })
   }
   cacheGeneration++
-  rememberDocumentAssets(stored.document)
-  showcaseCards(stored.document).forEach(card => rememberCustomLogo(card, card.logo))
+  if (!officialOnly) {
+    rememberDocumentAssets(stored.document)
+    showcaseCards(stored.document).forEach(card => rememberCustomLogo(card, card.logo))
+  }
   for (const [assetRef, url] of entries) {
     const previous = registry.get(assetRef)
     registry.set(assetRef, { assetRef, fileName: '', mime: '', bytes: null, width: null, height: null, origin: 'server', ...previous, url })

@@ -179,8 +179,8 @@ await check('Actual official controls remove stale warning after recovery and ex
  const card=store.getShowcaseState().draft.sections[0],logoKey=model.logoMediaKey(card.logo),code=readFileSync(resolve(root,prefix+'editor/CardEditorPage.tsx'),'utf8'),tree=ts.createSourceFile('CardEditorPage.tsx',code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX)
  let fragment;function visit(node){if(ts.isConditionalExpression(node)&&node.condition.getText(tree)==="card.logo?.kind === 'official'"&&ts.isJsxFragment(node.whenTrue))fragment=node.whenTrue;ts.forEachChild(node,visit)}visit(tree);assert.ok(fragment)
  const React=await import('react'),{renderToStaticMarkup:render}=await import('react-dom/server'),compiled=ts.transpileModule('function controls(){return '+fragment.getText(tree)+'}',{compilerOptions:{target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React}}).outputText
- let state='idle';const make=new Function('React','styles','OutlineButton','card','logoKey','logoUrl','officialRecovery','setOfficialRecovery','refreshShowcaseMedia','canEdit','previousCustom','update','logoFailed',compiled+';return controls()')
- const controls=(logoFailed=false)=>make(React,{},props=>React.createElement('button',props),card,logoKey,media.mediaUrl(logoKey),state,value=>{state=value},repo.refreshShowcaseMedia,true,null,()=>{},logoFailed)
+ let state='idle';const make=new Function('React','styles','OutlineButton','card','logoKey','logoUrl','officialRecovery','setOfficialRecovery','refreshShowcaseMedia','canEdit','previousCustom','update','logoFailed','mediaUrl',compiled+';return controls()')
+ const controls=(logoFailed=false)=>make(React,{},props=>React.createElement('button',props),card,logoKey,media.mediaUrl(logoKey),state,value=>{state=value},repo.refreshShowcaseMedia,true,null,()=>{},logoFailed,media.mediaUrl)
  assert.match(render(controls()),/A fonte oficial está indisponível/);reply=()=>json(200,officialWire(doc,'https://assets.example.invalid/recovered.png'));const button=controls().props.children.find(item=>React.isValidElement(item)&&item.props.onClick);button.props.onClick();assert.equal(state,'loading')
  for(let n=0;n<20&&state!=='complete';n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(state,'complete');assert.equal(store.getShowcaseState().stored.warnings.length,1)
  const html=render(controls());assert.equal(html.includes('A fonte oficial está indisponível'),false);assert.match(html,/Conferência encerrada/);assert.match(html,/<button[^>]*disabled/);assert.equal(mutations().length,0)
@@ -199,7 +199,7 @@ await check('Actual editor and preview logo elements replace a broken URL with a
  const text=readFileSync(resolve(root,prefix+file),'utf8'),tree=ts.createSourceFile(file,text,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);let choice
  function visit(node){if(ts.isConditionalExpression(node)&&node.condition.getText(tree)==='logoUrl && !logoFailed')choice=node;ts.forEachChild(node,visit)}visit(tree);assert.ok(choice)
  const compiled=ts.transpileModule('function image(){return '+choice.getText(tree)+'}',{compilerOptions:{target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React}}).outputText
- let failed=null,failedByCard={},refreshes=0;const key=model.logoMediaKey(card.logo),make=new Function('React','logoUrl','logoFailed','logoEntry','card','editorPlaceholders','logoKey','logoMediaKey','setFailedLogoUrl','setFailedLogoUrls','refreshMedia',compiled+';return image()')
+ let failed=null,failedByCard={},refreshes=0;const key=model.logoMediaKey(card.logo),make=new Function('React','logoUrl','logoFailed','logoEntry','card','editorPlaceholders','logoKey','logoMediaKey','setFailedLogoUrl','setFailedLogoUrls','refreshMedia','logoRefreshState',compiled+';return image()')
  const image=url=>make(React,url,failed===url||failedByCard[card.instanceId]===url,undefined,card,true,key,model.logoMediaKey,value=>{failed=value},update=>{failedByCard=update(failedByCard)},()=>{refreshes++})
  const url='https://assets.example.invalid/failing.png';assert.match(render(image(url)),/<img/);image(url).props.onError();assert.equal(refreshes,1);assert.equal(render(image(url)).includes('<img'),false);assert.match(render(image('https://assets.example.invalid/recovered.png')),/<img/)
  }assert.equal(mutations().length,0)
@@ -223,5 +223,101 @@ await check('SSR shows binding description, no main_area/catalogue; READ_ONLY di
  setup();const {createElement:h}=await import('react'),{renderToStaticMarkup:render}=await import('react-dom/server'),{MediaPickerDialog}=await load(prefix+'editor/MediaPickerDialog.tsx'),props={purpose:'logo',logoSource:source,title:'Logo',onPicked(){},onOfficialPicked(){},onClose(){}}
  const html=render(h(MediaPickerDialog,props));for(const text of ['Logo oficial da origem','sem copiar ou enviar arquivo','até 60 segundos'])assert.ok(html.includes(text));for(const text of ['main_area','Site · escura','Vitrine · clara','Já na vitrine'])assert.equal(html.includes(text),false)
  session(['READ_ONLY']);assert.match(render(h(MediaPickerDialog,props)),/<fieldset[^>]*disabled/);assert.equal(calls.length,0)
+})
+await check('Unsaved official preview follows source URL changes without new selection, upload or save',async()=>{
+ const now=Date.now;let time=10000;Date.now=()=>time
+ try{
+  const doc=setup(),selected=await choice(),logo=official.selectOfficialLogo(actor(),selected,source,controller().signal),key=model.logoMediaKey(logo),before=structuredClone(doc)
+  calls=[];await official.refreshSelectedOfficialPreviews([key],controller().signal);assert.equal(calls.length,0)
+  time+=60000;manifestReply=()=>json(200,{...manifest(source,2),variants:[{...manifest(source,2).variants[0],url:'https://assets.example.invalid/new-unsaved.png'}]})
+  await official.refreshSelectedOfficialPreviews([key,key],controller().signal)
+  assert.equal(calls.length,2);assert.equal(media.mediaUrl(key),'https://assets.example.invalid/new-unsaved.png');assert.deepEqual(doc,before);assert.equal(mutations().length,0)
+  await official.refreshSelectedOfficialPreviews([key],controller().signal);assert.equal(calls.length,2)
+  time+=60000;await official.refreshSelectedOfficialPreviews([],controller().signal);assert.equal(calls.length,2)
+ }finally{Date.now=now}
+})
+await check('Background preview renewal never supersedes an open picker; stable variant selection follows a new version',async()=>{
+ const now=Date.now;let time=10000;Date.now=()=>time
+ try{
+  setup();const original=await choice(),logo=official.selectOfficialLogo(actor(),original,source,controller().signal),key=model.logoMediaKey(logo);time+=60000
+  let release;manifestReply=()=>new Promise(resolve=>{release=resolve});const picker=official.loadOfficialLogoOptions(actor(),source)
+  while(!release)await new Promise(resolve=>setImmediate(resolve));const before=calls.length
+  await official.refreshSelectedOfficialPreviews([key],controller().signal);assert.equal(calls.length,before)
+  release(json(200,manifest(source,2)));const choices=await picker,selected=official.refreshedOfficialSelection(original,choices)
+  assert.ok(selected);assert.equal(selected.variantId,original.variantId);assert.notEqual(selected.id,original.id)
+  assert.equal(official.refreshedOfficialSelection(original,[{...selected,sourceId:'7'}]),null);assert.equal(official.refreshedOfficialSelection(original,[]),null)
+  assert.equal(mutations().length,0)
+ }finally{Date.now=now}
+})
+await check('A newer picker discovery invalidates a pending background result without invalidating the picker',async()=>{
+ const now=Date.now;let time=10000;Date.now=()=>time
+ try{
+  setup();const original=await choice(),logo=official.selectOfficialLogo(actor(),original,source,controller().signal),key=model.logoMediaKey(logo);time+=60000
+  let release;manifestReply=()=>new Promise(resolve=>{release=resolve});const background=official.refreshSelectedOfficialPreviews([key],controller().signal)
+  while(!release)await new Promise(resolve=>setImmediate(resolve));manifestReply=()=>json(200,manifest(source,3))
+  const options=await official.loadOfficialLogoOptions(actor(),source);release(json(200,manifest(source,2)));await background
+  assert.equal(options[0].version,version(3));assert.equal(official.selectOfficialLogo(actor(),options[0],source,controller().signal).variantId,'header');assert.equal(mutations().length,0)
+ }finally{Date.now=now}
+})
+await check('Periodic official GET renews only transient official media, coalesces and preserves dirty draft/CAS/custom',async()=>{
+ const now=Date.now;let time=100000;Date.now=()=>time
+ try{
+  const doc=setup();reply=()=>json(200,officialWire(doc));await store.loadShowcase(actor())
+  const changed=structuredClone(store.getShowcaseState().draft.sections[0]);changed.shortDescription='Unsaved local text';store.replaceCard(actor(),changed)
+  const before=structuredClone(store.getShowcaseState()),previous=media.previousCustomLogo(changed),customUrl=media.mediaUrl(uuid(2)),key=model.logoMediaKey(changed.logo)
+  calls=[];await repo.refreshOfficialShowcaseMedia();assert.equal(calls.length,0)
+  time+=60000;let release;reply=()=>new Promise(resolve=>{release=resolve})
+  const first=repo.refreshOfficialShowcaseMedia(),second=repo.refreshOfficialShowcaseMedia();assert.equal(calls.length,1)
+  const latest=officialWire(doc,'https://assets.example.invalid/current-brand.png',42);latest.data.document.sections[0].shortDescription='Concurrent editorial text';latest.data.document.banner.images[0].url='https://assets.example.invalid/other-custom.png'
+  release(json(200,latest));await Promise.all([first,second])
+  assert.deepEqual(store.getShowcaseState(),before);assert.deepEqual(repo.readStoredShowcase(),before.stored)
+  assert.equal(media.mediaUrl(key),'https://assets.example.invalid/current-brand.png');assert.equal(media.mediaUrl(uuid(2)),customUrl);assert.deepEqual(media.previousCustomLogo(changed),previous)
+  await repo.refreshOfficialShowcaseMedia();assert.equal(calls.length,1);assert.equal(mutations().length,0)
+ }finally{Date.now=now}
+})
+await check('Periodic official read cannot apply after session change, abort or authoritative reload',async()=>{
+ const now=Date.now;let time=200000;Date.now=()=>time
+ try{
+  for(const invalidate of ['session','abort','reload']){
+   const doc=setup();reply=()=>json(200,officialWire(doc));await store.loadShowcase(actor());time+=60000
+   const abort=new AbortController();let release;reply=()=>new Promise(resolve=>{release=resolve});const pending=repo.refreshOfficialShowcaseMedia(abort.signal)
+   const key=model.logoMediaKey(store.getShowcaseState().draft.sections[0].logo)
+   if(invalidate==='session')session()
+   if(invalidate==='abort')abort.abort()
+   if(invalidate==='reload'){reply=()=>json(200,officialWire(doc,'https://assets.example.invalid/newer.png',15));await store.loadShowcase(actor())}
+   const before=media.mediaUrl(key);release(json(200,officialWire(doc,'https://assets.example.invalid/late.png',99)));await pending.catch(()=>undefined)
+   assert.equal(media.mediaUrl(key),before)
+  }
+ }finally{Date.now=now}
+})
+await check('An expired custom asset waits for official renewal, then receives one full recovery without losing draft/CAS',async()=>{
+ const now=Date.now;let time=500000;Date.now=()=>time
+ try{
+  const doc=setup();reply=()=>json(200,officialWire(doc));await store.loadShowcase(actor())
+  const changed=structuredClone(store.getShowcaseState().draft.sections[0]);changed.shortDescription='Keep the local draft';store.replaceCard(actor(),changed)
+  const before=structuredClone(store.getShowcaseState()),asset=uuid(2),expired=media.mediaUrl(asset);calls=[];time+=60000
+  let release;reply=()=>new Promise(resolve=>{release=resolve});const automatic=repo.refreshOfficialShowcaseMedia()
+  const recovery=repo.refreshShowcaseMedia(asset,expired);assert.equal(calls.length,1)
+  const current=officialWire(doc,'https://assets.example.invalid/current-brand.png',77);current.data.document.banner.images[0].url='https://assets.example.invalid/fresh-signed.png'
+  reply=()=>json(200,current);release(json(200,current));await Promise.all([automatic,recovery])
+  assert.equal(calls.length,2);assert.equal(media.mediaUrl(asset),'https://assets.example.invalid/fresh-signed.png');assert.deepEqual(store.getShowcaseState(),before)
+  await repo.refreshShowcaseMedia(asset,media.mediaUrl(asset));assert.equal(calls.length,2);assert.equal(mutations().length,0)
+ }finally{Date.now=now}
+})
+await check('Shared official renewal pauses hidden pages, coalesces mounts and removes lifecycle listeners',async()=>{
+ const now=Date.now,previousDocument=globalThis.document,previousWindow=globalThis.window;let time=400000,interval,cleared=0
+ Date.now=()=>time
+ const events=new Map(),add=(type,fn)=>events.set(type,fn),remove=(type,fn)=>{if(events.get(type)===fn)events.delete(type)}
+ globalThis.document={hidden:false,addEventListener:add,removeEventListener:remove}
+ globalThis.window={...previousWindow,setInterval:fn=>{interval=fn;return 1},clearInterval:()=>cleared++,addEventListener:add,removeEventListener:remove}
+ try{
+  const doc=setup();reply=()=>json(200,officialWire(doc));await store.loadShowcase(actor());calls=[]
+  const refresh=await load(prefix+'showcaseOfficialRefresh.ts'),a=refresh.retainOfficialDocumentRefresh(),b=refresh.retainOfficialDocumentRefresh()
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,0);assert.equal(events.size,3)
+  time+=60000;globalThis.document.hidden=true;interval();assert.equal(calls.length,0)
+  globalThis.document.hidden=false;events.get('visibilitychange')();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1)
+  events.get('focus')();events.get('online')();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1)
+  a();assert.equal(events.size,3);b();assert.equal(events.size,0);assert.equal(cleared,1);assert.equal(mutations().length,0)
+ }finally{Date.now=now;globalThis.document=previousDocument;globalThis.window=previousWindow}
 })
 console.log(`Showcase official bindings: ${checks} checks passed (physical code, simulated registry/manifest/API, SSR; no live network or real brand changes).`)

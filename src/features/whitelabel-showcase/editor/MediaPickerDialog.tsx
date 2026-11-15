@@ -4,8 +4,10 @@ import { Dialog } from '../../../components/ui/Dialog'
 import { OutlineButton } from '../../../components/ui/OutlineButton'
 import { createUploadAttempts, hasUncertainUpload, ingestUpload, runUploadAttempt, UPLOAD_GUIDANCE, type UploadPurpose } from '../showcaseMedia'
 import { loadSourceImageOptions, selectExistingLogo, type ExistingLogoOption } from '../showcaseLogoCatalog'
-import { loadOfficialLogoOptions, selectOfficialLogo } from '../showcaseOfficialLogos'
+import { loadOfficialLogoOptions, refreshedOfficialSelection, selectOfficialLogo } from '../showcaseOfficialLogos'
 import { SHOWCASE_V2_WRITES_ENABLED } from '../showcaseRelease'
+import { useOfficialLogoMedia } from '../useOfficialLogoMedia'
+import { OFFICIAL_LOGO_REFRESH_MS } from '../../official-logo-refresh/officialLogoRefresh'
 import type { CardSource, OfficialCardLogo } from '../showcaseModel'
 import { useShowcaseActor } from './editorHooks'
 import styles from './ShowcaseEditor.module.css'
@@ -14,9 +16,12 @@ export type PickedMedia = { assetRef: string; fileName: string; warnings: string
 
 function OptionThumbnail({ option }: { option: ExistingLogoOption }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
-  const url = option.kind === 'source' ? option.previewUrl : option.url
+  const sourceUrl = option.kind === 'source' ? option.previewUrl : option.url
+  const officialMedia = useOfficialLogoMedia(option.kind === 'official' ? [sourceUrl] : [])
+  const logoRefreshState = officialMedia(sourceUrl)
+  const url = logoRefreshState?.renderUrl ?? sourceUrl
   return <span className={styles.logoThumbnail} data-background={option.background}>
-    {url && failedUrl !== url ? <img src={url} alt={`${option.whitelabel} — ${option.variant}`} onError={() => setFailedUrl(url)} /> : <span style={{ color: option.background === 'light' ? '#172035' : '#fff' }}>Prévia indisponível</span>}
+    {url && failedUrl !== url ? <img src={url} data-official-logo-refresh={logoRefreshState?.status} title={logoRefreshState?.status === 'unverified' ? 'Não foi possível verificar a atualização desta logo. A última imagem disponível foi mantida.' : undefined} alt={`${option.whitelabel} — ${option.variant}`} onError={() => setFailedUrl(url)} /> : <span style={{ color: option.background === 'light' ? '#172035' : '#fff' }}>Prévia indisponível</span>}
   </span>
 }
 
@@ -46,8 +51,28 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onOffic
   const hasExisting = purpose === 'logo' || !!logoSource
   const [mode, setMode] = useState<'existing' | 'upload'>(hasExisting ? 'existing' : 'upload')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedChoice = useRef<ExistingLogoOption | null>(null)
   const [discoveryResult, setDiscoveryResult] = useState<{ key: string; phase: 'empty' | 'ready' | 'error'; options: ExistingLogoOption[] }>({ key: '', phase: 'empty', options: [] })
   const [reloadOptions, setReloadOptions] = useState(0)
+  useEffect(() => {
+    if (purpose !== 'logo') return
+    let last = Date.now()
+    const refresh = () => {
+      if (document.hidden || Date.now() - last < OFFICIAL_LOGO_REFRESH_MS) return
+      last = Date.now()
+      setReloadOptions(value => value + 1)
+    }
+    const interval = window.setInterval(refresh, OFFICIAL_LOGO_REFRESH_MS)
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('online', refresh)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('online', refresh)
+    }
+  }, [purpose])
   const sourceId = logoSource?.whitelabelId, sourceSlug = logoSource?.slug, sourceName = logoSource?.name ?? '', sourceBaseUrl = logoSource?.baseUrl
   const rolesKey = actor.roles?.join('|') ?? ''
   const sessionVersion = actor.sessionVersion
@@ -61,6 +86,11 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onOffic
     const load = purpose === 'logo' ? loadOfficialLogoOptions : loadSourceImageOptions
     void load({ roles: rolesKey.split('|'), sessionVersion }, source, controller.signal).then(options => {
       if (controller.signal.aborted) return
+      if (selectedChoice.current?.kind === 'official') {
+        const current = refreshedOfficialSelection(selectedChoice.current, options.filter(option => option.kind === 'official'))
+        selectedChoice.current = current
+        setSelectedId(current?.id ?? null)
+      }
       setDiscoveryResult({ key: discoveryKey, options, phase: options.length ? 'ready' : 'empty' })
     }).catch(() => { if (!controller.signal.aborted) setDiscoveryResult({ key: discoveryKey, options: [], phase: 'error' }) })
     return () => controller.abort()
@@ -132,11 +162,11 @@ function ScopedMediaPickerDialog({ purpose, title, logoSource, onPicked, onOffic
         <p className={styles.hint}>{purpose === 'logo' ? 'Somente a marca da origem deste card. A seleção vincula a variante oficial ao rascunho, sem copiar ou enviar arquivo. Após salvar, a leitura acompanha a fonte publicada; o cache pode durar até 60 segundos. A logo personalizada atual permanece até uma escolha explícita.' : 'As imagens da origem são arquivos de áreas de página (main_area); não são necessariamente logos institucionais. Confira a miniatura e a procedência antes de usar.'}</p>
         {logoSource && discovery === 'loading' && <p role="status">Consultando imagens de {logoSource.name || logoSource.slug}…</p>}
         {logoSource && discovery === 'empty' && <p className={styles.hint}>{purpose === 'logo' ? 'A fonte oficial desta origem ainda não disponibiliza uma logo compatível com esta consulta. Isso não significa ausência da marca. Nenhuma logo de outra origem será oferecida; a logo atual foi preservada.' : 'A origem não retornou imagens main_area. A imagem atual foi preservada.'}</p>}
-        {logoSource && discovery === 'error' && <div role="alert"><p>Não foi possível consultar a fonte desta origem. A imagem atual foi preservada; nenhuma outra marca a substitui.</p><OutlineButton disabled={state.phase === 'sending'} onClick={() => { setSelectedId(null); setReloadOptions(value => value + 1) }}>Consultar novamente</OutlineButton></div>}
+        {logoSource && discovery === 'error' && <div role="alert"><p>Não foi possível consultar a fonte desta origem. A imagem atual foi preservada; nenhuma outra marca a substitui.</p><OutlineButton disabled={state.phase === 'sending'} onClick={() => { selectedChoice.current = null; setSelectedId(null); setReloadOptions(value => value + 1) }}>Consultar novamente</OutlineButton></div>}
         <fieldset className={styles.logoChoices} disabled={!canEdit || state.phase === 'sending'}>
           <legend className="visually-hidden">Escolha uma imagem</legend>
           {logos.map(option => <label key={option.id} className={styles.logoChoice}>
-            <input type="radio" name="existing-logo" value={option.id} checked={selectedId === option.id} onChange={() => setSelectedId(option.id)} />
+            <input type="radio" name="existing-logo" value={option.id} checked={selectedId === option.id} onChange={() => { selectedChoice.current = option; setSelectedId(option.id) }} />
             <OptionThumbnail option={option} />
             <strong>{option.whitelabel}</strong><span>{option.variant}</span><small>{option.provenance}</small>
             <small>{option.kind === 'official' ? 'Vincula a marca e a variante ao rascunho. Nenhum asset ou upload é criado.' : 'Cria uma nova referência na WL6 somente ao confirmar o uso.'}</small>

@@ -4,19 +4,22 @@ import { assertCanEdit, showcaseSessionKey, type ShowcaseActor } from './showcas
 import { showcaseRequest, uncertainShowcaseError } from './showcaseClient'
 import { decodeStoredShowcase, encodeShowcaseDocument, malformedShowcase, sameCanonicalDocument } from './showcaseCodec'
 import { cloneDocument, emptyShowcaseDocument, type ShowcaseDocument, type StoredShowcase } from './showcaseModel'
-import { documentAssetRefs, ensureMedia, hydrateStoredMedia, mediaUrl, rememberDocumentAssets, resolveMedia } from './showcaseMedia'
+import { documentAssetRefs, ensureMedia, hydrateStoredMedia, hydrateOfficialMedia, mediaUrl, rememberDocumentAssets, resolveMedia } from './showcaseMedia'
 import { SHOWCASE_V2_WRITES_ENABLED } from './showcaseRelease'
+import { OFFICIAL_LOGO_REFRESH_MS } from '../official-logo-refresh/officialLogoRefresh'
 
 const empty = (): StoredShowcase => ({ configured: false, revision: null, savedAt: null, document: emptyShowcaseDocument() })
 let snapshot = empty(), sessionEpoch = 0, sessionKey = showcaseSessionKey()
 let mediaGeneration = 0, mediaRecoveryUsed = false, mediaRecovery: Promise<void> | null = null
+let lastOfficialRead = Number.NEGATIVE_INFINITY
+let officialRefresh: Promise<void> | null = null
 function invalidateMediaRecovery(resetBudget: boolean) {
-  mediaGeneration++; mediaRecovery = null
+  mediaGeneration++; mediaRecovery = null; officialRefresh = null
   if (resetBudget) mediaRecoveryUsed = false
 }
 const listeners = new Set<() => void>()
 function publish(stored: StoredShowcase) { snapshot = cloneDocument(stored); rememberDocumentAssets(snapshot.document); listeners.forEach(listener => listener()); return cloneDocument(snapshot) }
-subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; invalidateMediaRecovery(true); publish(empty()) })
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; sessionEpoch++; lastOfficialRead = Number.NEGATIVE_INFINITY; invalidateMediaRecovery(true); publish(empty()) })
 export const readStoredShowcase = () => cloneDocument(snapshot)
 export const getStoredSnapshot = () => snapshot
 export const subscribeStoredShowcase = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
@@ -27,7 +30,24 @@ export async function fetchStoredShowcase(actor?: ShowcaseActor, signal?: AbortS
   const epoch = sessionEpoch, generation = mediaGeneration
   const body = await showcaseRequest('/whitelabels/6/showcase', { actor, signal })
   if (epoch !== sessionEpoch || generation !== mediaGeneration) throw new ApiError(0, {}, { kind: 'network' })
+  lastOfficialRead = Date.now()
   return publish(hydrateStoredMedia(body))
+}
+/** Read-only renewal is independent of editorial revision and error recovery budget. */
+export async function refreshOfficialShowcaseMedia(signal?: AbortSignal): Promise<void> {
+  if (mediaRecovery) return mediaRecovery
+  if (officialRefresh) return officialRefresh
+  if (signal?.aborted || Date.now() - lastOfficialRead < OFFICIAL_LOGO_REFRESH_MS) return
+  lastOfficialRead = Date.now()
+  const epoch = sessionEpoch, generation = mediaGeneration
+  const operation = (async () => {
+    const body = await showcaseRequest('/whitelabels/6/showcase', { signal })
+    if (signal?.aborted || epoch !== sessionEpoch || generation !== mediaGeneration) return
+    // Do not publish/adopt this document: it may contain another operator's edits.
+    hydrateOfficialMedia(body)
+  })()
+  officialRefresh = operation
+  try { await operation } finally { if (officialRefresh === operation) officialRefresh = null }
 }
 /** One shared media recovery per loaded document, including all editor mounts. */
 export async function refreshShowcaseMedia(assetRef: string, failedUrl: string): Promise<void> {
@@ -37,9 +57,14 @@ export async function refreshShowcaseMedia(assetRef: string, failedUrl: string):
   if (mediaRecovery) return mediaRecovery
   if (mediaRecoveryUsed) return
   mediaRecoveryUsed = true
+  const waitForOfficial = officialRefresh
   const epoch = sessionEpoch, generation = mediaGeneration
   const draftUpload = resolveMedia(assetRef)?.origin === 'upload' && !documentAssetRefs(snapshot.document).includes(assetRef)
   const operation = (async () => {
+    // A logo-only read cannot recover an expired custom/signed asset.
+    if (waitForOfficial) await waitForOfficial.catch(() => undefined)
+    if (epoch !== sessionEpoch || generation !== mediaGeneration || mediaUrl(assetRef) !== (failedUrl || null)) return
+    lastOfficialRead = Date.now()
     const body = await showcaseRequest('/whitelabels/6/showcase')
     if (epoch !== sessionEpoch || generation !== mediaGeneration) return
     // Deliberately do not publish: a media refresh cannot adopt a newer

@@ -100,7 +100,7 @@
     },
     "src/features/whitelabel-showcase/editor/CardEditorPage.tsx": {
       "before": null,
-      "after": "17f2f1d2b4070d2ca8d8596869a0ab452b278ebd48d0fe74de1e72ccea57162d"
+      "after": "ee7596095f320afcc84d87ac3133ea36229bfb47163e7dee62e3d5fda36ca79d"
     },
     "src/features/whitelabel-showcase/editor/CardsTab.tsx": {
       "before": null,
@@ -116,7 +116,7 @@
     },
     "src/features/whitelabel-showcase/editor/MediaPickerDialog.tsx": {
       "before": null,
-      "after": "e80c3f8b9bac6c524122ed238cacdceefb85a5558f2ec526f4195fb03ddc0967"
+      "after": "858fedbadd33351eec3524b70064b1ee4bd878bd69409065ebd8cd8cdae9a93c"
     },
     "src/features/whitelabel-showcase/editor/PreviewPanel.tsx": {
       "before": null,
@@ -184,7 +184,7 @@
     },
     "src/features/whitelabel-showcase/public/ShowcaseView.tsx": {
       "before": null,
-      "after": "9952564a0026a80b33f9f2021c88fc96083ec31576b29205a0d281aef1a1ec78"
+      "after": "4ad6149806365ebc82d5bb6ed2d88cde47de203b15580048bfe52e9e6a6ddab7"
     },
     "src/features/whitelabel-showcase/public/autoplay.ts": {
       "before": null,
@@ -212,7 +212,7 @@
     },
     "src/features/whitelabel-showcase/public/useShowcaseMedia.ts": {
       "before": null,
-      "after": "88e09093022e0a958f972456a5d4bb92e300c74a0c32e5dddf39864885f0a80b"
+      "after": "3968593589ee40ad4ccf71b5c41fe6a998200971500e5ae947c5e7c871fc0e2e"
     },
     "src/features/whitelabel-showcase/showcaseAccess.ts": {
       "before": null,
@@ -236,7 +236,7 @@
     },
     "src/features/whitelabel-showcase/showcaseMedia.ts": {
       "before": null,
-      "after": "a341e1f6b5c3d6e15751be5bc36058374404ab7062c1217939c29d28289472bd"
+      "after": "2a1c75fdfec095eb724b3ffcbe359aea56766387123c3af27d3469661315b800"
     },
     "src/features/whitelabel-showcase/showcaseModel.ts": {
       "before": null,
@@ -244,7 +244,7 @@
     },
     "src/features/whitelabel-showcase/showcaseRepository.ts": {
       "before": null,
-      "after": "3a84c588d0a7e10bcef03747c45881c8e74f34cf23afd762edb9a77f0c4761cc"
+      "after": "de7a23c9d72cadd8039822f03d353aaa5f5e6f4f58a8f927696757b6b4638f45"
     },
     "src/features/whitelabel-showcase/showcaseSourceLookup.ts": {
       "before": null,
@@ -284,7 +284,19 @@
     },
     "src/features/whitelabel-showcase/showcaseOfficialLogos.ts": {
       "before": null,
-      "after": "6169919d84d12e34acb6d9ef9a422318ce0266f4e8c8e203b3475f6dd85f5dc2"
+      "after": "d483937a1f54a5a04ec9570ba650cd10dbc8c3543e7d8536d8ba3c747a1a8ba3"
+    },
+    "src/features/official-logo-refresh/officialLogoRefresh.ts": {
+      "before": null,
+      "after": "ef2d0499bfdf5f84bd487db0d3b898e359be6da6a4d6ba2618929813f1b3ac0a"
+    },
+    "src/features/whitelabel-showcase/showcaseOfficialRefresh.ts": {
+      "before": null,
+      "after": "b411f383cd826e5ddd7ad7c5047cb5118f15c0c9d9ed58d1dd3a790643037984"
+    },
+    "src/features/whitelabel-showcase/useOfficialLogoMedia.ts": {
+      "before": null,
+      "after": "9f1fdfdf7c103ca61eeff98f59f7191e028946a7ea77a6a2158d948900020996"
     }
   }
 }

@@ -17,6 +17,7 @@ import {
 import { discardDraft, getShowcaseState, isDraftDirty, replaceCard, useShowcaseState } from '../showcaseStore'
 import { cardWarnings, fieldIds, validateCard } from '../showcaseValidation'
 import { useShowcaseMedia } from '../public/useShowcaseMedia'
+import { useOfficialLogoMedia } from '../useOfficialLogoMedia'
 import { ShowcaseView } from '../public/ShowcaseView'
 import { SOURCE_STATUS_MESSAGES, useShowcaseActor, useSourceStates } from './editorHooks'
 import { ImageListEditor } from './ImageListEditor'
@@ -114,7 +115,10 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
   const sourceWarning = sourceState.status !== 'loading' && sourceState.status !== 'active' ? SOURCE_STATUS_MESSAGES[sourceState.status] : undefined
   const logoKey = logoMediaKey(card.logo)
   const refreshMedia = useShowcaseMedia(logoKey ? [logoKey] : [])
-  const logoUrl = mediaUrl(logoKey)
+  const rawLogoUrl = mediaUrl(logoKey)
+  const officialMedia = useOfficialLogoMedia(card.logo?.kind === 'official' ? [rawLogoUrl] : [])
+  const logoRefreshState = officialMedia(rawLogoUrl)
+  const logoUrl = logoRefreshState?.renderUrl ?? rawLogoUrl
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
   const logoFailed = !!logoUrl && failedLogoUrl === logoUrl
   const logoEntry = logoKey ? resolveMedia(logoKey) : undefined
@@ -183,19 +187,20 @@ function CardEditor({ tenantId, draftCard, focusField }: { tenantId: string; dra
                 <div className={styles.logoField}>
                   <span className={styles.fieldLabel}>Logotipo</span>
                   <div className={styles.logoPreview} style={{ background: isHexColor(card.colors.panel) ? card.colors.panel : undefined }} id={fieldIds.cardLogo} tabIndex={-1}>
-                    {logoUrl && !logoFailed ? <img src={logoUrl} onError={() => { setFailedLogoUrl(logoUrl); if (logoKey) refreshMedia(logoKey) }} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>{card.logo?.kind === 'official' ? 'Logo oficial indisponível' : 'Sem logotipo'}</span>}
+                    {logoUrl && !logoFailed ? <img src={logoUrl} data-official-logo-refresh={logoRefreshState?.status} onError={() => { setFailedLogoUrl(logoUrl); if (logoKey) refreshMedia(logoKey) }} alt="" width={logoEntry?.width ?? undefined} height={logoEntry?.height ?? undefined} /> : <span>{card.logo?.kind === 'official' ? 'Logo oficial indisponível' : 'Sem logotipo'}</span>}
                   </div>
+                  {logoRefreshState?.status === 'unverified' && <small className={styles.warningText} role="status">Não foi possível verificar a atualização desta logo. A última imagem disponível foi mantida.</small>}
                   <OutlineButton onClick={() => setLogoPicker(true)}><Upload size={15} aria-hidden="true" />{!canEdit ? 'Consultar logo da origem' : card.logo ? 'Substituir logo' : 'Adicionar logo'}</OutlineButton>
                   <small className={styles.hint}>{UPLOAD_GUIDANCE.logo.summary}</small>
                   {card.logo?.kind === 'official' ? <>
-                    <small className={styles.hint}>Logo oficial vinculada · {card.logo.variantId}. Atualizações são resolvidas na leitura, com cache de até 60 segundos.</small>
+                    <small className={styles.hint}>Logo oficial vinculada · {card.logo.variantId}. A fonte é consultada automaticamente em intervalos de 60 segundos enquanto a tela estiver visível, sem salvar o card.</small>
                     {(!logoUrl || logoFailed) && <p className={styles.warningBox} role="status">A fonte oficial está indisponível. O vínculo e o conteúdo foram preservados; nenhuma outra marca será usada.</p>}
                     <OutlineButton disabled={officialRecovery !== 'idle'} onClick={() => {
                       if (!logoKey || officialRecovery !== 'idle') return
                       setOfficialRecovery('loading')
-                      void refreshShowcaseMedia(logoKey, logoUrl || '').catch(() => undefined).finally(() => setOfficialRecovery('complete'))
+                      void refreshShowcaseMedia(logoKey, mediaUrl(logoKey) || '').catch(() => undefined).finally(() => setOfficialRecovery('complete'))
                     }}>{officialRecovery === 'loading' ? 'Conferindo resolução…' : 'Conferir resolução da logo'}</OutlineButton>
-                    {officialRecovery === 'complete' && <small className={styles.hint} role="status">Conferência encerrada: há uma recuperação de mídia por documento. Uma nova leitura exige recarregar a página; preserve antes as alterações não salvas.</small>}
+                    {officialRecovery === 'complete' && <small className={styles.hint} role="status">Conferência encerrada: consultas automáticas continuam enquanto esta tela estiver visível, sem salvar ou substituir o rascunho.</small>}
                     {canEdit && previousCustom && <OutlineButton onClick={() => update({ logo: previousCustom })}>Usar última logo personalizada desta sessão</OutlineButton>}
                   </> : card.logo && <small className={styles.hint}>Logo personalizada · {card.logo.fileName}</small>}
                   {logoWarnings.length ? <ul className={styles.warningList}>{logoWarnings.map(text => <li key={text}>{text}</li>)}</ul> : null}

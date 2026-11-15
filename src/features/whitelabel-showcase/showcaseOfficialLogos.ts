@@ -1,10 +1,12 @@
-import { getSessionVersion } from '../../lib/authSession'
-import { assertCanEdit, assertCanRead, type ShowcaseActor } from './showcaseAccess'
+import { getOperator, getSessionVersion, subscribeSession } from '../../lib/authSession'
+import { assertCanEdit, assertCanRead, showcaseSessionKey, type ShowcaseActor } from './showcaseAccess'
 import { object, malformedShowcase } from './showcaseCodec'
 import { showcaseEnvironment } from './showcaseMapping'
 import { rememberOfficialPreview } from './showcaseMedia'
 import { lookupSourceById } from './showcaseSourceLookup'
 import type { CardSource, OfficialCardLogo } from './showcaseModel'
+import { logoMediaKey } from './showcaseModel'
+import { OFFICIAL_LOGO_REFRESH_MS } from '../official-logo-refresh/officialLogoRefresh'
 
 export type OfficialLogoOption = {
   kind: 'official'; id: string; sourceId: string; sourceSlug: string; whitelabel: string
@@ -17,6 +19,10 @@ const identityKey = (source: Pick<CardSource, 'whitelabelId' | 'slug'>) => JSON.
 // no stale brand or another card's override is used as a fallback.
 const discovered = new Map<string, { session: number; options: OfficialLogoOption[] }>()
 const generations = new Map<string, number>()
+const activeDiscoveries = new Map<string, Set<symbol>>()
+const selectedPreviews = new Map<string, { logo: OfficialCardLogo; source: CardSource; lastRead: number }>()
+let sessionKey = showcaseSessionKey()
+subscribeSession(() => { const next = showcaseSessionKey(); if (next === sessionKey) return; sessionKey = next; discovered.clear(); generations.clear(); activeDiscoveries.clear(); selectedPreviews.clear() })
 
 /** Bound public reads; selecting an official binding does not dispatch an upload. */
 async function publicRead<T>(signal: AbortSignal | undefined, read: (readSignal: AbortSignal) => Promise<T>): Promise<T> {
@@ -72,29 +78,41 @@ export async function loadOfficialLogoOptions(actor: ShowcaseActor, source: Card
   assertCanRead(actor)
   const key = identityKey(source), generation = (generations.get(key) ?? 0) + 1
   generations.set(key, generation); discovered.delete(key)
-  const scoped = { ...actor, sessionVersion: getSessionVersion() }
-  const resolved = await lookupSourceById(source.whitelabelId, signal)
-  assertCanRead(scoped)
-  if ((resolved.status !== 'found' && resolved.status !== 'inactive') || resolved.source.whitelabelId !== source.whitelabelId || resolved.source.slug !== source.slug) throw malformedShowcase()
-  const authoritative = resolved.source
-  const origin = officialLogoOrigin(authoritative)
-  if (!origin) return []
-  const value = await publicRead(signal, async readSignal => {
-    const response = await fetch(`${origin}/branding/logo-manifest.json`, { signal: readSignal, credentials: 'omit', redirect: 'error', cache: 'no-store' })
-    if (response.status === 404 || response.status === 410) return null
-    if (!response.ok || !response.headers.get('content-type')?.includes('application/json') || Number(response.headers.get('content-length')) > 65536) throw malformedShowcase()
-    const text = await response.text()
-    if (text.length > 65536) throw malformedShowcase()
-    return JSON.parse(text) as unknown
-  })
-  if (signal?.aborted || generations.get(key) !== generation) throw new Error('Consulta substituída.')
-  assertCanRead(scoped)
-  if (value === null) return []
-  const options = decodeOfficialLogoManifest(value, authoritative)
-  if (signal?.aborted || generations.get(key) !== generation) throw new Error('Consulta substituída.')
-  assertCanRead(scoped)
-  discovered.set(key, { session: scoped.sessionVersion, options: options.map(option => ({ ...option })) })
-  return options
+  const active = activeDiscoveries.get(key) ?? new Set<symbol>(), request = Symbol()
+  active.add(request); activeDiscoveries.set(key, active)
+  try {
+    const scoped = { ...actor, sessionVersion: getSessionVersion() }
+    const resolved = await lookupSourceById(source.whitelabelId, signal)
+    assertCanRead(scoped)
+    if ((resolved.status !== 'found' && resolved.status !== 'inactive') || resolved.source.whitelabelId !== source.whitelabelId || resolved.source.slug !== source.slug) throw malformedShowcase()
+    const authoritative = resolved.source
+    const origin = officialLogoOrigin(authoritative)
+    if (!origin) return []
+    const value = await publicRead(signal, async readSignal => {
+      const response = await fetch(`${origin}/branding/logo-manifest.json`, { signal: readSignal, credentials: 'omit', redirect: 'error', cache: 'no-store' })
+      if (response.status === 404 || response.status === 410) return null
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/json') || Number(response.headers.get('content-length')) > 65536) throw malformedShowcase()
+      const text = await response.text()
+      if (text.length > 65536) throw malformedShowcase()
+      return JSON.parse(text) as unknown
+    })
+    if (signal?.aborted || generations.get(key) !== generation) throw new Error('Consulta substituída.')
+    assertCanRead(scoped)
+    if (value === null) return []
+    const options = decodeOfficialLogoManifest(value, authoritative)
+    if (signal?.aborted || generations.get(key) !== generation) throw new Error('Consulta substituída.')
+    assertCanRead(scoped)
+    discovered.set(key, { session: scoped.sessionVersion, options: options.map(option => ({ ...option })) })
+    return options
+  } finally {
+    active.delete(request)
+    if (!active.size && activeDiscoveries.get(key) === active) activeDiscoveries.delete(key)
+  }
+}
+
+/** A renewed manifest may change URL/version while the operator's variant stays selected. */
+export function refreshedOfficialSelection(previous: OfficialLogoOption, options: readonly OfficialLogoOption[]) {
+  return options.find(option => option.sourceId === previous.sourceId && option.sourceSlug === previous.sourceSlug && option.variantId === previous.variantId) ?? null
 }
 
 /** Explicit draft binding. No download, upload, copy or editorial request. */
@@ -105,5 +123,31 @@ export function selectOfficialLogo(actor: ShowcaseActor, choice: OfficialLogoOpt
   if (!selected || signal.aborted || selected.sourceId !== source.whitelabelId || selected.sourceSlug !== source.slug) throw new Error('Consulte novamente a logo oficial desta origem. A logo atual foi preservada.')
   const logo: OfficialCardLogo = { kind: 'official', source: { whitelabelId: Number(selected.sourceId), slug: selected.sourceSlug }, variantId: selected.variantId, alt: selected.suggestedAlt }
   rememberOfficialPreview(logo, selected.url)
+  selectedPreviews.set(logoMediaKey(logo)!, { logo, source: { ...source }, lastRead: Date.now() })
   return logo
+}
+
+/** A newly selected, unsaved binding is absent from GET showcase; renew its source too. */
+export async function refreshSelectedOfficialPreviews(keys: readonly string[], signal: AbortSignal) {
+  const session = getSessionVersion()
+  const groups = new Map<string, Array<[string, { logo: OfficialCardLogo; source: CardSource; lastRead: number }]>>()
+  for (const key of new Set(keys)) {
+    const entry = selectedPreviews.get(key)
+    // An open picker has priority; background renewal must not supersede its discovery.
+    if (!entry || activeDiscoveries.has(identityKey(entry.source)) || Date.now() - entry.lastRead < OFFICIAL_LOGO_REFRESH_MS) continue
+    entry.lastRead = Date.now()
+    const group = identityKey(entry.source), items = groups.get(group) ?? []
+    items.push([key, entry]); groups.set(group, items)
+  }
+  await Promise.all([...groups.values()].map(async items => {
+    try {
+      const options = await loadOfficialLogoOptions({ roles: getOperator()?.roles, sessionVersion: session }, items[0][1].source, signal)
+      if (signal.aborted || session !== getSessionVersion()) return
+      for (const [key, entry] of items) {
+        if (selectedPreviews.get(key) !== entry) continue
+        const option = options.find(item => item.variantId === entry.logo.variantId)
+        rememberOfficialPreview(entry.logo, option?.url ?? null)
+      }
+    } catch { /* Keep the last known preview; no claim that a failed source read is fresh. */ }
+  }))
 }

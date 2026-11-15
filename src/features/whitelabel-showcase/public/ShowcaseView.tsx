@@ -18,6 +18,7 @@ import { Heading, regulatoryNotice, ShowcaseFooter, ShowcaseHeader } from './Sho
 import type { ShowcaseSlide } from './showcaseTypes'
 import './showcase.css'
 import { useShowcaseMedia } from './useShowcaseMedia'
+import { useOfficialLogoMedia } from '../useOfficialLogoMedia'
 
 export type ShowcaseSection = 'header' | 'hero' | 'intro' | 'portfolio' | 'closing' | 'footer'
 const ALL_SECTIONS: readonly ShowcaseSection[] = ['header', 'hero', 'intro', 'portfolio', 'closing', 'footer']
@@ -56,6 +57,7 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
   const [dialog, setDialog] = useState<DemoContent | null>(null)
   const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, string>>({})
   const refreshMedia = useShowcaseMedia([...document.banner.images.map(image => image.assetRef), ...showcaseCards(document).flatMap(card => [...card.images.map(image => image.assetRef), ...(card.logo ? [logoMediaKey(card.logo)!] : [])])])
+  const officialMedia = useOfficialLogoMedia(showcaseCards(document).filter(card => card.logo?.kind === 'official').map(card => mediaUrl(logoMediaKey(card.logo))))
   const show = (section: ShowcaseSection) => sections.includes(section)
   const level = (base: number) => base + headingOffset
   const ids = { hero: `${idPrefix}-inicio`, portfolio: `${idPrefix}-plataformas`, main: `${idPrefix}-conteudo` }
@@ -118,7 +120,9 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
               if (!show('portfolio')) return null
               const card = section
                 const slides = slidesFor(card.images, refreshMedia)
-                const logoUrl = mediaUrl(logoMediaKey(card.logo))
+                const sourceLogoUrl = mediaUrl(logoMediaKey(card.logo))
+                const logoRefreshState = card.logo?.kind === 'official' ? officialMedia(sourceLogoUrl) : undefined
+                const logoUrl = logoRefreshState?.renderUrl ?? sourceLogoUrl
                 const logoFailed = !!logoUrl && failedLogoUrls[card.instanceId] === logoUrl
                 const logoEntry = card.logo ? resolveMedia(logoMediaKey(card.logo)!) : undefined
                 const nameId = `${idPrefix}-card-${card.instanceId}-name`
@@ -131,7 +135,7 @@ export function ShowcaseView({ document, sections = ALL_SECTIONS, idPrefix, embe
                   <div className="wl-platform-info">
                     <Heading level={level(3)} className="wl-platform-name" id={nameId}>
                       {logoUrl && !logoFailed
-                        ? <img className="wl-brand-logo" src={logoUrl} alt={card.logo?.alt ?? card.displayName} width={logoEntry?.width ?? 2172} height={logoEntry?.height ?? 724} loading="lazy" onError={() => { setFailedLogoUrls(current => ({ ...current, [card.instanceId]: logoUrl })); if (card.logo) refreshMedia(logoMediaKey(card.logo)!) }} />
+                        ? <img className="wl-brand-logo" src={logoUrl} data-official-logo-refresh={logoRefreshState?.status} alt={card.logo?.alt ?? card.displayName} width={logoEntry?.width ?? 2172} height={logoEntry?.height ?? 724} loading="lazy" onError={() => { setFailedLogoUrls(current => ({ ...current, [card.instanceId]: logoUrl })); if (card.logo) refreshMedia(logoMediaKey(card.logo)!) }} />
                         : <span className="wl-brand-fallback">{card.displayName || (editorPlaceholders ? 'Logo ausente' : '')}</span>}
                     </Heading>
                     <div className="wl-platform-details">

@@ -2,11 +2,14 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { ensureMedia, getMediaSnapshot, mediaUrl, subscribeMedia } from '../showcaseMedia'
 import { refreshShowcaseMedia } from '../showcaseRepository'
 import { isUuid } from '../showcaseModel'
+import { retainOfficialDocumentRefresh } from '../showcaseOfficialRefresh'
 
 /** Resolve durable references for this document; URL renewal never changes its revision. */
 export function useShowcaseMedia(refs: readonly string[]) {
   useSyncExternalStore(subscribeMedia, getMediaSnapshot, getMediaSnapshot)
   const key = JSON.stringify([...new Set(refs)].sort())
+  const hasOfficial = refs.some(ref => ref.startsWith('["official",'))
+  useEffect(() => hasOfficial ? retainOfficialDocumentRefresh(JSON.parse(key) as string[]) : undefined, [hasOfficial, key])
   // Capture the URL rendered now: a delayed error from an old render must not
   // request recovery of a newer URL already present in the shared registry.
   const displayedUrls = new Map(refs.map(ref => [ref, mediaUrl(ref)]))

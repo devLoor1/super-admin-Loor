@@ -5,7 +5,16 @@ import { isSmtpTenantId, safeSmtpCorrelation } from './smtpReadApi'
 
 export type EmailTemplateType = { type: string; label: string; description: string; available_variables: string[]; required_variables: string[]; capabilityVersion: 1 }
 export type EmailTemplate = { id: number; wtlb_id: number | null; name: string; type: string; subject: string; body_html: string; available_variables: string[]; active: boolean; is_default: boolean; created_at: string | null; updated_at: string | null; version: string; capabilityVersion: 1 }
-export type EmailPreview = { subject: string; body_html: string; renderSource: 'core-email-template-service'; sampleData: true; externalImagesBlocked: true; capabilityVersion: 1 }
+export type EmailPreview = {
+  subject: string
+  body_html: string
+  renderSource: 'core-email-template-service'
+  sampleData: true
+  externalImagesBlocked: true
+  /** Present when Core re-attached the tenant email logo after isolation (data-email-logo="1"). */
+  previewTenantLogo?: boolean
+  capabilityVersion: 1
+}
 export type EmailPreviewCommand = { type: string; subject: string; body_html: string; brandingDraft?: { primary_color?: string | null; logo_url?: string | null } }
 const invalid = (): never => { throw new ApiError(200, {}, { kind: 'malformed' }) }
 const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : invalid()
@@ -41,7 +50,17 @@ export function parseEmailTemplateList(raw: unknown, tenant: string, type: strin
 export function parseEmailPreview(raw: unknown): EmailPreview {
   const row = object(own(object(raw), 'data')); rejectPrivateKeys(row)
   if (own(row, 'renderSource') !== 'core-email-template-service' || own(row, 'sampleData') !== true || own(row, 'externalImagesBlocked') !== true || own(row, 'capabilityVersion') !== 1) return invalid()
-  return { subject: string(own(row, 'subject'), 2048), body_html: string(own(row, 'body_html'), 250000), renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1 }
+  const previewTenantLogo = own(row, 'previewTenantLogo')
+  if (previewTenantLogo !== undefined && typeof previewTenantLogo !== 'boolean') return invalid()
+  return {
+    subject: string(own(row, 'subject'), 2048),
+    body_html: string(own(row, 'body_html'), 250000),
+    renderSource: 'core-email-template-service',
+    sampleData: true,
+    externalImagesBlocked: true,
+    ...(typeof previewTenantLogo === 'boolean' ? { previewTenantLogo } : {}),
+    capabilityVersion: 1,
+  }
 }
 export function emailTemplatePath(tenant: string, suffix = '') { if (!isSmtpTenantId(tenant)) throw new ApiError(404, { code: 'INVALID_WHITELABEL_ID' }); return `/whitelabels/${tenant}/emails/templates${suffix}` }
 function authorizeRead() { if (!canReadEmailTemplates(getOperator()?.roles)) throw new ApiError(403, { code: 'EMAIL_READ_FORBIDDEN' }) }
@@ -69,15 +88,51 @@ export async function previewEmail(tenant: string, command: EmailPreviewCommand,
   catch (error) { if (error instanceof ApiError && error.status === 401) handleUnauthorized(token, session); return safeError(error) }
 }
 
+/** Keep only the Core-marked tenant email logo; drop every other media node. */
+function retainPreviewTenantLogo(root: DocumentFragment) {
+  root.querySelectorAll('img').forEach(node => {
+    const marked = node.getAttribute('data-email-logo') === '1'
+    const src = node.getAttribute('src') ?? ''
+    let ok = false
+    if (marked) {
+      try {
+        const url = new URL(src)
+        ok = (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password
+      } catch {
+        ok = false
+      }
+    }
+    if (!ok) node.remove()
+  })
+}
+
 /** Belt-and-braces document boundary. Returned HTML never enters the application shell. */
 export function emailPreviewDocument(body: string) {
   // Detached template content is inert, including image loading. Unlike an
   // ordinary parsed document it cannot start requests before sanitization.
   const parsed = document.createElement('template')
   parsed.innerHTML = body
-  parsed.content.querySelectorAll('script,style,iframe,frame,frameset,object,embed,link,meta,base,form,input,button,textarea,select,svg,math,img,video,audio,source').forEach(node => node.remove())
-  parsed.content.querySelectorAll('*').forEach(node => { for (const attribute of [...node.attributes]) if (/^on/i.test(attribute.name) || ['href', 'src', 'srcset', 'action', 'formaction', 'ping', 'target', 'download', 'background'].includes(attribute.name.toLowerCase()) || attribute.name.toLowerCase() === 'style' && /url\s*\(|@import|expression|behavior\s*:|-moz-binding/i.test(attribute.value)) node.removeAttribute(attribute.name) })
+  parsed.content.querySelectorAll('script,style,iframe,frame,frameset,object,embed,link,meta,base,form,input,button,textarea,select,svg,math,video,audio,source').forEach(node => node.remove())
+  retainPreviewTenantLogo(parsed.content)
+  parsed.content.querySelectorAll('*').forEach(node => {
+    const isTenantLogo = node.tagName.toLowerCase() === 'img' && node.getAttribute('data-email-logo') === '1'
+    for (const attribute of [...node.attributes]) {
+      const name = attribute.name.toLowerCase()
+      if (/^on/i.test(attribute.name)) {
+        node.removeAttribute(attribute.name)
+        continue
+      }
+      if (isTenantLogo && (name === 'src' || name === 'alt' || name === 'height' || name === 'style' || name === 'data-email-logo')) {
+        continue
+      }
+      if (['href', 'src', 'srcset', 'action', 'formaction', 'ping', 'target', 'download', 'background'].includes(name)
+        || (name === 'style' && /url\s*\(|@import|expression|behavior\s*:|-moz-binding/i.test(attribute.value))) {
+        node.removeAttribute(attribute.name)
+      }
+    }
+  })
   // Server strips executable markup; CSP plus an empty sandbox also blocks scripts,
-  // forms, child frames, network/tracking images and link navigation capabilities.
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'none'; style-src 'unsafe-inline'; font-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'; navigate-to 'none'"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#f4f6f8;overflow-wrap:anywhere}body{padding:16px;font-family:Arial,sans-serif}img{display:none!important}a{pointer-events:none!important;cursor:default!important}*{max-width:100%;box-sizing:border-box}</style></head><body>${parsed.innerHTML}</body></html>`
+  // forms, child frames and non-logo network images. Only https/http img for the
+  // allowlisted tenant logo (data-email-logo="1") may load.
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http:; style-src 'unsafe-inline'; font-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'; navigate-to 'none'"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#f4f6f8;overflow-wrap:anywhere}body{padding:16px;font-family:Arial,sans-serif}img:not([data-email-logo="1"]){display:none!important}a{pointer-events:none!important;cursor:default!important}*{max-width:100%;box-sizing:border-box}</style></head><body>${parsed.innerHTML}</body></html>`
 }

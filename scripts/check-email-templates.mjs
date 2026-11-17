@@ -147,7 +147,15 @@ for (const logo of ['http://example.invalid/logo.png','https://user:pass@example
 await check('preview contract refuses arbitrary local renderer or unsafe image status', () => { for (const extra of [{ renderSource: 'local' }, { sampleData: false }, { externalImagesBlocked: false }]) assert.throws(() => api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1, ...extra } })) })
 await check('preview boundary blocks image fetch/execution/navigation and never injects shell HTML', async () => {
   const source = await readFile(resolve(root, 'src/features/whitelabel-emails/EmailTemplatesWorkspace.tsx'), 'utf8'), apiSource = await readFile(resolve(root, 'src/features/whitelabel-emails/emailTemplatesApi.ts'), 'utf8')
-  assert.match(source, /sandbox=""/); assert.match(source, /referrerPolicy="no-referrer"/); assert.doesNotMatch(source, /dangerouslySetInnerHTML/); assert.match(apiSource, /img-src 'none'/); assert.match(apiSource, /form-action 'none'/); assert.match(apiSource, /querySelectorAll\('script,style,iframe/); assert.match(apiSource, /document.createElement\('template'\)/)
+  assert.match(source, /sandbox=""/); assert.match(source, /referrerPolicy="no-referrer"/); assert.doesNotMatch(source, /dangerouslySetInnerHTML/)
+  assert.match(apiSource, /img-src https: http:/); assert.doesNotMatch(apiSource, /img-src 'none'/)
+  assert.match(apiSource, /data-email-logo/); assert.match(apiSource, /retainPreviewTenantLogo|data-email-logo="1"/)
+  assert.match(apiSource, /form-action 'none'/); assert.match(apiSource, /querySelectorAll\('script,style,iframe/); assert.match(apiSource, /document.createElement\('template'\)/)
+})
+await check('preview parser accepts optional previewTenantLogo flag', () => {
+  const withLogo = api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p><img data-email-logo="1" src="https://cdn.example.invalid/l.png">', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, previewTenantLogo: true, capabilityVersion: 1 } })
+  assert.equal(withLogo.previewTenantLogo, true)
+  assert.throws(() => api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, previewTenantLogo: 'yes', capabilityVersion: 1 } }))
 })
 await check('email viewport remains 600/360 while the whole document scales without upscaling', () => {
   assert.equal(geometry.EMAIL_PREVIEW_VIEWPORT.desktop.width, 600); assert.equal(geometry.EMAIL_PREVIEW_VIEWPORT.mobile.width, 360)

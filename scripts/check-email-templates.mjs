@@ -53,6 +53,61 @@ for (const typeName of ['email_confirmation', 'investment_contract', ...Object.k
   assert.equal(editorial.serializeEditorial(typeName, { ...draft, greeting: '<script>alert(1)</script>' }), null)
 })
 await check('unknown future type has no fabricated editor fallback', () => { assert.equal(editorial.defaultEditorial('future_type'), null); assert.equal(editorial.supportsEditorial('future_type'), false) })
+await check('linked editor previews the global model and preserves legacy custom HTML', () => {
+  const type = 'welcome_approved'
+  const body = { type, subject: 'Assunto original', body_html: '<p>Conteúdo original</p>' }
+  assert.deepEqual(editorial.templateForBrandingPreview({ ...body, is_default: true }), {
+    type, ...editorial.serializeEditorial(type, editorial.defaultEditorial(type)),
+  })
+  assert.deepEqual(editorial.templateForBrandingPreview({ ...body, is_default: false }), body)
+})
+for (const [templateType, fileName, fallbackName] of [
+  ['email_confirmation', 'emailConfirmationTemplateModel', 'EMAIL_CONFIRMATION_FALLBACK'],
+  ['investment_contract', 'investmentContractTemplateModel', 'INVESTMENT_CONTRACT_FALLBACK'],
+]) await check(`known ${templateType} default previews the Admin model and keeps the persisted record intact`, async () => {
+  const model = await load(`src/features/whitelabel-emails/editorial/${fileName}.ts`)
+  const fallback = model[fallbackName]
+  const record = Object.freeze({ type: templateType, subject: fallback.subject, body_html: fallback.bodyHtml })
+  const draft = editorial.readEditorial(record.type, record.subject, record.body_html)
+  assert.deepEqual(draft, editorial.defaultEditorial(templateType))
+  const preview = editorial.templateForBrandingPreview(record)
+  assert.deepEqual(preview, { type: templateType, ...editorial.serializeEditorial(templateType, draft) })
+  assert.match(preview.body_html, /<table role="presentation"/)
+  assert.match(preview.body_html, /max-width:600px/)
+  assert.notEqual(preview.body_html, record.body_html)
+  for (const change of [{ subject: 'Outro assunto' }, { body_html: record.body_html + '<p>Conteúdo anterior</p>' }]) {
+    const legacy = { ...record, ...change }
+    assert.equal(editorial.readEditorial(legacy.type, legacy.subject, legacy.body_html), null)
+    assert.deepEqual(editorial.templateForBrandingPreview(legacy), legacy)
+  }
+})
+await check('an edited confirmation and branding draft enter one render-only request', async () => {
+  login()
+  const draft = editorial.defaultEditorial('email_confirmation')
+  const template = Object.freeze({ type: 'email_confirmation', ...editorial.serializeEditorial('email_confirmation', draft) })
+  const content = editorial.templateForBrandingPreview(template, 'Validar cadastro de exemplo')
+  assert.deepEqual(editorial.templateForBrandingPreview(template, ''), template)
+  assert.equal(editorial.templateForBrandingPreview(template, '{{nome}}'), null)
+  const legacy = { type: template.type, subject: 'Legado', body_html: '<p>Preservado</p>' }
+  assert.deepEqual(editorial.templateForBrandingPreview(legacy, 'Exemplo'), legacy)
+  const brand = branding.emailBrandingPreviewDraft({ primary_color: '#397060', logo_url: 'https://example.invalid/logo-qa.png' })
+  let calls = 0
+  dispatch = async (url, init) => {
+    calls++
+    assert.equal(new URL(url).pathname, '/api/whitelabels/6/emails/templates/preview')
+    const body = JSON.parse(init.body)
+    assert.equal(body.subject, content.subject)
+    assert.equal(body.body_html, content.body_html)
+    assert.match(body.body_html, />Validar cadastro de exemplo<\/a>/)
+    assert.deepEqual(body.brandingDraft, brand)
+    assert.equal(body.variables, undefined)
+    return response({ subject: 'Exemplo', body_html: '<span style="background:#397060">Validar cadastro de exemplo</span>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1 })
+  }
+  const result = await api.previewEmail('6', { type: 'email_confirmation', ...content, brandingDraft: brand })
+  assert.match(result.body_html, /#397060/)
+  assert.match(result.body_html, /Validar cadastro de exemplo/)
+  assert.equal(calls, 1)
+})
 await check('legacy branding display matches Core nullish aliases without changing stored values', () => {
   const original = { primaryColor: '#123456', logoUrl: 'https://qa.example.invalid/logo.png', extension: { untouched: true } }, snapshot = JSON.stringify(original)
   assert.equal(branding.configurationDisplayValue('email_branding.config', original, ['primary_color']), '#123456')
@@ -72,7 +127,7 @@ await check('preview normalizes Core legacy colors without changing saved data o
   for (const color of ['AABBCC', '#AABBCC', '#AABBCCDD', ' AABBCCDD ']) for (const key of ['primary_color', 'primaryColor']) {
     const original = Object.freeze({ [key]: color, logo_url: 'https://qa.example.invalid/new-logo.png', extension: Object.freeze({ untouched: true }) }), snapshot = JSON.stringify(original)
     const brandingDraft = branding.emailBrandingPreviewDraft(original)
-    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
+    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: original.logo_url })
     await api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft })
     assert.deepEqual(sent.brandingDraft, brandingDraft); assert.equal(JSON.stringify(original), snapshot)
   }
@@ -81,20 +136,20 @@ await check('preview branding keeps stored null distinct while matching Core ali
   assert.deepEqual(branding.emailBrandingPreviewDraft({}), {})
   assert.deepEqual(branding.emailBrandingPreviewDraft(null), { primary_color: null, logo_url: null })
   const saved = Object.freeze({ primary_color: null, primaryColor: '#aabbcc', logo_url: null, logoUrl: 'https://qa.example.invalid/logo.png' })
-  assert.deepEqual(branding.emailBrandingPreviewDraft(saved), { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
+  assert.deepEqual(branding.emailBrandingPreviewDraft(saved), { primary_color: '#aabbcc', logo_url: saved.logoUrl })
   assert.equal(saved.primary_color, null); assert.equal(saved.logo_url, null)
   assert.deepEqual(branding.emailBrandingPreviewDraft({ primary_color: null, logo_url: null }), { primary_color: null, logo_url: null })
   for (const value of [{ primary_color: 'invalid' }, { primary_color: '#12345' }, { primary_color: 123456 }, { logo_url: false }, []]) assert.equal(branding.emailBrandingPreviewDraft(value), null)
 })
-await check('color-only preview keeps legacy logo layout without forwarding any actual URL', async () => {
+await check('color-only preview keeps the WL logo resolved by Core without forwarding its stored URL', async () => {
   login(['READ_ONLY']); let sent
   dispatch = async (_url, options) => { sent = JSON.parse(options.body); return response({ subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1 }) }
   for (const logo of ['http://legacy.example.invalid/logo.png', 'https://legacy.example.invalid/logo.png?token=DO_NOT_FORWARD', 'https://legacy.example.invalid/logo.png#private-reference', 'http://legacy.example.invalid/logo.png?v=1#logo']) for (const key of ['logo_url', 'logoUrl']) {
     const original = Object.freeze({ primary_color: '#112233', [key]: logo, extension: Object.freeze({ untouched: true }) }), snapshot = JSON.stringify(original)
-    const brandingDraft = branding.emailBrandingPreviewDraft({ ...original, primary_color: '#aabbcc' })
-    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc', logo_url: 'https://example.invalid/email-logo-preview.png' })
+    const brandingDraft = branding.emailBrandingPreviewDraft({ ...original, primary_color: '#aabbcc' }, original)
+    assert.deepEqual(brandingDraft, { primary_color: '#aabbcc' })
     await api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft })
-    assert.deepEqual(sent.brandingDraft, brandingDraft); assert.doesNotMatch(JSON.stringify(sent), /legacy\.example|DO_NOT_FORWARD|private-reference/); assert.doesNotMatch(sent.brandingDraft.logo_url, /[?#]/)
+    assert.deepEqual(sent.brandingDraft, brandingDraft); assert.doesNotMatch(JSON.stringify(sent), /legacy\.example|DO_NOT_FORWARD|private-reference/)
     assert.equal(JSON.stringify(original), snapshot)
   }
 })
@@ -104,6 +159,29 @@ await check('logo presence projection rejects userinfo, invalid schemes and malf
   }
   assert.deepEqual(branding.emailBrandingPreviewDraft({ primary_color: '#aabbcc' }), { primary_color: '#aabbcc' })
   assert.deepEqual(branding.emailBrandingPreviewDraft({ logo_url: null }), { logo_url: null })
+})
+await check('a changed draft URL reaches Core, unchanged logo is omitted, and explicit removal is null', async () => {
+  login(['READ_ONLY'])
+  const baseline = { logoUrl: 'https://example.invalid/saved.png' }
+  const logo = 'https://example.invalid/qa-brand.png?version=2'
+  const draft = branding.emailBrandingPreviewDraft({ ...baseline, logo_url: logo }, baseline)
+  let calls = 0
+  dispatch = async (_url, options) => {
+    calls++
+    assert.equal(JSON.parse(options.body).brandingDraft.logo_url, logo)
+    return response({ subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, previewTenantLogo: true, capabilityVersion: 1 })
+  }
+  const result = await api.previewEmail('6', { type: 'email_confirmation', subject: 'Example', body_html: '<p>Example</p>', brandingDraft: draft })
+  assert.equal(result.previewTenantLogo, true)
+  assert.equal(result.externalImagesBlocked, true)
+  assert.equal(calls, 1)
+  assert.deepEqual(branding.emailBrandingPreviewDraft(baseline, baseline), {})
+  assert.deepEqual(branding.emailBrandingPreviewDraft({}, baseline), { logo_url: null })
+})
+await check('logo metadata accepts true, false and an absent field', () => {
+  const data = { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1 }
+  for (const flag of [false, true]) assert.equal(api.parseEmailPreview({ data: { ...data, previewTenantLogo: flag } }).previewTenantLogo, flag)
+  assert.equal(Object.hasOwn(api.parseEmailPreview({ data }), 'previewTenantLogo'), false)
 })
 function fixture(operation = 'save', mode = 'normal', create = false) {
   const tenant = String(++sequence), session = login(), baseline = row(tenant), initial = create ? [] : [baseline], records = [...initial], seen = []
@@ -127,6 +205,21 @@ function fixture(operation = 'save', mode = 'normal', create = false) {
   }
   return { tenant, session, command, seen, records, attempt: () => writes.getTemplateAttempt(tenant, 'email_confirmation', session) }
 }
+await check('a saved structured edit reopens from the template detail GET', async () => {
+  const f = fixture()
+  const draft = { ...editorial.defaultEditorial('email_confirmation'), message: 'Confira o cadastro de exemplo.', actionLabel: 'Validar cadastro de exemplo' }
+  const serialized = editorial.serializeEditorial('email_confirmation', draft)
+  Object.assign(f.command.value, serialized)
+  await writes.executeTemplateWrite(f.command, f.session)
+  assert.equal(f.attempt().phase, 'confirmed')
+  const patches = f.seen.filter(request => request.method === 'PATCH')
+  assert.equal(patches.length, 1)
+  assert.equal(patches[0].body.subject, serialized.subject)
+  assert.equal(patches[0].body.body_html, serialized.body_html)
+  const reopened = await api.getEmailTemplate(f.tenant, f.command.baseline.id)
+  assert.deepEqual(editorial.readEditorial(reopened.type, reopened.subject, reopened.body_html), draft)
+  assert.deepEqual(editorial.templateForBrandingPreview(reopened), { type: reopened.type, ...serialized })
+})
 await check('one inactive create, authoritative list/detail readback', async () => { const f = fixture('save', 'normal', true); await writes.executeTemplateWrite(f.command, f.session); assert.equal(f.attempt().phase, 'confirmed'); assert.deepEqual(f.seen.map(item => item.method), ['GET','POST','GET','GET']); assert.equal(f.seen[1].body.active, false); assert.equal(f.attempt().result.id, 2) })
 await check('partial PATCH only changed editable fields', async () => { const f = fixture(); await writes.executeTemplateWrite(f.command, f.session); assert.equal(f.attempt().phase, 'confirmed'); assert.deepEqual(f.seen.find(item => item.method === 'PATCH').body, { name: 'Edited QA' }) })
 await check('DELETE only own existing template with list absence readback', async () => { const f = fixture('delete'); await writes.executeTemplateWrite(f.command, f.session); assert.equal(f.attempt().phase, 'confirmed'); assert.deepEqual(f.seen.map(item => item.method), ['GET','GET','DELETE','GET']); assert.equal(f.attempt().deletedId, 1) })
@@ -143,19 +236,11 @@ await check('preview is render-only body with server samples, current tenant and
   const command = { type: 'email_confirmation', subject: 'Hello', body_html: '<p>{{nome}}</p>', variables: { token: 'DO_NOT_SEND' }, brandingDraft: { primary_color: '#112233', ignored: 'DO_NOT_SEND' } }
   await api.previewEmail('6', command); assert.equal(sent.url, 'https://control-plane.example.invalid/api/whitelabels/6/emails/templates/preview'); assert.equal(sent.method, 'POST'); assert.equal(sent.body.variables, undefined); assert.deepEqual(sent.body.brandingDraft, { primary_color: '#112233' }); assert.doesNotMatch(JSON.stringify(sent), /DO_NOT_SEND/)
 })
-for (const logo of ['http://example.invalid/logo.png','https://user:pass@example.invalid/logo.png','https://example.invalid/logo.png?token=x']) await check('preview rejects unsafe logo', async () => { await assert.rejects(api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft: { logo_url: logo } }), error => error.status === 422) })
-await check('preview contract refuses arbitrary local renderer or unsafe image status', () => { for (const extra of [{ renderSource: 'local' }, { sampleData: false }, { externalImagesBlocked: false }]) assert.throws(() => api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1, ...extra } })) })
+for (const logo of ['ftp://example.invalid/logo.png','https://user:pass@example.invalid/logo.png','/relative.png']) await check('preview rejects unsafe logo', async () => { await assert.rejects(api.previewEmail('6', { type: 'email_confirmation', subject: 'Hello', body_html: '<p>Example</p>', brandingDraft: { logo_url: logo } }), error => error.status === 422) })
+await check('preview contract refuses arbitrary local renderer or unsafe image status', () => { for (const extra of [{ renderSource: 'local' }, { sampleData: false }, { externalImagesBlocked: false }, { previewTenantLogo: 'true' }]) assert.throws(() => api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, capabilityVersion: 1, ...extra } })) })
 await check('preview boundary blocks image fetch/execution/navigation and never injects shell HTML', async () => {
   const source = await readFile(resolve(root, 'src/features/whitelabel-emails/EmailTemplatesWorkspace.tsx'), 'utf8'), apiSource = await readFile(resolve(root, 'src/features/whitelabel-emails/emailTemplatesApi.ts'), 'utf8')
-  assert.match(source, /sandbox=""/); assert.match(source, /referrerPolicy="no-referrer"/); assert.doesNotMatch(source, /dangerouslySetInnerHTML/)
-  assert.match(apiSource, /img-src https: http:/); assert.doesNotMatch(apiSource, /img-src 'none'/)
-  assert.match(apiSource, /data-email-logo/); assert.match(apiSource, /retainPreviewTenantLogo|data-email-logo="1"/)
-  assert.match(apiSource, /form-action 'none'/); assert.match(apiSource, /querySelectorAll\('script,style,iframe/); assert.match(apiSource, /document.createElement\('template'\)/)
-})
-await check('preview parser accepts optional previewTenantLogo flag', () => {
-  const withLogo = api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p><img data-email-logo="1" src="https://cdn.example.invalid/l.png">', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, previewTenantLogo: true, capabilityVersion: 1 } })
-  assert.equal(withLogo.previewTenantLogo, true)
-  assert.throws(() => api.parseEmailPreview({ data: { subject: 'Example', body_html: '<p>Example</p>', renderSource: 'core-email-template-service', sampleData: true, externalImagesBlocked: true, previewTenantLogo: 'yes', capabilityVersion: 1 } }))
+  assert.match(source, /sandbox=""/); assert.match(source, /referrerPolicy="no-referrer"/); assert.doesNotMatch(source, /dangerouslySetInnerHTML/); assert.match(apiSource, /logo \? 'https: http:' : "'none'"/); assert.match(apiSource, /form-action 'none'/); assert.match(apiSource, /querySelectorAll\('script,style,iframe/); assert.match(apiSource, /document.createElement\('template'\)/)
 })
 await check('email viewport remains 600/360 while the whole document scales without upscaling', () => {
   assert.equal(geometry.EMAIL_PREVIEW_VIEWPORT.desktop.width, 600); assert.equal(geometry.EMAIL_PREVIEW_VIEWPORT.mobile.width, 360)

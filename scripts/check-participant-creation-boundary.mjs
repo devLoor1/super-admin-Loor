@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { pathsBeforeSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -7,7 +8,7 @@ import { root } from './operators-test-harness.mjs'
 import { participantBaseline, participantDigest, createParticipantBoundary, reviewedParticipantCreation, withoutParticipantCreation } from './reviewed-participant-creation-boundary.mjs'
 const manifest=JSON.parse(readFileSync(resolve(root,'scripts/participant-creation-reviewed-files.json'),'utf8'))
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).replaceAll('\r\n','\n')
-const actualPaths=[...new Set((git('diff','--name-only',participantBaseline,'--','src')+'\n'+git('ls-files','--others','--exclude-standard','--','src')).trim().split(/\r?\n/).filter(Boolean))].sort()
+const actualPaths = pathsBeforeSettingsParity(participantBaseline)
 assert.equal(manifest.finalized,true)
 assert.deepEqual(Object.keys(manifest.files).sort(),actualPaths.filter(path=>Object.hasOwn(manifest.files,path)||!reviewedShowcase(path)))
 for(const [path,pin]of Object.entries(manifest.files)){

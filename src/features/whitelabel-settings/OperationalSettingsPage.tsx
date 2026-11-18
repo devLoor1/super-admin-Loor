@@ -10,9 +10,11 @@ import { DotMatrixBackground } from '../whitelabels/visuals/DotMatrixBackground'
 import { SettingsSection } from './SettingsSection'
 import { canReadSettings, FEATURE_LABELS, isSettingsTenantId, TERMINOLOGY_LABELS, type ReadValue, type SettingsRead, type TermsRead, type SettingProvenance } from './settingsReadApi'
 import { useSettingsRead } from './useSettingsRead'
+import { VisualIdentitySettings } from './VisualIdentitySettings'
 import styles from './WhitelabelSettingsPage.module.css'
 import read from './SettingsRead.module.css'
 import { ConfigNavigation } from './ConfigNavigation'
+import { TermsPanel } from './TermsPanel'
 import { configArea, configHref, type ConfigArea } from './configRoute'
 import { PlatformAppRead } from './PlatformAppRead'
 import { PlatformPresentationRead } from './PlatformPresentationCards'
@@ -48,6 +50,7 @@ function Revision({ revision }: { revision: TermsRead }) {
 const Section = ({ id, title, subtitle, children }: { id: string; title: string; subtitle: string; children: ReactNode }) => <SettingsSection id={`settings-${id}`} title={title} subtitle={subtitle} status="readonly">{children}</SettingsSection>
 /** Only the explicit public projection reaches React; no settings bag, credentials or provider JSON. */
 export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; area?: ConfigArea | 'all' }) {
+  if (area === 'identity') return <VisualIdentitySettings id={data.id} />
   const show = (target: ConfigArea) => area === 'all' || area === target
   return <>
     <p className={read.notice}>Consulta do Control Plane. Nos textos de login e oito funcionalidades, a proveniência qualificada distingue substituição armazenada, padrão herdado e ausência. Sem proveniência, a consulta não comprova a origem e a edição permanece indisponível. Outras configurações continuam somente leitura.</p>
@@ -56,7 +59,7 @@ export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; 
       {show('platform') && <Section id="general" title="Geral" subtitle="Identidade retornada pelo endpoint deste Whitelabel."><dl className={read.list}>
         <Row label="ID do Whitelabel" field={{ state:'value', value:data.id }} /><Row label="Nome" field={data.name} /><Row label="Identificador" field={data.slug} /><Row label="URL pública" field={data.baseUrl} /><Row label="Ativo" field={data.active} boolean />
       </dl></Section>}
-      {show('identity') && <Section id="identity" title="Identidade" subtitle="Cores da etapa de perfil inicial; não representam toda a identidade visual."><dl className={read.list}>
+      {show('identity') && <Section id="identity" title="Tema legado do perfil inicial" subtitle="Valores registrados em quick_profile.theme. Na carteira Web, a aparência desta tela segue o Login."><dl className={read.list}>
         <Row label="Cor principal do perfil inicial" field={data.identity.primaryColor} /><Row label="Cor de fundo do perfil inicial" field={data.identity.backgroundColor} /><Row label="Cor do texto do perfil inicial" field={data.identity.textColor} />
       </dl><p className={read.missing}>Logo e favicon não possuem referências públicas qualificadas nesta integração.</p></Section>}
       {show('platform') && <Section id="experience" title="Experiência" subtitle="Textos públicos de entrada e vocabulário suportado."><dl className={read.list}>
@@ -72,10 +75,20 @@ export function SettingsReadCards({ data, area = 'all' }: { data: SettingsRead; 
       {data.terms.current.state === 'value' ? <Revision revision={data.terms.current.value} /> : <p>{data.terms.current.state === 'null' ? 'Nenhuma revisão vigente retornada para este Whitelabel.' : 'Revisão vigente não informada pela API.'}</p>}
       {data.terms.history.state === 'value' ? <details><summary>Histórico retornado ({data.terms.history.value.length} revisões)</summary>{data.terms.history.value.length ? data.terms.history.value.map(r => <Revision key={r.id} revision={r} />) : <p>Nenhuma revisão no histórico retornado.</p>}</details> : <p>Histórico {data.terms.history.state === 'null' ? 'sem valor (null)' : 'não informado pela API'}.</p>}
     </Section>}
-    <p className={read.missing}>SMTP, templates e identidade de e-mail possuem áreas próprias em E-mail. Imagens das páginas de acesso são configuradas em Plataforma. Credenciais e configurações internas não são exibidas. Publicação de Termos, identidade global/PWA e envio de testes permanecem indisponíveis.</p>
+    <p className={read.missing}>SMTP, templates e identidade de e-mail possuem áreas próprias em E-mail. Imagens das páginas de acesso são configuradas em Plataforma. Credenciais e configurações internas não são exibidas.</p>
   </>
 }
+function TermsReadFallback({ id }: { id: string }) {
+  const remote = useSettingsRead(id)
+  if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
+  if (remote.state.status !== 'success') return <p role="status">Consultando revisões nas configurações do Whitelabel…</p>
+  return <SettingsReadCards data={remote.state.data} area="terms" />
+}
 function ConfirmedSettings({ id, area, cell }: { id: string; area: ConfigArea; cell?: string }) {
+  if (area === 'terms') return <TermsPanel id={id} fallback={<TermsReadFallback id={id} />} />
+  return <GeneralSettings id={id} area={area} cell={cell} />
+}
+function GeneralSettings({ id, area, cell }: { id: string; area: ConfigArea; cell?: string }) {
   const remote = useSettingsRead(id)
   if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configurações…</p>

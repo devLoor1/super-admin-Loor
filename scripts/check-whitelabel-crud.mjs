@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
+import { reviewedSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedAdminLifecycle } from './reviewed-admin-lifecycle-boundary.mjs'
 import { reviewedOpportunityWrite } from './reviewed-opportunity-write-boundary.mjs'
 import { reviewedSettingsEvolution } from './reviewed-settings-evolution-boundary.mjs'
@@ -509,6 +510,15 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
         assert.match(source, /\/whitelabels\/6\/showcase/)
         assert.match(source, /\/whitelabels\/6\/platform\/assets/)
       }
+      continue
+    }
+    if (runtimePath === 'src/features/whitelabel-settings/termsPublication.ts') {
+      assert.equal(reviewedSettingsParity(runtimePath), true)
+      assert.deepEqual([...source.matchAll(/method:\s*'([A-Z]+)'/g)].map(match => match[1]), ['PUT'])
+      assert.match(source, /return '\/whitelabels\/' \+ id \+ '\/terms-of-use'/)
+      assert.match(source, /authenticatedGet\(path\(id\)/)
+      assert.match(source, /apiRequest<unknown>\(path\(id\)/)
+      assert.doesNotMatch(source, /\/admin\/|\/internal\/|fetch\s*\(|sendBeacon|WebSocket|setInterval/)
       continue
     }
     if (runtimePath === 'src/features/whitelabel-accounts/creation/participantCreationClient.ts') {

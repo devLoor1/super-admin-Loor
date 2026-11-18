@@ -1,0 +1,11 @@
+.terms-markdown-preview { min-width: 0; overflow-wrap: anywhere; line-height: 1.65; }
+.terms-markdown-preview > * { margin: 0 0 .85em; }
+.terms-markdown-preview > :last-child { margin-bottom: 0; }
+.terms-markdown-preview :is(p, li) { white-space: pre-wrap; }
+.terms-markdown-preview :is(h1, h2, h3, h4, h5, h6) { font-weight: 650; line-height: 1.25; }
+.terms-markdown-preview h1 { font-size: 1.55em; }
+.terms-markdown-preview h2 { font-size: 1.35em; }
+.terms-markdown-preview h3 { font-size: 1.2em; }
+.terms-markdown-preview ul { list-style: disc; padding-inline-start: 1.6em; }
+.terms-markdown-preview ol { list-style: decimal; padding-inline-start: 1.6em; }
+.terms-markdown-preview a { color: inherit; text-decoration: underline; }

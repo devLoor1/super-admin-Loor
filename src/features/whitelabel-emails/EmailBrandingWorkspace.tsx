@@ -9,7 +9,27 @@ import { useSettingsRead } from '../whitelabel-settings/useSettingsRead'
 import { EmailServerPreview } from './EmailTemplatesWorkspace'
 import { getEmailTemplates, getEmailTypes, type EmailPreviewCommand, type EmailTemplate } from './emailTemplatesApi'
 import { emailBrandingPreviewDraft } from './emailBrandingDisplay'
+import { readTemplateModel, templateForBrandingPreview } from './emailEditorialModel'
 import s from '../whitelabel-settings/ConfigurationStudio.module.css'
+
+function BrandingDraftPreview({ tenantId, template, branding }: {
+  tenantId: string
+  template: EmailTemplate
+  branding: EmailPreviewCommand['brandingDraft'] | null
+}) {
+  const [sampleLabel, setSampleLabel] = useState('')
+  const model = readTemplateModel(template)
+  const content = templateForBrandingPreview(template, sampleLabel)
+  const command = content && branding ? { ...content, brandingDraft: branding } : null
+  return <>
+    {model?.actionLabel && <label className={s.field}>Texto de exemplo do botão
+      <input value={sampleLabel} placeholder={model.actionLabel} maxLength={80} aria-invalid={!content} onChange={event => setSampleLabel(event.target.value)} />
+      <small>Esta alteração aparece somente na prévia da identidade.</small>
+      {!content && <small role="alert">Use texto simples para o botão.</small>}
+    </label>}
+    <EmailServerPreview tenantId={tenantId} command={command} label="Rascunho de identidade" />
+  </>
+}
 
 /** Email branding is independent from platform identity and SMTP metadata. */
 export function EmailBrandingWorkspace({ tenantId }: { tenantId: string }) {
@@ -26,14 +46,11 @@ export function EmailBrandingWorkspace({ tenantId }: { tenantId: string }) {
     }).then(result => { if (!controller.signal.aborted) setTemplate(result) }).catch(() => { if (!controller.signal.aborted) setFailed(true) })
     return () => controller.abort()
   }, [tenantId])
-  function preview(value: Json, saved: boolean) {
-    let command: EmailPreviewCommand | null = template ? { type: template.type, subject: template.subject, body_html: template.body_html } : null
-    if (command && !saved) {
-      const branding = emailBrandingPreviewDraft(value)
-      if (!branding) command = null
-      else command.brandingDraft = branding
+  function preview(value: Json, saved: boolean, effectiveValue: Json) {
+    if (template && !saved) {
+      return <BrandingDraftPreview key={`${tenantId}:${template.id}:${template.version}`} tenantId={tenantId} template={template} branding={emailBrandingPreviewDraft(value, effectiveValue)} />
     }
-    return <>{failed && <p role="status" className={s.note}>O template de exemplo do servidor não está disponível; a prévia não usa conteúdo simulado.</p>}<EmailServerPreview tenantId={tenantId} command={command} label={saved ? 'Identidade salva' : 'Rascunho de identidade'} /></>
+    return <>{failed && <p role="status" className={s.note}>O template de exemplo do servidor não está disponível; a prévia não usa conteúdo simulado.</p>}<EmailServerPreview tenantId={tenantId} command={template ? templateForBrandingPreview(template) : null} label={saved ? 'Identidade salva' : 'Rascunho de identidade'} /></>
   }
   const data = remote.state.status === 'success' ? remote.state.data : null
   const origin = data?.configuration['email_branding.config']

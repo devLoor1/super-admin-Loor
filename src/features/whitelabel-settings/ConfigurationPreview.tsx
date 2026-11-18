@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Check, LockKeyhole, Monitor, Smartphone } from 'lucide-react'
-import { record, valueAt, type ConfigCell, type Json } from './configurationContract'
+import { loginPresentationFallback, record, valueAt, type ConfigCell, type Json } from './configurationContract'
 import { AppConfigurationPreview } from './AppConfigurationPreview'
+import { supportsLoginPresentation } from './platformPresentationRead'
 import { businessText } from '../operation/shared/businessPresentation'
 import { getPlatformAsset, assetReference } from './platformAssetClient'
 import type { SettingsRead } from './settingsReadApi'
@@ -24,7 +25,9 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
   const page = cell.startsWith('register.') ? 'register' : cell.startsWith('quick_profile.') ? 'quick_profile' : 'login'
   const value = (key:ConfigCell):Json => !saved && override?.cell === key ? override.value : data.configuration[key]?.effectiveValue ?? null
   const scalar = (key:'login.title'|'login.subtitle'|'login.bullets') => !saved && override?.cell===key ? override.value : key==='login.title' ? readText(data.experience.title) : key==='login.subtitle' ? readText(data.experience.subtitle) : readText(data.experience.bullets)
-  const imageConfig = value(`${page}.main_area_image`), ref = record(imageConfig) && imageConfig.enabled === true && assetReference(imageConfig.assetRef) ? imageConfig.assetRef : null
+  const entryPage = /^(login|register|quick_profile)\./.test(cell)
+  const imageConfig = entryPage ? value('login.main_area_image') : null
+  const ref = record(imageConfig) && imageConfig.capabilityId === 'platform.main_area_image' && imageConfig.version === 1 && imageConfig.enabled === true && assetReference(imageConfig.assetRef) ? imageConfig.assetRef : null
   const [asset,setAsset]=useState<{key:string;url:string|null;error:boolean}|null>(null)
   const assetKey = `${data.id}:${ref ?? ''}`
   useEffect(()=>{
@@ -33,7 +36,7 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
     void getPlatformAsset(data.id,ref,controller.signal).then(row=>{if(!controller.signal.aborted)setAsset({key:assetKey,url:row.url,error:false})}).catch(()=>{if(!controller.signal.aborted)setAsset({key:assetKey,url:null,error:true})})
     return()=>controller.abort()
   },[data.id,ref,assetKey])
-  const currentImage = !saved && imageDraft !== undefined ? imageDraft : asset?.key===assetKey ? asset.url : null
+  const currentImage = !saved && cell==='login.main_area_image' && imageDraft !== undefined ? imageDraft : asset?.key===assetKey ? asset.url : null
   const tenantName=copy(readText(data.name),`Whitelabel ${data.id}`)
   let preview
   if(cell.startsWith('app_')) {
@@ -55,18 +58,42 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
     const config=value('email_branding.config'),primary=record(config)?config.primary_color??config.primaryColor:null
     preview=<div className={s.emailFrame}><div className={s.mailCanvas}><div className={s.mailHeader} style={{background:color(primary,'#334155')}}>{tenantName}</div><div className={s.mailBody}><h3>Mensagem de exemplo</h3><p>Identidade visual dos e-mails transacionais.</p><div className={s.sampleCta} style={{background:color(primary,'#334155')}}>Ação do template · desativada</div><small>Logo externa é bloqueada nesta apresentação local. A prévia do template usa o renderer Core.</small></div></div></div>
   } else {
-    const presentation=value(`${page}.entry_presentation`),quick=page==='quick_profile'?value('quick_profile.theme'):null,registration=value('register.content')
-    const layout=at(presentation,'regions/brand/layoutPreset')??(page==='login'?value('login.layout_preset'):null)
-    const brandText=at(presentation,'regions/brand/textColor')??(page==='login'?value('login.brand_panel_text_color'):record(quick)?quick.textColor:null)
-    const title=page==='login'?scalar('login.title'):page==='register'?at(registration,'values/title'):record(quick)?quick.sideTitle:null
-    const subtitle=page==='login'?scalar('login.subtitle'):page==='register'?at(registration,'values/introduction'):record(quick)?quick.sideSubtitle:null
-    const bullets=page==='login'?scalar('login.bullets'):null
+    const rawPresentation=value('login.entry_presentation')
+    const usesLoginOverride=supportsLoginPresentation(rawPresentation)
+    const presentation=usesLoginOverride?rawPresentation:loginPresentationFallback(value('login.layout_preset'),value('login.brand_panel_text_color'))
+    const registration=value('register.content')
+    const layout=at(presentation,'regions/brand/layoutPreset')
+    const brandText=at(presentation,'regions/brand/textColor')
+    const bullets=scalar('login.bullets')
     const background=color(at(presentation,'regions/main/backgroundColor'),'#f8fafc')
     const surface=at(presentation,'regions/main/formSurface')
-    preview=<div className={`${s.entryFrame} ${mobile?s.mobileFrame:''}`} data-layout={['side','top','hidden'].includes(String(layout))?String(layout):'side'} style={{background}}>
-      {layout!=='hidden'&&<div className={s.brandPanel} style={{background:color(at(presentation,'regions/brand/backgroundColor')??(record(quick)?quick.backgroundColor:null),'#334155'),color:color(brandText,'#ffffff')}}><strong className={s.previewLogo}>{tenantName}</strong><h3>{copy(title)}</h3><p>{copy(subtitle)}</p>{Array.isArray(bullets)&&<ul>{bullets.filter(v=>typeof v==='string').slice(0,3).map((bullet,i)=><li key={i}><Check size={13}/>{copy(bullet)}</li>)}</ul>}</div>}
-      <div className={s.formPanel} style={{color:color(at(presentation,'regions/main/textColor'),'#111827')}}>{currentImage&&<img className={s.entryImage} src={currentImage} referrerPolicy="no-referrer" alt="Imagem da área principal"/>}<div className={s.previewForm} style={record(surface)?{background:surface.enabled===false?'transparent':surfaceColor(surface.color,surface.opacity),borderRadius:number(surface.radius,16),padding:number(surface.padding,24),boxShadow:surface.shadow===false?'none':undefined}:undefined}><LockKeyhole size={18}/><h4>{page==='login'?'Acesse sua conta':page==='register'?copy(at(registration,'values/title'),'Crie sua conta'):'Complete seu perfil'}</h4><span>{page==='quick_profile'?'Nome completo':'E-mail'}</span><div className={s.sampleField}>Exemplo de apresentação</div><span>{page==='login'?'Senha':'Dados do cadastro'}</span><div className={s.sampleField}>••••••••</div>{page==='register'&&<small>{copy(at(registration,'values/auxiliaryText'))}</small>}<div className={s.sampleCta} style={{background:color(record(quick)?quick.primaryColor:null,'#334155')}}>{page==='login'?'Entrar':page==='register'?copy(at(registration,'values/submitLabel'),'Continuar'):'Continuar'}</div><small>Formulário ilustrativo · não interativo</small></div></div>
-    </div>
+    const disabled=record(surface)&&surface.enabled===false
+    const formStyle=disabled ? {background:'transparent',boxShadow:'none',borderRadius:0,padding:0} : {
+      background:surfaceColor(at(presentation,'regions/main/formSurface/color'),at(presentation,'regions/main/formSurface/opacity')),
+      borderRadius:number(at(presentation,'regions/main/formSurface/radius'),16),
+      padding:number(at(presentation,'regions/main/formSurface/padding'),24),
+      boxShadow:record(surface)&&surface.shadow===false?'none':'0 18px 45px rgba(15,23,42,.14)',
+    }
+    preview=<>
+      {rawPresentation!==null&&!usesLoginOverride&&<p className={s.note}>A carteira Web aplica os valores de compatibilidade do Login a este formato de apresentação. O registro original é preservado.</p>}
+      <div className={`${s.entryFrame} ${mobile?s.mobileFrame:''}`} data-layout={['side','top','hidden'].includes(String(layout))?String(layout):'side'} style={{background}}>
+        {layout!=='hidden'&&<div className={s.brandPanel} style={{background:color(at(presentation,'regions/brand/backgroundColor'),'#064e3b'),color:color(brandText,'#ffffff')}}>
+          <strong className={s.previewLogo}>{tenantName}</strong><h3>{copy(scalar('login.title'))}</h3><p>{copy(scalar('login.subtitle'))}</p>
+          {Array.isArray(bullets)&&<ul>{bullets.filter(v=>typeof v==='string').slice(0,3).map((bullet,i)=><li key={i}><Check size={13}/>{copy(bullet)}</li>)}</ul>}
+        </div>}
+        <div className={s.formPanel} style={{color:color(at(presentation,'regions/main/textColor'),'#111827')}}>
+          {currentImage&&<img className={s.entryImage} src={currentImage} referrerPolicy="no-referrer" alt=""/>}
+          <div className={s.previewForm} style={formStyle}>
+            <LockKeyhole size={18}/><h4>{page==='login'?'Acesse sua conta':page==='register'?copy(at(registration,'values/title'),'Crie sua conta'):'Complete seu perfil'}</h4>
+            {page==='register'&&<p>{copy(at(registration,'values/introduction'))}</p>}
+            <span>{page==='quick_profile'?'Nome completo':'E-mail'}</span><div className={s.sampleField}>Exemplo de apresentação</div>
+            <span>{page==='login'?'Senha':'Dados do cadastro'}</span><div className={s.sampleField}>••••••••</div>
+            <div className={s.sampleCta} style={{background:'#334155'}}>{page==='login'?'Entrar':page==='register'?copy(at(registration,'values/submitLabel'),'Continuar'):'Continuar'}</div>
+            {page==='register'&&<small>{copy(at(registration,'values/auxiliaryText'))}</small>}
+            <small>Formulário ilustrativo · não interativo</small>
+          </div>
+        </div>
+      </div></>
   }
   return <><div className={s.previewHead}><div><strong>Prévia da experiência</strong><p>{saved?'Leitura autoritativa · estado salvo':'Rascunho · alterações não aplicadas'}</p></div><div className={s.segment}><button aria-pressed={!mobile} onClick={()=>setMobile(false)}><Monitor size={14}/>Desktop</button><button aria-pressed={mobile} onClick={()=>setMobile(true)}><Smartphone size={14}/>Mobile</button></div></div><div className={mobile?s.mobileFrame:undefined}>{preview}</div>{ref&&asset?.key===assetKey&&asset.error&&<p role="status">A imagem persistida não pôde ser carregada.</p>}<p className={s.previewFoot}>Prévia editorial baseada nos campos qualificados. Valores ausentes são indicados; a composição usa cores neutras de apresentação. Não comprova aplicação no site ou App publicado.</p></>
 }

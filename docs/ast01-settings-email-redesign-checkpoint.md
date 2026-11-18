@@ -1,5 +1,9 @@
 # AST-01 · Settings & Email redesign — interruption-safe checkpoint
 
+## 17/11/2026 — equivalência entre os painéis
+
+Na WL6, o login da conta Admin ativa foi conciliado com o cadastro do Super Admin. A publicação QA gerou a revisão 3, ID 6. A restauração integral gerou a revisão 4, ID 7, confirmada nos dois painéis. No Super Admin publicado, a prévia recebeu uma URL substituta inválida para a logo. O candidato preserva a URL informada e o rascunho editorial. Os dois candidatos estão sem commit e disponíveis para revisão. A logo carregada no iframe do candidato, a cor do CTA na API e a publicação de Termos pelo candidato Super Admin ainda precisam de validação em ambiente servido. O histórico e os recibos estão na [matriz por painel](./settings-parity-20261117.md). O [handoff anterior](./solicitacao-backend-settings-20261117.md) indica quais perguntas o contrato já esclareceu.
+
 Started 2026-10-27 (America/Sao_Paulo). User directive: `C:/Users/User/Downloads/LOOR_AST01_Config_Email_Redesign_Codex_Account1.md`.
 
 ## Preserved baseline

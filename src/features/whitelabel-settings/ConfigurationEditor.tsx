@@ -4,7 +4,7 @@ import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { getSessionVersion, subscribeSession, useSessionOperator } from '../../lib/authSession'
 import { getSettingsRead, type SettingsRead } from './settingsReadApi'
-import { changeAt, cloneJson, compatibleConfig, CONFIG_DEFINITIONS, configValueError, sameJson, type ConfigCell, type ConfigOrigin, type Control, type Json } from './configurationContract'
+import { changeAt, cloneJson, compatibleConfig, CONFIG_DEFINITIONS, configValueError, loginPresentationFallback, sameJson, type ConfigCell, type ConfigOrigin, type Control, type Json } from './configurationContract'
 import { CONFIG_MESSAGES, configurationLocked, getConfigurationAttempt, reconcileConfiguration, subscribeConfiguration, writeConfiguration } from './configurationClient'
 import { beginNextSettingsWrite, executeSettingsReset, executeSettingsWrite, getSettingsWriteAttempt, reconcileSettingsWrite, settingsWriteKey, settingsWriteLocked, subscribeSettingsWrites } from './settingsWriteClient'
 import { normalizeSettingValue, settingsFieldBaseline, settingsFieldLabel, settingsTextLimit, type SettingsField, type SettingValue } from './settingsWriteContract'
@@ -29,7 +29,7 @@ export function ConfigInput({control,value,onChange,disabled}: {control:Control;
 export function OriginDetails({origin,cell}:{origin:ConfigOrigin;cell:string}) {
   return <details className={s.provenance}><summary>Origem e comportamento ao salvar</summary><p>{origin.stored?'Substituição própria armazenada.':origin.source==='default'?'Padrão herdado, sem substituição.':'Sem substituição nem padrão retornado.'}</p><p>Uma célula por solicitação: <code>{cell}</code>. Propriedades não editadas são preservadas. A conferência prévia reduz conflitos, sem bloqueio atômico no servidor.</p></details>
 }
-export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean)=>ReactNode}&Props) {
+export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
   const [baseline,setBaseline]=useState(data.configuration[cell]!)
   const [draft,setDraft]=useState<Json>(()=>cloneJson(baseline.stored?baseline.storedValue:baseline.effectiveValue))
   const [editing,setEditing]=useState(false),[saved,setSaved]=useState(true),[narrow,setNarrow]=useState<'edit'|'preview'>('edit')
@@ -45,6 +45,13 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
   useEffect(()=>{onState({dirty,busy});return()=>onState({dirty:false,busy:false})},[dirty,busy,onState])
   const canWrite=operator?.roles.includes('SUPER_ADMIN')===true,definition=CONFIG_DEFINITIONS[cell],valid=configValueError(cell,draft)
   const supported=compatibleConfig(cell,current)
+  const layoutOrigin=data.configuration['login.layout_preset'], textColorOrigin=data.configuration['login.brand_panel_text_color']
+  const needsLoginFallback=cell==='login.entry_presentation'&&current===null
+  const missingFallback=needsLoginFallback&&(!layoutOrigin||!textColorOrigin)
+  function startEditing() {
+    const initial=needsLoginFallback?loginPresentationFallback(layoutOrigin?.effectiveValue,textColorOrigin?.effectiveValue):definition.initial
+    setDraft(cloneJson(supported?current:initial));setEditing(true);setSaved(false)
+  }
   const fields=definition.fields.filter(field=>!screen||field.path[1]===screen)
   async function save(value:Json|undefined){
     if(!canWrite||locked||busy||value!==undefined&&valid)return
@@ -69,7 +76,8 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
   }
   return <><div className={s.mobileSwitch}><button aria-pressed={narrow==='edit'} onClick={()=>setNarrow('edit')}>Editor</button><button aria-pressed={narrow==='preview'} onClick={()=>setNarrow('preview')}>Prévia</button></div><div className={s.split}>
     <div className={s.editor} data-active={narrow==='edit'}><div className={s.sectionLead}><h4>{definition.title}</h4><p>{definition.description}</p></div>
-      {!editing&&canWrite&&!locked&&<OutlineButton onClick={()=>{setDraft(cloneJson(supported?current:definition.initial));setEditing(true);setSaved(false)}} disabled={current!==null&&!supported}>{supported?'Editar configuração':current===null?'Preparar configuração própria':'Versão não suportada'}</OutlineButton>}
+      {!editing&&canWrite&&!locked&&<OutlineButton onClick={startEditing} disabled={missingFallback||current!==null&&!supported}>{supported?'Editar configuração':current===null?'Preparar configuração própria':'Versão não suportada'}</OutlineButton>}
+      {missingFallback&&<p role="status">Para preparar a primeira apresentação, é preciso confirmar a origem da disposição e da cor de texto do Login.</p>}
       {editing&&!supported&&<p className={s.note}>Proposta inicial explícita. Estes valores ainda não foram salvos e não representam um padrão retornado pelo servidor.</p>}
       {!supported&&current!==null&&<p role="alert">A versão recebida não é compatível com este editor. O valor original será preservado.</p>}
       {(editing||supported)&&<fieldset className={s.fieldset} disabled={!editing||!canWrite||locked||busy}><legend className="visually-hidden">Campos de {definition.title}</legend>{fields.map(control=><ConfigInput key={control.path.join('/')} control={control} value={configurationDisplayValue(cell,draft,control.path)} disabled={!editing||!canWrite||locked||busy} onChange={next=>{setDraft(value=>changeAt(value,control.path,next));setSaved(false)}}/>)}</fieldset>}
@@ -77,7 +85,7 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
       {attempt&&attempt!==acknowledgedStale&&<p role="status">{CONFIG_MESSAGES[attempt.phase]}{attempt.status?` HTTP ${attempt.status}.`:''}</p>}{error&&<p role="status">{error}</p>}
       {attempt?.phase==='stale'&&attempt!==acknowledgedStale&&<OutlineButton disabled={busy} onClick={()=>void refresh()}>Descartar rascunho e atualizar referência</OutlineButton>}
       {canWrite&&['uncertain','readback_matches'].includes(attempt?.phase??'')&&<OutlineButton disabled={busy} onClick={()=>void reconcile()}>Consultar resultado por GET</OutlineButton>}
-    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div>{renderPreview?renderPreview(saved||!editing?baseline.effectiveValue:draft,saved||!editing):<ConfigurationPreview data={{...data,configuration:{...data.configuration,[cell]:baseline}}} cell={cell} override={editing?{cell,value:draft}:null} saved={saved} screen={screen}/>}</div>
+    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div>{renderPreview?renderPreview(saved||!editing?baseline.effectiveValue:draft,saved||!editing,baseline.effectiveValue):<ConfigurationPreview data={{...data,configuration:{...data.configuration,[cell]:baseline}}} cell={cell} override={editing?{cell,value:draft}:null} saved={saved} screen={screen}/>}</div>
   </div><footer className={s.footer}><span>{dirty?'Alterações não salvas.':canWrite?'Sem alteração pendente.':'Consulta autorizada. Edição requer SUPER_ADMIN.'}</span>{canWrite&&<div><OutlineButton disabled={!editing||busy||locked} onClick={()=>{setEditing(false);setDraft(cloneJson(current));setSaved(true)}}>Descartar</OutlineButton><OutlineButton disabled={!baseline.stored||busy||locked} onClick={()=>setReset(true)}>Remover substituição</OutlineButton><PrimaryButton disabled={!dirty||!!valid||busy||locked} onClick={()=>void save(draft)}>Salvar configuração</PrimaryButton></div>}</footer>
   {reset&&<Dialog title="Remover substituição?" description={definition.title} onClose={()=>setReset(false)} footer={<><OutlineButton onClick={()=>setReset(false)}>Cancelar</OutlineButton><PrimaryButton disabled={busy||locked} onClick={()=>void save(undefined)}>Confirmar remoção</PrimaryButton></>}><p>Remove somente a substituição desta configuração. O padrão retornado pelo servidor ou a ausência serão restaurados; nenhuma cópia do padrão será gravada.</p></Dialog>}</>
 }

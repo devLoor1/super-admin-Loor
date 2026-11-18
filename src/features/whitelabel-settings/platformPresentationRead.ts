@@ -77,6 +77,11 @@ function entryPresentation(settings: unknown, page: string, title: string): Plat
     field('surface.shadow', 'Superfície — sombra', ['main', 'formSurface', 'shadow'], boolean),
   ] }
 }
+/** The Web entry shell applies its complete v1 value or falls back as a whole. */
+export function supportsLoginPresentation(value: unknown): boolean {
+  const parsed = entryPresentation({ login: { entry_presentation: value } }, 'login', 'Login')
+  return parsed.state === 'value' && parsed.fields.every(field => field.reading.state === 'value')
+}
 const WIDGETS = { 'wallet-kpis': 'Indicadores da carteira', 'wallet-opportunities': 'Oportunidades', 'wallet-recent-investments': 'Investimentos recentes' }
 function dashboard(settings: unknown): PlatformPresentationCapability {
   const base = { id: 'dashboard-composition', title: 'Carteira — composição das seções', source: 'dashboard/components' }

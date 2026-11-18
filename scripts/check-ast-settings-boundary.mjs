@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { pathsBeforeSettingsParity, withoutSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { reviewedParticipantCreation } from './reviewed-participant-creation-boundary.mjs'
 import { execFileSync as nativeGit } from 'node:child_process'
@@ -78,7 +79,7 @@ console.log(`AST/settings adapter: ${checks} adversarial checks passed; candidat
 
 await check('final runtime diff was independently reviewed', () => assert.equal(astSettingsFinalized(), true, 'AST/settings manifest is provisional: review final runtime bytes and explicitly finalize; this suite never updates pins'))
 await check('every changed or added runtime file has one exact reviewed pin', () => {
-  const paths = [...new Set((git('diff', '--name-only', astSettingsBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
+  const paths = pathsBeforeSettingsParity(astSettingsBaseline)
   assert.ok(paths.length > 0)
   // Later participant-only files are separately pinned/tested; overlapping AST files stay in this gate.
   assert.deepEqual(astSettingsFiles().sort(), paths.filter(path => astSettingsFiles().includes(path) || !reviewedShowcase(path) && !reviewedParticipantCreation(path)))
@@ -98,7 +99,7 @@ for (const path of astSettingsFiles()) {
     const existed = git('ls-tree', '--name-only', astSettingsBaseline, '--', path).trim() === path
     assert.equal(pin.before, existed ? astSettingsDigest(git('show', `${astSettingsBaseline}:${path}`)) : null)
     const before = beforeAstSettings(path, actual)
-    assert.equal(before, pin.before === null ? actual : git('show', `${astSettingsBaseline}:${path}`))
+    assert.equal(before, pin.before === null ? withoutSettingsParity(path, actual) : git('show', `${astSettingsBaseline}:${path}`))
     assert.equal(beforeAstSettings(path, before), before)
     assert.equal(withoutAstSettings(path, actual), before)
     assert.equal(withoutAstSettings(path, before), before)

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reviewedSettingsParity, settingsParityExclusions } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedShowcase, showcaseExclusions, withoutShowcase } from './reviewed-showcase-boundary.mjs'
 import { withoutParticipantCreation, reviewedParticipantCreation, participantCreationExclusions } from './reviewed-participant-creation-boundary.mjs'
 import { createHash } from 'node:crypto'
@@ -36,7 +37,7 @@ export function reviewedConsolidation(path) {
   const accountUx = reviewedAccountUx(path)
   const evolution = reviewedSettingsEvolution(path)
   const pin = manifest.files[path]
-  if (!pin) return showcase || participant || evolution || accountUx || setSmtp || astSettings || operationalUx
+  if (!pin) return showcase || participant || evolution || accountUx || setSmtp || astSettings || operationalUx || reviewedSettingsParity(path)
   const absolute = resolve(root, path)
   if (pin.after === null) assert.equal(existsSync(absolute), false, `Removed prototype returned: ${path}`)
   else assert.equal(hash(beforeSettingsEvolution(path, beforeAccountUx(path, withoutOperationalUx(path, withoutParticipantCreation(path, nativeReadFileSync(absolute, 'utf8')))))), pin.after, `Unreviewed consolidation change: ${path}`)
@@ -81,7 +82,7 @@ export function execFileSync(command, args, options) {
     const beforePaths = args.slice(1, args.indexOf('--')).filter(a => !a.startsWith('-'))
     if (beforePaths.length <= 1) {
       for (const path of Object.keys(manifest.files)) reviewedConsolidation(path)
-      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions(), ...operationalUxExclusions(), ...participantCreationExclusions(), ...showcaseExclusions()]
+      args = [...args, ...Object.keys(manifest.files).map(path => `:(exclude)${path}`), ...settingsEvolutionExclusions(), ...accountUxExclusions(), ...setSmtpExclusions(), ...astSettingsExclusions(), ...operationalUxExclusions(), ...participantCreationExclusions(), ...showcaseExclusions(), ...settingsParityExclusions()]
     }
   }
   return nativeExecFileSync(command, args, options)

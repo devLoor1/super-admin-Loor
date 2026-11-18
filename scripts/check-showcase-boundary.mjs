@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { pathsBeforeSettingsParity, withoutSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -50,7 +51,7 @@ check('unknown files, directories, prototypes and auth code cannot be exempted',
 })
 check('final review covers every changed or added runtime file', () => {
   assert.equal(showcaseFinalized(), true, 'Review the final runtime diff before finalizing; this check never writes pins')
-  const paths = [...new Set((git('diff', '--name-only', showcaseBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
+  const paths = pathsBeforeSettingsParity(showcaseBaseline)
   assert.deepEqual(showcaseFiles().sort(), paths)
   for (const path of paths) {
     assert.ok(showcaseReviewPaths.includes(path))
@@ -64,7 +65,7 @@ for (const path of showcaseFiles()) {
     assert.equal(withoutShowcase(path, current + '\n// extra'), current + '\n// extra')
     if (git('ls-tree', '--name-only', showcaseBaseline, '--', path).trim() === path) {
       assert.equal(withoutShowcase(path, current), git('show', `${showcaseBaseline}:${path}`))
-    } else assert.equal(withoutShowcase(path, current), current)
+    } else assert.equal(withoutShowcase(path, current), withoutSettingsParity(path, current))
   })
 }
 check('historical review manifests and auth/menu/dependencies remain unchanged', () => {

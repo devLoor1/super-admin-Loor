@@ -59,7 +59,14 @@ const choice = (path: string, label: string, options: string[]): Control => ({ p
 const boolean = (path: string, label: string): Control => ({ path: path.split('/'), label, kind: 'boolean' })
 const number = (path: string, label: string, min: number, max: number): Control => ({ path: path.split('/'), label, kind: 'number', min, max })
 const entryFields: Control[] = [color('regions/brand/backgroundColor','Fundo do painel da marca'),color('regions/brand/textColor','Texto do painel da marca'),choice('regions/brand/layoutPreset','Posição do painel',['side','top','hidden']),color('regions/main/backgroundColor','Fundo da área principal'),color('regions/main/textColor','Texto da área principal'),boolean('regions/main/formSurface/enabled','Superfície do formulário'),color('regions/main/formSurface/color','Cor do formulário'),number('regions/main/formSurface/opacity','Opacidade do formulário',0.65,1),number('regions/main/formSurface/radius','Cantos do formulário (px)',0,28),number('regions/main/formSurface/padding','Espaçamento do formulário (px)',12,36),boolean('regions/main/formSurface/shadow','Sombra do formulário')]
-const entryInitial = (page: string): Json => ({capabilityId:'platform.entry-journey.presentation',version:1,page,regions:{brand:{backgroundColor:'#211b45',textColor:'#ffffff',layoutPreset:'side'},main:{backgroundColor:'#f8fafc',textColor:'#111827',formSurface:{enabled:true,color:'#ffffff',opacity:0.94,radius:16,padding:24,shadow:true}}}})
+const entryInitial = (page: string) => ({capabilityId:'platform.entry-journey.presentation',version:1,page,regions:{brand:{backgroundColor:page==='login'?'#064e3b':'#211b45',textColor:'#ffffff',layoutPreset:'side'},main:{backgroundColor:'#f8fafc',textColor:'#111827',formSurface:{enabled:true,color:'#ffffff',opacity:0.94,radius:16,padding:24,shadow:true}}}})
+/** Matches the Web Login shell before its first complete presentation override. */
+export function loginPresentationFallback(layout: Json | undefined, textColor: Json | undefined): Json {
+  const value = entryInitial('login')
+  if (layout === 'top' || layout === 'hidden') value.regions.brand.layoutPreset = layout
+  if (typeof textColor === 'string' && /^#[\da-f]{6}$/i.test(textColor)) value.regions.brand.textColor = textColor
+  return value
+}
 const image = (): ConfigDefinition => ({title:'Imagem da área principal',description:'Imagem da entrada, com recorte central e margem/cantos de 16 px.',capability:'platform.main_area_image',fields:[],initial:{capabilityId:'platform.main_area_image',version:1,enabled:false,assetRef:null}})
 const app = (authenticated: boolean): ConfigDefinition => {
   const groups = authenticated ? APP_AUTH_GROUPS : APP_ENTRY_GROUPS

@@ -1,4 +1,5 @@
-import assert from 'node:assert/strict'
+import { createExactRuntimeReview } from './exact-runtime-review.mjs'
+import { withoutSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -45,52 +46,22 @@ const binary = path => /\.(?:png|webp|woff2)$/.test(path)
 export const showcaseDigest = (value, path = '') => createHash('sha256').update(binary(path) ? value : String(value).replaceAll('\r\n', '\n')).digest('hex')
 
 export function createShowcaseBoundary(manifest, readCurrent, readBaseline) {
-  assert.equal(manifest.baseline, showcaseBaseline)
-  assert.equal(typeof manifest.finalized, 'boolean')
-  for (const [path, pin] of Object.entries(manifest.files)) {
-    assert.ok(showcaseReviewPaths.includes(path), `Unqualified showcase review path: ${path}`)
-    assert.deepEqual(Object.keys(pin).sort(), ['after', 'before'])
-    assert.match(pin.after, /^[a-f0-9]{64}$/)
-    assert.ok(pin.before === null || /^[a-f0-9]{64}$/.test(pin.before))
-    assert.notEqual(pin.before, pin.after)
-  }
-  const pinFor = path => manifest.finalized && Object.hasOwn(manifest.files, path) ? manifest.files[path] : undefined
-  function reviewed(path) {
-    const pin = pinFor(path)
-    if (!pin) return false
-    assert.equal(showcaseDigest(readCurrent(path), path), pin.after, `Unreviewed physical showcase source: ${path}`)
-    return true
-  }
-  function without(path, source) {
-    const pin = pinFor(path)
-    if (!pin) return source
-    reviewed(path)
-    // Older adapters may hold independent historical bytes. Reverse only the
-    // exact supplied successor; unknown supplied bytes receive no approval.
-    if (pin.before === null || showcaseDigest(source, path) !== pin.after) return source
-    const previous = readBaseline(path)
-    assert.equal(showcaseDigest(previous, path), pin.before, `Changed showcase predecessor: ${path}`)
-    return binary(path) ? previous : String(previous).replaceAll('\r\n', '\n')
-  }
-  return {
-    reviewed, without,
-    exclusions: () => {
-      assert.equal(manifest.finalized, true, 'Showcase review not finalized')
-      return Object.keys(manifest.files).map(path => { assert.equal(reviewed(path), true); return `:(exclude)${path}` })
-    },
-  }
+  return createExactRuntimeReview(
+    { label: 'showcase', baseline: showcaseBaseline, allowedPaths: showcaseReviewPaths, digest: showcaseDigest },
+    manifest, readCurrent, readBaseline,
+  )
 }
 
 const manifest = JSON.parse(readFileSync(resolve(root, 'scripts/showcase-reviewed-files.json'), 'utf8'))
 const originals = new Map()
 const boundary = createShowcaseBoundary(manifest,
-  path => readFileSync(resolve(root, path), binary(path) ? undefined : 'utf8'),
+  path => withoutSettingsParity(path, readFileSync(resolve(root, path), binary(path) ? undefined : 'utf8')),
   path => {
     if (!originals.has(path)) originals.set(path, execFileSync('git', ['show', `${showcaseBaseline}:${path}`], { cwd: root, ...(binary(path) ? {} : { encoding: 'utf8' }) }))
     return originals.get(path)
   })
 export const reviewedShowcase = boundary.reviewed
-export const withoutShowcase = boundary.without
+export const withoutShowcase = (path, source) => boundary.without(path, withoutSettingsParity(path, source))
 export const showcaseExclusions = boundary.exclusions
 export const showcaseFiles = () => Object.keys(manifest.files)
 export const showcaseFinalized = () => manifest.finalized

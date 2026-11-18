@@ -1,0 +1,82 @@
+{
+  "baseline": "c0a23cc2e1bf86638f8da91bf8cdf03d62bf18dd",
+  "finalized": true,
+  "files": {
+    "src/features/whitelabel-emails/EmailBrandingWorkspace.tsx": {
+      "before": "dfc734cffd256bd7ffbb581153f4df85c757b1def30a0e3d4fa652b471f1081a",
+      "after": "d422cf3530297497cf828081636c65bf4091a837ecda23903a475664f4f6e163"
+    },
+    "src/features/whitelabel-emails/EmailTemplatesWorkspace.tsx": {
+      "before": "d2ca5599fcc3506e5b47d7b0dd43d2990643e85432fc5db3e302ef7594ef18f8",
+      "after": "bcb5f8d72080a22ef0097b55825115da9564a54412f3f800f76c50eec7097d67"
+    },
+    "src/features/whitelabel-emails/emailBrandingDisplay.ts": {
+      "before": "c67aa6679504f99175ee8f07550784b817d9126e3f3e23a60c1b5a86576b2b7e",
+      "after": "b286b202252b9d475449ec3a7596b34f5bbcd4d9a45d7f07c2079d36af0cd6da"
+    },
+    "src/features/whitelabel-emails/emailEditorialModel.ts": {
+      "before": "69ab2d314a1d80f00ef3fdef86f03678e85dfa96bd817905ecc758ee463e154e",
+      "after": "db8cbb9588c0a900876d8de647ba85ec74bb569c29cd92d13681aee3905dffdd"
+    },
+    "src/features/whitelabel-emails/emailTemplatesApi.ts": {
+      "before": "75b0485e6416426c988881445508e88bfc3ae6af46dce1691e9eedc620f8fa31",
+      "after": "121da42edfc7d0c3ccaea3c2f350026449709795769246c9274a243170a5ae95"
+    },
+    "src/features/whitelabel-settings/ConfigurationEditor.tsx": {
+      "before": "699b6b2c7623cc47a100dafc8224707adb10b32bdc728d2107b3c5702d388f31",
+      "after": "d90e47acaab994a97415c521747bd69184153053bdae22ba9fea60464e19a7ee"
+    },
+    "src/features/whitelabel-settings/ConfigurationPreview.tsx": {
+      "before": "14a7a1d28bd6593c3699ab5d14f535191ef529495cfe53a07ab8d34f55f81f99",
+      "after": "ca295910433d1aab073dd634eacd705666135318de21117578981e863d9c4cb8"
+    },
+    "src/features/whitelabel-settings/ConfigurationStudio.module.css": {
+      "before": "3d5a0235d68053b4fe82c9ec8087cf07e6515c092cdf87d30963255b8e3c927c",
+      "after": "77375aafb21466e037afc0f359a890e4b5d8ae28ca4b6e6905c80b1a3900028e"
+    },
+    "src/features/whitelabel-settings/ConfigurationStudio.tsx": {
+      "before": "0ba5ab83d8be5213f129f5fe7596883de9fec10e73fbf885a41991e367858ac9",
+      "after": "78255e913bf3e4de154478b979234ad46b32b48b011f0d99d28039cba5429bba"
+    },
+    "src/features/whitelabel-settings/OperationalSettingsPage.tsx": {
+      "before": "a5b5eb34d8ced1c02ea8ee4d0e20780725b2a8afd2e5a8bfcdf0a2ebd8e70b2a",
+      "after": "8ba1689b1c0bfe303bf9304530849cabbf53af3b7eabc322584db2ca36843f0b"
+    },
+    "src/features/whitelabel-settings/TermsMarkdown.module.css": {
+      "before": null,
+      "after": "6f9027cf5645727806c3bc948ab1a231a0d9baf6cfa56729db9ce9cb045a0964"
+    },
+    "src/features/whitelabel-settings/TermsMarkdown.tsx": {
+      "before": null,
+      "after": "c193eb8d9a8f9b4f1adf0a0d224ec2c2a8b62b92871dd302494df377dfdf1543"
+    },
+    "src/features/whitelabel-settings/TermsPanel.module.css": {
+      "before": null,
+      "after": "46356d2602fc1b623ba448bf9a80a626227c389645cfdfe0388bf2a6af555970"
+    },
+    "src/features/whitelabel-settings/TermsPanel.tsx": {
+      "before": null,
+      "after": "f6a00052c8584a4e27b4c117e8b08c3fb1d3d6295b0607150008039166e0771f"
+    },
+    "src/features/whitelabel-settings/VisualIdentitySettings.module.css": {
+      "before": null,
+      "after": "9e4dfda0481bdbac84c58872ca1cb23d56c82e17bc4c24563bae4ae50270af8b"
+    },
+    "src/features/whitelabel-settings/VisualIdentitySettings.tsx": {
+      "before": null,
+      "after": "6dd30778c72b7cab892bff40907eae95155c4754be496371dc84a3efb011df46"
+    },
+    "src/features/whitelabel-settings/configurationContract.ts": {
+      "before": "f95e0727cb7bfbc28b39df05d154d7d0dc128d479c8810beff7ab1b2b47e2a24",
+      "after": "c5d04e38fbdc1314df64a4f6ffbdfd7a6b2cd6075a18df4c7aeeb42a0de430e5"
+    },
+    "src/features/whitelabel-settings/platformPresentationRead.ts": {
+      "before": "011b726d281dbf606f9cc7da4376502e694a6bfe0bf8b812620889a7c65715f2",
+      "after": "f1c80775034953ee118b672c3408b09a1e98ea58509e9c1f52ae1b2b20193e8e"
+    },
+    "src/features/whitelabel-settings/termsPublication.ts": {
+      "before": null,
+      "after": "3d2bcedae4c0f36e1880bb0480b0e0b4253d00adbd3076e558f8cf30a984969b"
+    }
+  }
+}

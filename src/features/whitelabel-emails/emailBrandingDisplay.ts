@@ -1,5 +1,5 @@
 import { record, valueAt, type ConfigCell, type Json } from '../whitelabel-settings/configurationContract'
-import type { EmailPreviewCommand } from './emailTemplatesApi'
+import { isEmailLogoUrl, type EmailPreviewCommand } from './emailTemplatesApi'
 
 /** Match Core's canonical ?? legacy alias resolution for display only.
  * Stored nulls/aliases stay unchanged; edits target only the canonical key. */
@@ -12,11 +12,12 @@ export function configurationDisplayValue(cell: ConfigCell, value: Json, path: s
 
 /** Normalize only the render command using Core EmailBrandingService.normalizeHex.
  * The stored/draft object, including legacy aliases and alpha, stays untouched. */
-export function emailBrandingPreviewDraft(value: Json): EmailPreviewCommand['brandingDraft'] | null {
+export function emailBrandingPreviewDraft(value: Json, baseline?: Json): EmailPreviewCommand['brandingDraft'] | null {
   if (value === null) return { primary_color: null, logo_url: null }
   if (!record(value)) return null
   const color = configurationDisplayValue('email_branding.config', value, ['primary_color'])
   const logo = configurationDisplayValue('email_branding.config', value, ['logo_url'])
+  const storedLogo = baseline === undefined ? undefined : configurationDisplayValue('email_branding.config', baseline, ['logo_url'])
   const branding: NonNullable<EmailPreviewCommand['brandingDraft']> = {}
   if (color !== undefined) {
     if (color === null) branding.primary_color = null
@@ -26,18 +27,10 @@ export function emailBrandingPreviewDraft(value: Json): EmailPreviewCommand['bra
       branding.primary_color = `#${match[1].toLowerCase()}`
     }
   }
-  if (logo !== undefined) {
-    if (logo === null) branding.logo_url = null
-    else {
-      if (typeof logo !== 'string' || logo.length > 2048 || logo !== logo.trim() || /[\p{Cc}\p{Cf}]/u.test(logo)) return null
-      try {
-        const url = new URL(logo)
-        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null
-      } catch { return null }
-      // Both preview boundaries remove images. Represent presence/header layout
-      // only, never an applied logo, and never forward the real URL/query/token.
-      branding.logo_url = 'https://example.invalid/email-logo-preview.png'
-    }
+  // Omit the unchanged URL: Core resolves it from the WL, including legacy aliases.
+  if (logo !== storedLogo) {
+    if (logo != null && !isEmailLogoUrl(logo)) return null
+    branding.logo_url = logo ?? null
   }
   return branding
 }

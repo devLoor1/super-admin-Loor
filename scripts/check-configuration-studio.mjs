@@ -62,7 +62,7 @@ await test('public qualified raw extensions retained but separate from render pr
   const f=fixture();const parsed=read.parseSettingsRead(f.raw,f.id)
   assert.deepEqual(parsed.configuration[f.cell].storedValue.extension,{future:{retain:['safe',null,3]}})
   assert.deepEqual(contract.changeAt(f.value,['regions','main','textColor'],'#abcdef').extension,f.value.extension)
-  assert.equal(f.baseline.storedValue.regions.brand.backgroundColor,'#211b45')
+  assert.equal(f.baseline.storedValue.regions.brand.backgroundColor,'#064e3b')
 })
 for(const source of ['stored','default','absent'])await test(`origin ${source}`,()=>{
   const raw={stored:source==='stored',storedValue:source==='stored'?null:null,effectiveValue:source==='default'?{}:null,source,version:source==='stored'?'v':null}
@@ -92,15 +92,57 @@ await test('optional App path editing never injects other screen defaults',()=>{
   assert.deepEqual(Object.keys(next.screens),['login']);assert.deepEqual(Object.keys(next.screens.login),['submitLabel']);assert.equal(contract.configValueError(cell,next),null)
 })
 const { ConfigurationPreview } = await load('src/features/whitelabel-settings/ConfigurationPreview.tsx')
-for (const page of ['login', 'register', 'quick_profile']) await test(`rendered ${page} preview keeps Quick Profile colors in their own page`, () => {
+for (const page of ['login', 'register', 'quick_profile']) await test(`rendered ${page} preview follows the investor login shell`, () => {
   const f=fixture(),data=read.parseSettingsRead(f.raw,f.id)
-  // No page-specific presentation exists, so a leak would enter through the
-  // fallback styles even though the Login/Cadastro configuration never set it.
-  delete data.configuration['login.entry_presentation']
+  const login=contract.changeAt(contract.CONFIG_DEFINITIONS['login.entry_presentation'].initial,['regions','brand','backgroundColor'],'#266655')
+  data.configuration['login.entry_presentation']={stored:true,storedValue:login,effectiveValue:login,source:'stored',version:'login-v1'}
   const theme={sideTitle:'Perfil inicial',sideSubtitle:'Texto do perfil',primaryColor:'#aa1122',backgroundColor:'#bb3344',textColor:'#cc5566'}
   data.configuration['quick_profile.theme']={stored:true,storedValue:theme,effectiveValue:theme,source:'stored',version:'theme-v1'}
   const html=renderToStaticMarkup(createElement(ConfigurationPreview,{data,cell:`${page}.entry_presentation`,saved:true}))
-  for (const color of ['#aa1122','#bb3344','#cc5566']) assert.equal(html.includes(color),page==='quick_profile',`${page}: ${color}`)
+  assert.match(html,/#266655/)
+  for (const color of ['#aa1122','#bb3344','#cc5566']) assert.equal(html.includes(color),false,`${page}: ${color}`)
+})
+await test('incompatible presentation stays intact and Web preview uses its scalar fallback',()=>{
+  const f=fixture(),data=read.parseSettingsRead(f.raw,f.id)
+  const color='#746294'
+  data.configuration['login.brand_panel_text_color']={stored:true,storedValue:color,effectiveValue:color,source:'stored',version:'legacy-v1'}
+  const html=renderToStaticMarkup(createElement(ConfigurationPreview,{data,cell:'register.content',saved:true}))
+  assert.match(html,/#746294/);assert.match(html,/compatibilidade do Login/)
+  assert.match(html,/#064e3b/);assert.ok(data.configuration[f.cell].storedValue.extension)
+})
+await test('identity links retain the selected tenant and the display has no write controls',async()=>{
+  const {VisualIdentitySettings}=await load('src/features/whitelabel-settings/VisualIdentitySettings.tsx')
+  for(const id of ['6','934']){
+    const html=renderToStaticMarkup(createElement(VisualIdentitySettings,{id}))
+    const links=[...html.matchAll(/href="([^"]*)"/g)].map(match=>match[1])
+    assert.equal(links.length,6);assert.ok(links.every(link=>link.startsWith(`#/whitelabels/${id}/`)))
+    assert.ok(links.some(link=>link.includes('quick_profile.appearance')))
+    assert.ok(links.some(link=>link.includes('section=branding')))
+    assert.doesNotMatch(html,/<button|<input|<form/)
+  }
+})
+await test('saved main colour survives GET and reopening the inherited page in a read-only session',async()=>{
+  const f=fixture()
+  // The consumer accepts the complete v1 document; the generic settings fixture also covers extension preservation above.
+  delete f.origin.storedValue.extension
+  const baseline=(await read.getSettingsRead(f.id)).configuration[f.cell]
+  const value=contract.changeAt(baseline.storedValue,['regions','main','backgroundColor'],'#eeddaa')
+  function preview(data,cell,saved,override){
+    return renderToStaticMarkup(createElement(ConfigurationPreview,{data,cell,saved,override}))
+  }
+  assert.match(preview(read.parseSettingsRead(f.raw,f.id),f.cell,false,{cell:f.cell,value}),/#eeddaa/)
+  await client.writeConfiguration(f.id,f.cell,baseline,value,f.session)
+  assert.equal(f.attempt().phase,'confirmed')
+  auth.clearSession()
+  auth.persistSession({accessToken:'synthetic-new-session',tokenType:'Bearer',operator:{id:'viewer',name:'Viewer',email:'viewer@example.invalid',roles:['READ_ONLY']}})
+  const reopened=await read.getSettingsRead(f.id)
+  assert.match(preview(reopened,'quick_profile.appearance',true),/#eeddaa/)
+  const {CompositeConfigurationEditor}=await load('src/features/whitelabel-settings/ConfigurationEditor.tsx')
+  const html=renderToStaticMarkup(createElement(CompositeConfigurationEditor,{id:f.id,data:reopened,cell:f.cell,onReload(){},onState(){}}))
+  assert.doesNotMatch(html,/Editar configuração|Salvar configuração|Remover substituição/)
+  assert.match(html,/<fieldset[^>]*disabled/)
+  await assert.rejects(client.writeConfiguration(f.id,f.cell,reopened.configuration[f.cell],value,auth.getSessionVersion()))
+  assert.deepEqual(f.seen.map(row=>row.method),['GET','GET','PUT','GET','GET'])
 })
 await test('Cadastro auxiliary copy reacts to drafts while saved preview keeps authoritative copy',()=>{
   const f=fixture(),data=read.parseSettingsRead(f.raw,f.id),cell='register.content'
@@ -131,6 +173,23 @@ function mountEditor(name,props){
   return view.render()
 }
 async function settle(){for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))}
+await test('first complete override starts from the tenant fallback and requires both legacy origins',()=>{
+  const f=fixture(),data=read.parseSettingsRead(f.raw,f.id)
+  const origin=(value)=>({stored:true,storedValue:value,effectiveValue:value,source:'stored',version:'legacy-v1'})
+  data.configuration[f.cell]={stored:false,storedValue:null,effectiveValue:null,source:'absent',version:null}
+  data.configuration['login.layout_preset']=origin('top')
+  const props={id:f.id,data,cell:f.cell,onReload(){},onState(){}}
+  const partial=mountEditor('CompositeConfigurationEditor',props)
+  assert.equal(partial.button('Preparar configuração própria').props.disabled,true);partial.dispose()
+  data.configuration['login.brand_panel_text_color']=origin('#227744')
+  const complete=mountEditor('CompositeConfigurationEditor',props)
+  const prepare=complete.button('Preparar configuração própria')
+  assert.equal(prepare.props.disabled,false);prepare.props.onClick();complete.render()
+  for(const [path,expected] of [['regions/brand/layoutPreset','top'],['regions/brand/textColor','#227744'],['regions/brand/backgroundColor','#064e3b']]){
+    assert.equal(complete.find(node=>node.props?.control?.path.join('/')===path).props.value,expected)
+  }
+  assert.equal(f.seen.length,0);complete.dispose()
+})
 await test('stale composite draft is explicitly discarded before a fresh edit preserves remote extensions',async()=>{
   const f=fixture(),data=read.parseSettingsRead(f.raw,f.id);let held
   const view=mountEditor('CompositeConfigurationEditor',{id:f.id,data,cell:f.cell,onReload(){},onState:state=>{held=state}})

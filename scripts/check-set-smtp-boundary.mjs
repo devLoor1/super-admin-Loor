@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { pathsBeforeSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -18,7 +19,7 @@ let checks = 0
 function check(label, run) { try { run(); checks++ } catch (cause) { throw Error(label, { cause }) } }
 check('final runtime diff was explicitly reviewed', () => assert.equal(setSmtpFinalized(), true, 'Run the reviewer-only finalization after reviewing the final runtime diff'))
 check('all runtime changes have individual finalized review pins', () => {
-  const paths = [...new Set((git('diff', '--name-only', setSmtpBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
+  const paths = pathsBeforeSettingsParity(setSmtpBaseline)
   assert.ok(paths.length > 0)
   // Keep every old SET pin; only exact reviewed successor additions are outside
   // this historical unit. The successor has its own complete-delta assertion.

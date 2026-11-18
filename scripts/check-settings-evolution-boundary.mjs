@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { pathsBeforeSettingsParity } from './reviewed-settings-parity-boundary.mjs'
 import { reviewedShowcase } from './reviewed-showcase-boundary.mjs'
 import { execFileSync as nativeGit } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -21,7 +22,7 @@ let checks = 0
 function check(label, run) { try { run(); checks++ } catch (cause) { throw Error(label, { cause }) } }
 
 check('all changed or added runtime files have individual exact pins', () => {
-  const paths = [...new Set((git('diff', '--name-only', settingsEvolutionBaseline, '--', 'src') + '\n' + git('ls-files', '--others', '--exclude-standard', '--', 'src')).trim().split(/\r?\n/).filter(Boolean))].sort()
+  const paths = pathsBeforeSettingsParity(settingsEvolutionBaseline)
   // A later presentation unit has its own independently checked exact manifest.
   // Its files are not silently added to or re-pinned in this historical manifest.
   assert.deepEqual(settingsEvolutionFiles().sort(), paths.filter(path => (!reviewedShowcase(path) || settingsEvolutionFiles().includes(path)) && !reviewedAccountUx(path) && (!reviewedSetSmtp(path) || settingsEvolutionFiles().includes(path)) && (!reviewedAstSettings(path) || settingsEvolutionFiles().includes(path)) && (!reviewedOperationalUx(path) || settingsEvolutionFiles().includes(path)) && (!reviewedParticipantCreation(path) || settingsEvolutionFiles().includes(path))))

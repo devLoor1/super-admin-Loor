@@ -195,16 +195,39 @@ export function suggestedFrontendUrls(
   const safe = slug.trim().toLowerCase()
   if (mode === 'PATH') {
     return {
-      investor: `${SHARED_PATH_ORIGINS.investor}/w/${safe}`,
-      entrepreneur: `${SHARED_PATH_ORIGINS.entrepreneur}/w/${safe}`,
-      admin: `${SHARED_PATH_ORIGINS.admin}/w/${safe}`,
+      investor: safe ? `${SHARED_PATH_ORIGINS.investor}/w/${safe}` : '',
+      entrepreneur: safe ? `${SHARED_PATH_ORIGINS.entrepreneur}/w/${safe}` : '',
+      admin: safe ? `${SHARED_PATH_ORIGINS.admin}/w/${safe}` : '',
     }
   }
   return {
-    investor: `https://${safe}.investor.loor.vc`,
-    entrepreneur: `https://${safe}.empresa.loor.vc`,
-    admin: `https://${safe}.admin.loor.vc`,
+    investor: safe ? `https://${safe}.investor.loor.vc` : '',
+    entrepreneur: safe ? `https://${safe}.empresa.loor.vc` : '',
+    admin: safe ? `https://${safe}.admin.loor.vc` : '',
   }
+}
+
+/** Investor baseUrl suggestion for PATH mode (empty when slug is blank). */
+export function suggestedPathInvestorBaseUrl(slug: string): string {
+  return suggestedFrontendUrls(slug, 'PATH').investor
+}
+
+/**
+ * Auto-fill URL base from slug in PATH mode when the field is empty or still
+ * equals the previous suggestion (so a manual edit is not overwritten).
+ */
+export function nextBaseUrlAfterSlugChange(input: {
+  slug: string
+  previousSlug: string
+  baseUrl: string
+  urlMode?: FrontendUrlMode
+}): string {
+  const mode = input.urlMode ?? defaultProvisioningUrlMode()
+  if (mode !== 'PATH') return input.baseUrl
+  const current = input.baseUrl.trim()
+  const previousSuggested = suggestedPathInvestorBaseUrl(input.previousSlug).trim()
+  if (current && current !== previousSuggested) return input.baseUrl
+  return suggestedPathInvestorBaseUrl(input.slug)
 }
 
 /** Homolog SA defaults to PATH until wildcard DNS exists. */

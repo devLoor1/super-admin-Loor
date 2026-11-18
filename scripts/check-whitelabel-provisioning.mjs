@@ -155,15 +155,20 @@ await check('FAILED step shape + terminal helpers', () => {
   assert.equal(api.isTerminalProvisioningStatus('WAITING_MANUAL_ACTION'), true)
 })
 
-await check('manual gate keys only FE_DEPLOY_CHECK and DNS_CHECK', () => {
-  assert.equal(api.isManualGate('FE_DEPLOY_CHECK'), true)
-  assert.equal(api.isManualGate('DNS_CHECK'), true)
+await check('manual gates are automatic on Control Plane (isManualGate always false)', () => {
+  assert.equal(api.isManualGate('FE_DEPLOY_CHECK'), false)
+  assert.equal(api.isManualGate('DNS_CHECK'), false)
   assert.equal(api.isManualGate('CREATE_TENANT'), false)
-  assert.equal(api.isManualGate('VALIDATE'), false)
+  assert.deepEqual([...api.MANUAL_GATE_KEYS], ['FE_DEPLOY_CHECK', 'DNS_CHECK'])
 })
 
 await check('suggestedFrontendUrls homolog convention', () => {
-  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test'), {
+  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test', 'PATH'), {
+    investor: 'https://homolog.loor.vc/w/wl-hml-test',
+    entrepreneur: 'https://homolog.empresa.loor.vc/w/wl-hml-test',
+    admin: 'https://homolog.admin.loor.vc/w/wl-hml-test',
+  })
+  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test', 'HOSTNAME'), {
     investor: 'https://wl-hml-test.investor.loor.vc',
     entrepreneur: 'https://wl-hml-test.empresa.loor.vc',
     admin: 'https://wl-hml-test.admin.loor.vc',
@@ -219,12 +224,13 @@ await check('wizard buildCreateBody posts Nest DTO fields only', () => {
     skipDnsCheck: false,
   })
   assert.deepEqual(Object.keys(body).sort(), [
-    'baseUrl', 'enabledEnvironments', 'initialAdmin', 'name', 'skipFeDeployCheck', 'slug', 'smtp', 'templateFromWhitelabelId', 'terms',
+    'baseUrl', 'enabledEnvironments', 'initialAdmin', 'name', 'skipDnsCheck', 'skipFeDeployCheck', 'slug', 'smtp', 'templateFromWhitelabelId', 'terms', 'urlMode',
   ].sort())
   assert.deepEqual(body.enabledEnvironments, ['INVESTOR', 'ADMIN'])
   assert.equal(body.initialAdmin.temporaryPassword, 'TempPass#123')
   assert.equal(body.smtp.password, 'secret-smtp')
-  assert.equal(body.skipDnsCheck, undefined)
+  assert.equal(body.urlMode, 'PATH')
+  assert.equal(body.skipDnsCheck, true)
   const scrubbed = form.scrubBodyForReview(body)
   assert.equal(scrubbed.initialAdmin.temporaryPassword, '••••••••')
   assert.equal(scrubbed.smtp.password, '••••••••')
@@ -325,7 +331,8 @@ await check('skip flags still work together with branding (and without it)', () 
   assert.equal(withBranding.branding.loginBrandPanelTextColor, '#000000')
   const without = form.buildCreateBody({ ...brandDraft(), brandingEnabled: false, skipFeDeployCheck: true })
   assert.equal(without.skipFeDeployCheck, true)
-  assert.equal(without.skipDnsCheck, undefined)
+  // PATH mode always sends skipDnsCheck=true (DNS per tenant is not required).
+  assert.equal(without.skipDnsCheck, true)
   assert.equal(without.branding, undefined)
 })
 
@@ -409,7 +416,47 @@ await check('WAITING_MANUAL_ACTION parse for FE gate', () => {
   })
   assert.equal(waiting.status, 'WAITING_MANUAL_ACTION')
   assert.equal(waiting.currentStep, 'FE_DEPLOY_CHECK')
-  assert.equal(api.isManualGate(waiting.currentStep), true)
+  assert.equal(api.isManualGate(waiting.currentStep), false)
+  assert.ok(api.MANUAL_GATE_KEYS.includes(waiting.currentStep))
+})
+
+await check('PATH slug change auto-fills Investor baseUrl unless manually edited', () => {
+  assert.equal(
+    api.nextBaseUrlAfterSlugChange({
+      slug: 'shared-fe-demo-aurora',
+      previousSlug: '',
+      baseUrl: '',
+      urlMode: 'PATH',
+    }),
+    'https://homolog.loor.vc/w/shared-fe-demo-aurora',
+  )
+  assert.equal(
+    api.nextBaseUrlAfterSlugChange({
+      slug: 'shared-fe-demo-b',
+      previousSlug: 'shared-fe-demo-a',
+      baseUrl: 'https://homolog.loor.vc/w/shared-fe-demo-a',
+      urlMode: 'PATH',
+    }),
+    'https://homolog.loor.vc/w/shared-fe-demo-b',
+  )
+  assert.equal(
+    api.nextBaseUrlAfterSlugChange({
+      slug: 'shared-fe-demo-b',
+      previousSlug: 'shared-fe-demo-a',
+      baseUrl: 'https://custom.example/path',
+      urlMode: 'PATH',
+    }),
+    'https://custom.example/path',
+  )
+  assert.equal(
+    api.nextBaseUrlAfterSlugChange({
+      slug: 'acme',
+      previousSlug: '',
+      baseUrl: '',
+      urlMode: 'HOSTNAME',
+    }),
+    '',
+  )
 })
 
 console.log(failed ? `\nWhitelabel provisioning: ${failed} failed.` : '\nWhitelabel provisioning: all focused synthetic checks passed. No live requests.')

@@ -154,6 +154,17 @@ function Wizard() {
     setErrors((current) => (current[key] ? { ...current, [key]: undefined } : current))
   }
 
+  function patch(partial: Partial<ProvisioningDraft>) {
+    setDraft((current) => ({ ...current, ...partial }))
+    setErrors((current) => {
+      let next = current
+      for (const key of Object.keys(partial) as Array<keyof ProvisioningDraft>) {
+        if (next[key]) next = { ...next, [key]: undefined }
+      }
+      return next
+    })
+  }
+
   function next() {
     const found = validateWizardStep(step, draft)
     setErrors(found)
@@ -223,7 +234,7 @@ function Wizard() {
       >
         <fieldset disabled={submitting} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
           <legend className="visually-hidden">{WIZARD_STEP_LABELS[step]}</legend>
-          {step === 'client' ? <ClientStep draft={draft} errors={errors} set={set} /> : null}
+          {step === 'client' ? <ClientStep draft={draft} errors={errors} set={set} patch={patch} /> : null}
           {step === 'environments' ? <EnvironmentsStep draft={draft} errors={errors} set={set} /> : null}
           {step === 'template' ? <TemplateStep draft={draft} errors={errors} set={set} options={templates} /> : null}
           {step === 'admin' ? <AdminStep draft={draft} errors={errors} set={set} /> : null}

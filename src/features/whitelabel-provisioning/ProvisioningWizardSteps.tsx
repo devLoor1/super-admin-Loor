@@ -1,7 +1,11 @@
 import { TriangleAlert } from 'lucide-react'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import type { WhitelabelRecord } from '../whitelabels/whitelabelApi'
-import { MAIN_AREA_PAGES, type MainAreaPage } from './provisioningApi'
+import {
+  MAIN_AREA_PAGES,
+  nextBaseUrlAfterSlugChange,
+  type MainAreaPage,
+} from './provisioningApi'
 import { BASE_URL_MAX, BRAND_LOGO_URL_MAX, NAME_MAX, SLUG_MAX, formatFileSize, type DraftErrors, type ProvisioningDraft } from './provisioningForm'
 import { CheckField, TextAreaField, TextField } from './ProvisioningUi'
 import styles from './Provisioning.module.css'
@@ -10,6 +14,8 @@ export type StepProps = {
   draft: ProvisioningDraft
   errors: DraftErrors
   set: <K extends keyof ProvisioningDraft>(key: K, value: ProvisioningDraft[K]) => void
+  /** Atomic multi-field update (used when slug auto-fills baseUrl). */
+  patch?: (partial: Partial<ProvisioningDraft>) => void
 }
 
 const MAIN_AREA_PAGE_LABELS: Record<MainAreaPage, string> = {
@@ -18,12 +24,25 @@ const MAIN_AREA_PAGE_LABELS: Record<MainAreaPage, string> = {
   quick_profile: 'Perfil rápido',
 }
 
-export function ClientStep({ draft, errors, set }: StepProps) {
+export function ClientStep({ draft, errors, set, patch }: StepProps) {
+  function onSlugChange(value: string) {
+    const baseUrl = nextBaseUrlAfterSlugChange({
+      slug: value,
+      previousSlug: draft.slug,
+      baseUrl: draft.baseUrl,
+    })
+    if (patch) patch({ slug: value, baseUrl })
+    else {
+      set('slug', value)
+      set('baseUrl', baseUrl)
+    }
+  }
+
   return (
     <div className={styles.formGrid}>
       <TextField id="prov-name" label="Nome do Whitelabel" value={draft.name} maxLength={NAME_MAX * 2} autoComplete="off" error={errors.name} onChange={(e) => set('name', e.target.value)} full />
-      <TextField id="prov-slug" label="Identificador (slug)" value={draft.slug} maxLength={SLUG_MAX + 20} autoComplete="off" spellCheck={false} error={errors.slug} hint="Letras minúsculas, números e hífens. A edição do slug não está disponível depois da criação." onChange={(e) => set('slug', e.target.value)} />
-      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder="https://homolog.loor.vc/w/shared-fe-demo-a" error={errors.baseUrl} hint="Homolog PATH: URL do Investor compartilhado + /w/{slug} (ex.: https://homolog.loor.vc/w/shared-fe-demo-a). O slug do cliente vem do path/Core — não de VITE_PLATFORM_SLUG no Netlify." onChange={(e) => set('baseUrl', e.target.value)} />
+      <TextField id="prov-slug" label="Identificador (slug)" value={draft.slug} maxLength={SLUG_MAX + 20} autoComplete="off" spellCheck={false} error={errors.slug} hint="Letras minúsculas, números e hífens. Em modo PATH a URL base do Investor é preenchida automaticamente. A edição do slug não está disponível depois da criação." onChange={(e) => onSlugChange(e.target.value)} />
+      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder="https://homolog.loor.vc/w/shared-fe-demo-a" error={errors.baseUrl} hint="Homolog PATH: preenchida ao digitar o slug (`https://homolog.loor.vc/w/{slug}`). Pode editar manualmente; depois disso o auto-preenchimento para de sobrescrever." onChange={(e) => set('baseUrl', e.target.value)} />
     </div>
   )
 }

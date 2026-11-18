@@ -68,6 +68,27 @@
   margin-top: 10px;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.provisionButton {
+  height: 43px;
+  margin-top: 10px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+/* Same restricted pattern as Novo Whitelabel: focusable, explains itself, never navigates. */
+.provisionButton[aria-disabled='true'] {
+  border-style: dashed;
+  color: var(--text-on-dark-muted);
+  cursor: not-allowed;
+}
+
 /* Role-restricted (not SUPER_ADMIN): focusable, explains itself, never opens the create review. */
 .newButton[aria-disabled='true'] {
   opacity: 0.55;

@@ -9,7 +9,9 @@ import { getSessionVersion, useSessionOperator } from '../../lib/authSession'
 import { WhitelabelCreateDialog } from './crud/WhitelabelCreateDialog'
 import { WhitelabelNameEditDialog } from './crud/WhitelabelNameEditDialog'
 import { WhitelabelLifecycleDialog } from './crud/WhitelabelLifecycleDialog'
-import { WRITE_ACCESS_NOTE, whitelabelWriteAccess, WHITELABEL_LIFECYCLE_ENABLED, type LifecycleOperation } from './crud/whitelabelMutationContract'
+import { WHITELABEL_MUTATIONS, WRITE_ACCESS_NOTE, whitelabelWriteAccess, WHITELABEL_LIFECYCLE_ENABLED, type LifecycleOperation } from './crud/whitelabelMutationContract'
+import { canStartProvisioning } from '../whitelabel-provisioning/provisioningApi'
+import { provisioningNewHref } from '../whitelabel-provisioning/provisioningRoute'
 import { WhitelabelDetailPanel, WhitelabelDetailStatus } from './WhitelabelDetailPanel'
 import { WhitelabelListPanel, type Sort } from './WhitelabelListPanel'
 import { DotMatrixBackground } from './visuals/DotMatrixBackground'
@@ -207,6 +209,15 @@ function WhitelabelsContent({
     setDialog({ kind: 'create', sessionVersion: getSessionVersion() })
   }
 
+  const provisionAvailable = canStartProvisioning(operator?.roles)
+  function openProvisioning() {
+    if (!provisionAvailable) {
+      notify(writeAccess === 'super-admin' ? WHITELABEL_MUTATIONS.create.pendingLabel : WRITE_ACCESS_NOTE[writeAccess])
+      return
+    }
+    window.location.hash = provisioningNewHref()
+  }
+
   function openEditName(record: WhitelabelRecord) {
     // Only the authoritative detail of the selected ID (never a record still on screen during a transition).
     if (writeAccess !== 'super-admin') return
@@ -322,6 +333,8 @@ function WhitelabelsContent({
           onOpenActions={openActions}
           onCreate={openCreate}
           createAccess={writeAccess}
+          onProvision={openProvisioning}
+          provisionAvailable={provisionAvailable}
           accentColor={accentColor}
         />
         </div>

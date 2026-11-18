@@ -25,6 +25,7 @@ import { WHITELABEL_STATUS_META, formatWhitelabelDate, whitelabelAvatar, type Wh
 import styles from './WhitelabelDetailPanel.module.css'
 import { useSessionOperator } from '../../lib/authSession'
 import { showcaseSettingsEntryHref } from '../whitelabel-showcase/showcaseAccess'
+import { ProvisioningSummaryCard } from '../whitelabel-provisioning/ProvisioningSummaryCard'
 
 type DetailTab = 'overview'
 
@@ -305,6 +306,8 @@ function Overview({
           <DateField label="Última atualização" value={whitelabel.updatedAt} />
         </dl>
       </section>
+
+      <ProvisioningSummaryCard whitelabelId={whitelabel.id} />
 
       <div className={styles.relationships} data-detail-stage="summary">
         {availableSummary.length ? (

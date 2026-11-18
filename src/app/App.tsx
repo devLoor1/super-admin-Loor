@@ -30,6 +30,9 @@ import { AuditDetailPage } from '../features/governance-audit/AuditDetailPage'
 import { MenuVisibilityPage } from '../features/menu-visibility/MenuVisibilityPage'
 import { OperatorsListPage } from '../features/control-plane-operators/OperatorsListPage'
 import { OperatorDetailPage } from '../features/control-plane-operators/OperatorDetailPage'
+import { ProvisioningWizardPage } from '../features/whitelabel-provisioning/ProvisioningWizardPage'
+import { ProvisioningProgressPage } from '../features/whitelabel-provisioning/ProvisioningProgressPage'
+import { isProvisioningId } from '../features/whitelabel-provisioning/provisioningRoute'
 import { isAuthenticated, subscribeSession, validateSession } from '../lib/authSession'
 import { subscribeNavigation, registerFallbackLogoutGuard } from './navigationGuard'
 import { viewAvailable } from './presentationAvailability'
@@ -73,6 +76,8 @@ type View =
   | 'settings-menu-visibility'
   | 'control-plane-operators'
   | 'control-plane-operator'
+  | 'whitelabel-provisioning-new'
+  | 'whitelabel-provisioning'
 
 type Route =
   | { view: 'login' | 'dashboard' }
@@ -119,6 +124,8 @@ type Route =
   | { view: 'settings-menu-visibility'; previa?: string }
   | { view: 'control-plane-operators'; rawQuery: string }
   | { view: 'control-plane-operator'; id: string; returnTo?: string; invalidQuery: boolean }
+  | { view: 'whitelabel-provisioning-new' }
+  | { view: 'whitelabel-provisioning'; id: string; invalid: boolean }
 
 const TITLES: Record<View, string> = {
   'control-plane-operators': 'Super Admin · Operadores do Control Plane',
@@ -155,6 +162,8 @@ const TITLES: Record<View, string> = {
   audit: 'Super Admin · Auditoria',
   'audit-event': 'Super Admin · Auditoria / Evento',
   'settings-menu-visibility': 'Super Admin · Configurações / Visibilidade dos módulos',
+  'whitelabel-provisioning-new': 'Super Admin · Implantar Whitelabel',
+  'whitelabel-provisioning': 'Super Admin · Implantação de Whitelabel',
 }
 
 /** Views rendered inside the dark App Shell (require Control Plane session). */
@@ -192,8 +201,11 @@ const SHELL_VIEWS: ReadonlySet<View> = new Set<View>([
   'audit',
   'audit-event',
   'settings-menu-visibility',
+  'whitelabel-provisioning-new',
+  'whitelabel-provisioning',
 ])
 
+const PROVISIONING_PATH = /^whitelabel-provisionings\/([^/]+)$/
 const ACCOUNTS_PATH = /^whitelabels\/([\w-]+)\/accounts$/
 const SETTINGS_PATH = /^whitelabels\/([\w-]+)\/settings$/
 const EMAILS_PATH = /^whitelabels\/([\w-]+)\/emails$/
@@ -284,6 +296,12 @@ function routeFromHash(): Route {
     const query = new URLSearchParams(search)
     const value = (key: string) => query.get(key) || undefined
     return { view: 'whitelabels', whitelabelId: value('id'), page: value('page'), query: value('search'), status: value('status'), search }
+  }
+  if (path === 'whitelabel-provisionings/new') return { view: 'whitelabel-provisioning-new' }
+  const provisioning = PROVISIONING_PATH.exec(path)
+  if (provisioning) {
+    const id = decodeSegment(provisioning[1])
+    return { view: 'whitelabel-provisioning', id, invalid: !isProvisioningId(id) || search !== '' }
   }
   const accounts = ACCOUNTS_PATH.exec(path)
   if (accounts) {
@@ -598,6 +616,10 @@ export function App() {
   }
   if (route.view === 'audit-event') {
     return <AuditDetailPage key={route.auditEventId} auditEventId={route.auditEventId} returnTo={route.returnTo} />
+  }
+  if (route.view === 'whitelabel-provisioning-new') return <ProvisioningWizardPage />
+  if (route.view === 'whitelabel-provisioning') {
+    return route.invalid ? <ReadinessUnavailablePage /> : <ProvisioningProgressPage key={route.id} id={route.id} />
   }
   if (route.view === 'settings-menu-visibility') return <MenuVisibilityPage previa={route.previa} />
   if (route.view === 'control-plane-operators') return <OperatorsListPage rawQuery={route.rawQuery} />

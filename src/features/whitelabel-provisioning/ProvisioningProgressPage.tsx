@@ -10,15 +10,13 @@ import { useSessionOperator } from '../../lib/authSession'
 import { formatWhitelabelDate } from '../whitelabels/whitelabelApi'
 import {
   canStartProvisioning,
-  isManualGate,
   isTerminalProvisioningStatus,
   retryProvisioning,
-  type ProvisioningRecord,
   type ProvisioningStep,
 } from './provisioningApi'
 import { STEP_LABELS, STEP_STATUS_GLYPH } from './provisioningLabels'
 import { DeliveryPanel } from './ProvisioningDelivery'
-import { ManualGatePanel } from './ProvisioningManualGate'
+import { ReadinessPanel } from './ProvisioningReadiness'
 import { ProvisioningStatusBadge, ProvisioningStepBadge } from './ProvisioningUi'
 import { useProvisioningPoll } from './useProvisioningPoll'
 import styles from './Provisioning.module.css'
@@ -100,8 +98,6 @@ function ProgressContent({ id }: { id: string }) {
   }
 
   const failedStep = record.steps.find((step) => step.status === 'FAILED')
-  const waitingStep = record.steps.find((step) => step.status === 'WAITING_MANUAL_ACTION')
-  const gateKey = record.status === 'WAITING_MANUAL_ACTION' ? (waitingStep?.key ?? record.currentStep) : null
   const percentage = Math.min(100, Math.max(0, Math.round(record.progress.percentage)))
   const live = !isTerminalProvisioningStatus(record.status)
   const pollError = error ? describeApiError(error, 'a implantação') : null
@@ -191,9 +187,7 @@ function ProgressContent({ id }: { id: string }) {
         ) : null}
       </section>
 
-      {gateKey && isManualGate(gateKey) ? (
-        <ManualGatePanel key={gateKey} record={record} stepKey={gateKey} disabled={!canWrite || busyAction !== null} onCompleted={(next: ProvisioningRecord) => applyRecord(next)} />
-      ) : null}
+      <ReadinessPanel record={record} />
 
       {record.status === 'COMPLETED' && record.delivery ? <DeliveryPanel delivery={record.delivery} /> : null}
     </div>

@@ -23,7 +23,7 @@ export function ClientStep({ draft, errors, set }: StepProps) {
     <div className={styles.formGrid}>
       <TextField id="prov-name" label="Nome do Whitelabel" value={draft.name} maxLength={NAME_MAX * 2} autoComplete="off" error={errors.name} onChange={(e) => set('name', e.target.value)} full />
       <TextField id="prov-slug" label="Identificador (slug)" value={draft.slug} maxLength={SLUG_MAX + 20} autoComplete="off" spellCheck={false} error={errors.slug} hint="Letras minúsculas, números e hífens. A edição do slug não está disponível depois da criação." onChange={(e) => set('slug', e.target.value)} />
-      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder="https://cliente.exemplo.com.br" error={errors.baseUrl} hint="Endereço público do cliente (a conferência de DNS é manual)." onChange={(e) => set('baseUrl', e.target.value)} />
+      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder="https://homolog.loor.vc/w/shared-fe-demo-a" error={errors.baseUrl} hint="Homolog PATH: URL do Investor compartilhado + /w/{slug} (ex.: https://homolog.loor.vc/w/shared-fe-demo-a). O slug do cliente vem do path/Core — não de VITE_PLATFORM_SLUG no Netlify." onChange={(e) => set('baseUrl', e.target.value)} />
     </div>
   )
 }

@@ -73,7 +73,7 @@ export function DeliveryPanel({ delivery }: { delivery: Delivery }) {
       <h2 id="prov-delivery-title" className={styles.title}>Entrega da implantação</h2>
       <p className={styles.subtitle}>
         {confirmed
-          ? 'URLs confirmadas nos gates FE_DEPLOY_CHECK / DNS_CHECK. Nenhuma senha é exibida aqui.'
+          ? 'URLs confirmadas pela readiness automática (DNS + HTTPS + bootstrap). Nenhuma senha é exibida aqui.'
           : 'Gates de frontend/DNS foram pulados — só a convenção de nomes aparece abaixo. Não compartilhe sugestões como se fossem live.'}
       </p>
       <dl className={styles.deliveryList}>

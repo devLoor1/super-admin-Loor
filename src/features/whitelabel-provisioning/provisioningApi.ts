@@ -43,6 +43,7 @@ export const PROVISIONING_STEP_STATUSES = [
 
 export type ProvisioningStepStatus = (typeof PROVISIONING_STEP_STATUSES)[number]
 
+/** Legacy keys kept for typing; shared-frontend homolog no longer parks on them. */
 export const MANUAL_GATE_KEYS = ['FE_DEPLOY_CHECK', 'DNS_CHECK'] as const
 export type ManualGateKey = (typeof MANUAL_GATE_KEYS)[number]
 
@@ -130,12 +131,16 @@ export const MAIN_AREA_IMAGE_TYPES = ['image/jpeg', 'image/png'] as const
 
 export type EnvironmentCapability = 'INVESTOR' | 'ENTREPRENEUR' | 'ADMIN'
 
+export type FrontendUrlMode = 'HOSTNAME' | 'PATH'
+
 export type CreateProvisioningBody = {
   name: string
   slug: string
   baseUrl: string
   /** Contracted FE environments. Omitted on legacy clients → Nest defaults to all three. */
   enabledEnvironments?: EnvironmentCapability[]
+  /** PATH = shared Netlify /w/{slug} (homolog demo). HOSTNAME = {slug}.*.loor.vc. */
+  urlMode?: FrontendUrlMode
   templateFromWhitelabelId?: number
   initialAdmin?: { name?: string; email: string; temporaryPassword: string }
   terms?: { title: string; contentMarkdown: string }
@@ -175,14 +180,37 @@ export type CompleteManualBody = {
   note?: string
 }
 
-/** Homolog convention used to prefill gate URL fields (matches Nest `suggestedFrontendUrls`). */
-export function suggestedFrontendUrls(slug: string): Record<FrontendEnvironment, string> {
+/** Infrastructure bases only — never a client slug. Overridable via VITE_*_BASE_URL. */
+const SHARED_PATH_ORIGINS: Record<FrontendEnvironment, string> = {
+  investor: String(import.meta.env.VITE_INVESTOR_BASE_URL || 'https://homolog.loor.vc').replace(/\/+$/, ''),
+  entrepreneur: String(import.meta.env.VITE_ENTREPRENEUR_BASE_URL || 'https://homolog.empresa.loor.vc').replace(/\/+$/, ''),
+  admin: String(import.meta.env.VITE_ADMIN_BASE_URL || 'https://homolog.admin.loor.vc').replace(/\/+$/, ''),
+}
+
+/** Homolog URL convention (PATH = shared Netlify demo; HOSTNAME = future wildcards). */
+export function suggestedFrontendUrls(
+  slug: string,
+  mode: FrontendUrlMode = 'PATH',
+): Record<FrontendEnvironment, string> {
   const safe = slug.trim().toLowerCase()
+  if (mode === 'PATH') {
+    return {
+      investor: `${SHARED_PATH_ORIGINS.investor}/w/${safe}`,
+      entrepreneur: `${SHARED_PATH_ORIGINS.entrepreneur}/w/${safe}`,
+      admin: `${SHARED_PATH_ORIGINS.admin}/w/${safe}`,
+    }
+  }
   return {
     investor: `https://${safe}.investor.loor.vc`,
     entrepreneur: `https://${safe}.empresa.loor.vc`,
     admin: `https://${safe}.admin.loor.vc`,
   }
+}
+
+/** Homolog SA defaults to PATH until wildcard DNS exists. */
+export function defaultProvisioningUrlMode(): FrontendUrlMode {
+  const raw = String(import.meta.env.VITE_PROVISIONING_URL_MODE || 'PATH').trim().toUpperCase()
+  return raw === 'HOSTNAME' ? 'HOSTNAME' : 'PATH'
 }
 
 export function isHttpsOrigin(value: string): boolean {
@@ -484,6 +512,7 @@ export function isTerminalProvisioningStatus(status: ProvisioningStatus) {
   return status === 'FAILED' || status === 'WAITING_MANUAL_ACTION' || status === 'COMPLETED' || status === 'CANCELLED'
 }
 
-export function isManualGate(key: string): key is ManualGateKey {
-  return (MANUAL_GATE_KEYS as readonly string[]).includes(key)
+/** Always false — FE/DNS readiness is automatic on the Control Plane. */
+export function isManualGate(_key: string): _key is ManualGateKey {
+  return false
 }

@@ -15,6 +15,7 @@ import {
   MAIN_AREA_IMAGE_MAX_BYTES,
   MAIN_AREA_IMAGE_TYPES,
   MAIN_AREA_PAGES,
+  defaultProvisioningUrlMode,
   type CreateProvisioningBody,
   type MainAreaPage,
   type ProvisioningBranding,
@@ -272,6 +273,8 @@ export function buildCreateBody(draft: ProvisioningDraft): CreateProvisioningBod
   const branding = buildBranding(draft)
   if (branding) body.branding = branding
   body.enabledEnvironments = selectedEnvironments(draft)
+  body.urlMode = defaultProvisioningUrlMode()
+  if (body.urlMode === 'PATH') body.skipDnsCheck = true
   if (draft.skipFeDeployCheck) body.skipFeDeployCheck = true
   if (draft.skipDnsCheck) body.skipDnsCheck = true
   return body

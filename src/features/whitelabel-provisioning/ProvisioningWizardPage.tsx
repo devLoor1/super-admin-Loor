@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Lock, Rocket } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Lock, Rocket, TriangleAlert } from 'lucide-react'
 import { AppShell } from '../../components/shell/AppShell'
 import { useNotice } from '../../components/shell/notice'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -14,7 +14,12 @@ import {
   whitelabelWriteAccess,
 } from '../whitelabels/crud/whitelabelMutationContract'
 import { listWhitelabels, type WhitelabelRecord } from '../whitelabels/whitelabelApi'
-import { canStartProvisioning, createProvisioning } from './provisioningApi'
+import {
+  canStartProvisioning,
+  createProvisioning,
+  getProvisioningUrlConfig,
+  nextBaseUrlAfterSlugChange,
+} from './provisioningApi'
 import {
   EMPTY_PROVISIONING_DRAFT,
   WIZARD_STEPS,
@@ -121,10 +126,48 @@ function Wizard() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [templates, setTemplates] = useState<TemplateOptions>({ status: 'loading' })
   const [templateAttempt, setTemplateAttempt] = useState(0)
+  const [urlConfigStatus, setUrlConfigStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [urlConfigError, setUrlConfigError] = useState<string | null>(null)
+  const [urlConfigAttempt, setUrlConfigAttempt] = useState(0)
   const submitController = useRef<AbortController | null>(null)
 
   const step = WIZARD_STEPS[index]
   const lastIndex = WIZARD_STEPS.length - 1
+  const urlConfigReady = urlConfigStatus === 'ready' && Boolean(draft.urlMode && draft.urlTemplates)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setUrlConfigStatus('loading')
+    setUrlConfigError(null)
+    getProvisioningUrlConfig(controller.signal).then(
+      (config) => {
+        if (controller.signal.aborted) return
+        setDraft((current) => {
+          const baseUrl = current.slug
+            ? nextBaseUrlAfterSlugChange({
+                slug: current.slug,
+                previousSlug: '',
+                baseUrl: current.baseUrl,
+                urlTemplates: config.urlTemplates,
+              })
+            : current.baseUrl
+          return {
+            ...current,
+            urlMode: config.urlMode,
+            urlTemplates: config.urlTemplates,
+            baseUrl,
+          }
+        })
+        setUrlConfigStatus('ready')
+      },
+      (error: unknown) => {
+        if (controller.signal.aborted || isAbortError(error)) return
+        setUrlConfigStatus('error')
+        setUrlConfigError(describeApiError(error, 'a configuração de URL do Control Plane').description)
+      },
+    )
+    return () => controller.abort()
+  }, [urlConfigAttempt])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -179,7 +222,7 @@ function Wizard() {
   }
 
   async function submit() {
-    if (submitting) return
+    if (submitting || !urlConfigReady) return
     const found = validateWizardStep('review', draft)
     if (Object.values(found).some(Boolean)) {
       // Send the operator back to the first step that has an error.
@@ -224,15 +267,27 @@ function Wizard() {
         ))}
       </ol>
 
+      {urlConfigStatus === 'error' ? (
+        <div className={styles.state} role="alert" style={{ marginTop: 16 }}>
+          <EmptyState
+            icon={TriangleAlert}
+            title="Não foi possível carregar o modo de URL"
+            description={urlConfigError || 'O Control Plane não informou PROVISIONING_FRONTEND_URL_MODE.'}
+          />
+          <OutlineButton onClick={() => setUrlConfigAttempt((value) => value + 1)}>Tentar novamente</OutlineButton>
+        </div>
+      ) : null}
+
       <form
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
+          if (!urlConfigReady) return
           if (step === 'review') void submit()
           else next()
         }}
       >
-        <fieldset disabled={submitting} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+        <fieldset disabled={submitting || !urlConfigReady} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
           <legend className="visually-hidden">{WIZARD_STEP_LABELS[step]}</legend>
           {step === 'client' ? <ClientStep draft={draft} errors={errors} set={set} patch={patch} /> : null}
           {step === 'environments' ? <EnvironmentsStep draft={draft} errors={errors} set={set} /> : null}
@@ -243,6 +298,9 @@ function Wizard() {
         </fieldset>
 
         {submitError ? <p className={styles.submitError} role="alert">{submitError}</p> : null}
+        {urlConfigStatus === 'loading' ? (
+          <p className={styles.hint} style={{ marginTop: 12 }}>Carregando modo de URL do Control Plane…</p>
+        ) : null}
 
         <div className={styles.actions}>
           <OutlineButton onClick={back} disabled={index === 0 || submitting}>
@@ -250,12 +308,12 @@ function Wizard() {
           </OutlineButton>
           <div className={styles.actionsGroup}>
             {step === 'review' ? (
-              <PrimaryButton type="submit" disabled={submitting} aria-busy={submitting || undefined}>
+              <PrimaryButton type="submit" disabled={submitting || !urlConfigReady} aria-busy={submitting || undefined}>
                 <Rocket size={16} aria-hidden="true" />
                 {submitting ? 'Iniciando implantação…' : 'Iniciar implantação'}
               </PrimaryButton>
             ) : (
-              <PrimaryButton type="submit">
+              <PrimaryButton type="submit" disabled={!urlConfigReady}>
                 Avançar <ArrowRight size={16} aria-hidden="true" />
               </PrimaryButton>
             )}
@@ -270,6 +328,7 @@ const REVIEW_LABELS: Record<string, string> = {
   name: 'Nome',
   slug: 'Slug',
   baseUrl: 'URL base',
+  urlMode: 'Modo de URL (Nest)',
   templateFromWhitelabelId: 'Template',
   'initialAdmin.name': 'Admin · nome',
   'initialAdmin.email': 'Admin · e-mail',

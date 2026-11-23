@@ -13,6 +13,7 @@ export const PROVISIONING_STEP_KEYS = [
   'TERMS',
   'SMTP',
   'GATEWAY_CONFIG',
+  'CONFIGURE_FRONTEND_DOMAINS',
   'FE_DEPLOY_CHECK',
   'DNS_CHECK',
   'VALIDATE',
@@ -180,60 +181,107 @@ export type CompleteManualBody = {
   note?: string
 }
 
-/** Infrastructure bases only — never a client slug. Overridable via VITE_*_BASE_URL. */
-const SHARED_PATH_ORIGINS: Record<FrontendEnvironment, string> = {
-  investor: String(import.meta.env.VITE_INVESTOR_BASE_URL || 'https://homolog.loor.vc').replace(/\/+$/, ''),
-  entrepreneur: String(import.meta.env.VITE_ENTREPRENEUR_BASE_URL || 'https://homolog.empresa.loor.vc').replace(/\/+$/, ''),
-  admin: String(import.meta.env.VITE_ADMIN_BASE_URL || 'https://homolog.admin.loor.vc').replace(/\/+$/, ''),
+export type ProvisioningUrlConfig = {
+  urlMode: FrontendUrlMode
+  /** Nest templates with a literal `{slug}` placeholder. */
+  urlTemplates: Record<FrontendEnvironment, string>
+  suggestedUrls?: Partial<Record<FrontendEnvironment, string>>
 }
 
-/** Homolog URL convention (PATH = shared Netlify demo; HOSTNAME = future wildcards). */
+/** Substitute Nest `{slug}` placeholders (empty slug → empty URL). */
+export function applyUrlTemplate(template: string, slug: string): string {
+  const safe = slug.trim().toLowerCase()
+  if (!safe) return ''
+  return template.split('{slug}').join(safe)
+}
+
+/** Build concrete URLs from Nest templates (source of truth). */
 export function suggestedFrontendUrls(
   slug: string,
-  mode: FrontendUrlMode = 'PATH',
+  templates: Record<FrontendEnvironment, string>,
 ): Record<FrontendEnvironment, string> {
-  const safe = slug.trim().toLowerCase()
-  if (mode === 'PATH') {
-    return {
-      investor: safe ? `${SHARED_PATH_ORIGINS.investor}/w/${safe}` : '',
-      entrepreneur: safe ? `${SHARED_PATH_ORIGINS.entrepreneur}/w/${safe}` : '',
-      admin: safe ? `${SHARED_PATH_ORIGINS.admin}/w/${safe}` : '',
-    }
-  }
   return {
-    investor: safe ? `https://${safe}.investor.loor.vc` : '',
-    entrepreneur: safe ? `https://${safe}.empresa.loor.vc` : '',
-    admin: safe ? `https://${safe}.admin.loor.vc` : '',
+    investor: applyUrlTemplate(templates.investor, slug),
+    entrepreneur: applyUrlTemplate(templates.entrepreneur, slug),
+    admin: applyUrlTemplate(templates.admin, slug),
   }
 }
 
-/** Investor baseUrl suggestion for PATH mode (empty when slug is blank). */
-export function suggestedPathInvestorBaseUrl(slug: string): string {
-  return suggestedFrontendUrls(slug, 'PATH').investor
+/** Investor baseUrl suggestion from Nest templates (empty when slug is blank). */
+export function suggestedInvestorBaseUrl(
+  slug: string,
+  templates: Record<FrontendEnvironment, string> | null | undefined,
+): string {
+  if (!templates?.investor) return ''
+  return applyUrlTemplate(templates.investor, slug)
 }
 
 /**
- * Auto-fill URL base from slug in PATH mode when the field is empty or still
- * equals the previous suggestion (so a manual edit is not overwritten).
+ * Auto-fill URL base from slug when the field is empty or still equals the
+ * previous Nest suggestion (so a manual edit is not overwritten).
+ * Works for both PATH and HOSTNAME — mode/templates come from Nest.
  */
 export function nextBaseUrlAfterSlugChange(input: {
   slug: string
   previousSlug: string
   baseUrl: string
-  urlMode?: FrontendUrlMode
+  urlTemplates?: Record<FrontendEnvironment, string> | null
 }): string {
-  const mode = input.urlMode ?? defaultProvisioningUrlMode()
-  if (mode !== 'PATH') return input.baseUrl
+  const templates = input.urlTemplates
+  if (!templates?.investor) return input.baseUrl
   const current = input.baseUrl.trim()
-  const previousSuggested = suggestedPathInvestorBaseUrl(input.previousSlug).trim()
+  const previousSuggested = suggestedInvestorBaseUrl(input.previousSlug, templates).trim()
   if (current && current !== previousSuggested) return input.baseUrl
-  return suggestedPathInvestorBaseUrl(input.slug)
+  return suggestedInvestorBaseUrl(input.slug, templates)
 }
 
-/** Homolog SA defaults to PATH until wildcard DNS exists. */
-export function defaultProvisioningUrlMode(): FrontendUrlMode {
-  const raw = String(import.meta.env.VITE_PROVISIONING_URL_MODE || 'PATH').trim().toUpperCase()
-  return raw === 'HOSTNAME' ? 'HOSTNAME' : 'PATH'
+function parseUrlTemplates(raw: unknown): Record<FrontendEnvironment, string> {
+  const row = object(raw)
+  return {
+    investor: text(own(row, 'investor'), 512),
+    entrepreneur: text(own(row, 'entrepreneur'), 512),
+    admin: text(own(row, 'admin'), 512),
+  }
+}
+
+export function parseProvisioningUrlConfig(raw: unknown): ProvisioningUrlConfig {
+  const envelope = object(raw)
+  const row = object(own(envelope, 'data') ?? envelope)
+  const mode = enumOf(own(row, 'urlMode'), ['HOSTNAME', 'PATH'] as const)
+  const urlTemplates = parseUrlTemplates(own(row, 'urlTemplates'))
+  const suggestedRaw = own(row, 'suggestedUrls')
+  if (suggestedRaw === undefined || suggestedRaw === null) {
+    return { urlMode: mode, urlTemplates }
+  }
+  const suggested = object(suggestedRaw)
+  return {
+    urlMode: mode,
+    urlTemplates,
+    suggestedUrls: {
+      ...(own(suggested, 'investor') === undefined
+        ? {}
+        : { investor: text(own(suggested, 'investor'), 512) }),
+      ...(own(suggested, 'entrepreneur') === undefined
+        ? {}
+        : { entrepreneur: text(own(suggested, 'entrepreneur'), 512) }),
+      ...(own(suggested, 'admin') === undefined
+        ? {}
+        : { admin: text(own(suggested, 'admin'), 512) }),
+    },
+  }
+}
+
+/** Nest Control Plane URL mode + templates (no Vite duplicate). */
+export async function getProvisioningUrlConfig(
+  signal?: AbortSignal,
+  slug?: string,
+): Promise<ProvisioningUrlConfig> {
+  return authed(
+    '/whitelabel-provisionings/config',
+    { signal, query: slug ? { slug } : undefined },
+    parseProvisioningUrlConfig,
+    false,
+  )
 }
 
 export function isHttpsOrigin(value: string): boolean {
@@ -445,7 +493,13 @@ function safeError(error: unknown): never {
 
 async function authed<T>(
   path: string,
-  options: { method?: 'GET' | 'POST'; body?: unknown; successStatus?: number; signal?: AbortSignal },
+  options: {
+    method?: 'GET' | 'POST'
+    body?: unknown
+    query?: Record<string, string | number | boolean | null | undefined>
+    successStatus?: number
+    signal?: AbortSignal
+  },
   parse: (raw: unknown) => T,
   write: boolean,
 ): Promise<T> {
@@ -458,6 +512,7 @@ async function authed<T>(
     const raw = await apiRequest(path, {
       method: options.method ?? 'GET',
       body: options.body,
+      query: options.query,
       token,
       signal: options.signal,
       timeoutMs: 180_000,

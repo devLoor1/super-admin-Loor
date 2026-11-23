@@ -65,7 +65,7 @@ const sample = {
     templateFromWhitelabelId: null,
     errorCode: null,
     errorMessage: null,
-    progress: { completed: 11, total: 11, percentage: 100 },
+    progress: { completed: 12, total: 12, percentage: 100 },
     steps: [
       { key: 'CREATE_TENANT', status: 'SUCCESS', attempts: 1, payload: null, result: { id: 10 }, lastErrorCode: null, lastErrorMessage: null, startedAt: '2026-11-17T22:00:00.000Z', completedAt: '2026-11-17T22:00:01.000Z' },
       { key: 'APPLY_SETTINGS_TEMPLATE', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
@@ -74,6 +74,7 @@ const sample = {
       { key: 'TERMS', status: 'SUCCESS', attempts: 1, payload: null, result: {}, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
       { key: 'SMTP', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
       { key: 'GATEWAY_CONFIG', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
+      { key: 'CONFIGURE_FRONTEND_DOMAINS', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
       { key: 'FE_DEPLOY_CHECK', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
       { key: 'DNS_CHECK', status: 'SKIPPED', attempts: 0, payload: null, result: null, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
       { key: 'VALIDATE', status: 'SUCCESS', attempts: 1, payload: null, result: {}, lastErrorCode: null, lastErrorMessage: null, startedAt: null, completedAt: null },
@@ -87,12 +88,12 @@ const sample = {
       admin: { email: 'a@example.invalid', name: 'Ana' },
       urls: {
         primary: 'https://sa-prov-smoke.example.invalid',
-        investor: 'https://sa-prov-smoke.investor.loor.vc',
+        investor: 'https://sa-prov-smoke.loor.vc',
         entrepreneur: 'https://sa-prov-smoke.empresa.loor.vc',
         admin: 'https://sa-prov-smoke.admin.loor.vc',
       },
       suggestedUrls: {
-        investor: 'https://sa-prov-smoke.investor.loor.vc',
+        investor: 'https://sa-prov-smoke.loor.vc',
         entrepreneur: 'https://sa-prov-smoke.empresa.loor.vc',
         admin: 'https://sa-prov-smoke.admin.loor.vc',
         note: 'Homolog convention only',
@@ -120,7 +121,7 @@ await check('parses COMPLETED provisioning with delivery', () => {
   const row = api.parseProvisioning(sample)
   assert.equal(row.status, 'COMPLETED')
   assert.equal(row.progress.percentage, 100)
-  assert.equal(row.steps.length, 11)
+  assert.equal(row.steps.length, 12)
   assert.equal(row.delivery.admin.email, 'a@example.invalid')
   assert.equal(row.steps.find((s) => s.key === 'CREATE_TENANT').status, 'SUCCESS')
   assert.equal(row.steps.find((s) => s.key === 'UPLOAD_BRAND').status, 'SKIPPED')
@@ -162,19 +163,49 @@ await check('manual gates are automatic on Control Plane (isManualGate always fa
   assert.deepEqual([...api.MANUAL_GATE_KEYS], ['FE_DEPLOY_CHECK', 'DNS_CHECK'])
 })
 
-await check('suggestedFrontendUrls homolog convention', () => {
-  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test', 'PATH'), {
+await check('suggestedFrontendUrls from Nest templates', () => {
+  const pathTemplates = {
+    investor: 'https://homolog.loor.vc/w/{slug}',
+    entrepreneur: 'https://homolog.empresa.loor.vc/w/{slug}',
+    admin: 'https://homolog.admin.loor.vc/w/{slug}',
+  }
+  const hostnameTemplates = {
+    investor: 'https://{slug}.loor.vc',
+    entrepreneur: 'https://{slug}.empresa.loor.vc',
+    admin: 'https://{slug}.admin.loor.vc',
+  }
+  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test', pathTemplates), {
     investor: 'https://homolog.loor.vc/w/wl-hml-test',
     entrepreneur: 'https://homolog.empresa.loor.vc/w/wl-hml-test',
     admin: 'https://homolog.admin.loor.vc/w/wl-hml-test',
   })
-  assert.deepEqual(api.suggestedFrontendUrls('Wl-Hml-Test', 'HOSTNAME'), {
-    investor: 'https://wl-hml-test.investor.loor.vc',
-    entrepreneur: 'https://wl-hml-test.empresa.loor.vc',
-    admin: 'https://wl-hml-test.admin.loor.vc',
+  assert.deepEqual(api.suggestedFrontendUrls('teste-auto-01', hostnameTemplates), {
+    investor: 'https://teste-auto-01.loor.vc',
+    entrepreneur: 'https://teste-auto-01.empresa.loor.vc',
+    admin: 'https://teste-auto-01.admin.loor.vc',
   })
-  assert.equal(api.isHttpsOrigin('https://wl-hml-test.investor.loor.vc'), true)
-  assert.equal(api.isHttpsOrigin('http://wl-hml-test.investor.loor.vc'), false)
+  assert.equal(api.isHttpsOrigin('https://teste-auto-01.loor.vc'), true)
+  assert.equal(api.isHttpsOrigin('http://teste-auto-01.loor.vc'), false)
+})
+
+await check('parseProvisioningUrlConfig Nest envelope', () => {
+  const config = api.parseProvisioningUrlConfig({
+    data: {
+      urlMode: 'HOSTNAME',
+      urlTemplates: {
+        investor: 'https://{slug}.loor.vc',
+        entrepreneur: 'https://{slug}.empresa.loor.vc',
+        admin: 'https://{slug}.admin.loor.vc',
+      },
+      suggestedUrls: {
+        investor: 'https://teste-auto-01.loor.vc',
+        entrepreneur: 'https://teste-auto-01.empresa.loor.vc',
+        admin: 'https://teste-auto-01.admin.loor.vc',
+      },
+    },
+  })
+  assert.equal(config.urlMode, 'HOSTNAME')
+  assert.equal(config.suggestedUrls.investor, 'https://teste-auto-01.loor.vc')
 })
 
 await check('parses delivery with null confirmed urls when gates skipped', () => {
@@ -193,7 +224,7 @@ await check('parses delivery with null confirmed urls when gates skipped', () =>
     },
   })
   assert.equal(row.delivery.urls.investor, null)
-  assert.equal(row.delivery.suggestedUrls.investor, 'https://sa-prov-smoke.investor.loor.vc')
+  assert.equal(row.delivery.suggestedUrls.investor, 'https://sa-prov-smoke.loor.vc')
 })
 
 await check('wizard buildCreateBody posts Nest DTO fields only', () => {
@@ -202,6 +233,12 @@ await check('wizard buildCreateBody posts Nest DTO fields only', () => {
     name: 'Acme Capital',
     slug: 'acme-capital',
     baseUrl: 'https://acme.example.invalid',
+    urlMode: 'PATH',
+    urlTemplates: {
+      investor: 'https://homolog.loor.vc/w/{slug}',
+      entrepreneur: 'https://homolog.empresa.loor.vc/w/{slug}',
+      admin: 'https://homolog.admin.loor.vc/w/{slug}',
+    },
     envInvestor: true,
     envAdmin: true,
     templateFromWhitelabelId: '6',
@@ -250,6 +287,12 @@ const brandDraft = (extra = {}) => ({
   name: 'Acme Capital',
   slug: 'acme-capital',
   baseUrl: 'https://acme.example.invalid',
+  urlMode: 'PATH',
+  urlTemplates: {
+    investor: 'https://homolog.loor.vc/w/{slug}',
+    entrepreneur: 'https://homolog.empresa.loor.vc/w/{slug}',
+    admin: 'https://homolog.admin.loor.vc/w/{slug}',
+  },
   adminEnabled: false,
   brandingEnabled: true,
   ...extra,
@@ -420,13 +463,23 @@ await check('WAITING_MANUAL_ACTION parse for FE gate', () => {
   assert.ok(api.MANUAL_GATE_KEYS.includes(waiting.currentStep))
 })
 
-await check('PATH slug change auto-fills Investor baseUrl unless manually edited', () => {
+await check('slug change auto-fills Investor baseUrl from Nest templates', () => {
+  const pathTemplates = {
+    investor: 'https://homolog.loor.vc/w/{slug}',
+    entrepreneur: 'https://homolog.empresa.loor.vc/w/{slug}',
+    admin: 'https://homolog.admin.loor.vc/w/{slug}',
+  }
+  const hostnameTemplates = {
+    investor: 'https://{slug}.loor.vc',
+    entrepreneur: 'https://{slug}.empresa.loor.vc',
+    admin: 'https://{slug}.admin.loor.vc',
+  }
   assert.equal(
     api.nextBaseUrlAfterSlugChange({
       slug: 'shared-fe-demo-aurora',
       previousSlug: '',
       baseUrl: '',
-      urlMode: 'PATH',
+      urlTemplates: pathTemplates,
     }),
     'https://homolog.loor.vc/w/shared-fe-demo-aurora',
   )
@@ -435,7 +488,7 @@ await check('PATH slug change auto-fills Investor baseUrl unless manually edited
       slug: 'shared-fe-demo-b',
       previousSlug: 'shared-fe-demo-a',
       baseUrl: 'https://homolog.loor.vc/w/shared-fe-demo-a',
-      urlMode: 'PATH',
+      urlTemplates: pathTemplates,
     }),
     'https://homolog.loor.vc/w/shared-fe-demo-b',
   )
@@ -444,18 +497,18 @@ await check('PATH slug change auto-fills Investor baseUrl unless manually edited
       slug: 'shared-fe-demo-b',
       previousSlug: 'shared-fe-demo-a',
       baseUrl: 'https://custom.example/path',
-      urlMode: 'PATH',
+      urlTemplates: pathTemplates,
     }),
     'https://custom.example/path',
   )
   assert.equal(
     api.nextBaseUrlAfterSlugChange({
-      slug: 'acme',
+      slug: 'teste-auto-01',
       previousSlug: '',
       baseUrl: '',
-      urlMode: 'HOSTNAME',
+      urlTemplates: hostnameTemplates,
     }),
-    '',
+    'https://teste-auto-01.loor.vc',
   )
 })
 

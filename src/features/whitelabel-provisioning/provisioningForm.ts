@@ -15,8 +15,9 @@ import {
   MAIN_AREA_IMAGE_MAX_BYTES,
   MAIN_AREA_IMAGE_TYPES,
   MAIN_AREA_PAGES,
-  defaultProvisioningUrlMode,
   type CreateProvisioningBody,
+  type FrontendEnvironment,
+  type FrontendUrlMode,
   type MainAreaPage,
   type ProvisioningBranding,
 } from './provisioningApi'
@@ -39,6 +40,12 @@ export type ProvisioningDraft = {
   name: string
   slug: string
   baseUrl: string
+  /**
+   * From Nest `GET /whitelabel-provisionings/config` — never a Vite env.
+   * Empty until the wizard loads Control Plane config.
+   */
+  urlMode: FrontendUrlMode | ''
+  urlTemplates: Record<FrontendEnvironment, string> | null
   /** Contracted FE environments — at least one required. */
   envInvestor: boolean
   envEntrepreneur: boolean
@@ -76,6 +83,8 @@ export const EMPTY_PROVISIONING_DRAFT: Readonly<ProvisioningDraft> = Object.free
   name: '',
   slug: '',
   baseUrl: '',
+  urlMode: '',
+  urlTemplates: null,
   envInvestor: false,
   envEntrepreneur: false,
   envAdmin: false,
@@ -273,8 +282,9 @@ export function buildCreateBody(draft: ProvisioningDraft): CreateProvisioningBod
   const branding = buildBranding(draft)
   if (branding) body.branding = branding
   body.enabledEnvironments = selectedEnvironments(draft)
-  body.urlMode = defaultProvisioningUrlMode()
-  if (body.urlMode === 'PATH') body.skipDnsCheck = true
+  // Echo Nest mode for older Control Planes; Nest homolog ignores client and uses env.
+  if (draft.urlMode === 'HOSTNAME' || draft.urlMode === 'PATH') body.urlMode = draft.urlMode
+  if (draft.urlMode === 'PATH') body.skipDnsCheck = true
   if (draft.skipFeDeployCheck) body.skipFeDeployCheck = true
   if (draft.skipDnsCheck) body.skipDnsCheck = true
   return body

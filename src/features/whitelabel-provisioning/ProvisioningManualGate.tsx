@@ -91,7 +91,21 @@ function urlsFromFeStep(record: ProvisioningRecord, enabled: FrontendEnvironment
 export function ManualGatePanel({ record, stepKey, onCompleted, disabled = false }: Props) {
   const enabled = useMemo(() => enabledFromRecord(record), [record])
   const disabledEnvs = ALL_ENVS.filter((e) => !enabled.includes(e))
-  const suggested = useMemo(() => suggestedFrontendUrls(record.slug), [record.slug])
+  const suggested = useMemo(() => {
+    const fromDelivery = record.delivery?.suggestedUrls
+    const fromNest = {
+      investor: fromDelivery?.investor ?? '',
+      entrepreneur: fromDelivery?.entrepreneur ?? '',
+      admin: fromDelivery?.admin ?? '',
+    }
+    if (fromNest.investor || fromNest.entrepreneur || fromNest.admin) return fromNest
+    // Legacy fallback only when delivery has no Nest suggestions yet.
+    return suggestedFrontendUrls(record.slug, {
+      investor: 'https://{slug}.loor.vc',
+      entrepreneur: 'https://{slug}.empresa.loor.vc',
+      admin: 'https://{slug}.admin.loor.vc',
+    })
+  }, [record])
   const fromFe = useMemo(() => urlsFromFeStep(record, enabled), [record, enabled])
   const initialUrls = useMemo(() => {
     const base = fromFe ?? suggested

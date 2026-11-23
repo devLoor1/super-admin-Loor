@@ -30,6 +30,7 @@ export function ClientStep({ draft, errors, set, patch }: StepProps) {
       slug: value,
       previousSlug: draft.slug,
       baseUrl: draft.baseUrl,
+      urlTemplates: draft.urlTemplates,
     })
     if (patch) patch({ slug: value, baseUrl })
     else {
@@ -38,11 +39,20 @@ export function ClientStep({ draft, errors, set, patch }: StepProps) {
     }
   }
 
+  const modeHint =
+    draft.urlMode === 'HOSTNAME'
+      ? 'Modo HOSTNAME (Nest): URL base do Investor preenchida como `https://{slug}.loor.vc`.'
+      : draft.urlMode === 'PATH'
+        ? 'Modo PATH (Nest): URL base do Investor preenchida como `https://homolog.loor.vc/w/{slug}`.'
+        : 'Carregando modo de URL do Control Plane…'
+  const placeholder =
+    draft.urlMode === 'HOSTNAME' ? 'https://cliente.loor.vc' : 'https://homolog.loor.vc/w/shared-fe-demo-a'
+
   return (
     <div className={styles.formGrid}>
       <TextField id="prov-name" label="Nome do Whitelabel" value={draft.name} maxLength={NAME_MAX * 2} autoComplete="off" error={errors.name} onChange={(e) => set('name', e.target.value)} full />
-      <TextField id="prov-slug" label="Identificador (slug)" value={draft.slug} maxLength={SLUG_MAX + 20} autoComplete="off" spellCheck={false} error={errors.slug} hint="Letras minúsculas, números e hífens. Em modo PATH a URL base do Investor é preenchida automaticamente. A edição do slug não está disponível depois da criação." onChange={(e) => onSlugChange(e.target.value)} />
-      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder="https://homolog.loor.vc/w/shared-fe-demo-a" error={errors.baseUrl} hint="Homolog PATH: preenchida ao digitar o slug (`https://homolog.loor.vc/w/{slug}`). Pode editar manualmente; depois disso o auto-preenchimento para de sobrescrever." onChange={(e) => set('baseUrl', e.target.value)} />
+      <TextField id="prov-slug" label="Identificador (slug)" value={draft.slug} maxLength={SLUG_MAX + 20} autoComplete="off" spellCheck={false} error={errors.slug} hint={`Letras minúsculas, números e hífens. ${modeHint} A edição do slug não está disponível depois da criação.`} onChange={(e) => onSlugChange(e.target.value)} />
+      <TextField id="prov-base-url" label="URL base" value={draft.baseUrl} maxLength={BASE_URL_MAX} autoComplete="off" spellCheck={false} placeholder={placeholder} error={errors.baseUrl} hint={`${modeHint} Pode editar manualmente; depois disso o auto-preenchimento para de sobrescrever.`} onChange={(e) => set('baseUrl', e.target.value)} />
     </div>
   )
 }

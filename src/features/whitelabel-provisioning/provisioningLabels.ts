@@ -8,6 +8,7 @@ export const STEP_LABELS: Readonly<Record<ProvisioningStepKey, string>> = Object
   TERMS: 'Termos de uso',
   SMTP: 'SMTP',
   GATEWAY_CONFIG: 'Gateway de pagamento',
+  CONFIGURE_FRONTEND_DOMAINS: 'Domínios frontend (Netlify)',
   FE_DEPLOY_CHECK: 'Frontend compartilhado (readiness)',
   DNS_CHECK: 'DNS / HTTPS / tenant (readiness)',
   VALIDATE: 'Validação final',

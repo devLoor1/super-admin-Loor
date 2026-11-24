@@ -1,9 +1,19 @@
+import { useState } from 'react'
+import { Power, PowerOff } from 'lucide-react'
 import { describeApiError } from '../../lib/apiErrors'
 import { ApiError } from '../../lib/api'
+import { useSessionOperator } from '../../lib/authSession'
 import { useRemote } from '../../lib/useRemoteResource'
+import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
+import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import {
+  WHITELABEL_LIFECYCLE_ENABLED,
+  WHITELABEL_WRITE_ROLE,
+} from '../whitelabels/crud/whitelabelMutationContract'
 import {
   getWhitelabelProvisioning,
+  updateWhitelabelEnvironments,
   type EnvironmentCapability,
   type ProvisioningDelivery,
 } from './provisioningApi'
@@ -24,6 +34,31 @@ const ENV_LABEL: Record<EnvironmentCapability, string> = {
  */
 export function ProvisioningSummaryCard({ whitelabelId }: { whitelabelId: string }) {
   const { state, reload } = useRemote(`prov-summary:${whitelabelId}`, async (signal) => getWhitelabelProvisioning(whitelabelId, signal))
+  const operator = useSessionOperator()
+  const [pending, setPending] = useState<{ environment: EnvironmentCapability; action: 'enable' | 'disable' } | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [writeError, setWriteError] = useState<unknown>(null)
+  const canManage = WHITELABEL_LIFECYCLE_ENABLED && operator?.roles.includes(WHITELABEL_WRITE_ROLE) === true
+
+  async function confirmEnvironmentChange() {
+    if (!pending || !canManage || submitting) return
+    setSubmitting(true)
+    setWriteError(null)
+    try {
+      await updateWhitelabelEnvironments(
+        whitelabelId,
+        pending.action === 'enable'
+          ? { enable: [pending.environment] }
+          : { disable: [pending.environment] },
+      )
+      setPending(null)
+      reload()
+    } catch (error) {
+      setWriteError(error)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   if (state.status === 'error' && state.error instanceof ApiError && state.error.status === 403) return null
 
@@ -52,17 +87,63 @@ export function ProvisioningSummaryCard({ whitelabelId }: { whitelabelId: string
               <div className={styles.progressFill} data-status={state.data.status} style={{ width: `${Math.min(100, Math.max(0, Math.round(state.data.progress.percentage)))}%` }} />
             </div>
           </div>
-          {state.data.delivery ? <DeliveryGlance delivery={state.data.delivery} /> : null}
+          {state.data.delivery ? (
+            <DeliveryGlance
+              delivery={state.data.delivery}
+              canManage={canManage}
+              onChange={(environment, action) => {
+                setWriteError(null)
+                setPending({ environment, action })
+              }}
+            />
+          ) : null}
+          {!WHITELABEL_LIFECYCLE_ENABLED && operator?.roles.includes(WHITELABEL_WRITE_ROLE) ? (
+            <p className={styles.muted}>Alterações de ambientes aguardam a liberação do ciclo de vida.</p>
+          ) : null}
+          {writeError ? <p role="alert" className={styles.error}>{describeApiError(writeError, 'os ambientes').description}</p> : null}
           <a className={styles.link} href={provisioningHref(state.data.id)}>Ver implantação</a>
         </>
       ) : null}
 
       {state.status === 'error' ? <ErrorBody error={state.error} onRetry={reload} /> : null}
+      {pending ? (
+        <Dialog
+          title={`${pending.action === 'enable' ? 'Habilitar' : 'Desabilitar'} ${ENV_LABEL[pending.environment]}?`}
+          description={`Whitelabel ${whitelabelId}`}
+          icon={pending.action === 'enable' ? Power : PowerOff}
+          tone={pending.action === 'enable' ? 'teal' : 'warning'}
+          onClose={() => { if (!submitting) setPending(null) }}
+          footer={
+            <>
+              <OutlineButton disabled={submitting} onClick={() => setPending(null)}>Cancelar</OutlineButton>
+              <PrimaryButton disabled={submitting || !canManage} onClick={() => void confirmEnvironmentChange()}>
+                {submitting ? 'Salvando…' : `Confirmar ${pending.action === 'enable' ? 'habilitação' : 'desabilitação'}`}
+              </PrimaryButton>
+            </>
+          }
+        >
+          <p>
+            {pending.action === 'enable'
+              ? 'O Control Plane adicionará somente o alias necessário e verificará HTTPS e bootstrap. O tenant, admin e branding não serão recriados.'
+              : 'O ambiente deixará de ser contratado. Alias Netlify, DNS, SSL e dados serão preservados como infraestrutura residual.'}
+          </p>
+          <p className={styles.muted}>O slug permanece somente leitura; esta ação não renomeia hostnames.</p>
+          {writeError ? <p role="alert" className={styles.error}>{describeApiError(writeError, 'o ambiente').description}</p> : null}
+        </Dialog>
+      ) : null}
     </section>
   )
 }
 
-function DeliveryGlance({ delivery }: { delivery: ProvisioningDelivery }) {
+function DeliveryGlance({
+  delivery,
+  canManage,
+  onChange,
+}: {
+  delivery: ProvisioningDelivery
+  canManage: boolean
+  onChange: (environment: EnvironmentCapability, action: 'enable' | 'disable') => void
+}) {
   const enabled = delivery.enabledEnvironments ?? (
     [
       delivery.urls.investor != null || delivery.suggestedUrls.investor
@@ -102,9 +183,24 @@ function DeliveryGlance({ delivery }: { delivery: ProvisioningDelivery }) {
   return (
     <div className={styles.summaryDelivery}>
       <p className={styles.muted}>
-        Ambientes:{' '}
+        Ambientes ativos:{' '}
         {enabled.length ? enabled.map((e) => ENV_LABEL[e]).join(', ') : 'não informados'}
       </p>
+      <ul className={styles.environmentList} aria-label="Gerenciar ambientes contratados">
+        {(Object.keys(ENV_LABEL) as EnvironmentCapability[]).map((environment) => {
+          const active = enabled.includes(environment)
+          return (
+            <li key={environment}>
+              <span>{ENV_LABEL[environment]} · {active ? 'Ativo' : 'Inativo'}</span>
+              {canManage ? (
+                <OutlineButton onClick={() => onChange(environment, active ? 'disable' : 'enable')}>
+                  {active ? 'Desabilitar' : 'Habilitar'}
+                </OutlineButton>
+              ) : null}
+            </li>
+          )
+        })}
+      </ul>
       {urlRows.length ? (
         <ul className={styles.summaryUrlList}>
           {urlRows.map((row) => (

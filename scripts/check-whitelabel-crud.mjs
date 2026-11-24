@@ -603,11 +603,15 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
       assert.equal(/method:\s*['"](PUT|DELETE)['"]/.test(source), false)
       continue
     }
-    // Full CREATE path: reviewed independently by check-whitelabel-provisioning.mjs.
+    // Provisioning CREATE plus the reviewed post-CREATE environment lifecycle
+    // PATCH. Environment writes share the tenant lifecycle gate.
     if (runtimePath === 'src/features/whitelabel-provisioning/provisioningApi.ts') {
       assert.equal((source.match(/method:\s*'POST'/g) || []).length, 3)
+      assert.equal((source.match(/method:\s*'PATCH'/g) || []).length, 1)
       assert.match(source, /\/whitelabel-provisionings/)
-      assert.doesNotMatch(stripComments(source), /method:\s*['"](?:PATCH|PUT|DELETE)['"]/)
+      assert.match(source, /\/whitelabels\/\$\{encodeURIComponent\(whitelabelId\)\}\/provisioning\/environments/)
+      assert.match(source, /WHITELABEL_LIFECYCLE_ENABLED/)
+      assert.doesNotMatch(stripComments(source), /method:\s*['"](?:PUT|DELETE)['"]/)
       assert.doesNotMatch(source, /\/admin\/|\/internal\/|fetch\s*\(|sendBeacon|WebSocket/)
       continue
     }

@@ -72,7 +72,11 @@ export const WRITE_ACCESS_NOTE: Readonly<Record<Exclude<WhitelabelWriteAccess, '
 /* ---------- open blockers (contract gate). D is decided: slug/baseUrl immutable. ---------- */
 
 export const WHITELABEL_OPEN_BLOCKERS = Object.freeze([
-  Object.freeze({ id: 'A', label: 'Efeitos da desativação no tenant (cadastro, configurações públicas)' }),
+  Object.freeze({
+    id: 'A',
+    label:
+      'Desativação operacional: login + Auth middleware bloqueiam com WHITELABEL_INACTIVE; smoke live em homolog ainda pendente.',
+  }),
   Object.freeze({ id: 'B', label: 'Isolamento da recuperação de senha com tenant inativo: entrega Backend ainda não validada no ambiente' }),
   Object.freeze({ id: 'C', label: 'Política e efeitos de desativar o Whitelabel padrão' }),
   Object.freeze({
@@ -87,6 +91,6 @@ export const WHITELABEL_OPEN_BLOCKERS = Object.freeze([
   Object.freeze({
     id: 'I',
     label:
-      'Habilitar ambiente após CREATE ainda não dispara alias Netlify automático (provisioning inicial cobre os ambientes escolhidos na implantação).',
+      'Ambientes pós-CREATE: PATCH …/provisioning/environments (enable=alias+readiness+delivery; disable=descontrata sem remover alias). Smoke live e PATH-mode alias nuances ainda pendentes.',
   }),
 ])

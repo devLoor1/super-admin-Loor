@@ -1,6 +1,10 @@
 import { ApiError, apiRequest } from '../../lib/api'
 import { getAccessToken, getOperator, getSessionVersion, handleUnauthorized } from '../../lib/authSession'
-import { WHITELABEL_WRITES_ENABLED, WHITELABEL_WRITE_ROLE } from '../whitelabels/crud/whitelabelMutationContract'
+import {
+  WHITELABEL_LIFECYCLE_ENABLED,
+  WHITELABEL_WRITES_ENABLED,
+  WHITELABEL_WRITE_ROLE,
+} from '../whitelabels/crud/whitelabelMutationContract'
 
 /** Same create write gate as CRUD — Product must enable the env before implantation UI can POST. */
 export const PROVISIONING_WRITES_ENABLED = WHITELABEL_WRITES_ENABLED
@@ -486,6 +490,11 @@ function authorizeWrite() {
   if (!PROVISIONING_WRITES_ENABLED) throw new ApiError(403, { code: 'PROVISIONING_WRITES_DISABLED' })
 }
 
+function authorizeEnvironmentWrite() {
+  if (!canWriteProvisioning(getOperator()?.roles)) throw new ApiError(403, { code: 'PROVISIONING_WRITE_FORBIDDEN' })
+  if (!WHITELABEL_LIFECYCLE_ENABLED) throw new ApiError(403, { code: 'WHITELABEL_LIFECYCLE_DISABLED' })
+}
+
 function safeError(error: unknown): never {
   if (error instanceof ApiError) throw error
   throw error
@@ -494,16 +503,17 @@ function safeError(error: unknown): never {
 async function authed<T>(
   path: string,
   options: {
-    method?: 'GET' | 'POST'
+    method?: 'GET' | 'POST' | 'PATCH'
     body?: unknown
     query?: Record<string, string | number | boolean | null | undefined>
     successStatus?: number
     signal?: AbortSignal
   },
   parse: (raw: unknown) => T,
-  write: boolean,
+  write: boolean | 'lifecycle',
 ): Promise<T> {
-  if (write) authorizeWrite()
+  if (write === 'lifecycle') authorizeEnvironmentWrite()
+  else if (write) authorizeWrite()
   else authorizeRead()
   const token = getAccessToken()
   const session = getSessionVersion()
@@ -556,6 +566,36 @@ export function getProvisioning(id: string, signal?: AbortSignal) {
 export function getWhitelabelProvisioning(whitelabelId: string, signal?: AbortSignal) {
   if (!/^[1-9]\d*$/.test(whitelabelId)) throw new ApiError(404, { code: 'INVALID_WHITELABEL_ID' })
   return authed(`/whitelabels/${encodeURIComponent(whitelabelId)}/provisioning`, { signal }, parseProvisioning, false)
+}
+
+export type UpdateEnvironmentsBody = {
+  enable?: EnvironmentCapability[]
+  disable?: EnvironmentCapability[]
+}
+
+/**
+ * Post-CREATE environment contract changes.
+ * Enable: Netlify alias (HOSTNAME) + readiness + delivery update.
+ * Disable: marks uncontracted; aliases/DNS/SSL/data are retained deliberately.
+ * Shares VITE_WHITELABEL_LIFECYCLE_ENABLED with tenant activate/deactivate.
+ */
+export function updateWhitelabelEnvironments(
+  whitelabelId: string,
+  body: UpdateEnvironmentsBody,
+  signal?: AbortSignal,
+) {
+  if (!/^[1-9]\d*$/.test(whitelabelId)) throw new ApiError(404, { code: 'INVALID_WHITELABEL_ID' })
+  const enable = body.enable ?? []
+  const disable = body.disable ?? []
+  if (!enable.length && !disable.length) {
+    throw new ApiError(400, { code: 'E_ENVIRONMENT_ACTION_EMPTY' })
+  }
+  return authed(
+    `/whitelabels/${encodeURIComponent(whitelabelId)}/provisioning/environments`,
+    { method: 'PATCH', body: { enable, disable }, signal },
+    parseProvisioning,
+    'lifecycle',
+  )
 }
 
 export function retryProvisioning(id: string, body: RetryProvisioningBody = {}, signal?: AbortSignal, mainAreaImage?: File | null) {

@@ -336,9 +336,10 @@ await check('role-aware presentation: only SUPER_ADMIN gets the review flows; un
   assert.equal(contract.whitelabelWriteAccess(undefined), 'unknown')
   assert.match(contract.WRITE_ACCESS_NOTE['read-only'], /somente ao perfil Super Admin/)
 })
-await check('the contract-gate blockers A–H are carried forward, none marked resolved', async () => {
-  assert.deepEqual(contract.WHITELABEL_OPEN_BLOCKERS.map((blocker) => blocker.id), ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
+await check('the contract-gate blockers A–I are carried forward, none marked resolved', async () => {
+  assert.deepEqual(contract.WHITELABEL_OPEN_BLOCKERS.map((blocker) => blocker.id), ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'])
   assert.equal(contract.WHITELABEL_OPEN_BLOCKERS.some((blocker) => 'resolved' in blocker), false)
+  assert.match(contract.WHITELABEL_OPEN_BLOCKERS.find((b) => b.id === 'D').label, /imutáveis|rename|migração/i)
 })
 
 /* ---------- outcome interpretation (presentation of a future response) ---------- */
@@ -602,15 +603,25 @@ await check('Whitelabel reads remain GET-only; writes confined to exact reviewed
       assert.equal(/method:\s*['"](PUT|DELETE)['"]/.test(source), false)
       continue
     }
+    // Full CREATE path: reviewed independently by check-whitelabel-provisioning.mjs.
+    if (runtimePath === 'src/features/whitelabel-provisioning/provisioningApi.ts') {
+      assert.equal((source.match(/method:\s*'POST'/g) || []).length, 3)
+      assert.match(source, /\/whitelabel-provisionings/)
+      assert.doesNotMatch(stripComments(source), /method:\s*['"](?:PATCH|PUT|DELETE)['"]/)
+      assert.doesNotMatch(source, /\/admin\/|\/internal\/|fetch\s*\(|sendBeacon|WebSocket/)
+      continue
+    }
     assert.equal(/method:\s*['"](PATCH|PUT|DELETE)['"]/.test(source), false, file)
     if (/method:\s*['"]POST['"]/.test(source)) assert.match(file.replaceAll('\\', '/'), /src\/lib\/authSession\.ts$/, 'only the login uses POST')
   }
   const client = await readFile(resolve(root, 'src/lib/apiClient.ts'), 'utf8')
   assert.equal(/method/.test(stripComments(client)), false, 'the authenticated client exposes no method option')
 })
-await check('page wiring: dialogs get the selected authoritative record; no list / detail state is written', async () => {
+await check('page wiring: CREATE is Implantar (provisioning); edit dialog gets authoritative record; no list mutation', async () => {
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
-  assert.match(page, /<WhitelabelCreateDialog onClose=/)
+  assert.equal(/WhitelabelCreateDialog/.test(page), false, 'legacy CreateDialog must not be mounted; CREATE is provisioning only')
+  assert.match(page, /onProvision=\{openProvisioning\}/)
+  assert.match(page, /provisioningNewHref/)
   assert.match(page, /dialog\?\.kind === 'edit' && dialog\.record\.id === selectedId \? \(\s*<WhitelabelNameEditDialog\s+key=\{dialog\.record\.id\}/)
   assert.match(page, /latest=\{loadedDetail\?\.id === dialog\.record\.id \? loadedDetail : null\}/)
   assert.match(page, /selectedId=\{selectedId\}/)
@@ -619,7 +630,7 @@ await check('page wiring: dialogs get the selected authoritative record; no list
 })
 await check('page identity safety: switching selection discards the open edit; edits open only for the loaded selected ID', async () => {
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
-  assert.match(page, /if \(dialog && dialog.kind !== 'create' && dialog\.record\.id !== selectedId\) \{\s*setDialog\(null\)/)
+  assert.match(page, /if \(dialog && dialog\.record\.id !== selectedId\) \{\s*setDialog\(null\)/)
   assert.match(page, /A revisão foi fechada porque outro Whitelabel foi selecionado/)
   assert.match(page, /if \(writeAccess !== 'super-admin'\) return\s+if \(record\.id !== selectedId \|\| loadedDetail\?\.id !== record\.id\) \{\s+notify\([^)]*\)\s+return/)
   assert.match(page, /setDialog\(\{ kind: 'edit', record: loadedDetail, sessionVersion: getSessionVersion\(\) \}\)/, 'the authoritative detail and session, not a transition copy')
@@ -628,10 +639,10 @@ await check('page roles: access comes from the existing session operator; restri
   const page = await readFile(resolve(wlDir, 'WhitelabelsPage.tsx'), 'utf8')
   assert.match(page, /const operator = useSessionOperator\(\)/)
   assert.match(page, /whitelabelWriteAccess\(operator\?\.roles\)/)
-  assert.match(page, /if \(writeAccess !== 'super-admin'\) \{\s*notify\(WRITE_ACCESS_NOTE\[writeAccess\]\)\s*return/)
+  assert.match(page, /writeAccess === 'super-admin'/)
   const list = await readFile(resolve(wlDir, 'WhitelabelListPanel.tsx'), 'utf8')
-  assert.match(list, /createAccess === 'super-admin' \?/)
-  assert.match(list, /aria-disabled="true"\s+aria-describedby="wl-create-access-note"/)
+  assert.match(list, /provisionAvailable \?/)
+  assert.match(list, /aria-disabled="true"\s+aria-describedby="wl-provision-access-note"/)
   const detail = await readFile(resolve(wlDir, 'WhitelabelDetailPanel.tsx'), 'utf8')
   assert.match(detail, /access === 'super-admin' \?/)
   assert.match(detail, /aria-describedby="wl-edit-access-note"/)
@@ -683,24 +694,25 @@ const pageScenario = () => {
   globalThis.__wlCrudPage = { operator: { roles: ['SUPER_ADMIN'] }, records: [RECORD_A, RECORD_B], list: { rows: [RECORD_A, RECORD_B], total: 2, lastPage: 1 } }
   return renderHarness(PageContent, { accentColor: '#7c3aed', routeKey: '', params: { whitelabelId: RECORD_A.id } })
 }
-await check('actual page: role loss closes create/edit drafts and never restores them on role regain', async () => {
+await check('actual page: role loss closes edit drafts and never restores them on role regain', async () => {
   for (const roles of [['SUPPORT_ADMIN'], ['READ_ONLY'], [], null]) {
-    for (const kind of ['create', 'edit']) {
-      const h = pageScenario()
-      const tree = h.render()
-      if (kind === 'create') pageChild(tree, 'WhitelabelListPanel').props.onCreate()
-      else pageChild(tree, 'WhitelabelDetailPanel').props.onEditName(RECORD_A)
-      const dialogName = kind === 'create' ? 'WhitelabelCreateDialog' : 'WhitelabelNameEditDialog'
-      assert.ok(pageChild(h.render(), dialogName))
-      globalThis.__wlCrudPage.operator = roles === null ? null : { roles }
-      h.render() // React rerenders after render-phase state adjustment.
-      assert.equal(pageChild(h.render(), dialogName), null, `draft must close for ${JSON.stringify(roles)}`)
-      assert.doesNotMatch(textOf(findElement(h.render(), element => element.props?.['data-crud-announcement'])), /Nada foi enviado/, 'closing a dialog must not assert the outcome of a potentially sent request')
-      globalThis.__wlCrudPage.operator = { roles: ['SUPER_ADMIN'] }
-      assert.equal(pageChild(h.render(), dialogName), null, 'no hidden draft survives role loss')
-      assert.equal(requests, 0)
-    }
+    const h = pageScenario()
+    pageChild(h.render(), 'WhitelabelDetailPanel').props.onEditName(RECORD_A)
+    assert.ok(pageChild(h.render(), 'WhitelabelNameEditDialog'))
+    globalThis.__wlCrudPage.operator = roles === null ? null : { roles }
+    h.render() // React rerenders after render-phase state adjustment.
+    assert.equal(pageChild(h.render(), 'WhitelabelNameEditDialog'), null, `draft must close for ${JSON.stringify(roles)}`)
+    assert.doesNotMatch(textOf(findElement(h.render(), element => element.props?.['data-crud-announcement'])), /Nada foi enviado/, 'closing a dialog must not assert the outcome of a potentially sent request')
+    globalThis.__wlCrudPage.operator = { roles: ['SUPER_ADMIN'] }
+    assert.equal(pageChild(h.render(), 'WhitelabelNameEditDialog'), null, 'no hidden draft survives role loss')
+    assert.equal(requests, 0)
   }
+})
+await check('actual page: CREATE CTA is onProvision (Implantar), not legacy CreateDialog', async () => {
+  const h = pageScenario()
+  const list = pageChild(h.render(), 'WhitelabelListPanel')
+  assert.equal(typeof list.props.onProvision, 'function')
+  assert.equal(pageChild(h.render(), 'WhitelabelCreateDialog'), null)
 })
 await check('actual page: moving A to B clears A draft; B opens from B detail and prepares B ID', async () => {
   const h = pageScenario()

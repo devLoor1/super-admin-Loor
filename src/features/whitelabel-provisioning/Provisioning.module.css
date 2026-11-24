@@ -107,6 +107,8 @@
 .summary { display: grid; gap: 8px; padding: 14px 0 0; border-top: 1px solid var(--surface-divider); }
 .summaryHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .summaryTitle { font-size: 15px; font-weight: 600; line-height: 20px; }
+.summaryDelivery { display: grid; gap: 6px; margin-top: 4px; }
+.summaryUrlList { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12px; line-height: 18px; }
 
 @media (max-width: 760px) {
   .panel { padding: 16px 14px; }

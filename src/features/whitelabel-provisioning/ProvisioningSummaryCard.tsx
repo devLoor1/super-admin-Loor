@@ -2,11 +2,21 @@ import { describeApiError } from '../../lib/apiErrors'
 import { ApiError } from '../../lib/api'
 import { useRemote } from '../../lib/useRemoteResource'
 import { OutlineButton } from '../../components/ui/OutlineButton'
-import { getWhitelabelProvisioning } from './provisioningApi'
+import {
+  getWhitelabelProvisioning,
+  type EnvironmentCapability,
+  type ProvisioningDelivery,
+} from './provisioningApi'
 import { STEP_LABELS } from './provisioningLabels'
 import { provisioningHref } from './provisioningRoute'
 import { ProvisioningStatusBadge } from './ProvisioningUi'
 import styles from './Provisioning.module.css'
+
+const ENV_LABEL: Record<EnvironmentCapability, string> = {
+  INVESTOR: 'Investidor',
+  ENTREPRENEUR: 'Empreendedor',
+  ADMIN: 'Admin',
+}
 
 /**
  * Read-only implantation summary for the Whitelabel detail (`GET /whitelabels/:id/provisioning`).
@@ -42,12 +52,77 @@ export function ProvisioningSummaryCard({ whitelabelId }: { whitelabelId: string
               <div className={styles.progressFill} data-status={state.data.status} style={{ width: `${Math.min(100, Math.max(0, Math.round(state.data.progress.percentage)))}%` }} />
             </div>
           </div>
+          {state.data.delivery ? <DeliveryGlance delivery={state.data.delivery} /> : null}
           <a className={styles.link} href={provisioningHref(state.data.id)}>Ver implantação</a>
         </>
       ) : null}
 
       {state.status === 'error' ? <ErrorBody error={state.error} onRetry={reload} /> : null}
     </section>
+  )
+}
+
+function DeliveryGlance({ delivery }: { delivery: ProvisioningDelivery }) {
+  const enabled = delivery.enabledEnvironments ?? (
+    [
+      delivery.urls.investor != null || delivery.suggestedUrls.investor
+        ? 'INVESTOR'
+        : null,
+      delivery.urls.entrepreneur != null || delivery.suggestedUrls.entrepreneur
+        ? 'ENTREPRENEUR'
+        : null,
+      delivery.urls.admin != null || delivery.suggestedUrls.admin ? 'ADMIN' : null,
+    ].filter(Boolean) as EnvironmentCapability[]
+  )
+
+  const urlRows: { label: string; href: string; confirmed: boolean }[] = []
+  const pushEnv = (
+    capability: EnvironmentCapability,
+    label: string,
+    confirmed: string | null | undefined,
+    suggested: string | undefined,
+  ) => {
+    if (!enabled.includes(capability)) return
+    const href = confirmed || suggested
+    if (!href) return
+    urlRows.push({ label, href, confirmed: Boolean(confirmed) })
+  }
+  pushEnv('INVESTOR', 'Investidor', delivery.urls.investor, delivery.suggestedUrls.investor)
+  pushEnv(
+    'ENTREPRENEUR',
+    'Empreendedor',
+    delivery.urls.entrepreneur,
+    delivery.suggestedUrls.entrepreneur,
+  )
+  pushEnv('ADMIN', 'Admin', delivery.urls.admin, delivery.suggestedUrls.admin)
+  if (!urlRows.length && delivery.urls.primary) {
+    urlRows.push({ label: 'Principal', href: delivery.urls.primary, confirmed: true })
+  }
+
+  return (
+    <div className={styles.summaryDelivery}>
+      <p className={styles.muted}>
+        Ambientes:{' '}
+        {enabled.length ? enabled.map((e) => ENV_LABEL[e]).join(', ') : 'não informados'}
+      </p>
+      {urlRows.length ? (
+        <ul className={styles.summaryUrlList}>
+          {urlRows.map((row) => (
+            <li key={row.label}>
+              <span className={styles.muted}>
+                {row.label}
+                {row.confirmed ? '' : ' (sugerida)'}
+              </span>{' '}
+              <a className={`${styles.link} ${styles.mono}`} href={row.href} target="_blank" rel="noreferrer">
+                {row.href}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className={styles.muted}>URLs ainda não disponíveis nesta entrega.</p>
+      )}
+    </div>
   )
 }
 

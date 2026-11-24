@@ -30,12 +30,15 @@ import styles from './WhitelabelCrud.module.css'
 const PREFIX = 'wl-create'
 
 /**
- * Novo Whitelabel — prepared for `POST /api/whitelabels { name, slug, baseUrl }`.
+ * LEGACY — not mounted on WhitelabelsPage.
+ * CREATE in the Super Admin UI is only via Implantar (provisioning wizard).
+ * Kept for API/compat contract checks and `POST /api/whitelabels` review flows.
+ * Do not re-wire as a second CREATE path alongside provisioning.
  *
- * The form validates locally (rules of `CreateWhitelabelDto`), then stops at a
- * review that shows exactly what a future request would carry. The final
- * button stays disabled by default. Explicit build-time activation connects
- * the reviewed command to the guarded transport; no optimistic row is added.
+ * Legacy simple create (`POST /api/whitelabels { name, slug, baseUrl }`).
+ *
+ * Not wired to the Whitelabels list CTA — production CREATE is Implantar
+ * (provisioning wizard). Kept for API/compat and controlled emergency use.
  */
 export function WhitelabelCreateDialog({ onClose, fallbackFocus, onConfirmed, onInspectRecord }: { onClose: () => void; fallbackFocus?: () => HTMLElement | null; onConfirmed?: (record: WhitelabelRecord) => void; onInspectRecord?: (record: WhitelabelRecord) => void }) {
   const [draft, setDraft] = useState<CreateDraft>(() => ({ ...EMPTY_CREATE_DRAFT }))

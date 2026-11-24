@@ -1,12 +1,14 @@
 /*
  * Whitelabel Operational V1 — contract and build-time activation boundary.
  *
- * Create/name-only and Lifecycle have independent, exact-true build guards.
- * Backend SUPER_ADMIN guards remain authoritative. Lifecycle DELETE is the
- * deactivation alias, not physical deletion or universal access revocation.
+ * Name-only PATCH and Lifecycle have independent, exact-true build guards.
+ * Backend SUPER_ADMIN guards remain authoritative. UI CREATE is provisioning
+ * only (Implantar); POST /whitelabels remains for API/compat, not the list CTA.
+ * Lifecycle DELETE is soft-deactivate alias — no physical delete / no cascade.
+ * Slug and baseUrl are not editable via PATCH (forbidNonWhitelisted).
  *
- *   POST   /api/whitelabels                  { name, slug, baseUrl }   SUPER_ADMIN   → prepared (create review)
- *   PATCH  /api/whitelabels/:id              { name }                  SUPER_ADMIN   → prepared (name-only edit review)
+ *   POST   /api/whitelabels                  { name, slug, baseUrl }   SUPER_ADMIN   → API/compat (UI uses provisioning)
+ *   PATCH  /api/whitelabels/:id              { name }                  SUPER_ADMIN   → name-only edit review
  *   PATCH  /api/whitelabels/:id/activate     —                         SUPER_ADMIN   → lifecycle guard
  *   PATCH  /api/whitelabels/:id/deactivate   —                         SUPER_ADMIN   → lifecycle guard
  *   DELETE /api/whitelabels/:id              alias of deactivate       SUPER_ADMIN   → lifecycle guard
@@ -67,15 +69,24 @@ export const WRITE_ACCESS_NOTE: Readonly<Record<Exclude<WhitelabelWriteAccess, '
   unknown: 'Perfil do operador não confirmado nesta sessão: criar ou editar Whitelabels exige o perfil Super Admin.',
 })
 
-/* ---------- open blockers (kept from the contract gate; none is resolved here) ---------- */
+/* ---------- open blockers (contract gate). D is decided: slug/baseUrl immutable. ---------- */
 
 export const WHITELABEL_OPEN_BLOCKERS = Object.freeze([
   Object.freeze({ id: 'A', label: 'Efeitos da desativação no tenant (cadastro, configurações públicas)' }),
   Object.freeze({ id: 'B', label: 'Isolamento da recuperação de senha com tenant inativo: entrega Backend ainda não validada no ambiente' }),
   Object.freeze({ id: 'C', label: 'Política e efeitos de desativar o Whitelabel padrão' }),
-  Object.freeze({ id: 'D', label: 'Edição de slug / URL base muda a resolução do tenant' }),
+  Object.freeze({
+    id: 'D',
+    label:
+      'Slug/URL base imutáveis após criação (Nest + Core rejeitam). Rename futuro = operação de migração dedicada.',
+  }),
   Object.freeze({ id: 'E', label: 'Smoke de escrita real ainda exige autorização e plano de isolamento/limpeza' }),
   Object.freeze({ id: 'F', label: 'Audit é best-effort e não participa de transação atômica com o Core' }),
   Object.freeze({ id: 'G', label: 'Concorrência last-write-wins; não há versão ou ETag neste ciclo' }),
   Object.freeze({ id: 'H', label: '409 E_SLUG_TAKEN confirmado na fonte; smoke de escrita real pendente' }),
+  Object.freeze({
+    id: 'I',
+    label:
+      'Habilitar ambiente após CREATE ainda não dispara alias Netlify automático (provisioning inicial cobre os ambientes escolhidos na implantação).',
+  }),
 ])

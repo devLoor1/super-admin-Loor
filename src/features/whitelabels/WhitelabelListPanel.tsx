@@ -10,7 +10,6 @@ import {
   Info,
   Lock,
   MoreHorizontal,
-  Plus,
   RotateCw,
   Rocket,
   SearchX,
@@ -63,11 +62,12 @@ type WhitelabelListPanelProps = {
   onActivate: (id: string) => void
   /** Row "…": shows that Whitelabel's detail and moves focus to its actions (no destructive control in rows). */
   onOpenActions: (id: string) => void
-  /** "Novo Whitelabel": the page opens the create review (SUPER_ADMIN) or explains the restriction. */
-  onCreate: () => void
   /** Role-aware presentation only; the Backend guard is the authority. */
   createAccess: WhitelabelWriteAccess
-  /** "Implantar Whitelabel": navigates to the wizard (SUPER_ADMIN + writes enabled) or explains why it is unavailable. */
+  /**
+   * "Implantar Whitelabel" — sole CREATE path (full provisioning).
+   * Simple POST create is not offered in the list to avoid a competing flow.
+   */
   onProvision: () => void
   provisionAvailable: boolean
   accentColor: string
@@ -106,7 +106,6 @@ export function WhitelabelListPanel({
   activeId,
   onActivate,
   onOpenActions,
-  onCreate,
   createAccess,
   onProvision,
   provisionAvailable,
@@ -142,48 +141,27 @@ export function WhitelabelListPanel({
         </div>
         <div className={styles.headerActions}>
           {provisionAvailable ? (
-            <OutlineButton className={styles.provisionButton} onClick={onProvision} data-wl-provision>
+            <PrimaryButton className={styles.newButton} onClick={onProvision} data-wl-provision>
               <Rocket size={16} strokeWidth={1.8} aria-hidden="true" />
               Implantar Whitelabel
-            </OutlineButton>
+            </PrimaryButton>
           ) : (
             <>
-              <OutlineButton
-                className={styles.provisionButton}
+              <PrimaryButton
+                className={styles.newButton}
                 onClick={onProvision}
                 aria-disabled="true"
                 aria-describedby="wl-provision-access-note"
                 data-wl-provision
                 data-restricted={createAccess}
               >
-                <Lock size={16} strokeWidth={1.8} aria-hidden="true" />
-                Implantar Whitelabel
-              </OutlineButton>
-              <span id="wl-provision-access-note" className="visually-hidden">
-                {createAccess === 'super-admin' ? WHITELABEL_MUTATIONS.create.pendingLabel : WRITE_ACCESS_NOTE[createAccess]}
-              </span>
-            </>
-          )}
-          {createAccess === 'super-admin' ? (
-            <PrimaryButton className={styles.newButton} onClick={onCreate} data-wl-create>
-              <Plus size={18} strokeWidth={1.9} aria-hidden="true" />
-              Novo Whitelabel
-            </PrimaryButton>
-          ) : (
-            <>
-              <PrimaryButton
-                className={styles.newButton}
-                onClick={onCreate}
-                aria-disabled="true"
-                aria-describedby="wl-create-access-note"
-                data-wl-create
-                data-restricted={createAccess}
-              >
                 <Lock size={18} strokeWidth={1.9} aria-hidden="true" />
-                Novo Whitelabel
+                Implantar Whitelabel
               </PrimaryButton>
-              <span id="wl-create-access-note" className="visually-hidden">
-                {WRITE_ACCESS_NOTE[createAccess]}
+              <span id="wl-provision-access-note" className="visually-hidden">
+                {createAccess === 'super-admin'
+                  ? WHITELABEL_MUTATIONS.create.pendingLabel
+                  : WRITE_ACCESS_NOTE[createAccess]}
               </span>
             </>
           )}

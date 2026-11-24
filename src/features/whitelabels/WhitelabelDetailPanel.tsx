@@ -26,6 +26,7 @@ import styles from './WhitelabelDetailPanel.module.css'
 import { useSessionOperator } from '../../lib/authSession'
 import { showcaseSettingsEntryHref } from '../whitelabel-showcase/showcaseAccess'
 import { ProvisioningSummaryCard } from '../whitelabel-provisioning/ProvisioningSummaryCard'
+import { configHref } from '../whitelabel-settings/configRoute'
 
 type DetailTab = 'overview'
 
@@ -305,6 +306,38 @@ function Overview({
           <DateField label="Criado em" value={whitelabel.createdAt} />
           <DateField label="Última atualização" value={whitelabel.updatedAt} />
         </dl>
+        <p className={styles.cardSubtitle} data-slug-policy>
+          Slug e URL base são somente leitura após a criação. Troca de slug exige operação dedicada de migração
+          (aliases Netlify, hostnames, bootstrap e referências).
+        </p>
+      </section>
+
+      <section className={styles.card} aria-labelledby="wl-manage-title" data-detail-stage="management">
+        <div className={styles.cardHeader}>
+          <h3 id="wl-manage-title" className={styles.cardTitle}>
+            Gerenciamento
+          </h3>
+        </div>
+        <p className={styles.cardSubtitle}>
+          Branding, cores, logo e configurações públicas editáveis ficam nas Configurações do Whitelabel e
+          refletem nos fronts via bootstrap — sem novo deploy.
+        </p>
+        <ul className={styles.manageLinks}>
+          <li>
+            <a href={configHref(whitelabel.id, 'platform')}>Configurações da plataforma</a>
+          </li>
+          <li>
+            <a href={configHref(whitelabel.id, 'identity')}>Identidade visual</a>
+          </li>
+          <li>
+            <a href={`#/whitelabels/${encodeURIComponent(whitelabel.id)}/emails?section=branding`}>
+              Branding de e-mail
+            </a>
+          </li>
+          <li>
+            <a href={`#/whitelabels/${encodeURIComponent(whitelabel.id)}/accounts`}>Contas</a>
+          </li>
+        </ul>
       </section>
 
       <ProvisioningSummaryCard whitelabelId={whitelabel.id} />

@@ -245,6 +245,28 @@
   color: var(--text-on-dark-secondary);
 }
 
+.manageLinks {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.manageLinks a {
+  color: #c9c5ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.manageLinks a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-dark);
+  border-radius: 4px;
+}
+
 .editButton {
   height: 29px;
   margin: 0 1px 0 0;

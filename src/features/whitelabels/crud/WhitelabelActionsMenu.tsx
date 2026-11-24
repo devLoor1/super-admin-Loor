@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { Ban, EllipsisVertical, Lock, Pencil, Power, Trash2 } from 'lucide-react'
+import { Ban, EllipsisVertical, Lock, Pencil, Power } from 'lucide-react'
 import type { WhitelabelStatus } from '../whitelabelApi'
 import { WHITELABEL_MUTATIONS, WRITE_ACCESS_NOTE, type WhitelabelWriteAccess, type LifecycleOperation } from './whitelabelMutationContract'
 import styles from './WhitelabelCrud.module.css'
@@ -10,7 +10,8 @@ import styles from './WhitelabelCrud.module.css'
  * - "Editar nome": opens the name-only review for SUPER_ADMIN; for any other
  *   role it is an `aria-disabled` item with the reason, and does nothing.
  * - Lifecycle is independently guarded and SUPER_ADMIN-only, with explicit
- *   review before dispatch. DELETE is offered as logical deactivation only.
+ *   review before dispatch. UI offers activate/deactivate only (DELETE API is
+ *   a soft-deactivate alias — not exposed as a separate destructive action).
  *
  * Escape / Tab / outside press close the menu; disabled items stay focusable
  * so their reason is announced.
@@ -77,7 +78,7 @@ export function WhitelabelActionsMenu({
     items[next]?.focus()
   }
 
-  const lifecycleActions: LifecycleOperation[] = status === 'active' ? ['deactivate', 'logical-delete'] : ['activate']
+  const lifecycleActions: LifecycleOperation[] = status === 'active' ? ['deactivate'] : ['activate']
   const lifecycleAllowed = access === 'super-admin' && WHITELABEL_MUTATIONS.lifecycle.available && !!onLifecycle
 
   return (
@@ -159,11 +160,17 @@ export function WhitelabelActionsMenu({
           data-menu-lifecycle={operation}
           onClick={() => { if (lifecycleAllowed) { setOpen(false); onLifecycle?.(operation) } }}
         >
-          {operation === 'logical-delete' ? <Trash2 size={15} aria-hidden="true" /> : operation === 'deactivate' ? <Ban size={15} strokeWidth={1.8} aria-hidden="true" /> : <Power size={15} strokeWidth={1.8} aria-hidden="true" />}
+          {operation === 'deactivate' ? <Ban size={15} strokeWidth={1.8} aria-hidden="true" /> : <Power size={15} strokeWidth={1.8} aria-hidden="true" />}
           <span>
-            {operation === 'activate' ? 'Ativar Whitelabel' : operation === 'deactivate' ? 'Desativar Whitelabel' : 'Excluir logicamente'}
+            {operation === 'activate' ? 'Ativar Whitelabel' : 'Desativar Whitelabel'}
             <span id={`${lifecycleNoteId}-${operation}`} className={styles.menuItemNote} aria-hidden="true">
-              {access !== 'super-admin' ? WRITE_ACCESS_NOTE[access] : !lifecycleAllowed ? WHITELABEL_MUTATIONS.lifecycle.pendingLabel : operation === 'logical-delete' ? 'Torna inativo; não remove o registro' : 'Conferir identidade e estado antes de confirmar'}
+              {access !== 'super-admin'
+                ? WRITE_ACCESS_NOTE[access]
+                : !lifecycleAllowed
+                  ? WHITELABEL_MUTATIONS.lifecycle.pendingLabel
+                  : operation === 'deactivate'
+                    ? 'Torna inativo; não remove dados nem aliases'
+                    : 'Conferir identidade e estado antes de confirmar'}
             </span>
           </span>
         </button>)}

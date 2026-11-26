@@ -169,7 +169,7 @@ export const STUDIO_CELL_PRESENTATION: Record<string, StudioCellPresentation> = 
     cell: 'email_branding.config',
     label: 'Logo e cor primária',
     helper:
-      'Mesmo valor usado pelos e-mails e pelo bootstrap dos fronts (Investidor, Empreendedor e Admin). Não altera favicon/PWA de build.',
+      'Mesmo valor usado pelos e-mails e pelo bootstrap dos fronts (Investidor, Empreendedor e Admin). Faça upload da logo principal; não altera favicon/PWA de build.',
     aliases: ['logo', 'marca', 'logotipo', 'identidade', 'email', 'e-mail', 'cor primaria', 'primaria', 'branding'],
     fields: [
       {
@@ -182,8 +182,8 @@ export const STUDIO_CELL_PRESENTATION: Record<string, StudioCellPresentation> = 
         path: 'logo_url',
         label: 'Logo principal',
         helper:
-          'URL pública da logo. Alimenta e-mails e a logo runtime dos fronts via bootstrap. Se vazia, o site pode cair no banner do Login ou no nome do Whitelabel.',
-        aliases: ['logo', 'marca', 'logotipo', 'identidade', 'url'],
+          'Upload PNG/JPEG no storage oficial do tenant. Persiste logo_asset_ref; o bootstrap devolve a URL assinada em branding.logoUrl. Diferente do banner do Login.',
+        aliases: ['logo', 'marca', 'logotipo', 'identidade', 'upload', 'arquivo'],
       },
     ],
   },

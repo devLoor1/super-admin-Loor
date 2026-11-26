@@ -14,6 +14,8 @@ import s from './ConfigurationStudio.module.css'
 type Props = {
   whitelabelId: string
   slug: string | null
+  /** Comparison mode from the editor toggle — both use the real shared FE. */
+  mode?: 'draft' | 'saved'
   /** Remount iframe when saved settings change (e.g. after successful save/reload). */
   revision?: string | number
 }
@@ -31,7 +33,7 @@ function readSlug(value: { state: string; value?: unknown } | string | null | un
   return null
 }
 
-export function LiveWhitelabelPreview({ whitelabelId, slug, revision = 0 }: Props) {
+export function LiveWhitelabelPreview({ whitelabelId, slug, mode = 'saved', revision = 0 }: Props) {
   const normalizedSlug = readSlug(slug)
   const [load, setLoad] = useState<LoadState>({ status: 'loading' })
   const [environment, setEnvironment] = useState<LivePreviewEnvironment>('investor')
@@ -144,7 +146,9 @@ export function LiveWhitelabelPreview({ whitelabelId, slug, revision = 0 }: Prop
       </div>
 
       <p className={s.livePreviewNote}>
-        A prévia ao vivo exibe apenas as configurações já salvas. Alterações em rascunho não aparecem no frontend real.
+        {mode === 'draft'
+          ? 'Modo rascunho: o front real só reflete o que já foi gravado. Salve e atualize para conferir a mudança.'
+          : 'Modo salvo: frontend compartilhado com a configuração persistida deste Whitelabel.'}
       </p>
 
       {load.status === 'loading' ? <p className={s.livePreviewStatus}>Consultando URLs do tenant…</p> : null}

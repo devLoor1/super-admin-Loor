@@ -43,24 +43,32 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
   const tenantSlug = typeof data.slug === 'object' && data.slug.state === 'value' && typeof data.slug.value === 'string'
     ? data.slug.value
     : null
-  // Platform web cells: always the real shared FE (no editorial draft mock).
+  // Platform web cells: real shared FE only (never the editorial CSS mock).
+  // Rascunho vs Salvo is a comparison mode over the live tenant — unsaved field
+  // values cannot be injected cross-origin into the shared fronts without FE support.
   if (supportsLiveWhitelabelPreview(cell)) {
     const origin = isConfigCell(cell) ? data.configuration[cell] : undefined
     return <>
       <div className={s.previewHead}>
         <div>
           <strong>Prévia ao vivo</strong>
-          <p>Frontend compartilhado do tenant · apenas configuração já salva</p>
+          <p>
+            {saved
+              ? 'Salvo · frontend compartilhado com a configuração persistida'
+              : 'Rascunho · mesmo frontend real; alterações só entram depois de salvar e atualizar'}
+          </p>
         </div>
       </div>
-      {draftPending ? (
+      {!saved || draftPending ? (
         <p className={s.livePreviewNote} role="status">
-          Há alterações em edição que ainda não foram salvas. A prévia ao vivo continua mostrando o estado persistido.
+          O iframe carrega o Whitelabel real. Valores ainda não salvos no editor não podem ser injetados no front
+          compartilhado (origem cruzada). Salve a configuração e use <strong>Atualizar</strong> para ver o rascunho aplicado.
         </p>
       ) : null}
       <LiveWhitelabelPreview
         whitelabelId={data.id}
         slug={tenantSlug}
+        mode={saved ? 'saved' : 'draft'}
         revision={`${data.id}:${cell}:${JSON.stringify(origin?.effectiveValue ?? null)}`}
       />
     </>

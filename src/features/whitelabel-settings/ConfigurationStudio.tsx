@@ -397,9 +397,7 @@ function PlatformStudio({
                           onReload={onReload}
                           onState={onState}
                         />
-                      ) : (
-                        <p className={s.panelHint}>Selecione uma propriedade acima.</p>
-                      )}
+                      ) : null}
                     </div>
                   </details>
                 )

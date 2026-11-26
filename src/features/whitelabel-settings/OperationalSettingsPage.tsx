@@ -84,19 +84,19 @@ function TermsReadFallback({ id }: { id: string }) {
   if (remote.state.status !== 'success') return <p role="status">Consultando revisões nas configurações do Whitelabel…</p>
   return <SettingsReadCards data={remote.state.data} area="terms" />
 }
-function ConfirmedSettings({ id, area, cell }: { id: string; area: ConfigArea; cell?: string }) {
+function ConfirmedSettings({ id, area, cell, env, resource }: { id: string; area: ConfigArea; cell?: string; env?: string; resource?: string }) {
   if (area === 'terms') return <TermsPanel id={id} fallback={<TermsReadFallback id={id} />} />
-  return <GeneralSettings id={id} area={area} cell={cell} />
+  return <GeneralSettings id={id} area={area} cell={cell} env={env} resource={resource} />
 }
-function GeneralSettings({ id, area, cell }: { id: string; area: ConfigArea; cell?: string }) {
+function GeneralSettings({ id, area, cell, env, resource }: { id: string; area: ConfigArea; cell?: string; env?: string; resource?: string }) {
   const remote = useSettingsRead(id)
   if (remote.state.status === 'error') return <SettingsReadFeedback error={remote.state.error} retry={remote.reload} />
   if (remote.state.status !== 'success') return <p role="status">Consultando configurações…</p>
   return area === 'platform' || area === 'app'
-    ? <ConfigurationStudio id={id} data={remote.state.data} area={area} selectedCell={cell} onReload={remote.reload} />
+    ? <ConfigurationStudio id={id} data={remote.state.data} area={area} selectedCell={cell} selectedEnv={env} selectedResource={resource} onReload={remote.reload} />
     : <SettingsReadCards data={remote.state.data} area={area} />
 }
-function SettingsTenant({ whitelabelId, area, cell }: { whitelabelId: string; area: ConfigArea | null; cell?: string }) {
+function SettingsTenant({ whitelabelId, area, cell, env, resource }: { whitelabelId: string; area: ConfigArea | null; cell?: string; env?: string; resource?: string }) {
   const id = isSettingsTenantId(whitelabelId) ? whitelabelId : null
   const tenant = useWhitelabelRecord(id), registry = useWhitelabelOptions()
   const record = tenant.state.status === 'success' ? tenant.state.data : null
@@ -108,13 +108,13 @@ function SettingsTenant({ whitelabelId, area, cell }: { whitelabelId: string; ar
       </div>
       <ConfigNavigation id={id ?? 'select'} active={area ?? 'platform'} />
       {record && area === 'platform' && <ShowcaseEntryCard record={record} />}
-      {!area ? <div role="alert" className={styles.notFound}><h2>Área de configuração inválida</h2><p>Escolha uma das áreas disponíveis acima.</p></div> : !id ? <div className={styles.notFound}><h2>Selecione um Whitelabel</h2><p>Escolha um registro real do Control Plane para consultar suas configurações.</p></div> : tenant.state.status === 'error' ? <SettingsReadFeedback error={tenant.state.error} retry={tenant.reload} /> : record ? <ConfirmedSettings key={`${id}:${area}`} id={id} area={area} cell={cell} /> : <p role="status">Confirmando Whitelabel…</p>}
+      {!area ? <div role="alert" className={styles.notFound}><h2>Área de configuração inválida</h2><p>Escolha uma das áreas disponíveis acima.</p></div> : !id ? <div className={styles.notFound}><h2>Selecione um Whitelabel</h2><p>Escolha um registro real do Control Plane para consultar suas configurações.</p></div> : tenant.state.status === 'error' ? <SettingsReadFeedback error={tenant.state.error} retry={tenant.reload} /> : record ? <ConfirmedSettings key={`${id}:${area}:${env ?? ''}:${resource ?? ''}`} id={id} area={area} cell={cell} env={env} resource={resource} /> : <p role="status">Confirmando Whitelabel…</p>}
     </div></div>
   </AppShell>
 }
-export function OperationalSettingsPage({ whitelabelId, area, cell }: { whitelabelId: string; area?: string; cell?: string }) {
+export function OperationalSettingsPage({ whitelabelId, area, cell, env, resource }: { whitelabelId: string; area?: string; cell?: string; env?: string; resource?: string }) {
   const operator = useSessionOperator()
   const session = useSyncExternalStore(subscribeSession, getSessionVersion, getSessionVersion)
   if (!canReadSettings(operator?.roles)) return <AppShell activeNav="plataformas" title="Configurações do Whitelabel" location="Configurações"><div role="alert" className={styles.notFound}><h2>Acesso não permitido</h2><p>Este perfil não pode consultar configurações. A autorização final pertence ao Backend.</p></div></AppShell>
-  return <SettingsTenant key={session} whitelabelId={whitelabelId} area={configArea(area)} cell={cell} />
+  return <SettingsTenant key={session} whitelabelId={whitelabelId} area={configArea(area)} cell={cell} env={env} resource={resource} />
 }

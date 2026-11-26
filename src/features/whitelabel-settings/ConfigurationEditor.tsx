@@ -9,11 +9,12 @@ import { CONFIG_MESSAGES, configurationLocked, getConfigurationAttempt, reconcil
 import { beginNextSettingsWrite, executeSettingsReset, executeSettingsWrite, getSettingsWriteAttempt, reconcileSettingsWrite, settingsWriteKey, settingsWriteLocked, subscribeSettingsWrites } from './settingsWriteClient'
 import { normalizeSettingValue, settingsFieldBaseline, settingsFieldLabel, settingsTextLimit, type SettingsField, type SettingValue } from './settingsWriteContract'
 import { ConfigurationPreview } from './ConfigurationPreview'
+import type { LivePreviewContext } from './LiveWhitelabelPreview'
 import { configurationDisplayValue } from '../whitelabel-emails/emailBrandingDisplay'
 import s from './ConfigurationStudio.module.css'
 
 export type EditorState = {dirty:boolean;busy:boolean}
-type Props = {id:string;data:SettingsRead;onReload:()=>void;onState:(state:EditorState)=>void}
+type Props = {id:string;data:SettingsRead;onReload:()=>void;onState:(state:EditorState)=>void;previewContext?:LivePreviewContext}
 export function ConfigInput({control,value,onChange,disabled}: {control:Control;value:Json|undefined;onChange:(value:Json)=>void;disabled:boolean}) {
   const id=useId(),shown=typeof value==='string'||typeof value==='number'?value:''
   return <label className={s.field} htmlFor={id}>{control.label}
@@ -29,7 +30,7 @@ export function ConfigInput({control,value,onChange,disabled}: {control:Control;
 export function OriginDetails({origin,cell}:{origin:ConfigOrigin;cell:string}) {
   return <details className={s.provenance}><summary>Origem e comportamento ao salvar</summary><p>{origin.stored?'Substituição própria armazenada.':origin.source==='default'?'Padrão herdado, sem substituição.':'Sem substituição nem padrão retornado.'}</p><p>Uma célula por solicitação: <code>{cell}</code>. Propriedades não editadas são preservadas. A conferência prévia reduz conflitos, sem bloqueio atômico no servidor.</p></details>
 }
-export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
+export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview,previewContext}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
   const [baseline,setBaseline]=useState(data.configuration[cell]!)
   const [draft,setDraft]=useState<Json>(()=>cloneJson(baseline.stored?baseline.storedValue:baseline.effectiveValue))
   const [editing,setEditing]=useState(false),[saved,setSaved]=useState(true),[narrow,setNarrow]=useState<'edit'|'preview'>('edit')
@@ -85,13 +86,13 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
       {attempt&&attempt!==acknowledgedStale&&<p role="status">{CONFIG_MESSAGES[attempt.phase]}{attempt.status?` HTTP ${attempt.status}.`:''}</p>}{error&&<p role="status">{error}</p>}
       {attempt?.phase==='stale'&&attempt!==acknowledgedStale&&<OutlineButton disabled={busy} onClick={()=>void refresh()}>Descartar rascunho e atualizar referência</OutlineButton>}
       {canWrite&&['uncertain','readback_matches'].includes(attempt?.phase??'')&&<OutlineButton disabled={busy} onClick={()=>void reconcile()}>Consultar resultado por GET</OutlineButton>}
-    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div>{renderPreview?renderPreview(saved||!editing?baseline.effectiveValue:draft,saved||!editing,baseline.effectiveValue):<ConfigurationPreview data={{...data,configuration:{...data.configuration,[cell]:baseline}}} cell={cell} override={editing?{cell,value:draft}:null} saved={saved} draftPending={dirty} screen={screen}/>}</div>
+    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div>{renderPreview?renderPreview(saved||!editing?baseline.effectiveValue:draft,saved||!editing,baseline.effectiveValue):<ConfigurationPreview data={{...data,configuration:{...data.configuration,[cell]:baseline}}} cell={cell} override={editing?{cell,value:draft}:null} saved={saved} draftPending={dirty} screen={screen} previewContext={previewContext}/>}</div>
   </div><footer className={s.footer}><span>{dirty?'Alterações não salvas.':canWrite?'Sem alteração pendente.':'Consulta autorizada. Edição requer SUPER_ADMIN.'}</span>{canWrite&&<div><OutlineButton disabled={!editing||busy||locked} onClick={()=>{setEditing(false);setDraft(cloneJson(current));setSaved(true)}}>Descartar</OutlineButton><OutlineButton disabled={!baseline.stored||busy||locked} onClick={()=>setReset(true)}>Remover substituição</OutlineButton><PrimaryButton disabled={!dirty||!!valid||busy||locked} onClick={()=>void save(draft)}>Salvar configuração</PrimaryButton></div>}</footer>
   {reset&&<Dialog title="Remover substituição?" description={definition.title} onClose={()=>setReset(false)} footer={<><OutlineButton onClick={()=>setReset(false)}>Cancelar</OutlineButton><PrimaryButton disabled={busy||locked} onClick={()=>void save(undefined)}>Confirmar remoção</PrimaryButton></>}><p>Remove somente a substituição desta configuração. O padrão retornado pelo servidor ou a ausência serão restaurados; nenhuma cópia do padrão será gravada.</p></Dialog>}</>
 }
 
 /** Contextual presentation over the unchanged SET-01 transport and invariants. */
-export function ScalarConfigurationEditor({id,data,field,onReload,onState}:Props&{field:SettingsField}) {
+export function ScalarConfigurationEditor({id,data,field,onReload,onState,previewContext}:Props&{field:SettingsField}) {
   const [baseline]=useState(()=>settingsFieldBaseline(data,field)),version=useSyncExternalStore(subscribeSession,getSessionVersion,getSessionVersion),operator=useSessionOperator()
   const initial:SettingValue=baseline.value.state==='value'?baseline.value.value:field.startsWith('features.')?false:field==='login.bullets'?['','','']:''
   const [value,setValue]=useState(initial),[editing,setEditing]=useState(false),[saved,setSaved]=useState(true),[reset,setReset]=useState(false),[narrow,setNarrow]=useState<'edit'|'preview'>('edit'),[error,setError]=useState(''),[refreshing,setRefreshing]=useState(false)
@@ -122,7 +123,7 @@ export function ScalarConfigurationEditor({id,data,field,onReload,onState}:Props
     {attempt&&<p role="status">{attempt.phase==='confirmed'?'HTTP 200 e leitura confirmada.':attempt.phase==='stale'?'O valor mudou no servidor. Descarte este rascunho e recarregue para revisar a nova referência.':attempt.phase==='uncertain'||attempt.phase==='readback_matches'?'Resultado não confirmado. Gravações bloqueadas; consulte por GET.':busy?'Solicitação em andamento. Aguarde a leitura de confirmação.':'A solicitação não foi confirmada.'}</p>}{error&&<p role="alert">{error}</p>}
     {canWrite&&['uncertain','readback_matches'].includes(attempt?.phase??'')&&<OutlineButton disabled={busy} onClick={()=>void reconcile()}>Consultar por GET</OutlineButton>}
     {attempt?.phase==='stale'&&!editing&&<OutlineButton disabled={busy} onClick={onReload}>Recarregar referência por GET</OutlineButton>}
-    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div><ConfigurationPreview data={data} cell={field} override={editing?{cell:field,value}:null} saved={saved} draftPending={dirty}/></div></div>
+    </div><div className={s.preview} data-active={narrow==='preview'}><div className={s.previewMode}><button aria-pressed={!saved} onClick={()=>setSaved(false)}>Rascunho</button><button aria-pressed={saved} onClick={()=>setSaved(true)}>Salvo</button></div><ConfigurationPreview data={data} cell={field} override={editing?{cell:field,value}:null} saved={saved} draftPending={dirty} previewContext={previewContext}/></div></div>
     <footer className={s.footer}><span>{dirty?'Alterações não salvas.':'Configuração lida do servidor.'}</span>{canWrite&&<div><OutlineButton disabled={!editing||busy||locked} onClick={()=>{setValue(initial);setEditing(false);setSaved(true)}}>Descartar</OutlineButton><OutlineButton disabled={!baseline.provenance.stored||busy||locked} onClick={()=>setReset(true)}>Remover substituição</OutlineButton><PrimaryButton disabled={!dirty||!valid||busy||locked||attempt?.phase==='stale'} onClick={()=>void save()}>Salvar configuração</PrimaryButton></div>}</footer>
     {reset&&<Dialog title="Remover substituição?" description={settingsFieldLabel(field)} onClose={()=>setReset(false)} footer={<><OutlineButton onClick={()=>setReset(false)}>Cancelar</OutlineButton><PrimaryButton disabled={busy||locked} onClick={()=>void save(true)}>Confirmar remoção</PrimaryButton></>}><p>O valor volta ao padrão herdado ou à ausência, conforme o servidor. Não altera outras configurações.</p></Dialog>}</>
 }

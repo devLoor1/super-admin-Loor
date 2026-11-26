@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, LockKeyhole, Monitor, Smartphone } from 'lucide-react'
 import { isConfigCell, loginPresentationFallback, record, valueAt, type ConfigCell, type Json } from './configurationContract'
 import { AppConfigurationPreview } from './AppConfigurationPreview'
-import { LiveWhitelabelPreview } from './LiveWhitelabelPreview'
+import { LiveWhitelabelPreview, type LivePreviewContext } from './LiveWhitelabelPreview'
 import { supportsLiveWhitelabelPreview } from './livePreviewContract'
 import { supportsLoginPresentation } from './platformPresentationRead'
 import { businessText } from '../operation/shared/businessPresentation'
@@ -22,7 +22,7 @@ const readText = (field: {state:string;value?:unknown}) => field.state === 'valu
 export type PreviewOverride = { cell: string; value: Json } | null
 
 /** Qualified display paths only. Unknown preserved extensions never enter the rendered tree. */
-export function ConfigurationPreview({ data, cell, override = null, saved, imageDraft, screen, draftPending = false }: {data:SettingsRead;cell:string;override?:PreviewOverride;saved:boolean;imageDraft?:string|null;screen?:string;draftPending?:boolean}) {
+export function ConfigurationPreview({ data, cell, override = null, saved, imageDraft, screen, draftPending = false, previewContext }: {data:SettingsRead;cell:string;override?:PreviewOverride;saved:boolean;imageDraft?:string|null;screen?:string;draftPending?:boolean;previewContext?: LivePreviewContext}) {
   const [mobile,setMobile] = useState(false)
   const page = cell.startsWith('register.') ? 'register' : cell.startsWith('quick_profile.') ? 'quick_profile' : 'login'
   const value = (key:ConfigCell):Json => !saved && override?.cell === key ? override.value : data.configuration[key]?.effectiveValue ?? null
@@ -69,7 +69,8 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
         whitelabelId={data.id}
         slug={tenantSlug}
         mode={saved ? 'saved' : 'draft'}
-        revision={`${data.id}:${cell}:${JSON.stringify(origin?.effectiveValue ?? null)}`}
+        revision={`${data.id}:${cell}:${previewContext?.pagePath ?? ''}:${JSON.stringify(origin?.effectiveValue ?? null)}`}
+        context={previewContext}
       />
     </>
   }

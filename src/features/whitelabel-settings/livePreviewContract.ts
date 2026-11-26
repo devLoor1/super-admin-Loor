@@ -9,7 +9,8 @@ export type LivePreviewEnvironment = FrontendEnvironment
 
 /** Platform web experience cells use the shared-FE live preview (never the editorial CSS mock). */
 export function supportsLiveWhitelabelPreview(cell: string): boolean {
-  return !cell.startsWith('app_') && cell !== 'email_branding.config' && !cell.startsWith('features.')
+  // features.* and terminology use a representative live page (not a fake route).
+  return !cell.startsWith('app_') && cell !== 'email_branding.config'
 }
 
 export type LivePreviewTarget = {

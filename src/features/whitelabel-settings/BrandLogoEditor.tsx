@@ -5,7 +5,7 @@ import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
 import { getSessionVersion, subscribeSession, useSessionOperator } from '../../lib/authSession'
-import { ApiError } from '../../lib/api'
+import { ApiError, isAbortError } from '../../lib/api'
 import { cloneJson, record, sameJson, type ConfigOrigin, type Json, type JsonObject } from './configurationContract'
 import { CONFIG_MESSAGES, configurationLocked, getConfigurationAttempt, reconcileConfiguration, subscribeConfiguration, writeConfiguration } from './configurationClient'
 import {
@@ -15,6 +15,7 @@ import {
   assetReference,
   getPlatformAsset,
   mutatePlatformAsset,
+  previewLogoBackgroundRemoval,
   reconcilePlatformAsset,
   subscribeAssets,
   type PlatformAsset,
@@ -88,6 +89,9 @@ function LogoEditor ({
   const [asset, setAsset] = useState<PlatformAsset | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [localUrl, setLocalUrl] = useState<string | null>(null)
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null)
+  const [removeBackground, setRemoveBackground] = useState(true)
+  const [bgPhase, setBgPhase] = useState<'idle' | 'removing' | 'removed' | 'failed'>('idle')
   const [loading, setLoading] = useState(false)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -97,6 +101,7 @@ function LogoEditor ({
   const [, update] = useState(0)
   const active = useRef(true)
   const fileInput = useRef<HTMLInputElement>(null)
+  const previewAbort = useRef<AbortController | null>(null)
   const fileId = useId()
 
   const current = sourceValue(origin)
@@ -106,22 +111,29 @@ function LogoEditor ({
   const configAttempt = getConfigurationAttempt(id, CELL)
   const locked = assetLocked(id, SLOT) || configurationLocked(configAttempt)
   const dirty = !!file
-  const previewUrl = file ? localUrl : asset?.url ?? (!currentRef ? externalUrl : null)
-  const protectedDraft = dirty || attempt?.phase === 'uncertain'
-  const busyState = working || attempt?.phase === 'sending' || configAttempt?.phase === 'checking' || configAttempt?.phase === 'sending'
+  const savedPreview = asset?.url ?? (!currentRef ? externalUrl : null)
+  const protectedDraft = dirty || attempt?.phase === 'uncertain' || bgPhase === 'removing'
+  const busyState = working || bgPhase === 'removing' || attempt?.phase === 'sending' || configAttempt?.phase === 'checking' || configAttempt?.phase === 'sending'
   const guard = useUnsavedChangesGuard(!onState && (busyState || protectedDraft), () => { setFile(null) })
   const alive = useCallback(() => active.current && getSessionVersion() === session, [session])
 
-  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
+  useEffect(() => { active.current = true; return () => { active.current = false; previewAbort.current?.abort() } }, [])
   useEffect(() => subscribeAssets(() => update(n => n + 1)), [])
   useEffect(() => subscribeConfiguration(() => update(n => n + 1)), [])
   useEffect(() => { onState?.({ dirty: protectedDraft, busy: busyState }) }, [onState, protectedDraft, busyState])
+
   useEffect(() => {
     if (!file) { setLocalUrl(null); return }
     const url = URL.createObjectURL(file)
     setLocalUrl(url)
     return () => URL.revokeObjectURL(url)
   }, [file])
+
+  useEffect(() => {
+    return () => {
+      if (processedUrl) URL.revokeObjectURL(processedUrl)
+    }
+  }, [processedUrl])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -139,9 +151,48 @@ function LogoEditor ({
     return () => controller.abort()
   }, [id, currentRef, alive])
 
+  function clearProcessed () {
+    setProcessedUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+    setBgPhase('idle')
+  }
+
   function clearFile () {
+    previewAbort.current?.abort()
     setFile(null)
+    clearProcessed()
     if (fileInput.current) fileInput.current.value = ''
+  }
+
+  async function runBackgroundPreview (selected: File, enabled: boolean) {
+    previewAbort.current?.abort()
+    clearProcessed()
+    if (!enabled || !writable) return
+    const controller = new AbortController()
+    previewAbort.current = controller
+    setBgPhase('removing')
+    setError(null)
+    try {
+      const preview = await previewLogoBackgroundRemoval(id, session, selected, controller.signal)
+      if (controller.signal.aborted || !alive()) {
+        URL.revokeObjectURL(preview.objectUrl)
+        return
+      }
+      setProcessedUrl(preview.objectUrl)
+      setBgPhase('removed')
+      setNotice(preview.method === 'passthrough'
+        ? 'A logo já tinha transparência. Nenhuma remoção adicional foi aplicada.'
+        : 'Fundo removido')
+    } catch (e) {
+      if (controller.signal.aborted || isAbortError(e) || !alive()) return
+      setBgPhase('failed')
+      setProcessedUrl(null)
+      setError(e instanceof ApiError && e.message
+        ? e.message
+        : 'Não foi possível remover o fundo')
+    }
   }
 
   async function refreshOrigin (): Promise<ConfigOrigin> {
@@ -167,6 +218,11 @@ function LogoEditor ({
 
   async function uploadOrReplace () {
     if (!file || !writable || working || locked) return
+    if (removeBackground && bgPhase === 'removing') return
+    if (removeBackground && bgPhase === 'failed') {
+      setError('Não foi possível remover o fundo. Desative a opção ou escolha outro arquivo.')
+      return
+    }
     setWorking(true)
     setError(null)
     setNotice(null)
@@ -176,8 +232,9 @@ function LogoEditor ({
       if (!alive()) return
 
       const existingRef = logoAssetRefFrom(sourceValue(fresh))
+      const options = { removeBackground }
       if (existingRef) {
-        const replaced = await mutatePlatformAsset(id, 'replace', session, file, existingRef, CELL, SLOT)
+        const replaced = await mutatePlatformAsset(id, 'replace', session, file, existingRef, CELL, SLOT, options)
         if (!alive() || !replaced) return
         clearFile()
         setAsset(replaced)
@@ -187,7 +244,7 @@ function LogoEditor ({
         return
       }
 
-      const uploaded = await mutatePlatformAsset(id, 'upload', session, file, undefined, CELL, SLOT)
+      const uploaded = await mutatePlatformAsset(id, 'upload', session, file, undefined, CELL, SLOT, options)
       if (!alive() || !uploaded) return
       const confirmed = await persistRef(fresh, uploaded.ref)
       if (!alive() || !confirmed) return
@@ -199,8 +256,10 @@ function LogoEditor ({
       if (!alive()) return
       if (e instanceof ApiError && e.code === 'BASELINE_CHANGED') {
         setError('A configuração mudou. Atualize a leitura antes de enviar.')
-      } else if (e instanceof ApiError && e.code === 'INVALID_IMAGE') {
-        setError('Arquivo inválido. Use PNG ou JPEG de até 20 MiB.')
+      } else if (e instanceof ApiError && (e.code === 'INVALID_IMAGE' || e.code === 'E_LOGO_BG_NOT_SOLID')) {
+        setError(e.message || 'Arquivo inválido ou fundo não suportado.')
+      } else if (e instanceof ApiError && e.message) {
+        setError(e.message)
       } else {
         setError('O envio não foi concluído com confirmação. A logo anterior foi preservada.')
       }
@@ -261,38 +320,71 @@ function LogoEditor ({
 
   const hasLogo = !!currentRef || !!externalUrl || !!asset
   const uploading = attempt?.phase === 'sending' || (working && !!file)
+  const canSave = !!file && (!removeBackground || bgPhase === 'removed' || bgPhase === 'idle')
 
   return (
     <section className={styles.editor} aria-label="Logo principal" data-focus-path="logo_url">
       <div className={styles.status}>
         <span>
-          {uploading
-            ? 'Enviando…'
-            : file
-              ? 'Prévia local'
-              : currentRef
-                ? 'Logo por upload'
-                : externalUrl
-                  ? 'Logo por URL externa'
-                  : 'Sem logo configurada'}
+          {bgPhase === 'removing'
+            ? 'Removendo fundo…'
+            : uploading
+              ? 'Enviando…'
+              : bgPhase === 'removed'
+                ? 'Fundo removido'
+                : bgPhase === 'failed'
+                  ? 'Não foi possível remover o fundo'
+                  : file
+                    ? 'Prévia local'
+                    : currentRef
+                      ? 'Logo por upload'
+                      : externalUrl
+                        ? 'Logo por URL externa'
+                        : 'Sem logo configurada'}
         </span>
       </div>
-      <div className={styles.preview} aria-label="Prévia da logo principal">
-        {previewUrl
-          ? <img src={previewUrl} alt="Logo principal" referrerPolicy="no-referrer" style={{ objectFit: 'contain' }} onError={() => setError('A logo não carregou. Recarregue antes de confirmar visualmente.')} />
-          : (
-            <div>
-              <ImagePlus size={32} />
-              <p>{loading ? 'Lendo a logo…' : 'Nenhuma logo configurada'}</p>
-            </div>
-            )}
-      </div>
+
+      {!file && (
+        <div className={styles.preview} aria-label="Logo atual">
+          {savedPreview
+            ? <img src={savedPreview} alt="Logo atual" referrerPolicy="no-referrer" style={{ objectFit: 'contain' }} onError={() => setError('A logo não carregou. Recarregue antes de confirmar visualmente.')} />
+            : (
+              <div>
+                <ImagePlus size={32} />
+                <p>{loading ? 'Lendo a logo…' : 'Nenhuma logo configurada'}</p>
+              </div>
+              )}
+        </div>
+      )}
+
+      {file && (
+        <div className={styles.actions} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className={styles.preview} aria-label="Prévia original" style={{ minHeight: 140 }}>
+            {localUrl
+              ? <img src={localUrl} alt="Prévia original" style={{ objectFit: 'contain' }} />
+              : <div><p>Original</p></div>}
+            <p className={styles.caption}>Original</p>
+          </div>
+          <div className={styles.preview} aria-label="Prévia sem fundo" style={{ minHeight: 140 }}>
+            {removeBackground && processedUrl
+              ? <img src={processedUrl} alt="Prévia sem fundo" style={{ objectFit: 'contain', background: 'repeating-conic-gradient(#808080 0% 25%, #c0c0c0 0% 50%) 50% / 16px 16px' }} />
+              : (
+                <div>
+                  <p>{removeBackground ? (bgPhase === 'removing' ? 'Removendo fundo…' : bgPhase === 'failed' ? 'Falha na remoção' : 'Sem fundo') : 'Remoção desativada'}</p>
+                </div>
+                )}
+            <p className={styles.caption}>Sem fundo</p>
+          </div>
+        </div>
+      )}
+
       <p className={styles.caption}>
-        PNG ou JPEG · até 20 MiB. O arquivo vai para o storage oficial do tenant; a URL assinada não é editada manualmente.
+        PNG ou JPEG · até 20 MiB. Após remover o fundo, o arquivo salvo é PNG com transparência no storage oficial.
       </p>
+
       {writable
         ? (
-          <fieldset className={styles.controls} disabled={working || locked}>
+          <fieldset className={styles.controls} disabled={working || locked || bgPhase === 'removing'}>
             <legend>Logo principal</legend>
             <label className={styles.file} htmlFor={fileId}>
               <Upload size={18} />
@@ -317,14 +409,30 @@ function LogoEditor ({
                     return
                   }
                   setFile(selected)
+                  void runBackgroundPreview(selected, removeBackground)
                 }}
               />
             </label>
+            <label className={styles.toggle}>
+              <input
+                type="checkbox"
+                checked={removeBackground}
+                onChange={e => {
+                  const enabled = e.target.checked
+                  setRemoveBackground(enabled)
+                  setError(null)
+                  setNotice(null)
+                  if (file) void runBackgroundPreview(file, enabled)
+                  else clearProcessed()
+                }}
+              />
+              Remover fundo automaticamente
+            </label>
             <div className={styles.actions}>
               {file && (
-                <PrimaryButton onClick={() => { void uploadOrReplace() }}>
+                <PrimaryButton disabled={!canSave} onClick={() => { void uploadOrReplace() }}>
                   <Upload size={16} />
-                  {currentRef ? 'Substituir logo' : 'Enviar logo'}
+                  {currentRef ? 'Salvar logo' : 'Salvar'}
                 </PrimaryButton>
               )}
               {file && <OutlineButton onClick={() => setDiscard(true)}>Descartar prévia</OutlineButton>}
@@ -338,6 +446,7 @@ function LogoEditor ({
           </fieldset>
           )
         : <p>Seu perfil permite consultar a logo.</p>}
+
       {attempt?.phase === 'uncertain' && (
         <div className={styles.notice} role="status">
           <p>Resultado do arquivo incerto. Não repita o envio automaticamente.</p>
@@ -353,7 +462,7 @@ function LogoEditor ({
       {error && <p role="alert" className={styles.error}>{error}</p>}
       <details className={styles.details}>
         <summary>Avançado · referência técnica</summary>
-        <p>A identidade estável é <code>logo_asset_ref</code> (object key via platform asset). URLs assinadas são geradas no bootstrap/e-mail.</p>
+        <p>A identidade estável é <code>logo_asset_ref</code>. Remoção de fundo roda no Core (edge matte); o objeto final é PNG.</p>
         {currentRef && <p>Arquivo: <code>{currentRef}</code></p>}
         {externalUrl && !currentRef && <p>URL externa legada: <code>{externalUrl}</code></p>}
       </details>

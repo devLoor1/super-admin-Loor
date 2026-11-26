@@ -71,13 +71,15 @@ const brandLogoSrc = readFileSync(
   'utf8',
 )
 assert(brandLogoSrc.includes("SLOT = 'logo'") && brandLogoSrc.includes('logo_asset_ref'), 'BUG', 'brand-logo-slot', 'Logo upload uses slot=logo and logo_asset_ref')
-assert(brandLogoSrc.includes('Substituir logo') || brandLogoSrc.includes('Enviar logo'), 'BUG', 'brand-logo-actions', 'Logo replace/upload actions present')
+assert(brandLogoSrc.includes('Remover fundo automaticamente'), 'BUG', 'brand-logo-bg-switch', 'Background removal switch present')
+assert(brandLogoSrc.includes('Removendo fundo') && brandLogoSrc.includes('Fundo removido'), 'BUG', 'brand-logo-bg-states', 'Background removal status copy present')
 assert(brandLogoSrc.includes('Remover'), 'BUG', 'brand-logo-remove', 'Logo remove action present')
 const assetClientSrc = readFileSync(
   join(ROOT, 'src/features/whitelabel-settings/platformAssetClient.ts'),
   'utf8',
 )
 assert(assetClientSrc.includes("'logo'") && assetClientSrc.includes('form.append(\'slot\', slot)'), 'BUG', 'asset-client-logo-slot', 'platformAssetClient supports logo slot')
+assert(assetClientSrc.includes('previewLogoBackgroundRemoval') && assetClientSrc.includes('remove_background'), 'BUG', 'asset-client-bg-removal', 'Client supports BG removal preview and flag')
 
 function joinPreviewUrl(baseUrl, pagePath) {
   const url = new URL(baseUrl)

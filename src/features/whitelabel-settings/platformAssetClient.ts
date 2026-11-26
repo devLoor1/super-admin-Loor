@@ -77,8 +77,42 @@ export async function reconcilePlatformAsset(tenant: string, session: number, sl
   publish(tenant, slot, { ...attempt, phase: 'confirmed' })
   return asset
 }
+export type LogoBgPreview = { mime: 'image/png'; method: 'passthrough' | 'edge'; width: number; height: number; objectUrl: string }
+
+/** Preview logo background removal without creating a platform asset. */
+export async function previewLogoBackgroundRemoval(tenant: string, session: number, file: File, signal?: AbortSignal): Promise<LogoBgPreview> {
+  const token = authorize(tenant, session)
+  if (assetFileError(file)) throw new ApiError(422, { code: 'INVALID_IMAGE' })
+  const form = new FormData()
+  form.append('image', file)
+  try {
+    const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets/logo/remove-background', {
+      method: 'POST',
+      body: form,
+      token,
+      timeoutMs: 60_000,
+      successStatus: 200,
+      signal,
+    })
+    currentSession(token, session)
+    if (!record(raw) || !record(raw.data)) throw new ApiError(200, {}, { kind: 'malformed' })
+    const d = raw.data
+    if (d.mime !== 'image/png' || (d.method !== 'passthrough' && d.method !== 'edge') || typeof d.width !== 'number' || typeof d.height !== 'number' || typeof d.content_base64 !== 'string' || !d.content_base64) {
+      throw new ApiError(200, {}, { kind: 'malformed' })
+    }
+    const binary = atob(d.content_base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    const blob = new Blob([bytes], { type: 'image/png' })
+    return { mime: 'image/png', method: d.method, width: d.width, height: d.height, objectUrl: URL.createObjectURL(blob) }
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) handleUnauthorized(token, session)
+    throw error
+  }
+}
+
 /** One multipart dispatch. A failed readback never turns an accepted upload into a rejection. */
-export async function mutatePlatformAsset(tenant: string, operation: AssetAttempt['operation'], session: number, file?: File, ref?: string, cell?: ConfigCell, slot: PlatformAssetSlot = 'main_area'): Promise<PlatformAsset | null> {
+export async function mutatePlatformAsset(tenant: string, operation: AssetAttempt['operation'], session: number, file?: File, ref?: string, cell?: ConfigCell, slot: PlatformAssetSlot = 'main_area', options: { removeBackground?: boolean } = {}): Promise<PlatformAsset | null> {
   const token = authorize(tenant, session)
   if (operation !== 'upload' && !assetReference(ref)) throw new ApiError(422, { code: 'INVALID_ASSET' })
   if (assetLocked(tenant, slot)) throw new ApiError(409, { code: 'ASSET_RECOVERY_REQUIRED' })
@@ -86,11 +120,12 @@ export async function mutatePlatformAsset(tenant: string, operation: AssetAttemp
   const form = new FormData()
   if (file) form.append('image', file)
   if (operation === 'upload') form.append('slot', slot)
+  if (options.removeBackground) form.append('remove_background', '1')
   const status = operation === 'upload' ? 201 : 200
   let accepted = false
   publish(tenant, slot, { phase: 'sending', operation, ref, cell, session, slot })
   try {
-    const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets' + (ref ? '/' + encodeURIComponent(ref) : ''), { method: operation === 'upload' ? 'POST' : operation === 'replace' ? 'PUT' : 'DELETE', ...(operation !== 'delete' ? { body: form } : {}), token, timeoutMs: 45_000, successStatus: status })
+    const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets' + (ref ? '/' + encodeURIComponent(ref) : ''), { method: operation === 'upload' ? 'POST' : operation === 'replace' ? 'PUT' : 'DELETE', ...(operation !== 'delete' ? { body: form } : {}), token, timeoutMs: 60_000, successStatus: status })
     accepted = true
     // Retain a trustworthy returned identity immediately, even if other fields are malformed.
     if (operation === 'upload' && record(raw) && record(raw.data) && raw.data.wtlb_id === Number(tenant) && raw.data.slot === slot && assetReference(raw.data.asset_ref)) publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, ref: raw.data.asset_ref, status })

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Check, LockKeyhole, Monitor, Smartphone } from 'lucide-react'
-import { loginPresentationFallback, record, valueAt, type ConfigCell, type Json } from './configurationContract'
+import { isConfigCell, loginPresentationFallback, record, valueAt, type ConfigCell, type Json } from './configurationContract'
 import { AppConfigurationPreview } from './AppConfigurationPreview'
+import { LiveWhitelabelPreview } from './LiveWhitelabelPreview'
 import { supportsLoginPresentation } from './platformPresentationRead'
 import { businessText } from '../operation/shared/businessPresentation'
 import { getPlatformAsset, assetReference } from './platformAssetClient'
@@ -38,6 +39,27 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
   },[data.id,ref,assetKey])
   const currentImage = !saved && cell==='login.main_area_image' && imageDraft !== undefined ? imageDraft : asset?.key===assetKey ? asset.url : null
   const tenantName=copy(readText(data.name),`Whitelabel ${data.id}`)
+  const tenantSlug = typeof data.slug === 'object' && data.slug.state === 'value' && typeof data.slug.value === 'string'
+    ? data.slug.value
+    : null
+  // Live preview only for platform web experience cells (not email/app stubs).
+  const supportsLivePreview = !cell.startsWith('app_') && cell !== 'email_branding.config' && !cell.startsWith('features.')
+  if (saved && supportsLivePreview) {
+    const origin = isConfigCell(cell) ? data.configuration[cell] : undefined
+    return <>
+      <div className={s.previewHead}>
+        <div>
+          <strong>Prévia ao vivo</strong>
+          <p>Frontend compartilhado do tenant · apenas configuração salva</p>
+        </div>
+      </div>
+      <LiveWhitelabelPreview
+        whitelabelId={data.id}
+        slug={tenantSlug}
+        revision={`${data.id}:${cell}:${JSON.stringify(origin?.effectiveValue ?? null)}`}
+      />
+    </>
+  }
   let preview
   if(cell.startsWith('app_')) {
     preview=<AppConfigurationPreview value={value(cell as ConfigCell)} screen={screen} tenantName={tenantName}/>
@@ -95,5 +117,5 @@ export function ConfigurationPreview({ data, cell, override = null, saved, image
         </div>
       </div></>
   }
-  return <><div className={s.previewHead}><div><strong>Prévia da experiência</strong><p>{saved?'Leitura autoritativa · estado salvo':'Rascunho · alterações não aplicadas'}</p></div><div className={s.segment}><button aria-pressed={!mobile} onClick={()=>setMobile(false)}><Monitor size={14}/>Desktop</button><button aria-pressed={mobile} onClick={()=>setMobile(true)}><Smartphone size={14}/>Mobile</button></div></div><div className={mobile?s.mobileFrame:undefined}>{preview}</div>{ref&&asset?.key===assetKey&&asset.error&&<p role="status">A imagem persistida não pôde ser carregada.</p>}<p className={s.previewFoot}>Prévia editorial baseada nos campos qualificados. Valores ausentes são indicados; a composição usa cores neutras de apresentação. Não comprova aplicação no site ou App publicado.</p></>
+  return <><div className={s.previewHead}><div><strong>Prévia editorial</strong><p>{saved?'Leitura autoritativa · estado salvo':'Rascunho · alterações não aplicadas — o frontend real só reflete o estado salvo'}</p></div><div className={s.segment}><button aria-pressed={!mobile} onClick={()=>setMobile(false)}><Monitor size={14}/>Desktop</button><button aria-pressed={mobile} onClick={()=>setMobile(true)}><Smartphone size={14}/>Mobile</button></div></div><div className={mobile?s.mobileFrame:undefined}>{preview}</div>{ref&&asset?.key===assetKey&&asset.error&&<p role="status">A imagem persistida não pôde ser carregada.</p>}<p className={s.previewFoot}>Prévia editorial baseada nos campos qualificados. Valores ausentes são indicados; a composição usa cores neutras de apresentação. Alterne para <strong>Salvo</strong> para ver o Whitelabel real nos fronts compartilhados.</p></>
 }

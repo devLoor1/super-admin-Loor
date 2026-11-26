@@ -35,3 +35,22 @@
 .inherited a { color: #c9c5ff; text-underline-offset: 3px; }
 .inheritedPreview { padding: 20px; }
 .entryFrame.mobileFrame[data-layout=side] .brandPanel { display: none; }
+
+.livePreview { display: grid; gap: 12px; min-width: 0; }
+.livePreviewToolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.liveEnvSegment { display: flex; flex-wrap: wrap; gap: 3px; border: 1px solid var(--surface-border-strong); border-radius: 6px; padding: 3px; }
+.liveEnvSegment button { display: inline-flex; align-items: center; gap: 6px; background: none; color: var(--text-on-dark-muted); border: 0; border-radius: 4px; padding: 7px 10px; font-size: 11px; }
+.liveEnvSegment button[aria-pressed=true] { background: #333049; color: #e5e2ff; }
+.liveEnvSegment button:disabled { opacity: .55; cursor: not-allowed; }
+.liveEnvHint { font-size: 9px; color: #e8bf7b; text-transform: uppercase; letter-spacing: .04em; }
+.livePreviewActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.livePreviewNote,.livePreviewStatus { margin: 0; font-size: 11px; line-height: 1.6; color: var(--text-on-dark-muted); }
+.liveFrameShell { border: 1px solid var(--surface-border-strong); border-radius: 10px; overflow: hidden; background: #0b0f19; min-height: 520px; }
+.liveFrame { width: 100%; min-height: 520px; border: 0; background: #fff; }
+.liveFallback { border: 1px solid #394363; background: #232b403d; border-radius: 8px; padding: 18px; color: #b6c2db; display: grid; gap: 10px; }
+.liveFallback strong { color: #e1e7f5; font-size: 13px; }
+.liveFallback p { margin: 0; font-size: 12px; line-height: 1.6; }
+.liveOpenLink { display: inline-flex; align-items: center; gap: 6px; color: #c9c5ff; font-size: 12px; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .liveFrameShell,.liveFrame { min-height: 420px; }
+}

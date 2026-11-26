@@ -151,3 +151,8 @@
 .fieldHelper { display: block; margin: 0 0 6px; font-size: 10px !important; line-height: 1.5; color: var(--text-on-dark-muted) !important; }
 .field[data-highlight=true], [data-highlight=true] { outline: 2px solid #9a8cff; outline-offset: 4px; border-radius: 8px; background: #7867ff14; padding: 8px; }
 .panelBanner code { font-size: 10px; color: #c9c5ff; }
+.editGate { display: grid; gap: 10px; margin: 0 0 16px; padding: 12px 13px; border-radius: 8px; border: 1px solid #4a4078; background: #7867ff18; }
+.editGate p { margin: 0; font-size: 12px; line-height: 1.55; color: #d8d3ff; }
+.editGate strong { color: #fff; }
+.fieldset[data-locked=true] { cursor: pointer; position: relative; }
+.fieldset[data-locked=true]::after { content: 'Clique para editar'; position: absolute; right: 0; top: -2px; font-size: 10px; color: #c9c5ff; background: #7867ff22; border: 1px solid #4a4078; border-radius: 999px; padding: 3px 8px; pointer-events: none; }

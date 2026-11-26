@@ -62,17 +62,31 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
   const needsLoginFallback=cell==='login.entry_presentation'&&current===null
   const missingFallback=needsLoginFallback&&(!layoutOrigin||!textColorOrigin)
   function startEditing() {
+    if(!canWrite||locked||busy||missingFallback||(current!==null&&!supported)) return
     const initial=needsLoginFallback?loginPresentationFallback(layoutOrigin?.effectiveValue,textColorOrigin?.effectiveValue):definition.initial
     setDraft(cloneJson(supported?current:initial));setEditing(true);setSaved(false)
   }
   const fields=definition.fields.filter(field=>!screen||field.path[1]===screen)
   const friendlyTitle=studioCellLabel(cell,definition.title)
   const friendlyHelper=studioCellHelper(cell)??definition.description
+  const canBeginEdit=canWrite&&!locked&&!busy&&!missingFallback&&(supported||current===null)
+  // Studio UX: enter edit mode as soon as the cell is writable — fields must not look editable while locked.
+  useEffect(()=>{
+    if(editing||!canBeginEdit) return
+    startEditing()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot unlock per cell mount
+  },[cell,canBeginEdit])
   useEffect(()=>{
     if(!focusPath) return
     const el=document.querySelector(`[data-focus-path="${CSS.escape(focusPath)}"]`)
-    if(el instanceof HTMLElement) el.scrollIntoView({block:'nearest',behavior:'smooth'})
-  },[focusPath,cell])
+    if(el instanceof HTMLElement){
+      el.scrollIntoView({block:'nearest',behavior:'smooth'})
+      if(editing){
+        const input=el.querySelector('input:not([type=color]),textarea,select') as HTMLElement|null
+        input?.focus()
+      }
+    }
+  },[focusPath,cell,editing])
   async function save(value:Json|undefined){
     if(!canWrite||locked||busy||value!==undefined&&valid)return
     setError('');controller.current=new AbortController()
@@ -94,17 +108,33 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
     catch{setError('Consulta indisponível. A gravação continua bloqueada.')}
     finally{setRefreshing(false)}
   }
+  const lockedFields=!editing||!canWrite||locked||busy
   const editorBody=<><div className={s.sectionLead}><h4>{friendlyTitle}</h4><p>{friendlyHelper}</p></div>
-      {!editing&&canWrite&&!locked&&<OutlineButton onClick={startEditing} disabled={missingFallback||current!==null&&!supported}>{supported?'Editar configuração':current===null?'Preparar configuração própria':'Versão não suportada'}</OutlineButton>}
+      {!editing&&canWrite&&!locked?(
+        <div className={s.editGate}>
+          <p role="status">Os campos estão bloqueados para leitura. Clique em <strong>Editar</strong> para alterar e depois em <strong>Salvar</strong>.</p>
+          <PrimaryButton onClick={startEditing} disabled={!canBeginEdit}>{supported||current===null?(current===null?'Preparar e editar':'Editar'):'Versão não suportada'}</PrimaryButton>
+        </div>
+      ):null}
+      {!canWrite?<p className={s.editGate} role="status">Seu perfil só pode consultar. Edição requer SUPER_ADMIN.</p>:null}
       {missingFallback&&<p role="status">Para preparar a primeira apresentação, é preciso confirmar a origem da disposição e da cor de texto do Login.</p>}
       {editing&&!supported&&<p className={s.note}>Proposta inicial explícita. Estes valores ainda não foram salvos e não representam um padrão retornado pelo servidor.</p>}
       {!supported&&current!==null&&<p role="alert">A versão recebida não é compatível com este editor. O valor original será preservado.</p>}
-      {(editing||supported)&&<fieldset className={s.fieldset} disabled={!editing||!canWrite||locked||busy}><legend className="visually-hidden">Campos de {friendlyTitle}</legend>{fields.map(control=>{
+      {(editing||supported)&&<fieldset
+        className={s.fieldset}
+        disabled={lockedFields}
+        data-locked={lockedFields||undefined}
+        onPointerDownCapture={(event)=>{
+          if(!lockedFields||!canBeginEdit) return
+          event.preventDefault()
+          startEditing()
+        }}
+      ><legend className="visually-hidden">Campos de {friendlyTitle}</legend>{fields.map(control=>{
         const pathKey=control.path.filter(Boolean).join('/')
         const presented=studioFieldPresentation(cell,control.path)
         const nextControl=presented?{...control,label:presented.label}:control
         return <div key={pathKey||control.label} data-focus-path={pathKey||undefined}>
-          <ConfigInput control={nextControl} value={configurationDisplayValue(cell,draft,control.path)} disabled={!editing||!canWrite||locked||busy} helper={presented?.helper} highlighted={!!focusPath&&focusPath===pathKey} onChange={next=>{setDraft(value=>changeAt(value,control.path,next));setSaved(false)}}/>
+          <ConfigInput control={nextControl} value={configurationDisplayValue(cell,draft,control.path)} disabled={lockedFields} helper={presented?.helper} highlighted={!!focusPath&&focusPath===pathKey} onChange={next=>{setDraft(value=>changeAt(value,control.path,next));setSaved(false)}}/>
         </div>
       })}</fieldset>}
       {editing&&valid&&<p role="alert" className={s.error}>{valid}</p>}<OriginDetails origin={baseline} cell={cell}/>
@@ -145,9 +175,36 @@ export function ScalarConfigurationEditor({id,data,field,onReload,onState,previe
     catch{setError('Consulta indisponível. A gravação continua bloqueada.')}
     finally{setRefreshing(false)}
   }
-  const editorBody=<><div className={s.sectionLead}><h4>{settingsFieldLabel(field)}</h4><p>{field.startsWith('features.')?'Altera apenas a disponibilidade configurada, sem executar operações.':'Mensagem institucional da página de login.'}</p></div>
-    {!editing&&canWrite&&<OutlineButton disabled={locked&&attempt?.phase!=='confirmed'} onClick={()=>{if(attempt?.phase==='confirmed')beginNextSettingsWrite(id,field,version,[field]);setEditing(true);setSaved(false)}}>Editar configuração</OutlineButton>}
-    <fieldset className={s.fieldset} disabled={!editing||locked||busy}>{typeof value==='boolean'?<div className={s.field}><div className={s.switchRow}><span>{settingsFieldLabel(field)}</span><button type="button" role="switch" aria-checked={value} className={s.switch} disabled={!editing||locked||busy} onClick={()=>{setValue(!value);setSaved(false)}}/></div></div>:Array.isArray(value)?value.map((v,i)=><label className={s.field} key={i}>Destaque {i+1}<input value={v} maxLength={settingsTextLimit(field)} onChange={e=>{setValue(value.map((item,n)=>n===i?e.target.value:item));setSaved(false)}}/></label>):<label className={s.field}>{settingsFieldLabel(field)}<textarea rows={field==='login.title'?2:4} value={value} maxLength={settingsTextLimit(field)} onChange={e=>{setValue(e.target.value);setSaved(false)}}/></label>}</fieldset>
+  function beginScalarEdit(){
+    if(!canWrite||busy||(locked&&attempt?.phase!=='confirmed')) return
+    if(attempt?.phase==='confirmed') beginNextSettingsWrite(id,field,version,[field])
+    setEditing(true);setSaved(false)
+  }
+  const canBeginScalar=canWrite&&!busy&&!(locked&&attempt?.phase!=='confirmed')
+  useEffect(()=>{
+    if(editing||!canBeginScalar) return
+    beginScalarEdit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unlock once per field mount
+  },[field,canBeginScalar])
+  const lockedFields=!editing||locked||busy
+  const editorBody=<><div className={s.sectionLead}><h4>{studioCellLabel(field,settingsFieldLabel(field))}</h4><p>{studioCellHelper(field)??(field.startsWith('features.')?'Altera apenas a disponibilidade configurada, sem executar operações.':'Mensagem institucional da página de login.')}</p></div>
+    {!editing&&canWrite?(
+      <div className={s.editGate}>
+        <p role="status">Campo bloqueado. Clique em <strong>Editar</strong> para alterar e depois em <strong>Salvar</strong>.</p>
+        <PrimaryButton disabled={!canBeginScalar} onClick={beginScalarEdit}>Editar</PrimaryButton>
+      </div>
+    ):null}
+    {!canWrite?<p className={s.editGate} role="status">Seu perfil só pode consultar. Edição requer SUPER_ADMIN.</p>:null}
+    <fieldset
+      className={s.fieldset}
+      disabled={lockedFields}
+      data-locked={lockedFields||undefined}
+      onPointerDownCapture={(event)=>{
+        if(!lockedFields||!canBeginScalar) return
+        event.preventDefault()
+        beginScalarEdit()
+      }}
+    >{typeof value==='boolean'?<div className={s.field}><div className={s.switchRow}><span>{settingsFieldLabel(field)}</span><button type="button" role="switch" aria-checked={value} className={s.switch} disabled={lockedFields} onClick={()=>{setValue(!value);setSaved(false)}}/></div></div>:Array.isArray(value)?value.map((v,i)=><label className={s.field} key={i}>Destaque {i+1}<input value={v} maxLength={settingsTextLimit(field)} onChange={e=>{setValue(value.map((item,n)=>n===i?e.target.value:item));setSaved(false)}}/></label>):<label className={s.field}>{settingsFieldLabel(field)}<textarea rows={field==='login.title'?2:4} value={value} maxLength={settingsTextLimit(field)} onChange={e=>{setValue(e.target.value);setSaved(false)}}/></label>}</fieldset>
     {editing&&!valid&&<p role="alert">Preencha os campos dentro dos limites, sem HTML ou dados de autenticação.</p>}<OriginDetails cell={field} origin={baseline.provenance}/>
     {attempt&&<p role="status">{attempt.phase==='confirmed'?'HTTP 200 e leitura confirmada.':attempt.phase==='stale'?'O valor mudou no servidor. Descarte este rascunho e recarregue para revisar a nova referência.':attempt.phase==='uncertain'||attempt.phase==='readback_matches'?'Resultado não confirmado. Gravações bloqueadas; consulte por GET.':busy?'Solicitação em andamento. Aguarde a leitura de confirmação.':'A solicitação não foi confirmada.'}</p>}{error&&<p role="alert">{error}</p>}
     {canWrite&&['uncertain','readback_matches'].includes(attempt?.phase??'')&&<OutlineButton disabled={busy} onClick={()=>void reconcile()}>Consultar por GET</OutlineButton>}

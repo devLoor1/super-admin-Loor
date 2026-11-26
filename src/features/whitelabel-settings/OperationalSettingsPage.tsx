@@ -19,7 +19,6 @@ import { configArea, configHref, type ConfigArea } from './configRoute'
 import { PlatformAppRead } from './PlatformAppRead'
 import { PlatformPresentationRead } from './PlatformPresentationCards'
 import { ConfigurationStudio } from './ConfigurationStudio'
-import { ShowcaseEntryCard } from '../whitelabel-showcase/editor/ShowcaseEntryCard'
 
 const settingsReadHref = (id: string, area: ConfigArea = 'platform') => configHref(id, area)
 export function SettingsReadFeedback({ error, retry }: { error: unknown; retry: () => void }) {
@@ -107,7 +106,6 @@ function SettingsTenant({ whitelabelId, area, cell, env, resource }: { whitelabe
         <AccountsWhitelabelSelector current={record} pendingId={id ?? undefined} options={registry.state.status === 'success' ? registry.state.data.rows.filter(w => isSettingsTenantId(w.id)) : null} optionsStatus={registry.state.status === 'error' ? 'error' : registry.state.status === 'success' ? 'success' : 'loading'} onRetryOptions={registry.reload} contextLabel="as configurações" onSelect={next => { window.location.hash = settingsReadHref(next, area ?? 'platform') }} />
       </div>
       <ConfigNavigation id={id ?? 'select'} active={area ?? 'platform'} />
-      {record && area === 'platform' && <ShowcaseEntryCard record={record} />}
       {!area ? <div role="alert" className={styles.notFound}><h2>Área de configuração inválida</h2><p>Escolha uma das áreas disponíveis acima.</p></div> : !id ? <div className={styles.notFound}><h2>Selecione um Whitelabel</h2><p>Escolha um registro real do Control Plane para consultar suas configurações.</p></div> : tenant.state.status === 'error' ? <SettingsReadFeedback error={tenant.state.error} retry={tenant.reload} /> : record ? <ConfirmedSettings key={`${id}:${area}:${env ?? ''}:${resource ?? ''}`} id={id} area={area} cell={cell} env={env} resource={resource} /> : <p role="status">Confirmando Whitelabel…</p>}
     </div></div>
   </AppShell>

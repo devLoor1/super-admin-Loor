@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ChevronDown, ExternalLink, RefreshCw } from 'lucide-react'
 import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -6,8 +7,7 @@ import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
 import { CONFIG_DEFINITIONS, isConfigCell, type ConfigCell, type ConfigOrigin } from './configurationContract'
 import { CompositeConfigurationEditor, ScalarConfigurationEditor, type EditorState } from './ConfigurationEditor'
 import { PlatformAssetEditor } from './PlatformAssetEditor'
-import { ConfigurationPreview } from './ConfigurationPreview'
-import { LiveWhitelabelPreview, type LivePreviewContext } from './LiveWhitelabelPreview'
+import { LiveWhitelabelPreview, type LivePreviewContext, type PreviewViewport } from './LiveWhitelabelPreview'
 import { isSettingsField, settingsFieldLabel } from './settingsWriteContract'
 import { APP_AUTH_GROUPS, APP_ENTRY_GROUPS } from './appContentRead'
 import { configHref, type ConfigArea } from './configRoute'
@@ -15,11 +15,13 @@ import { resolveLivePreviewTargets, type LivePreviewTarget } from './livePreview
 import { getWhitelabelProvisioning } from '../whitelabel-provisioning/provisioningApi'
 import {
   getStudioMenu,
+  joinPreviewUrl,
   resolveStudioSelection,
   STUDIO_ENVIRONMENT_MENUS,
   type StudioEnvironmentId,
   type StudioResource,
 } from './studioExperienceCatalog'
+import { sectionsForResource } from './studioPanelSections'
 import type { SettingsRead } from './settingsReadApi'
 import s from './ConfigurationStudio.module.css'
 
@@ -50,133 +52,94 @@ function tabLabel(cell: string) {
   return label(cell)
 }
 
-function kindBadge(kind: StudioResource['kind']) {
-  if (kind === 'PAGE') return 'Página'
-  if (kind === 'FEATURE') return 'Recurso'
-  return 'Global'
+function readText(field: { state: string; value?: unknown } | undefined): string | null {
+  if (!field || field.state !== 'value' || typeof field.value !== 'string') return null
+  return field.value
 }
 
 function AssetPane({
   id,
-  data,
   cell,
   origin,
   onReload,
   onState,
-  dirty,
-  previewContext,
 }: {
   id: string
-  data: SettingsRead
   cell: ConfigCell
   origin: ConfigOrigin
   onReload: () => void
   onState: (state: EditorState) => void
-  dirty: boolean
-  previewContext?: LivePreviewContext
 }) {
-  const [narrow, setNarrow] = useState<'edit' | 'preview'>('edit')
-  const [imageDraft, setImageDraft] = useState<string | null | undefined>(undefined)
-  const [previewSaved, setPreviewSaved] = useState(true)
   return (
-    <>
-      <div className={s.mobileSwitch}>
-        <button aria-pressed={narrow === 'edit'} onClick={() => setNarrow('edit')}>
-          Editor
-        </button>
-        <button aria-pressed={narrow === 'preview'} onClick={() => setNarrow('preview')}>
-          Prévia
-        </button>
-      </div>
-      <div className={s.split}>
-        <div className={s.editor} data-active={narrow === 'edit'}>
-          <PlatformAssetEditor
-            id={id}
-            cell={cell}
-            baseline={origin}
-            onReload={onReload}
-            onState={onState}
-            onPreview={setImageDraft}
-          />
-        </div>
-        <div className={s.preview} data-active={narrow === 'preview'}>
-          <div className={s.previewMode}>
-            <button aria-pressed={!previewSaved} onClick={() => setPreviewSaved(false)}>
-              Rascunho
-            </button>
-            <button aria-pressed={previewSaved} onClick={() => setPreviewSaved(true)}>
-              Salvo
-            </button>
-          </div>
-          <ConfigurationPreview
-            data={data}
-            cell={cell}
-            saved={previewSaved}
-            imageDraft={dirty ? imageDraft : undefined}
-            draftPending={dirty}
-            previewContext={previewContext}
-          />
-        </div>
-      </div>
-    </>
+    <div className={s.panelEditor}>
+      <PlatformAssetEditor id={id} cell={cell} baseline={origin} onReload={onReload} onState={onState} />
+    </div>
   )
 }
 
-function GlobalBrandingPane({
+function PropertyEditor({
+  id,
   data,
-  resource,
-  previewContext,
+  cell,
+  onReload,
+  onState,
 }: {
+  id: string
   data: SettingsRead
-  resource: StudioResource
-  previewContext: LivePreviewContext
+  cell: string
+  onReload: () => void
+  onState: (state: EditorState) => void
 }) {
-  const [previewSaved, setPreviewSaved] = useState(true)
-  const tenantSlug =
-    typeof data.slug === 'object' && data.slug.state === 'value' && typeof data.slug.value === 'string'
-      ? data.slug.value
-      : null
+  const origin = isConfigCell(cell) ? data.configuration[cell] : undefined
+  if (cell === 'quick_profile.appearance') {
+    return (
+      <div className={s.panelNotice}>
+        <p>
+          A aparência desta tela na carteira Web segue o Login. Use a seção de Login para alterar a apresentação
+          visual.
+        </p>
+        <a href={configHref(id, 'platform', 'login.entry_presentation', { env: 'investor', resource: 'login' })}>
+          Abrir aparência do Login
+        </a>
+      </div>
+    )
+  }
+  if (isSettingsField(cell)) {
+    if (!data.provenance[cell]) {
+      return <p className={s.panelNotice}>Proveniência não fornecida. Não é seguro editar este valor.</p>
+    }
+    return (
+      <ScalarConfigurationEditor
+        key={cell}
+        id={id}
+        data={data}
+        field={cell}
+        onReload={onReload}
+        onState={onState}
+        embedPreview={false}
+      />
+    )
+  }
+  if (isConfigCell(cell) && origin) {
+    if (cell.endsWith('.main_area_image')) {
+      return <AssetPane id={id} cell={cell} origin={origin} onReload={onReload} onState={onState} />
+    }
+    return (
+      <CompositeConfigurationEditor
+        key={cell}
+        id={id}
+        data={data}
+        cell={cell}
+        onReload={onReload}
+        onState={onState}
+        embedPreview={false}
+      />
+    )
+  }
   return (
-    <div className={s.split}>
-      <div className={s.editor} data-active="true">
-        <div className={s.sectionLead}>
-          <h4>Configurações globais do Whitelabel</h4>
-          <p>
-            {resource.notice ??
-              'Esta página utiliza atualmente as configurações globais do Whitelabel (branding/bootstrap). Não há editor específico nesta etapa.'}
-          </p>
-        </div>
-        <div className={s.systemNotice}>
-          <p>
-            <strong>Sem contrato local.</strong> Nenhum campo artificial de entrepreneur.* ou admin.* foi criado.
-            Alterações de marca continuam em Identidade visual / bootstrap do tenant.
-          </p>
-        </div>
-      </div>
-      <div className={s.preview} data-active="true">
-        <div className={s.previewMode}>
-          <button aria-pressed={!previewSaved} onClick={() => setPreviewSaved(false)}>
-            Rascunho
-          </button>
-          <button aria-pressed={previewSaved} onClick={() => setPreviewSaved(true)}>
-            Salvo
-          </button>
-        </div>
-        <div className={s.previewHead}>
-          <div>
-            <strong>Prévia ao vivo</strong>
-            <p>{previewSaved ? 'Salvo · frontend compartilhado' : 'Rascunho · mesmo frontend real'}</p>
-          </div>
-        </div>
-        <LiveWhitelabelPreview
-          whitelabelId={data.id}
-          slug={tenantSlug}
-          mode={previewSaved ? 'saved' : 'draft'}
-          revision={`${data.id}:${resource.id}:${previewContext.pagePath ?? 'limited'}`}
-          context={previewContext}
-        />
-      </div>
-    </div>
+    <p className={s.panelNotice}>
+      O servidor não retornou proveniência para esta configuração. Nenhum valor será inventado.
+    </p>
   )
 }
 
@@ -203,11 +166,8 @@ function PlatformStudio({
   const { env, resource } = selection
   const cell = selection.cell
   const menu = getStudioMenu(env)
-
-  const tenantSlug =
-    typeof data.slug === 'object' && data.slug.state === 'value' && typeof data.slug.value === 'string'
-      ? data.slug.value
-      : null
+  const tenantName = readText(data.name) ?? `Whitelabel ${id}`
+  const tenantSlug = readText(data.slug)
 
   const [targets, setTargets] = useState<LivePreviewTarget[]>(() =>
     resolveLivePreviewTargets({ whitelabelId: id, slug: tenantSlug, provisioning: null }),
@@ -234,6 +194,10 @@ function PlatformStudio({
 
   const envTarget = targets.find((t) => t.environment === env)
   const envContracted = envTarget?.contracted !== false
+  const openLiveUrl =
+    envTarget?.contracted && envTarget.url
+      ? joinPreviewUrl(envTarget.url, resource.previewPath ?? '/') ?? envTarget.url
+      : null
 
   const previewContext: LivePreviewContext = {
     environment: env,
@@ -254,7 +218,20 @@ function PlatformStudio({
     [],
   )
   const guard = useUnsavedChangesGuard(state.dirty || state.busy, () => setState({ dirty: false, busy: false }))
-  const origin = cell && isConfigCell(cell) ? data.configuration[cell] : undefined
+  const [viewport, setViewport] = useState<PreviewViewport>('desktop')
+  const [previewMode, setPreviewMode] = useState<'draft' | 'saved'>('saved')
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const [mobilePane, setMobilePane] = useState<'config' | 'preview'>('config')
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
+
+  const sections = sectionsForResource(resource.id, resource.cells)
+  useEffect(() => {
+    const next: Record<string, boolean> = {}
+    for (const section of sectionsForResource(resource.id, resource.cells)) {
+      next[section.id] = section.defaultOpen !== false
+    }
+    setOpenSections(next)
+  }, [resource.id, resource.cells])
 
   const hrefFor = (nextEnv: StudioEnvironmentId, nextResource: StudioResource, nextCell?: string) =>
     configHref(id, 'platform', nextCell ?? nextResource.cells[0], {
@@ -262,204 +239,202 @@ function PlatformStudio({
       resource: nextResource.id,
     })
 
+  const onEnvChange = (next: string) => {
+    if (!isStudioEnv(next)) return
+    const target = targets.find((t) => t.environment === next)
+    if (target && !target.contracted) return
+    window.location.hash = hrefFor(next, getStudioMenu(next).resources[0])
+  }
+
+  const onResourceChange = (nextId: string) => {
+    const next = menu.resources.find((r) => r.id === nextId)
+    if (!next) return
+    window.location.hash = hrefFor(env, next)
+  }
+
+  const revision = `${id}:${env}:${resource.id}:${cell ?? 'none'}:${previewMode}`
+
   return (
-    <section className={s.studio} aria-label="Studio Whitelabel">
-      <header className={s.heading}>
-        <div>
-          <span className={s.eyebrow}>Studio Whitelabel</span>
-          <h2>
-            {menu.label} › {resource.title}
-          </h2>
-          <p>
-            Ambiente → Página/Recurso → Editor → Preview. Menus distintos por frontend; a prévia usa a URL de delivery
-            + rota real.
+    <section className={s.studioShell} aria-label="Studio Whitelabel">
+      <header className={s.studioTopbar}>
+        <div className={s.studioIdentity}>
+          <div className={s.studioTenant}>
+            <span className={s.studioEyebrow}>Studio</span>
+            <strong title={tenantName}>{tenantName}</strong>
+          </div>
+          <label className={s.studioSelect}>
+            <span>Ambiente</span>
+            <span className={s.studioSelectWrap}>
+              <select
+                value={env}
+                onChange={(e) => onEnvChange(e.target.value)}
+                aria-label="Ambiente"
+              >
+                {STUDIO_ENVIRONMENT_MENUS.map((item) => {
+                  const target = targets.find((t) => t.environment === item.id)
+                  const contracted = target?.contracted !== false
+                  return (
+                    <option key={item.id} value={item.id} disabled={!contracted}>
+                      {item.label}
+                      {!contracted ? ' (não contratado)' : ''}
+                    </option>
+                  )
+                })}
+              </select>
+              <ChevronDown size={14} aria-hidden="true" />
+            </span>
+          </label>
+          <label className={s.studioSelect}>
+            <span>Página / recurso</span>
+            <span className={s.studioSelectWrap}>
+              <select value={resource.id} onChange={(e) => onResourceChange(e.target.value)} aria-label="Página ou recurso">
+                {menu.resources.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.title}
+                    {item.kind === 'FEATURE' ? ' · recurso' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} aria-hidden="true" />
+            </span>
+          </label>
+          <p className={s.studioContextLine}>
+            Editando: <strong>{menu.label}</strong> → <strong>{resource.title}</strong>
+            {resource.previewPath != null ? <code>{resource.previewPath}</code> : <em>sem deep-link</em>}
           </p>
         </div>
-        <span className={state.dirty ? s.draftBadge : s.savedBadge}>
-          {state.dirty ? 'Alterações não salvas' : 'Leitura do servidor'}
-        </span>
+        <div className={s.studioTopActions}>
+          <span className={state.dirty ? s.draftBadge : s.savedBadge}>
+            {state.dirty ? 'Alterações não salvas' : 'Salvo'}
+          </span>
+          <div className={s.previewMode} role="group" aria-label="Modo da prévia">
+            <button type="button" aria-pressed={previewMode === 'draft'} onClick={() => setPreviewMode('draft')}>
+              Rascunho
+            </button>
+            <button type="button" aria-pressed={previewMode === 'saved'} onClick={() => setPreviewMode('saved')}>
+              Salvo
+            </button>
+          </div>
+          <OutlineButton type="button" onClick={() => setRefreshSignal((n) => n + 1)}>
+            <RefreshCw size={13} /> Recarregar
+          </OutlineButton>
+          {openLiveUrl ? (
+            <a className={s.liveOpenLink} href={openLiveUrl} target="_blank" rel="noopener noreferrer">
+              Abrir ao vivo <ExternalLink size={13} />
+            </a>
+          ) : null}
+        </div>
       </header>
 
-      <div className={s.envBar} role="tablist" aria-label="Ambiente">
-        {STUDIO_ENVIRONMENT_MENUS.map((item) => {
-          const target = targets.find((t) => t.environment === item.id)
-          const contracted = target?.contracted !== false
-          const disabled = !contracted
-          if (disabled) {
-            return (
-              <span
-                key={item.id}
-                role="tab"
-                aria-selected={env === item.id}
-                aria-disabled="true"
-                className={s.envTabDisabled}
-                title="Ambiente não contratado"
-              >
-                {item.label}
-                <span className={s.liveEnvHint}>não contratado</span>
-              </span>
-            )
-          }
-          return (
-            <a
-              key={item.id}
-              role="tab"
-              aria-selected={env === item.id}
-              href={hrefFor(item.id, getStudioMenu(item.id).resources[0])}
-              title={item.label}
-            >
-              {item.label}
-            </a>
-          )
-        })}
+      <div className={s.studioMobileTabs} role="tablist" aria-label="Studio">
+        <button type="button" role="tab" aria-selected={mobilePane === 'config'} onClick={() => setMobilePane('config')}>
+          Configurar
+        </button>
+        <button type="button" role="tab" aria-selected={mobilePane === 'preview'} onClick={() => setMobilePane('preview')}>
+          Prévia
+        </button>
       </div>
 
-      {!envContracted ? (
-        <div className={s.liveFallback} role="status" style={{ margin: '16px 24px' }}>
-          <strong>Ambiente não contratado</strong>
-          <p>
-            Prévia ativa deste frontend não está disponível. Habilite o ambiente no detalhe do Whitelabel. O menu
-            permanece visível apenas para contexto — sem iframe como se estivesse disponível.
-          </p>
-        </div>
-      ) : null}
-
-      <div className={s.workbench}>
-        <nav className={s.areaNav} aria-label={`Páginas e recursos · ${menu.label}`}>
-          <span>{menu.label.toUpperCase()}</span>
-          {menu.resources.map((item) => (
-            <a
-              key={item.id}
-              href={hrefFor(env, item)}
-              aria-current={resource.id === item.id ? 'page' : undefined}
-            >
-              <span>
-                {item.title}
-                <small className={s.kindHint}>{kindBadge(item.kind)}</small>
-              </span>
-              <span aria-hidden="true">›</span>
-            </a>
-          ))}
-          <p>
-            Contexto: {menu.label} › {resource.title}
-            {resource.authenticatedPreviewPath
-              ? ` · Auth: ${resource.authenticatedPreviewPath}`
-              : ''}
-          </p>
-        </nav>
-
-        <div className={s.workspace}>
-          <div className={s.workspaceTitle}>
-            <div>
-              <h3>{resource.title}</h3>
-              <p>
-                {kindBadge(resource.kind)}
-                {resource.previewPath != null ? ` · ${resource.previewPath}` : ' · sem deep-link'}
-                {cell ? ` · ${label(cell)}` : ''}
-              </p>
-            </div>
-          </div>
-
-          {resource.cells.length > 0 && cell ? (
-            <nav className={s.contextTabs} aria-label={`Configurações de ${resource.title}`}>
-              {resource.cells.map((item) => (
-                <a
-                  key={item}
-                  href={hrefFor(env, resource, item)}
-                  aria-current={cell === item ? 'page' : undefined}
-                >
-                  {tabLabel(item)}
-                </a>
-              ))}
-            </nav>
-          ) : null}
-
-          {(resource.id === 'register' || resource.id === 'quick_profile') && cell ? (
-            <div className={s.inherited}>
-              <p>
-                A aparência desta tela na carteira Web segue o Login.
-                {historicalCells.has(cell) &&
-                  ' O editor abaixo conserva a configuração legada. A prévia da carteira usa os valores do Login.'}
-              </p>
-              <a href={hrefFor(env, getStudioResourceLogin(), 'login.entry_presentation')}>
-                Abrir aparência do Login
-              </a>
-            </div>
-          ) : null}
-
-          {(cell === 'login.layout_preset' || cell === 'login.brand_panel_text_color') && (
-            <div className={s.inherited}>
-              <p>
-                Valor de compatibilidade usado quando a apresentação completa do Login estiver ausente ou
-                incompatível.
-              </p>
-              <a href={hrefFor(env, getStudioResourceLogin(), 'login.entry_presentation')}>
-                Consultar apresentação do Login
-              </a>
-            </div>
-          )}
-
-          {resource.notice && resource.kind !== 'PAGE' ? (
-            <div className={s.inherited}>
-              <p>{resource.notice}</p>
-            </div>
-          ) : null}
-
+      <div className={s.studioBody} data-pane={mobilePane}>
+        <aside className={s.studioRail} aria-label="Painel de propriedades">
           {!envContracted ? (
-            <div className={s.editor}>
-              <h3>Prévia bloqueada</h3>
-              <p>Ambiente não contratado — editor de settings permanece acessível quando houver células, sem iframe ativo.</p>
+            <div className={s.panelNotice} role="status">
+              <strong>Ambiente não contratado</strong>
+              <p>Prévia bloqueada. O menu permanece para contexto; habilite o ambiente no detalhe do Whitelabel.</p>
             </div>
-          ) : resource.editorMode !== 'cells' || !cell ? (
-            <GlobalBrandingPane data={data} resource={resource} previewContext={previewContext} />
-          ) : cell === 'quick_profile.appearance' ? (
-            <div className={s.inheritedPreview}>
-              <ConfigurationPreview data={data} cell={cell} saved previewContext={previewContext} />
+          ) : null}
+
+          {resource.kind === 'FEATURE' ? (
+            <div className={s.panelBanner} role="status">
+              Recurso (não é uma página). Prévia representativa
+              {resource.previewPath === '/oportunidades' ? ': Ofertas' : resource.previewPath?.includes('wallet') ? ': Carteira' : ''}.
             </div>
-          ) : isSettingsField(cell) ? (
-            data.provenance[cell] ? (
-              <ScalarConfigurationEditor
-                key={`${env}:${resource.id}:${cell}`}
-                id={id}
-                data={data}
-                field={cell}
-                onReload={onReload}
-                onState={onState}
-                previewContext={previewContext}
-              />
-            ) : (
-              <p className={s.editor}>Proveniência não fornecida. Não é seguro editar este valor.</p>
-            )
-          ) : isConfigCell(cell) && origin ? (
-            cell.endsWith('.main_area_image') ? (
-              <AssetPane
-                key={`${env}:${resource.id}:${cell}`}
-                id={id}
-                data={data}
-                cell={cell}
-                origin={origin}
-                onReload={onReload}
-                onState={onState}
-                dirty={state.dirty}
-                previewContext={previewContext}
-              />
-            ) : (
-              <CompositeConfigurationEditor
-                key={`${env}:${resource.id}:${cell}`}
-                id={id}
-                data={data}
-                cell={cell}
-                onReload={onReload}
-                onState={onState}
-                previewContext={previewContext}
-              />
-            )
+          ) : null}
+
+          {resource.editorMode !== 'cells' || resource.cells.length === 0 ? (
+            <div className={s.panelNotice}>
+              <h3>Identidade global</h3>
+              <p>
+                {resource.notice ??
+                  'Esta experiência utiliza atualmente a identidade global do Whitelabel.'}
+              </p>
+              <p>
+                Nenhum campo artificial de entrepreneur.* ou admin.* — branding/bootstrap em Identidade visual.
+              </p>
+            </div>
           ) : (
-            <p className={s.editor}>
-              O servidor não retornou proveniência para esta configuração. Nenhum valor será inventado.
-            </p>
+            <div className={s.propSections}>
+              {sections.map((section) => {
+                const open = openSections[section.id] !== false
+                return (
+                  <details
+                    key={section.id}
+                    className={s.propSection}
+                    open={open}
+                    onToggle={(e) => {
+                      const el = e.currentTarget
+                      setOpenSections((prev) => ({ ...prev, [section.id]: el.open }))
+                    }}
+                  >
+                    <summary>{section.title}</summary>
+                    <div className={s.propSectionBody}>
+                      <div className={s.propCellNav} role="tablist" aria-label={section.title}>
+                        {section.cells.map((item) => (
+                          <a
+                            key={item}
+                            href={hrefFor(env, resource, item)}
+                            aria-current={cell === item ? 'page' : undefined}
+                          >
+                            {tabLabel(item)}
+                          </a>
+                        ))}
+                      </div>
+                      {cell && section.cells.includes(cell) ? (
+                        <PropertyEditor
+                          id={id}
+                          data={data}
+                          cell={cell}
+                          onReload={onReload}
+                          onState={onState}
+                        />
+                      ) : (
+                        <p className={s.panelHint}>Selecione uma propriedade acima.</p>
+                      )}
+                    </div>
+                  </details>
+                )
+              })}
+            </div>
           )}
-        </div>
+
+          {(resource.id === 'register' || resource.id === 'quick_profile') && (
+            <div className={s.panelHint}>
+              A aparência visual desta tela na carteira Web segue o Login.
+            </div>
+          )}
+        </aside>
+
+        <main className={s.studioStage} aria-label="Prévia live">
+          {!envContracted ? (
+            <div className={s.liveFallback} role="status">
+              <strong>Prévia bloqueada</strong>
+              <p>Ambiente não contratado — nenhum iframe ativo.</p>
+            </div>
+          ) : (
+            <LiveWhitelabelPreview
+              whitelabelId={data.id}
+              slug={tenantSlug}
+              mode={previewMode}
+              revision={revision}
+              refreshSignal={refreshSignal}
+              context={previewContext}
+              chrome="stage"
+              viewport={viewport}
+              onViewportChange={setViewport}
+              dirty={state.dirty || previewMode === 'draft'}
+            />
+          )}
+        </main>
       </div>
 
       {guard.pending && (
@@ -487,8 +462,8 @@ function PlatformStudio({
   )
 }
 
-function getStudioResourceLogin(): StudioResource {
-  return getStudioMenu('investor').resources.find((r) => r.id === 'login')!
+function isStudioEnv(value: string): value is StudioEnvironmentId {
+  return value === 'investor' || value === 'entrepreneur' || value === 'admin'
 }
 
 function AppStudio({

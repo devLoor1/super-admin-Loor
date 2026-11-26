@@ -83,7 +83,7 @@ type Route =
   | { view: 'login' | 'dashboard' }
   | { view: 'whitelabels'; whitelabelId?: string; page?: string; query?: string; status?: string; search: string }
   | { view: 'accounts'; whitelabelId: string; tipo?: string; page?: string; query?: string; conta?: string; search: string }
-  | { view: 'settings'; whitelabelId: string; area?: string; cell?: string; env?: string; resource?: string }
+  | { view: 'settings'; whitelabelId: string; area?: string; cell?: string; env?: string; resource?: string; focus?: string; section?: string }
   | { view: 'settings-showcase'; whitelabelId: string; tab: 'banner' | 'introducao' | 'cards'; invalid: boolean }
   | { view: 'settings-showcase-card'; whitelabelId: string; instanceId: string; focusField?: string; invalid: boolean }
   | { view: 'emails'; whitelabelId: string; section?: string }
@@ -320,18 +320,24 @@ function routeFromHash(): Route {
   const settings = SETTINGS_PATH.exec(path)
   if (settings) {
     const query = new URLSearchParams(search)
-    const allowed = new Set(['area', 'cell', 'env', 'resource'])
+    const allowed = new Set(['area', 'cell', 'env', 'resource', 'focus', 'section'])
     const validQuery =
       [...query.keys()].every((key) => allowed.has(key)) &&
       query.getAll('area').length <= 1 &&
       query.getAll('cell').length <= 1 &&
       query.getAll('env').length <= 1 &&
-      query.getAll('resource').length <= 1
+      query.getAll('resource').length <= 1 &&
+      query.getAll('focus').length <= 1 &&
+      query.getAll('section').length <= 1
     const envRaw = validQuery ? query.get('env') : null
     const resourceRaw = validQuery ? query.get('resource') : null
+    const focusRaw = validQuery ? query.get('focus') : null
+    const sectionRaw = validQuery ? query.get('section') : null
     const envOk = !envRaw || envRaw === 'investor' || envRaw === 'entrepreneur' || envRaw === 'admin'
     const resourceOk = !resourceRaw || /^[a-z][a-z0-9_]{0,63}$/.test(resourceRaw)
-    const ok = validQuery && envOk && resourceOk
+    const focusOk = !focusRaw || /^[A-Za-z0-9_./-]{1,120}$/.test(focusRaw)
+    const sectionOk = !sectionRaw || /^[a-z][a-z0-9_]{0,63}$/.test(sectionRaw)
+    const ok = validQuery && envOk && resourceOk && focusOk && sectionOk
     return {
       view: 'settings',
       whitelabelId: settings[1],
@@ -339,6 +345,8 @@ function routeFromHash(): Route {
       cell: ok ? query.get('cell') ?? undefined : undefined,
       env: ok ? envRaw ?? undefined : undefined,
       resource: ok ? resourceRaw ?? undefined : undefined,
+      focus: ok ? focusRaw ?? undefined : undefined,
+      section: ok ? sectionRaw ?? undefined : undefined,
     }
   }
   const showcase = /^whitelabels\/([^/]+)\/settings\/plataforma\/vitrine(?:\/cards\/([^/]+))?$/.exec(path)
@@ -566,7 +574,7 @@ export function App() {
       />
     )
   }
-  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} cell={route.cell} env={route.env} resource={route.resource} />
+  if (route.view === 'settings') return <OperationalSettingsPage whitelabelId={route.whitelabelId} area={route.area} cell={route.cell} env={route.env} resource={route.resource} focus={route.focus} section={route.section} />
   if (route.view === 'settings-showcase') return route.invalid ? <ReadinessUnavailablePage /> : <ShowcaseSettingsPage tenantId={route.whitelabelId} tab={route.tab} />
   if (route.view === 'settings-showcase-card') return route.invalid ? <ReadinessUnavailablePage /> : <CardEditorPage tenantId={route.whitelabelId} instanceId={route.instanceId} focusField={route.focusField} />
   if (route.view === 'emails') return <OperationalSmtpPage whitelabelId={route.whitelabelId} section={route.section} />

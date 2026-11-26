@@ -137,3 +137,17 @@
   .studioTopbar { padding: 14px; }
   .viewportFrame { min-height: 420px; height: 62vh; }
 }
+
+.studioSearch { position: relative; min-width: min(280px, 100%); flex: 1 1 220px; max-width: 360px; }
+.studioSearchField { display: flex; align-items: center; gap: 8px; border: 1px solid var(--surface-border-strong); border-radius: 8px; background: #101625; padding: 0 10px; }
+.studioSearchField svg { opacity: .65; flex: none; }
+.studioSearchField input { width: 100%; border: 0; background: transparent; color: var(--text-on-dark); font: inherit; font-size: 12px; padding: 9px 0; outline: none; }
+.studioSearchResults { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; margin: 0; padding: 6px; list-style: none; border: 1px solid var(--surface-border-strong); border-radius: 10px; background: #121826; box-shadow: 0 16px 40px #00000066; max-height: 320px; overflow: auto; }
+.studioSearchResults a { display: grid; gap: 3px; text-decoration: none; color: var(--text-on-dark); padding: 9px 10px; border-radius: 7px; }
+.studioSearchResults a:hover, .studioSearchResults a:focus-visible { background: #7867ff22; }
+.studioSearchResults strong { font-size: 12px; font-weight: 600; }
+.studioSearchResults span { font-size: 10px; line-height: 1.45; color: var(--text-on-dark-muted); }
+.studioSearchEmpty { padding: 12px 10px; font-size: 12px; color: var(--text-on-dark-muted); }
+.fieldHelper { display: block; margin: 0 0 6px; font-size: 10px !important; line-height: 1.5; color: var(--text-on-dark-muted) !important; }
+.field[data-highlight=true], [data-highlight=true] { outline: 2px solid #9a8cff; outline-offset: 4px; border-radius: 8px; background: #7867ff14; padding: 8px; }
+.panelBanner code { font-size: 10px; color: #c9c5ff; }

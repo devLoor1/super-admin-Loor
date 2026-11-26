@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ChevronDown, ExternalLink, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { ChevronDown, ExternalLink, RefreshCw, Search } from 'lucide-react'
 import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
-import { CONFIG_DEFINITIONS, isConfigCell, type ConfigCell, type ConfigOrigin } from './configurationContract'
+import { CONFIG_DEFINITIONS, isConfigCell } from './configurationContract'
 import { CompositeConfigurationEditor, ScalarConfigurationEditor, type EditorState } from './ConfigurationEditor'
 import { PlatformAssetEditor } from './PlatformAssetEditor'
 import { LiveWhitelabelPreview, type LivePreviewContext, type PreviewViewport } from './LiveWhitelabelPreview'
@@ -22,6 +22,7 @@ import {
   type StudioResource,
 } from './studioExperienceCatalog'
 import { sectionsForResource } from './studioPanelSections'
+import { searchStudioSettings, studioCellHelper, studioCellLabel } from './studioPresentationCatalog'
 import type { SettingsRead } from './settingsReadApi'
 import s from './ConfigurationStudio.module.css'
 
@@ -31,24 +32,17 @@ const appGroups = [
   { id: 'terminology', title: 'Terminologia', cells: ['terminology.config'] },
 ]
 const label = (cell: string) =>
-  cell === 'quick_profile.appearance'
-    ? 'Aparência herdada'
-    : isConfigCell(cell)
-      ? CONFIG_DEFINITIONS[cell].title
-      : isSettingsField(cell)
-        ? settingsFieldLabel(cell)
-        : cell
-const historicalCells = new Set([
-  'register.entry_presentation',
-  'register.main_area_image',
-  'quick_profile.theme',
-  'quick_profile.entry_presentation',
-  'quick_profile.main_area_image',
-])
+  studioCellLabel(
+    cell,
+    cell === 'quick_profile.appearance'
+      ? 'Aparência herdada'
+      : isConfigCell(cell)
+        ? CONFIG_DEFINITIONS[cell].title
+        : isSettingsField(cell)
+          ? settingsFieldLabel(cell)
+          : cell,
+  )
 function tabLabel(cell: string) {
-  if (cell === 'quick_profile.theme') return 'Tema legado'
-  if (cell.endsWith('.entry_presentation')) return historicalCells.has(cell) ? 'Aparência legada' : 'Aparência'
-  if (cell.endsWith('.main_area_image')) return historicalCells.has(cell) ? 'Imagem legada' : 'Imagem'
   return label(cell)
 }
 
@@ -57,38 +51,20 @@ function readText(field: { state: string; value?: unknown } | undefined): string
   return field.value
 }
 
-function AssetPane({
-  id,
-  cell,
-  origin,
-  onReload,
-  onState,
-}: {
-  id: string
-  cell: ConfigCell
-  origin: ConfigOrigin
-  onReload: () => void
-  onState: (state: EditorState) => void
-}) {
-  return (
-    <div className={s.panelEditor}>
-      <PlatformAssetEditor id={id} cell={cell} baseline={origin} onReload={onReload} onState={onState} />
-    </div>
-  )
-}
-
 function PropertyEditor({
   id,
   data,
   cell,
   onReload,
   onState,
+  focusPath,
 }: {
   id: string
   data: SettingsRead
   cell: string
   onReload: () => void
   onState: (state: EditorState) => void
+  focusPath?: string
 }) {
   const origin = isConfigCell(cell) ? data.configuration[cell] : undefined
   if (cell === 'quick_profile.appearance') {
@@ -122,7 +98,15 @@ function PropertyEditor({
   }
   if (isConfigCell(cell) && origin) {
     if (cell.endsWith('.main_area_image')) {
-      return <AssetPane id={id} cell={cell} origin={origin} onReload={onReload} onState={onState} />
+      return (
+        <div className={s.panelEditor}>
+          <div className={s.sectionLead}>
+            <h4>{studioCellLabel(cell, CONFIG_DEFINITIONS[cell].title)}</h4>
+            <p>{studioCellHelper(cell) ?? CONFIG_DEFINITIONS[cell].description}</p>
+          </div>
+          <PlatformAssetEditor id={id} cell={cell} baseline={origin} onReload={onReload} onState={onState} />
+        </div>
+      )
     }
     return (
       <CompositeConfigurationEditor
@@ -133,6 +117,7 @@ function PropertyEditor({
         onReload={onReload}
         onState={onState}
         embedPreview={false}
+        focusPath={focusPath}
       />
     )
   }
@@ -143,12 +128,84 @@ function PropertyEditor({
   )
 }
 
+function StudioSearch({
+  tenantId,
+  onNavigate,
+}: {
+  tenantId: string
+  onNavigate: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const inputId = useId()
+  const hits = useMemo(() => searchStudioSettings(query), [query])
+
+  useEffect(() => {
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [])
+
+  return (
+    <div className={s.studioSearch} ref={rootRef}>
+      <label className={s.studioSearchField} htmlFor={inputId}>
+        <Search size={14} aria-hidden="true" />
+        <input
+          id={inputId}
+          type="search"
+          value={query}
+          placeholder="Buscar configuração..."
+          autoComplete="off"
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+        />
+      </label>
+      {open && query.trim().length >= 2 ? (
+        <ul className={s.studioSearchResults} role="listbox" aria-label="Resultados da busca">
+          {hits.length === 0 ? (
+            <li className={s.studioSearchEmpty}>Nenhuma configuração encontrada.</li>
+          ) : (
+            hits.map((hit) => (
+              <li key={hit.id}>
+                <a
+                  href={configHref(tenantId, 'platform', hit.cell, {
+                    env: hit.env,
+                    resource: hit.resourceId,
+                    section: hit.sectionId,
+                    focus: hit.focusPath,
+                  })}
+                  onClick={() => {
+                    setOpen(false)
+                    setQuery('')
+                    onNavigate()
+                  }}
+                >
+                  <strong>{hit.label}</strong>
+                  <span>{hit.breadcrumb}</span>
+                </a>
+              </li>
+            ))
+          )}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function PlatformStudio({
   id,
   data,
   selectedEnv,
   selectedResource,
   selectedCell,
+  focusPath,
+  focusSection,
   onReload,
 }: {
   id: string
@@ -156,6 +213,8 @@ function PlatformStudio({
   selectedEnv?: string
   selectedResource?: string
   selectedCell?: string
+  focusPath?: string
+  focusSection?: string
   onReload: () => void
 }) {
   const selection = resolveStudioSelection({
@@ -229,9 +288,13 @@ function PlatformStudio({
     const next: Record<string, boolean> = {}
     for (const section of sectionsForResource(resource.id, resource.cells)) {
       next[section.id] = section.defaultOpen !== false
+      if (focusSection && section.id === focusSection) next[section.id] = true
+      if (cell && section.cells.includes(cell)) next[section.id] = true
     }
     setOpenSections(next)
-  }, [resource.id, resource.cells])
+  }, [resource.id, resource.cells, focusSection, cell])
+
+  const marcaGlobal = menu.resources.find((item) => item.id === 'marca_global')
 
   const hrefFor = (nextEnv: StudioEnvironmentId, nextResource: StudioResource, nextCell?: string) =>
     configHref(id, 'platform', nextCell ?? nextResource.cells[0], {
@@ -291,7 +354,7 @@ function PlatformStudio({
                 {menu.resources.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.title}
-                    {item.kind === 'FEATURE' ? ' · recurso' : ''}
+                    {item.kind === 'FEATURE' ? ' · recurso' : item.kind === 'GLOBAL' ? ' · marca' : ''}
                   </option>
                 ))}
               </select>
@@ -304,6 +367,7 @@ function PlatformStudio({
           </p>
         </div>
         <div className={s.studioTopActions}>
+          <StudioSearch tenantId={id} onNavigate={() => setMobilePane('config')} />
           <span className={state.dirty ? s.draftBadge : s.savedBadge}>
             {state.dirty ? 'Alterações não salvas' : 'Salvo'}
           </span>
@@ -351,6 +415,13 @@ function PlatformStudio({
             </div>
           ) : null}
 
+          {resource.kind === 'GLOBAL' ? (
+            <div className={s.panelBanner} role="status">
+              Marca global — afeta a identidade compartilhada dos fronts via bootstrap. A aba E-mail usa o mesmo
+              valor (<code>email_branding.config</code>).
+            </div>
+          ) : null}
+
           {resource.editorMode !== 'cells' || resource.cells.length === 0 ? (
             <div className={s.panelNotice}>
               <h3>Identidade global</h3>
@@ -358,12 +429,23 @@ function PlatformStudio({
                 {resource.notice ??
                   'Esta experiência utiliza atualmente a identidade global do Whitelabel.'}
               </p>
-              <p>
-                Nenhum campo artificial de entrepreneur.* ou admin.* — branding/bootstrap em Identidade visual.
-              </p>
+              {marcaGlobal ? (
+                <a href={hrefFor(env, marcaGlobal)}>Abrir Marca global (logo e cor primária)</a>
+              ) : (
+                <p>Nenhum campo artificial de entrepreneur.* ou admin.* nesta etapa.</p>
+              )}
             </div>
           ) : (
             <div className={s.propSections}>
+              {resource.id === 'marca_global' ? (
+                <div className={s.panelNotice}>
+                  <h3>Nome do Whitelabel</h3>
+                  <p>{tenantName}</p>
+                  <p className={s.panelHint}>
+                    Favicon / PWA / logo de build — configuração técnica; não editável neste Studio.
+                  </p>
+                </div>
+              ) : null}
               {sections.map((section) => {
                 const open = openSections[section.id] !== false
                 return (
@@ -396,6 +478,7 @@ function PlatformStudio({
                           cell={cell}
                           onReload={onReload}
                           onState={onState}
+                          focusPath={focusPath}
                         />
                       ) : null}
                     </div>
@@ -623,6 +706,8 @@ export function ConfigurationStudio({
   selectedCell,
   selectedEnv,
   selectedResource,
+  focusPath,
+  focusSection,
   onReload,
 }: {
   id: string
@@ -631,6 +716,8 @@ export function ConfigurationStudio({
   selectedCell?: string
   selectedEnv?: string
   selectedResource?: string
+  focusPath?: string
+  focusSection?: string
   onReload: () => void
 }) {
   if (area === 'app') {
@@ -643,6 +730,8 @@ export function ConfigurationStudio({
       selectedEnv={selectedEnv}
       selectedResource={selectedResource}
       selectedCell={selectedCell}
+      focusPath={focusPath}
+      focusSection={focusSection}
       onReload={onReload}
     />
   )

@@ -50,7 +50,24 @@ export const INVESTOR_WALLET_PREFIX = '/wallet'
 
 const featureCells = SETTINGS_FIELDS.filter((cell) => cell.startsWith('features.'))
 
+/** Shared runtime branding (email_branding.config → bootstrap logoUrl/primaryColor). */
+function marcaGlobalResource(previewPath: string, requiresAuth: boolean): StudioResource {
+  return {
+    id: 'marca_global',
+    title: 'Marca global',
+    kind: 'GLOBAL',
+    cells: ['email_branding.config'],
+    previewPath,
+    requiresAuth,
+    previewMode: 'representative',
+    editorMode: 'cells',
+    notice:
+      'Logo e cor primária do bootstrap dos fronts (Investidor, Empreendedor e Admin). O mesmo valor alimenta a identidade dos e-mails — uma única fonte (email_branding.config). Favicon/PWA de build não são editáveis aqui.',
+  }
+}
+
 const investorResources: StudioResource[] = [
+  marcaGlobalResource(`${INVESTOR_WALLET_PREFIX}/login`, false),
   {
     id: 'login',
     title: 'Login',
@@ -149,6 +166,7 @@ const entrepreneurNotice =
   'Esta página utiliza atualmente as configurações globais do Whitelabel (branding/bootstrap). Não há contrato de settings específico do Empreendedor nesta etapa.'
 
 const entrepreneurResources: StudioResource[] = [
+  marcaGlobalResource('/auth', false),
   {
     id: 'auth',
     title: 'Autenticação',
@@ -158,7 +176,7 @@ const entrepreneurResources: StudioResource[] = [
     requiresAuth: false,
     previewMode: 'live',
     editorMode: 'global_branding',
-    notice: 'Login e Cadastro são abas da mesma rota /auth. Consome branding/bootstrap global.',
+    notice: 'Login e Cadastro são abas da mesma rota /auth. Consome branding/bootstrap global — edite em Marca global.',
   },
   {
     id: 'dashboard',
@@ -243,6 +261,7 @@ const adminSpaNotice =
   'O Admin usa majoritariamente estado React (AdminView), sem deep-links estáveis. A prévia live é limitada — abra o ambiente ao vivo após autenticação.'
 
 const adminResources: StudioResource[] = [
+  marcaGlobalResource('/', false),
   {
     id: 'login',
     title: 'Login',
@@ -252,7 +271,7 @@ const adminResources: StudioResource[] = [
     requiresAuth: false,
     previewMode: 'live',
     editorMode: 'global_branding',
-    notice: 'Componente de Login na raiz quando deslogado. Consome branding/bootstrap global.',
+    notice: 'Componente de Login na raiz quando deslogado. Consome branding/bootstrap global — edite em Marca global.',
   },
   {
     id: 'integracao_pag',
@@ -329,7 +348,16 @@ export function getStudioMenu(env: StudioEnvironmentId): StudioEnvironmentMenu {
 
 export function getStudioResource(env: StudioEnvironmentId, resourceId: string | null | undefined): StudioResource {
   const menu = getStudioMenu(env)
-  return menu.resources.find((r) => r.id === resourceId) ?? menu.resources[0]
+  if (resourceId) {
+    const hit = menu.resources.find((r) => r.id === resourceId)
+    if (hit) return hit
+  }
+  // Prefer a page over Marca global when the URL omits resource.
+  return (
+    menu.resources.find((r) => r.id === 'login' || r.id === 'auth') ??
+    menu.resources.find((r) => r.kind === 'PAGE') ??
+    menu.resources[0]
+  )
 }
 
 export function resourceForCell(env: StudioEnvironmentId, cell: string | null | undefined): StudioResource {

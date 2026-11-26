@@ -11,23 +11,26 @@ import { normalizeSettingValue, settingsFieldBaseline, settingsFieldLabel, setti
 import { ConfigurationPreview } from './ConfigurationPreview'
 import type { LivePreviewContext } from './LiveWhitelabelPreview'
 import { configurationDisplayValue } from '../whitelabel-emails/emailBrandingDisplay'
+import { studioCellHelper, studioCellLabel, studioFieldPresentation } from './studioPresentationCatalog'
 import s from './ConfigurationStudio.module.css'
 
 export type EditorState = {dirty:boolean;busy:boolean}
-type Props = {id:string;data:SettingsRead;onReload:()=>void;onState:(state:EditorState)=>void;previewContext?:LivePreviewContext;/** When false, omit the live-preview column (Studio shell owns the stage). */embedPreview?:boolean}
-export function ConfigInput({control,value,onChange,disabled}: {control:Control;value:Json|undefined;onChange:(value:Json)=>void;disabled:boolean}) {
+type Props = {id:string;data:SettingsRead;onReload:()=>void;onState:(state:EditorState)=>void;previewContext?:LivePreviewContext;/** When false, omit the live-preview column (Studio shell owns the stage). */embedPreview?:boolean;focusPath?:string}
+export function ConfigInput({control,value,onChange,disabled,helper,highlighted}: {control:Control;value:Json|undefined;onChange:(value:Json)=>void;disabled:boolean;helper?:string;highlighted?:boolean}) {
   const id=useId(),shown=typeof value==='string'||typeof value==='number'?value:''
   if(control.kind==='boolean'){
     const on=value===true
-    return <div className={s.field}>
+    return <div className={s.field} data-highlight={highlighted||undefined}>
       <div className={s.switchRow}>
         <span>{control.label}</span>
         <button type="button" role="switch" id={id} aria-checked={on} disabled={disabled||value===undefined} className={s.switch} onClick={()=>onChange(!on)}/>
       </div>
+      {helper?<small className={s.fieldHelper}>{helper}</small>:null}
       {value===undefined?<small>Ausente neste valor. Não será preenchido automaticamente ao salvar.</small>:value===null?<small>Valor explícito null; será preservado até você editá-lo.</small>:null}
     </div>
   }
-  return <label className={s.field} htmlFor={id}>{control.label}
+  return <label className={s.field} htmlFor={id} data-highlight={highlighted||undefined}>{control.label}
+    {helper?<small className={s.fieldHelper}>{helper}</small>:null}
     {control.kind==='select'?<select id={id} disabled={disabled} value={typeof value==='string'?value:''} onChange={e=>onChange(e.target.value)}><option value="" disabled>Não informado</option>{control.options?.map(option=><option key={option}>{option}</option>)}</select>
       :control.kind==='number'?<input id={id} type="number" step="any" min={control.min} max={control.max} disabled={disabled} value={shown} onChange={e=>onChange(e.target.value===''?null:Number(e.target.value))}/>
       :control.kind==='color'?<div className={s.colorRow}><span className={s.colorSwatch} style={{background:typeof value==='string'&&/^#[\da-f]{6}$/i.test(value)?value:'#334155'}} aria-hidden="true"/><input aria-label={`Paleta: ${control.label}`} type="color" disabled={disabled} value={typeof value==='string'&&/^#[\da-f]{6}$/i.test(value)?value:'#334155'} onChange={e=>onChange(e.target.value)}/><input id={id} aria-label={control.label} disabled={disabled} value={shown} placeholder="#RRGGBB" maxLength={7} onChange={e=>onChange(e.target.value)}/></div>
@@ -39,7 +42,7 @@ export function ConfigInput({control,value,onChange,disabled}: {control:Control;
 export function OriginDetails({origin,cell}:{origin:ConfigOrigin;cell:string}) {
   return <details className={s.provenance}><summary>Origem e comportamento ao salvar</summary><p>{origin.stored?'Substituição própria armazenada.':origin.source==='default'?'Padrão herdado, sem substituição.':'Sem substituição nem padrão retornado.'}</p><p>Uma célula por solicitação: <code>{cell}</code>. Propriedades não editadas são preservadas. A conferência prévia reduz conflitos, sem bloqueio atômico no servidor.</p></details>
 }
-export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview,previewContext,embedPreview=true}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
+export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview,previewContext,embedPreview=true,focusPath}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
   const [baseline,setBaseline]=useState(data.configuration[cell]!)
   const [draft,setDraft]=useState<Json>(()=>cloneJson(baseline.stored?baseline.storedValue:baseline.effectiveValue))
   const [editing,setEditing]=useState(false),[saved,setSaved]=useState(true),[narrow,setNarrow]=useState<'edit'|'preview'>('edit')
@@ -63,6 +66,13 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
     setDraft(cloneJson(supported?current:initial));setEditing(true);setSaved(false)
   }
   const fields=definition.fields.filter(field=>!screen||field.path[1]===screen)
+  const friendlyTitle=studioCellLabel(cell,definition.title)
+  const friendlyHelper=studioCellHelper(cell)??definition.description
+  useEffect(()=>{
+    if(!focusPath) return
+    const el=document.querySelector(`[data-focus-path="${CSS.escape(focusPath)}"]`)
+    if(el instanceof HTMLElement) el.scrollIntoView({block:'nearest',behavior:'smooth'})
+  },[focusPath,cell])
   async function save(value:Json|undefined){
     if(!canWrite||locked||busy||value!==undefined&&valid)return
     setError('');controller.current=new AbortController()
@@ -84,12 +94,19 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
     catch{setError('Consulta indisponível. A gravação continua bloqueada.')}
     finally{setRefreshing(false)}
   }
-  const editorBody=<><div className={s.sectionLead}><h4>{definition.title}</h4><p>{definition.description}</p></div>
+  const editorBody=<><div className={s.sectionLead}><h4>{friendlyTitle}</h4><p>{friendlyHelper}</p></div>
       {!editing&&canWrite&&!locked&&<OutlineButton onClick={startEditing} disabled={missingFallback||current!==null&&!supported}>{supported?'Editar configuração':current===null?'Preparar configuração própria':'Versão não suportada'}</OutlineButton>}
       {missingFallback&&<p role="status">Para preparar a primeira apresentação, é preciso confirmar a origem da disposição e da cor de texto do Login.</p>}
       {editing&&!supported&&<p className={s.note}>Proposta inicial explícita. Estes valores ainda não foram salvos e não representam um padrão retornado pelo servidor.</p>}
       {!supported&&current!==null&&<p role="alert">A versão recebida não é compatível com este editor. O valor original será preservado.</p>}
-      {(editing||supported)&&<fieldset className={s.fieldset} disabled={!editing||!canWrite||locked||busy}><legend className="visually-hidden">Campos de {definition.title}</legend>{fields.map(control=><ConfigInput key={control.path.join('/')} control={control} value={configurationDisplayValue(cell,draft,control.path)} disabled={!editing||!canWrite||locked||busy} onChange={next=>{setDraft(value=>changeAt(value,control.path,next));setSaved(false)}}/>)}</fieldset>}
+      {(editing||supported)&&<fieldset className={s.fieldset} disabled={!editing||!canWrite||locked||busy}><legend className="visually-hidden">Campos de {friendlyTitle}</legend>{fields.map(control=>{
+        const pathKey=control.path.filter(Boolean).join('/')
+        const presented=studioFieldPresentation(cell,control.path)
+        const nextControl=presented?{...control,label:presented.label}:control
+        return <div key={pathKey||control.label} data-focus-path={pathKey||undefined}>
+          <ConfigInput control={nextControl} value={configurationDisplayValue(cell,draft,control.path)} disabled={!editing||!canWrite||locked||busy} helper={presented?.helper} highlighted={!!focusPath&&focusPath===pathKey} onChange={next=>{setDraft(value=>changeAt(value,control.path,next));setSaved(false)}}/>
+        </div>
+      })}</fieldset>}
       {editing&&valid&&<p role="alert" className={s.error}>{valid}</p>}<OriginDetails origin={baseline} cell={cell}/>
       {attempt&&attempt!==acknowledgedStale&&<p role="status">{CONFIG_MESSAGES[attempt.phase]}{attempt.status?` HTTP ${attempt.status}.`:''}</p>}{error&&<p role="status">{error}</p>}
       {attempt?.phase==='stale'&&attempt!==acknowledgedStale&&<OutlineButton disabled={busy} onClick={()=>void refresh()}>Descartar rascunho e atualizar referência</OutlineButton>}

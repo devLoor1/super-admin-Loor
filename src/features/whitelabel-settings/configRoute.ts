@@ -14,6 +14,9 @@ export function configArea(value?: string | null): ConfigArea | null {
 export type ConfigHrefOptions = {
   env?: StudioEnvironmentId
   resource?: string
+  /** Nested field path to highlight (e.g. regions/brand/backgroundColor). */
+  focus?: string
+  section?: string
 }
 
 export function configHref(
@@ -27,7 +30,9 @@ export function configHref(
   if (area === 'platform') {
     if (opts?.env) query.set('env', opts.env)
     if (opts?.resource) query.set('resource', opts.resource)
+    if (opts?.section) query.set('section', opts.section)
   }
   if (cell) query.set('cell', cell)
+  if (opts?.focus) query.set('focus', opts.focus)
   return `#/whitelabels/${encodeURIComponent(id)}/settings?${query.toString()}`
 }

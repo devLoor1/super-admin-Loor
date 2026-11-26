@@ -22,13 +22,28 @@ const LOGIN: StudioPanelSection[] = [
     id: 'appearance',
     title: 'Aparência',
     defaultOpen: true,
-    cells: ['login.entry_presentation', 'login.layout_preset', 'login.brand_panel_text_color'],
+    cells: ['login.entry_presentation'],
   },
   {
     id: 'images',
     title: 'Imagens',
-    defaultOpen: false,
+    defaultOpen: true,
     cells: ['login.main_area_image'],
+  },
+  {
+    id: 'advanced',
+    title: 'Avançado',
+    defaultOpen: false,
+    cells: ['login.layout_preset', 'login.brand_panel_text_color'],
+  },
+]
+
+const MARCA_GLOBAL: StudioPanelSection[] = [
+  {
+    id: 'brand',
+    title: 'Marca global',
+    defaultOpen: true,
+    cells: ['email_branding.config'],
   },
 ]
 
@@ -107,7 +122,9 @@ const OFFERS: StudioPanelSection[] = [
 /** Build collapsible sections for a resource, falling back to a single "Propriedades" group. */
 export function sectionsForResource(resourceId: string, cells: string[]): StudioPanelSection[] {
   const preset =
-    resourceId === 'login'
+    resourceId === 'marca_global'
+      ? MARCA_GLOBAL
+      : resourceId === 'login'
       ? LOGIN
       : resourceId === 'register'
         ? REGISTER

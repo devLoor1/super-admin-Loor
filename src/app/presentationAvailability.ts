@@ -17,7 +17,7 @@ export function viewAvailable(view: string) {
 export function readinessHref(id: string, candidate?: string) {
   if (id === 'financeiro') return '#/finance/investments'
   if (id === 'contas' && (!candidate || candidate.includes('_proto_'))) return '#/whitelabels/select/accounts'
-  if (id === 'whitelabel-settings' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/settings(?:\?(?:area=(?:platform|app|identity|terms)|env=(?:investor|entrepreneur|admin)|resource=[a-z][a-z0-9_]*|cell=[a-z_]+\.[a-z_]+)(?:&(?:area=(?:platform|app|identity|terms)|env=(?:investor|entrepreneur|admin)|resource=[a-z][a-z0-9_]*|cell=[a-z_]+\.[a-z_]+))*)?$/.test(candidate))) return '#/whitelabels/select/settings'
+  if (id === 'whitelabel-settings' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/settings(?:\?[A-Za-z0-9_.=%&\-/]+)?$/.test(candidate))) return '#/whitelabels/select/settings'
   if (id === 'whitelabel-emails' && (!candidate || !/^#\/whitelabels\/[1-9]\d*\/emails(?:\?section=(?:smtp|templates|branding))?$/.test(candidate))) return '#/whitelabels/select/emails?section=smtp'
   return candidate?.includes('_proto_') ? undefined : candidate
 }

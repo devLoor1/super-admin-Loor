@@ -314,9 +314,10 @@ export function searchStudioSettings(query: string, limit = 12): StudioSearchHit
     for (const bag of bags) {
       best = Math.max(best, scoreMatch(q, bag))
     }
+    if (best <= 0) continue
     // Prefer Investor hits for shared cells (marca global / login) when tied.
     if (entry.env === 'investor') best += 1
-    if (best > 0) results.push({ ...entry, score: best })
+    results.push({ ...entry, score: best })
   }
   results.sort((a, b) => b.score - a.score || a.breadcrumb.localeCompare(b.breadcrumb, 'pt-BR'))
   // Deduplicate same cell+focus keeping best env

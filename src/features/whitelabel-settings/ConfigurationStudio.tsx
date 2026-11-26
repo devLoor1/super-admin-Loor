@@ -4,9 +4,10 @@ import { Dialog } from '../../components/ui/Dialog'
 import { OutlineButton } from '../../components/ui/OutlineButton'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { useUnsavedChangesGuard } from '../../app/useUnsavedChangesGuard'
-import { CONFIG_DEFINITIONS, isConfigCell } from './configurationContract'
+import { CONFIG_DEFINITIONS, isConfigCell, type ConfigOrigin } from './configurationContract'
 import { CompositeConfigurationEditor, ScalarConfigurationEditor, type EditorState } from './ConfigurationEditor'
 import { PlatformAssetEditor } from './PlatformAssetEditor'
+import { BrandLogoEditor } from './BrandLogoEditor'
 import { LiveWhitelabelPreview, type LivePreviewContext, type PreviewViewport } from './LiveWhitelabelPreview'
 import { isSettingsField, settingsFieldLabel } from './settingsWriteContract'
 import { APP_AUTH_GROUPS, APP_ENTRY_GROUPS } from './appContentRead'
@@ -49,6 +50,57 @@ function tabLabel(cell: string) {
 function readText(field: { state: string; value?: unknown } | undefined): string | null {
   if (!field || field.state !== 'value' || typeof field.value !== 'string') return null
   return field.value
+}
+
+function EmailBrandingStudioPanel({
+  id,
+  data,
+  origin,
+  onReload,
+  onState,
+  focusPath,
+}: {
+  id: string
+  data: SettingsRead
+  origin: ConfigOrigin
+  onReload: () => void
+  onState: (state: EditorState) => void
+  focusPath?: string
+}) {
+  const logoState = useRef<EditorState>({ dirty: false, busy: false })
+  const colorState = useRef<EditorState>({ dirty: false, busy: false })
+  const publish = useCallback(() => {
+    onState({
+      dirty: logoState.current.dirty || colorState.current.dirty,
+      busy: logoState.current.busy || colorState.current.busy,
+    })
+  }, [onState])
+  const revision = origin.version ?? `${origin.source}:${origin.stored ? '1' : '0'}`
+  return (
+    <div className={s.panelEditor}>
+      <div className={s.sectionLead}>
+        <h4>{studioCellLabel('email_branding.config', CONFIG_DEFINITIONS['email_branding.config'].title)}</h4>
+        <p>{studioCellHelper('email_branding.config') ?? CONFIG_DEFINITIONS['email_branding.config'].description}</p>
+      </div>
+      <BrandLogoEditor
+        key={`brand-logo:${revision}`}
+        id={id}
+        baseline={origin}
+        onReload={onReload}
+        onState={(next) => { logoState.current = next; publish() }}
+      />
+      <CompositeConfigurationEditor
+        key={`email-branding-color:${revision}`}
+        id={id}
+        data={data}
+        cell="email_branding.config"
+        onReload={onReload}
+        onState={(next) => { colorState.current = next; publish() }}
+        embedPreview={false}
+        focusPath={focusPath === 'logo_url' ? undefined : focusPath}
+      />
+    </div>
+  )
 }
 
 function PropertyEditor({
@@ -106,6 +158,18 @@ function PropertyEditor({
           </div>
           <PlatformAssetEditor id={id} cell={cell} baseline={origin} onReload={onReload} onState={onState} />
         </div>
+      )
+    }
+    if (cell === 'email_branding.config') {
+      return (
+        <EmailBrandingStudioPanel
+          id={id}
+          data={data}
+          origin={origin}
+          onReload={onReload}
+          onState={onState}
+          focusPath={focusPath}
+        />
       )
     }
     return (

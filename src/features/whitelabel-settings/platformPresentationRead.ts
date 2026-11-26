@@ -132,9 +132,12 @@ function emailBranding(settings: unknown): PlatformPresentationCapability {
   // Narrow persisted snake_case projection only. Do not silently normalize
   // Core's optional camelCase aliases, eight-digit colors or hashless colors.
   // The URL is never retained: even valid references become a constant label.
+  const safeAssetRef = (value: unknown): value is string =>
+    typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
   return { ...base, state: 'value', fields: [
     { key: 'primary_color', label: 'Cor principal do e-mail (hexadecimal de seis dígitos)', reading: checked(at(root.value, ['primary_color']), color) },
-    { key: 'logo_url', label: 'Logo do e-mail — referência sem carregamento', reading: checked(at(root.value, ['logo_url']), safeLogoReference, () => 'Referência HTTP(S) informada; conteúdo não carregado') },
+    { key: 'logo_asset_ref', label: 'Logo principal — referência de asset (upload)', reading: checked(at(root.value, ['logo_asset_ref']), safeAssetRef, () => 'Referência de platform asset informada') },
+    { key: 'logo_url', label: 'Logo externa legada — referência sem carregamento', reading: checked(at(root.value, ['logo_url']), safeLogoReference, () => 'Referência HTTP(S) informada; conteúdo não carregado') },
   ] }
 }
 

@@ -77,7 +77,7 @@ export async function reconcilePlatformAsset(tenant: string, session: number, sl
   publish(tenant, slot, { ...attempt, phase: 'confirmed' })
   return asset
 }
-export type LogoBgPreview = { mime: 'image/png'; method: 'passthrough' | 'edge'; width: number; height: number; objectUrl: string }
+export type LogoBgPreview = { mime: 'image/png'; method: 'passthrough' | 'luma' | 'chroma' | 'edge'; width: number; height: number; objectUrl: string }
 
 function logoBgPreviewPayload (raw: unknown): Record<string, unknown> | null {
   if (!record(raw)) return null
@@ -108,7 +108,9 @@ export async function previewLogoBackgroundRemoval(tenant: string, session: numb
     currentSession(token, session)
     const d = logoBgPreviewPayload(raw)
     if (!d) throw new ApiError(200, { code: 'E_LOGO_BG_PREVIEW_SHAPE', message: 'Prévia de remoção de fundo em formato inesperado.' }, { kind: 'malformed' })
-    const method = d.method === 'passthrough' || d.method === 'edge' ? d.method : null
+    const method = d.method === 'passthrough' || d.method === 'luma' || d.method === 'chroma' || d.method === 'edge'
+      ? d.method
+      : null
     const width = typeof d.width === 'number' ? d.width : Number(d.width)
     const height = typeof d.height === 'number' ? d.height : Number(d.height)
     const b64 = typeof d.content_base64 === 'string' ? d.content_base64 : null

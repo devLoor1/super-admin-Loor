@@ -79,6 +79,17 @@ export async function reconcilePlatformAsset(tenant: string, session: number, sl
 }
 export type LogoBgPreview = { mime: 'image/png'; method: 'passthrough' | 'edge'; width: number; height: number; objectUrl: string }
 
+function logoBgPreviewPayload (raw: unknown): Record<string, unknown> | null {
+  if (!record(raw)) return null
+  // Nest returns Core body as-is: { data: { mime, ... } }
+  if (record(raw.data) && typeof raw.data.mime === 'string') return raw.data
+  // Defensive: accidental double-wrap { data: { data: { mime } } }
+  if (record(raw.data) && record(raw.data.data) && typeof raw.data.data.mime === 'string') return raw.data.data
+  // Bare payload
+  if (typeof raw.mime === 'string') return raw
+  return null
+}
+
 /** Preview logo background removal without creating a platform asset. */
 export async function previewLogoBackgroundRemoval(tenant: string, session: number, file: File, signal?: AbortSignal): Promise<LogoBgPreview> {
   const token = authorize(tenant, session)
@@ -90,21 +101,25 @@ export async function previewLogoBackgroundRemoval(tenant: string, session: numb
       method: 'POST',
       body: form,
       token,
-      timeoutMs: 60_000,
+      timeoutMs: 90_000,
       successStatus: 200,
       signal,
     })
     currentSession(token, session)
-    if (!record(raw) || !record(raw.data)) throw new ApiError(200, {}, { kind: 'malformed' })
-    const d = raw.data
-    if (d.mime !== 'image/png' || (d.method !== 'passthrough' && d.method !== 'edge') || typeof d.width !== 'number' || typeof d.height !== 'number' || typeof d.content_base64 !== 'string' || !d.content_base64) {
-      throw new ApiError(200, {}, { kind: 'malformed' })
+    const d = logoBgPreviewPayload(raw)
+    if (!d) throw new ApiError(200, { code: 'E_LOGO_BG_PREVIEW_SHAPE', message: 'Prévia de remoção de fundo em formato inesperado.' }, { kind: 'malformed' })
+    const method = d.method === 'passthrough' || d.method === 'edge' ? d.method : null
+    const width = typeof d.width === 'number' ? d.width : Number(d.width)
+    const height = typeof d.height === 'number' ? d.height : Number(d.height)
+    const b64 = typeof d.content_base64 === 'string' ? d.content_base64 : null
+    if (d.mime !== 'image/png' || !method || !Number.isFinite(width) || !Number.isFinite(height) || !b64) {
+      throw new ApiError(200, { code: 'E_LOGO_BG_PREVIEW_FIELDS', message: 'Prévia de remoção de fundo incompleta.' }, { kind: 'malformed' })
     }
-    const binary = atob(d.content_base64)
+    const binary = atob(b64)
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
     const blob = new Blob([bytes], { type: 'image/png' })
-    return { mime: 'image/png', method: d.method, width: d.width, height: d.height, objectUrl: URL.createObjectURL(blob) }
+    return { mime: 'image/png', method, width, height, objectUrl: URL.createObjectURL(blob) }
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) handleUnauthorized(token, session)
     throw error

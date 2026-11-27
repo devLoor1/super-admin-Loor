@@ -179,10 +179,12 @@ export async function mutatePlatformAsset(tenant: string, operation: AssetAttemp
   if (operation === 'upload') form.append('slot', slot)
   if (options.removeBackground) form.append('remove_background', '1')
   const status = operation === 'upload' ? 201 : 200
+  // BG removal on Core can exceed the default 60s budget (sharp cold start).
+  const timeoutMs = options.removeBackground ? 90_000 : 60_000
   let accepted = false
   publish(tenant, slot, { phase: 'sending', operation, ref, cell, session, slot })
   try {
-    const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets' + (ref ? '/' + encodeURIComponent(ref) : ''), { method: operation === 'upload' ? 'POST' : operation === 'replace' ? 'PUT' : 'DELETE', ...(operation !== 'delete' ? { body: form } : {}), token, timeoutMs: 60_000, successStatus: status })
+    const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets' + (ref ? '/' + encodeURIComponent(ref) : ''), { method: operation === 'upload' ? 'POST' : operation === 'replace' ? 'PUT' : 'DELETE', ...(operation !== 'delete' ? { body: form } : {}), token, timeoutMs, successStatus: status })
     accepted = true
     // Retain a trustworthy returned identity immediately, even if other fields are malformed.
     if (operation === 'upload' && record(raw) && record(raw.data) && raw.data.wtlb_id === Number(tenant) && raw.data.slot === slot && assetReference(raw.data.asset_ref)) publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, ref: raw.data.asset_ref, status })
@@ -196,7 +198,25 @@ export async function mutatePlatformAsset(tenant: string, operation: AssetAttemp
       publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, ref: receipt.ref, receipt, status })
     }
     currentSession(token, session)
-    const result = await readOutcome(tenant, ledger.get(ledgerKey(tenant, slot))!)
+    const attempt = ledger.get(ledgerKey(tenant, slot))!
+    let result: PlatformAsset | null
+    try {
+      result = await readOutcome(tenant, attempt)
+    } catch (readbackError) {
+      // BG removal changes mime/size; strict readback often false-negatives after a
+      // successful Core write. Trust the mutation receipt and refresh URL best-effort.
+      if (!options.removeBackground || operation === 'delete' || !attempt.receipt || attempt.receipt === true) {
+        throw readbackError
+      }
+      const receipt = attempt.receipt
+      result = receipt
+      try {
+        const fresh = await getPlatformAsset(tenant, receipt.ref, undefined, slot)
+        if (fresh.ref === receipt.ref && fresh.slot === receipt.slot) result = fresh
+      } catch {
+        // receipt already confirms the write
+      }
+    }
     currentSession(token, session)
     publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, phase: 'confirmed' })
     return result

@@ -221,13 +221,41 @@ function LogoEditor ({
     return confirmed
   }
 
-  /** White/light logo on the green panel must not sit on the FE white pill. */
+  /**
+   * Best-effort: never fail a successful logo upload because logo_on_dark
+   * writeConfiguration no-ops (already set) or readback drifts.
+   */
   async function persistLogoOnDark (nextOrigin: ConfigOrigin, onDark: boolean) {
-    return persistRef(
-      nextOrigin,
-      logoAssetRefFrom(sourceValue(nextOrigin)),
-      { logo_on_dark: onDark },
-    )
+    try {
+      const value = brandingPayload(nextOrigin, {
+        logo_asset_ref: logoAssetRefFrom(sourceValue(nextOrigin)),
+        logo_on_dark: onDark,
+      })
+      // No-op when Core already persisted the flag during matte.
+      if (nextOrigin.stored && sameJson(value, nextOrigin.storedValue)) {
+        setOrigin(nextOrigin)
+        return nextOrigin
+      }
+      await writeConfiguration(id, CELL, nextOrigin, value, session)
+      const phase = getConfigurationAttempt(id, CELL)?.phase
+      if (phase === 'confirmed') {
+        const confirmed = await refreshOrigin()
+        if (alive() && confirmed) setOrigin(confirmed)
+        return confirmed
+      }
+      // rejected/stale/uncertain — asset write already won; refresh and move on
+      try {
+        const confirmed = await refreshOrigin()
+        if (alive() && confirmed) setOrigin(confirmed)
+        return confirmed
+      } catch {
+        if (alive()) setOrigin(nextOrigin)
+        return nextOrigin
+      }
+    } catch {
+      if (alive()) setOrigin(nextOrigin)
+      return nextOrigin
+    }
   }
 
   async function uploadOrReplace (forceWithoutBg = false) {
@@ -252,15 +280,13 @@ function LogoEditor ({
         const replaced = await mutatePlatformAsset(id, 'replace', session, file, existingRef, CELL, SLOT, options)
         if (!alive() || !replaced) return
         clearFile()
-        setAsset(replaced)
-        if (applyBg) {
-          const withFlag = await persistLogoOnDark(fresh, true)
-          if (!alive() || !withFlag) return
-        } else {
-          setOrigin(fresh)
-        }
+        // Bust signed-URL caches in the live iframe (same asset_ref, new bytes).
+        setAsset({ ...replaced, url: replaced.url ? `${replaced.url}${replaced.url.includes('?') ? '&' : '?'}v=${Date.now()}` : replaced.url })
+        if (applyBg) await persistLogoOnDark(fresh, true)
+        else setOrigin(fresh)
+        if (!alive()) return
         setNotice(applyBg
-          ? 'Logo atualizada (fundo removido · pill branca desligada no painel escuro)'
+          ? 'Logo atualizada (fundo removido)'
           : 'Logo atualizada')
         onReload()
         return
@@ -268,13 +294,13 @@ function LogoEditor ({
 
       const uploaded = await mutatePlatformAsset(id, 'upload', session, file, undefined, CELL, SLOT, options)
       if (!alive() || !uploaded) return
-      const confirmed = await persistRef(fresh, uploaded.ref, applyBg ? { logo_on_dark: true } : {})
+      // Persist asset_ref first (required). logo_on_dark is secondary.
+      const confirmed = await persistRef(fresh, uploaded.ref)
       if (!alive() || !confirmed) return
+      if (applyBg) await persistLogoOnDark(confirmed, true)
       clearFile()
       setAsset(uploaded)
-      setNotice(applyBg
-        ? 'Logo atualizada (fundo removido · pill branca desligada no painel escuro)'
-        : 'Logo atualizada')
+      setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
       onReload()
     } catch (e) {
       if (!alive()) return

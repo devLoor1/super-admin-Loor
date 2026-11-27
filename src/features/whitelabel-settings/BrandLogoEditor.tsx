@@ -286,8 +286,10 @@ function LogoEditor ({
       onReload()
     } catch (e) {
       if (!alive()) return
-      setError(e instanceof ApiError && e.message
-        ? e.message
+      setError(e instanceof ApiError
+        ? (e.kind === 'http'
+          ? `${e.message}${e.code ? ` (${e.code})` : ''}`
+          : `${e.message}${e.status ? ` · HTTP ${e.status}` : ''}`)
         : 'Não foi possível remover o fundo da logo atual.')
     } finally {
       if (alive()) setWorking(false)

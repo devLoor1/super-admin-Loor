@@ -14,8 +14,26 @@ import { configurationDisplayValue } from '../whitelabel-emails/emailBrandingDis
 import { studioCellHelper, studioCellLabel, studioFieldPresentation } from './studioPresentationCatalog'
 import s from './ConfigurationStudio.module.css'
 
-export type EditorState = {dirty:boolean;busy:boolean}
-type Props = {id:string;data:SettingsRead;onReload:()=>void;onState:(state:EditorState)=>void;previewContext?:LivePreviewContext;/** When false, omit the live-preview column (Studio shell owns the stage). */embedPreview?:boolean;focusPath?:string}
+export type EditorState = {
+  dirty: boolean
+  busy: boolean
+  /** Optional flush for companion editors (e.g. pending logo file). Return false to abort. */
+  flush?: () => Promise<boolean>
+}
+type Props = {
+  id: string
+  data: SettingsRead
+  onReload: () => void
+  onState: (state: EditorState) => void
+  previewContext?: LivePreviewContext
+  /** When false, omit the live-preview column (Studio shell owns the stage). */
+  embedPreview?: boolean
+  focusPath?: string
+  /** Pending logo (or other) save hooked into this cell's footer Salvar. */
+  companionDirty?: boolean
+  companionBusy?: boolean
+  companionFlush?: () => Promise<boolean>
+}
 export function ConfigInput({control,value,onChange,disabled,helper,highlighted}: {control:Control;value:Json|undefined;onChange:(value:Json)=>void;disabled:boolean;helper?:string;highlighted?:boolean}) {
   const id=useId(),shown=typeof value==='string'||typeof value==='number'?value:''
   if(control.kind==='boolean'){
@@ -42,7 +60,7 @@ export function ConfigInput({control,value,onChange,disabled,helper,highlighted}
 export function OriginDetails({origin,cell}:{origin:ConfigOrigin;cell:string}) {
   return <details className={s.provenance}><summary>Origem e comportamento ao salvar</summary><p>{origin.stored?'Substituição própria armazenada.':origin.source==='default'?'Padrão herdado, sem substituição.':'Sem substituição nem padrão retornado.'}</p><p>Uma célula por solicitação: <code>{cell}</code>. Propriedades não editadas são preservadas. A conferência prévia reduz conflitos, sem bloqueio atômico no servidor.</p></details>
 }
-export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview,previewContext,embedPreview=true,focusPath}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
+export function CompositeConfigurationEditor({id,data,cell,onReload,onState,screen,renderPreview,previewContext,embedPreview=true,focusPath,companionDirty=false,companionBusy=false,companionFlush}:{cell:ConfigCell;screen?:string;renderPreview?:(value:Json,saved:boolean,effectiveValue:Json)=>ReactNode}&Props) {
   const [baseline,setBaseline]=useState(data.configuration[cell]!)
   const [draft,setDraft]=useState<Json>(()=>cloneJson(baseline.stored?baseline.storedValue:baseline.effectiveValue))
   const [editing,setEditing]=useState(false),[saved,setSaved]=useState(true),[narrow,setNarrow]=useState<'edit'|'preview'>('edit')
@@ -52,10 +70,11 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
   const operator=useSessionOperator(),controller=useRef<AbortController|null>(null)
   useEffect(()=>subscribeConfiguration(()=>update(n=>n+1)),[])
   useEffect(()=>()=>controller.current?.abort(),[])
-  const attempt=getConfigurationAttempt(id,cell),locked=configurationLocked(attempt),busy=refreshing||attempt?.phase==='checking'||attempt?.phase==='sending'
+  const attempt=getConfigurationAttempt(id,cell),locked=configurationLocked(attempt),busy=refreshing||attempt?.phase==='checking'||attempt?.phase==='sending'||companionBusy
   const current=baseline.stored?baseline.storedValue:baseline.effectiveValue
   const dirty=editing&&(!sameJson(current,draft)||!baseline.stored)
-  useEffect(()=>{onState({dirty,busy});return()=>onState({dirty:false,busy:false})},[dirty,busy,onState])
+  const anyDirty=dirty||companionDirty
+  useEffect(()=>{onState({dirty:anyDirty,busy});return()=>onState({dirty:false,busy:false})},[anyDirty,busy,onState])
   const canWrite=operator?.roles.includes('SUPER_ADMIN')===true,definition=CONFIG_DEFINITIONS[cell],valid=configValueError(cell,draft)
   const supported=compatibleConfig(cell,current)
   const layoutOrigin=data.configuration['login.layout_preset'], textColorOrigin=data.configuration['login.brand_panel_text_color']
@@ -88,9 +107,19 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
     }
   },[focusPath,cell,editing])
   async function save(value:Json|undefined){
-    if(!canWrite||locked||busy||value!==undefined&&valid)return
+    if(!canWrite||locked||busy)return
+    if(value!==undefined&&valid&&!companionDirty)return
     setError('');controller.current=new AbortController()
-    try{await writeConfiguration(id,cell,baseline,value,version,controller.current.signal);if(getConfigurationAttempt(id,cell)?.phase==='confirmed'){setEditing(false);onReload()}}
+    try{
+      if(companionFlush&&companionDirty){
+        const ok=await companionFlush()
+        if(!ok){setError('A logo pendente não foi confirmada. Nada da cor foi gravado.');return}
+      }
+      // Color-only no-op when the footer was used just to flush the logo.
+      if(value!==undefined&&(!dirty||valid)){onReload();return}
+      await writeConfiguration(id,cell,baseline,value,version,controller.current.signal)
+      if(getConfigurationAttempt(id,cell)?.phase==='confirmed'){setEditing(false);onReload()}
+    }
     catch{setError('Não foi possível concluir a solicitação. Nenhum reenvio automático será feito.')}
     setReset(false)
   }
@@ -142,7 +171,8 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
       {attempt?.phase==='stale'&&attempt!==acknowledgedStale&&<OutlineButton disabled={busy} onClick={()=>void refresh()}>Descartar rascunho e atualizar referência</OutlineButton>}
       {canWrite&&['uncertain','readback_matches'].includes(attempt?.phase??'')&&<OutlineButton disabled={busy} onClick={()=>void reconcile()}>Consultar resultado por GET</OutlineButton>}
   </>
-  const footer=<footer className={s.footer}><span>{dirty?'Alterações não salvas.':canWrite?'Sem alteração pendente.':'Consulta autorizada. Edição requer SUPER_ADMIN.'}</span>{canWrite&&<div><OutlineButton disabled={!editing||busy||locked} onClick={()=>{setEditing(false);setDraft(cloneJson(current));setSaved(true)}}>Descartar</OutlineButton><OutlineButton disabled={!baseline.stored||busy||locked} onClick={()=>setReset(true)}>Remover substituição</OutlineButton><PrimaryButton disabled={!dirty||!!valid||busy||locked} onClick={()=>void save(draft)}>Salvar</PrimaryButton></div>}</footer>
+  const saveLabel=companionDirty&&dirty?'Salvar logo e cor':companionDirty?'Salvar logo':'Salvar'
+  const footer=<footer className={s.footer}><span>{companionDirty?'Há uma logo pendente — use Salvar no rodapé.':dirty?'Alterações não salvas.':canWrite?'Sem alteração pendente.':'Consulta autorizada. Edição requer SUPER_ADMIN.'}</span>{canWrite&&<div><OutlineButton disabled={(!editing&&!companionDirty)||busy||locked} onClick={()=>{setEditing(false);setDraft(cloneJson(current));setSaved(true)}}>Descartar</OutlineButton><OutlineButton disabled={!baseline.stored||busy||locked} onClick={()=>setReset(true)}>Remover substituição</OutlineButton><PrimaryButton disabled={(!anyDirty)||(dirty&&!!valid)||busy||locked} onClick={()=>void save(draft)}>{saveLabel}</PrimaryButton></div>}</footer>
   const dialog=reset?<Dialog title="Remover substituição?" description={definition.title} onClose={()=>setReset(false)} footer={<><OutlineButton onClick={()=>setReset(false)}>Cancelar</OutlineButton><PrimaryButton disabled={busy||locked} onClick={()=>void save(undefined)}>Confirmar remoção</PrimaryButton></>}><p>Remove somente a substituição desta configuração. O padrão retornado pelo servidor ou a ausência serão restaurados; nenhuma cópia do padrão será gravada.</p></Dialog>:null
   if(!embedPreview) return <div className={s.panelEditor}>{editorBody}{footer}{dialog}</div>
   return <><div className={s.mobileSwitch}><button aria-pressed={narrow==='edit'} onClick={()=>setNarrow('edit')}>Editor</button><button aria-pressed={narrow==='preview'} onClick={()=>setNarrow('preview')}>Prévia</button></div><div className={s.split}>

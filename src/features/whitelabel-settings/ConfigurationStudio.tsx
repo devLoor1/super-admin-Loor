@@ -69,11 +69,14 @@ function EmailBrandingStudioPanel({
 }) {
   const logoState = useRef<EditorState>({ dirty: false, busy: false })
   const colorState = useRef<EditorState>({ dirty: false, busy: false })
+  const [, bump] = useState(0)
   const publish = useCallback(() => {
     onState({
       dirty: logoState.current.dirty || colorState.current.dirty,
       busy: logoState.current.busy || colorState.current.busy,
+      flush: logoState.current.flush,
     })
+    bump((n) => n + 1)
   }, [onState])
   const revision = origin.version ?? `${origin.source}:${origin.stored ? '1' : '0'}`
   return (
@@ -98,6 +101,9 @@ function EmailBrandingStudioPanel({
         onState={(next) => { colorState.current = next; publish() }}
         embedPreview={false}
         focusPath={focusPath === 'logo_url' ? undefined : focusPath}
+        companionDirty={logoState.current.dirty}
+        companionBusy={logoState.current.busy}
+        companionFlush={logoState.current.flush}
       />
     </div>
   )
@@ -336,7 +342,7 @@ function PlatformStudio({
   const onState = useCallback(
     (next: EditorState) =>
       setState((current) =>
-        current.dirty === next.dirty && current.busy === next.busy ? current : next,
+        current.dirty === next.dirty && current.busy === next.busy && current.flush === next.flush ? current : next,
       ),
     [],
   )
@@ -344,6 +350,10 @@ function PlatformStudio({
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
   const [previewMode, setPreviewMode] = useState<'draft' | 'saved'>('saved')
   const [refreshSignal, setRefreshSignal] = useState(0)
+  const reloadAndRefreshPreview = useCallback(() => {
+    onReload()
+    setRefreshSignal((n) => n + 1)
+  }, [onReload])
   const [mobilePane, setMobilePane] = useState<'config' | 'preview'>('config')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
 
@@ -540,7 +550,7 @@ function PlatformStudio({
                           id={id}
                           data={data}
                           cell={cell}
-                          onReload={onReload}
+                          onReload={reloadAndRefreshPreview}
                           onState={onState}
                           focusPath={focusPath}
                         />

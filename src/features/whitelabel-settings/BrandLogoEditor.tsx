@@ -205,10 +205,11 @@ function LogoEditor ({
     return fresh
   }
 
-  async function persistRef (nextOrigin: ConfigOrigin, ref: string | null) {
+  async function persistRef (nextOrigin: ConfigOrigin, ref: string | null, extras: JsonObject = {}) {
     const value = brandingPayload(nextOrigin, {
       logo_asset_ref: ref,
       ...(ref ? {} : { logo_url: null }),
+      ...extras,
     })
     await writeConfiguration(id, CELL, nextOrigin, value, session)
     if (getConfigurationAttempt(id, CELL)?.phase !== 'confirmed') {
@@ -218,6 +219,15 @@ function LogoEditor ({
     if (!alive()) return null
     setOrigin(confirmed)
     return confirmed
+  }
+
+  /** White/light logo on the green panel must not sit on the FE white pill. */
+  async function persistLogoOnDark (nextOrigin: ConfigOrigin, onDark: boolean) {
+    return persistRef(
+      nextOrigin,
+      logoAssetRefFrom(sourceValue(nextOrigin)),
+      { logo_on_dark: onDark },
+    )
   }
 
   async function uploadOrReplace (forceWithoutBg = false) {
@@ -243,19 +253,28 @@ function LogoEditor ({
         if (!alive() || !replaced) return
         clearFile()
         setAsset(replaced)
-        setOrigin(fresh)
-        setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
+        if (applyBg) {
+          const withFlag = await persistLogoOnDark(fresh, true)
+          if (!alive() || !withFlag) return
+        } else {
+          setOrigin(fresh)
+        }
+        setNotice(applyBg
+          ? 'Logo atualizada (fundo removido · pill branca desligada no painel escuro)'
+          : 'Logo atualizada')
         onReload()
         return
       }
 
       const uploaded = await mutatePlatformAsset(id, 'upload', session, file, undefined, CELL, SLOT, options)
       if (!alive() || !uploaded) return
-      const confirmed = await persistRef(fresh, uploaded.ref)
+      const confirmed = await persistRef(fresh, uploaded.ref, applyBg ? { logo_on_dark: true } : {})
       if (!alive() || !confirmed) return
       clearFile()
       setAsset(uploaded)
-      setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
+      setNotice(applyBg
+        ? 'Logo atualizada (fundo removido · pill branca desligada no painel escuro)'
+        : 'Logo atualizada')
       onReload()
     } catch (e) {
       if (!alive()) return
@@ -282,7 +301,14 @@ function LogoEditor ({
       const result = await reprocessLogoBackground(id, session, currentRef, CELL)
       if (!alive() || !result) return
       setAsset(result)
-      setNotice('Fundo removido da logo atual e salvo no storage.')
+      try {
+        const fresh = await refreshOrigin()
+        await persistLogoOnDark(fresh, true)
+      } catch {
+        // Asset already matted; flag is best-effort for FE white-pill.
+      }
+      if (!alive()) return
+      setNotice('Fundo removido. Pill branca do painel escuro desligada (logo_on_dark).')
       onReload()
     } catch (e) {
       if (!alive()) return

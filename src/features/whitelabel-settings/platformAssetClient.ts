@@ -126,6 +126,35 @@ export async function previewLogoBackgroundRemoval(tenant: string, session: numb
   }
 }
 
+/** Reprocess an existing logo asset in place (same asset_ref) with background removal. */
+export async function reprocessLogoBackground(tenant: string, session: number, ref: string, cell?: ConfigCell): Promise<PlatformAsset | null> {
+  const token = authorize(tenant, session)
+  if (!assetReference(ref)) throw new ApiError(422, { code: 'INVALID_ASSET' })
+  if (assetLocked(tenant, 'logo')) throw new ApiError(409, { code: 'ASSET_RECOVERY_REQUIRED' })
+  const slot: PlatformAssetSlot = 'logo'
+  let accepted = false
+  publish(tenant, slot, { phase: 'sending', operation: 'replace', ref, cell, session, slot })
+  try {
+    const raw = await apiRequest<unknown>(
+      '/whitelabels/' + tenant + '/platform/assets/' + encodeURIComponent(ref) + '/remove-background',
+      { method: 'POST', token, timeoutMs: 90_000, successStatus: 200 },
+    )
+    accepted = true
+    const receipt = parsePlatformAsset(raw, tenant, ref, slot)
+    publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, ref: receipt.ref, receipt, status: 200 })
+    currentSession(token, session)
+    const result = await readOutcome(tenant, ledger.get(ledgerKey(tenant, slot))!)
+    currentSession(token, session)
+    publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, phase: 'confirmed' })
+    return result
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) handleUnauthorized(token, session)
+    const rejected = !accepted && error instanceof ApiError && error.kind === 'http' && [400, 403, 404, 413, 415, 422].includes(error.status)
+    publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, phase: rejected ? 'rejected' : 'uncertain', ...(error instanceof ApiError ? { status: error.status, ...(error.correlationId && /^[a-f0-9-]{36}$/i.test(error.correlationId) ? { correlationId: error.correlationId } : {}) } : {}) })
+    throw error
+  }
+}
+
 /** One multipart dispatch. A failed readback never turns an accepted upload into a rejection. */
 export async function mutatePlatformAsset(tenant: string, operation: AssetAttempt['operation'], session: number, file?: File, ref?: string, cell?: ConfigCell, slot: PlatformAssetSlot = 'main_area', options: { removeBackground?: boolean } = {}): Promise<PlatformAsset | null> {
   const token = authorize(tenant, session)

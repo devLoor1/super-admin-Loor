@@ -17,6 +17,7 @@ import {
   mutatePlatformAsset,
   previewLogoBackgroundRemoval,
   reconcilePlatformAsset,
+  reprocessLogoBackground,
   subscribeAssets,
   type PlatformAsset,
 } from './platformAssetClient'
@@ -272,6 +273,27 @@ function LogoEditor ({
     }
   }
 
+  async function reprocessCurrentLogo () {
+    if (!writable || working || locked || !currentRef || file) return
+    setWorking(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await reprocessLogoBackground(id, session, currentRef, CELL)
+      if (!alive() || !result) return
+      setAsset(result)
+      setNotice('Fundo removido da logo atual e salvo no storage.')
+      onReload()
+    } catch (e) {
+      if (!alive()) return
+      setError(e instanceof ApiError && e.message
+        ? e.message
+        : 'Não foi possível remover o fundo da logo atual.')
+    } finally {
+      if (alive()) setWorking(false)
+    }
+  }
+
   async function removeLogo () {
     if (!writable || working || locked) return
     setWorking(true)
@@ -330,8 +352,8 @@ function LogoEditor ({
   return (
     <section className={styles.editor} aria-label="Logo principal" data-focus-path="logo_url">
       <p className={styles.caption}>
-        Como usar: (1) selecione um PNG/JPEG, (2) aguarde a prévia “Sem fundo” se a opção estiver marcada, (3) clique em Salvar.
-        O checkbox sozinho não grava nada — é preciso escolher o arquivo e salvar.
+        Já tem logo salva? Use <strong>Remover fundo da logo atual</strong>.
+        Ou selecione um arquivo novo com a opção marcada e depois Salvar. O checkbox sozinho não grava nada; o Salvar de baixo (cor) também não remove fundo.
       </p>
       <div className={styles.status}>
         <span>
@@ -485,10 +507,15 @@ function LogoEditor ({
                 <p className={styles.caption} role="status">Aguarde a remoção do fundo para salvar…</p>
               )}
               {file && <OutlineButton onClick={() => setDiscard(true)}>Descartar prévia</OutlineButton>}
+              {currentRef && !file && (
+                <PrimaryButton disabled={working || locked} onClick={() => { void reprocessCurrentLogo() }}>
+                  Remover fundo da logo atual
+                </PrimaryButton>
+              )}
               {hasLogo && !file && (
                 <OutlineButton onClick={() => setConfirmRemove(true)}>
                   <Trash2 size={15} />
-                  Remover
+                  Remover logo
                 </OutlineButton>
               )}
             </div>

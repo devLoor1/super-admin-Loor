@@ -216,11 +216,12 @@ function LogoEditor ({
     return confirmed
   }
 
-  async function uploadOrReplace () {
+  async function uploadOrReplace (forceWithoutBg = false) {
     if (!file || !writable || working || locked) return
-    if (removeBackground && bgPhase === 'removing') return
-    if (removeBackground && bgPhase === 'failed') {
-      setError('Não foi possível remover o fundo. Desative a opção ou escolha outro arquivo.')
+    if (bgPhase === 'removing') return
+    const applyBg = !forceWithoutBg && removeBackground && bgPhase === 'removed'
+    if (!forceWithoutBg && removeBackground && bgPhase === 'failed') {
+      setError('Não foi possível remover o fundo. Use “Salvar sem remover fundo” ou tente outro arquivo.')
       return
     }
     setWorking(true)
@@ -232,14 +233,14 @@ function LogoEditor ({
       if (!alive()) return
 
       const existingRef = logoAssetRefFrom(sourceValue(fresh))
-      const options = { removeBackground }
+      const options = { removeBackground: applyBg }
       if (existingRef) {
         const replaced = await mutatePlatformAsset(id, 'replace', session, file, existingRef, CELL, SLOT, options)
         if (!alive() || !replaced) return
         clearFile()
         setAsset(replaced)
         setOrigin(fresh)
-        setNotice('Logo atualizada')
+        setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
         onReload()
         return
       }
@@ -250,7 +251,7 @@ function LogoEditor ({
       if (!alive() || !confirmed) return
       clearFile()
       setAsset(uploaded)
-      setNotice('Logo atualizada')
+      setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
       onReload()
     } catch (e) {
       if (!alive()) return
@@ -320,10 +321,15 @@ function LogoEditor ({
 
   const hasLogo = !!currentRef || !!externalUrl || !!asset
   const uploading = attempt?.phase === 'sending' || (working && !!file)
-  const canSave = !!file && (!removeBackground || bgPhase === 'removed' || bgPhase === 'idle')
+  const canSaveWithBg = !!file && bgPhase === 'removed'
+  const canSavePlain = !!file && bgPhase !== 'removing'
 
   return (
     <section className={styles.editor} aria-label="Logo principal" data-focus-path="logo_url">
+      <p className={styles.caption}>
+        Como usar: (1) selecione um PNG/JPEG, (2) aguarde a prévia “Sem fundo” se a opção estiver marcada, (3) clique em Salvar.
+        O checkbox sozinho não grava nada — é preciso escolher o arquivo e salvar.
+      </p>
       <div className={styles.status}>
         <span>
           {bgPhase === 'removing'
@@ -331,11 +337,11 @@ function LogoEditor ({
             : uploading
               ? 'Enviando…'
               : bgPhase === 'removed'
-                ? 'Fundo removido'
+                ? 'Fundo removido — pronto para salvar'
                 : bgPhase === 'failed'
                   ? 'Não foi possível remover o fundo'
                   : file
-                    ? 'Prévia local'
+                    ? 'Arquivo selecionado — salve para aplicar'
                     : currentRef
                       ? 'Logo por upload'
                       : externalUrl
@@ -428,12 +434,36 @@ function LogoEditor ({
               />
               Remover fundo automaticamente
             </label>
+            {!file && (
+              <p className={styles.caption} role="status">
+                Selecione um arquivo acima para gerar a prévia e habilitar Salvar.
+              </p>
+            )}
             <div className={styles.actions}>
-              {file && (
-                <PrimaryButton disabled={!canSave} onClick={() => { void uploadOrReplace() }}>
+              {file && removeBackground && bgPhase === 'removed' && (
+                <PrimaryButton disabled={!canSaveWithBg || working} onClick={() => { void uploadOrReplace(false) }}>
                   <Upload size={16} />
-                  {currentRef ? 'Salvar logo' : 'Salvar'}
+                  Salvar com fundo removido
                 </PrimaryButton>
+              )}
+              {file && (!removeBackground || bgPhase === 'idle') && (
+                <PrimaryButton disabled={!canSavePlain || working} onClick={() => { void uploadOrReplace(true) }}>
+                  <Upload size={16} />
+                  Salvar logo
+                </PrimaryButton>
+              )}
+              {file && removeBackground && bgPhase === 'failed' && (
+                <>
+                  <OutlineButton disabled={working} onClick={() => { void runBackgroundPreview(file, true) }}>
+                    Tentar remover fundo de novo
+                  </OutlineButton>
+                  <PrimaryButton disabled={!canSavePlain || working} onClick={() => { void uploadOrReplace(true) }}>
+                    Salvar sem remover fundo
+                  </PrimaryButton>
+                </>
+              )}
+              {file && bgPhase === 'removing' && (
+                <p className={styles.caption} role="status">Aguarde a remoção do fundo para salvar…</p>
               )}
               {file && <OutlineButton onClick={() => setDiscard(true)}>Descartar prévia</OutlineButton>}
               {hasLogo && !file && (

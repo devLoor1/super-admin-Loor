@@ -121,7 +121,16 @@ function LogoEditor ({
   useEffect(() => { active.current = true; return () => { active.current = false; previewAbort.current?.abort() } }, [])
   useEffect(() => subscribeAssets(() => update(n => n + 1)), [])
   useEffect(() => subscribeConfiguration(() => update(n => n + 1)), [])
-  useEffect(() => { onState?.({ dirty: protectedDraft, busy: busyState }) }, [onState, protectedDraft, busyState])
+  const flushRef = useRef<() => Promise<boolean>>(async () => true)
+
+  useEffect(() => {
+    onState?.({
+      dirty: protectedDraft,
+      busy: busyState,
+      flush: dirty ? () => flushRef.current() : undefined,
+    })
+    return () => onState?.({ dirty: false, busy: false })
+  }, [onState, protectedDraft, busyState, dirty])
 
   useEffect(() => {
     if (!file) { setLocalUrl(null); return }
@@ -258,13 +267,13 @@ function LogoEditor ({
     }
   }
 
-  async function uploadOrReplace (forceWithoutBg = false) {
-    if (!file || !writable || working || locked) return
-    if (bgPhase === 'removing') return
+  async function uploadOrReplace (forceWithoutBg = false): Promise<boolean> {
+    if (!file || !writable || working || locked) return false
+    if (bgPhase === 'removing') return false
     const applyBg = !forceWithoutBg && removeBackground && (bgPhase === 'removed' || bgPhase === 'deferred')
     if (!forceWithoutBg && removeBackground && bgPhase === 'failed') {
       setError('Não foi possível remover o fundo. Use “Salvar sem remover fundo” ou tente outro arquivo.')
-      return
+      return false
     }
     setWorking(true)
     setError(null)
@@ -272,38 +281,39 @@ function LogoEditor ({
     try {
       const fresh = await refreshOrigin()
       if (!sameJson(fresh, origin)) throw new ApiError(409, { code: 'BASELINE_CHANGED' })
-      if (!alive()) return
+      if (!alive()) return false
 
       const existingRef = logoAssetRefFrom(sourceValue(fresh))
       const options = { removeBackground: applyBg }
       if (existingRef) {
         const replaced = await mutatePlatformAsset(id, 'replace', session, file, existingRef, CELL, SLOT, options)
-        if (!alive() || !replaced) return
+        if (!alive() || !replaced) return false
         clearFile()
         // Bust signed-URL caches in the live iframe (same asset_ref, new bytes).
         setAsset({ ...replaced, url: replaced.url ? `${replaced.url}${replaced.url.includes('?') ? '&' : '?'}v=${Date.now()}` : replaced.url })
         if (applyBg) await persistLogoOnDark(fresh, true)
         else setOrigin(fresh)
-        if (!alive()) return
+        if (!alive()) return false
         setNotice(applyBg
           ? 'Logo atualizada (fundo removido)'
           : 'Logo atualizada')
         onReload()
-        return
+        return true
       }
 
       const uploaded = await mutatePlatformAsset(id, 'upload', session, file, undefined, CELL, SLOT, options)
-      if (!alive() || !uploaded) return
+      if (!alive() || !uploaded) return false
       // Persist asset_ref first (required). logo_on_dark is secondary.
       const confirmed = await persistRef(fresh, uploaded.ref)
-      if (!alive() || !confirmed) return
+      if (!alive() || !confirmed) return false
       if (applyBg) await persistLogoOnDark(confirmed, true)
       clearFile()
       setAsset(uploaded)
       setNotice(applyBg ? 'Logo atualizada (fundo removido)' : 'Logo atualizada')
       onReload()
+      return true
     } catch (e) {
-      if (!alive()) return
+      if (!alive()) return false
       if (e instanceof ApiError && e.code === 'BASELINE_CHANGED') {
         setError('A configuração mudou. Atualize a leitura antes de enviar.')
       } else if (e instanceof ApiError && (e.code === 'INVALID_IMAGE' || e.code === 'E_LOGO_BG_NOT_SOLID')) {
@@ -313,9 +323,18 @@ function LogoEditor ({
       } else {
         setError('O envio não foi concluído com confirmação. A logo anterior foi preservada.')
       }
+      return false
     } finally {
       if (alive()) setWorking(false)
     }
+  }
+
+  flushRef.current = async () => {
+    if (!file) return true
+    if (bgPhase === 'removing') return false
+    if (removeBackground && bgPhase === 'failed') return false
+    const forceWithoutBg = !removeBackground || bgPhase === 'idle'
+    return uploadOrReplace(forceWithoutBg)
   }
 
   async function reprocessCurrentLogo () {
@@ -406,8 +425,8 @@ function LogoEditor ({
   return (
     <section className={styles.editor} aria-label="Logo principal" data-focus-path="logo_url">
       <p className={styles.caption}>
-        Já tem logo salva? Use <strong>Remover fundo da logo atual</strong>.
-        Ou selecione um arquivo novo com a opção marcada e depois Salvar. O checkbox sozinho não grava nada; o Salvar de baixo (cor) também não remove fundo.
+        Selecione o arquivo (prévia acima) e use o <strong>Salvar do rodapé</strong> — agora ele grava a logo também.
+        Os botões desta seção fazem a mesma coisa. O checkbox sozinho não grava nada.
       </p>
       <div className={styles.status}>
         <span>

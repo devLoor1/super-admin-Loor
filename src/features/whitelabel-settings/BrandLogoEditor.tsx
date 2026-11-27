@@ -279,9 +279,12 @@ function LogoEditor ({
     setError(null)
     setNotice(null)
     try {
+      // Always rebase onto the latest email_branding.config. This cell is shared
+      // with the color editor — a strict sameJson(origin) check blocked Salvar
+      // whenever primary_color / logo_on_dark drifted since mount.
       const fresh = await refreshOrigin()
-      if (!sameJson(fresh, origin)) throw new ApiError(409, { code: 'BASELINE_CHANGED' })
       if (!alive()) return false
+      if (!sameJson(fresh, origin)) setOrigin(fresh)
 
       const existingRef = logoAssetRefFrom(sourceValue(fresh))
       const options = { removeBackground: applyBg }
@@ -314,9 +317,7 @@ function LogoEditor ({
       return true
     } catch (e) {
       if (!alive()) return false
-      if (e instanceof ApiError && e.code === 'BASELINE_CHANGED') {
-        setError('A configuração mudou. Atualize a leitura antes de enviar.')
-      } else if (e instanceof ApiError && (e.code === 'INVALID_IMAGE' || e.code === 'E_LOGO_BG_NOT_SOLID')) {
+      if (e instanceof ApiError && (e.code === 'INVALID_IMAGE' || e.code === 'E_LOGO_BG_NOT_SOLID')) {
         setError(e.message || 'Arquivo inválido ou fundo não suportado.')
       } else if (e instanceof ApiError && e.message) {
         setError(e.message)
@@ -376,8 +377,8 @@ function LogoEditor ({
     const previousRef = currentRef
     try {
       const fresh = await refreshOrigin()
-      if (!sameJson(fresh, origin)) throw new ApiError(409, { code: 'BASELINE_CHANGED' })
       if (!alive()) return
+      if (!sameJson(fresh, origin)) setOrigin(fresh)
       await persistRef(fresh, null)
       if (!alive()) return
       setAsset(null)

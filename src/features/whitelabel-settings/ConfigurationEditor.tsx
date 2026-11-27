@@ -114,6 +114,20 @@ export function CompositeConfigurationEditor({id,data,cell,onReload,onState,scre
       if(companionFlush&&companionDirty){
         const ok=await companionFlush()
         if(!ok){setError('A logo pendente não foi confirmada. Nada da cor foi gravado.');return}
+        // Logo write bumps the shared email_branding.config baseline — rebase before color PUT.
+        try{
+          const next=(await getSettingsRead(id,controller.current.signal)).configuration[cell]
+          if(next) setBaseline(next)
+          if(value!==undefined&&(!dirty||valid)){onReload();return}
+          if(next) await writeConfiguration(id,cell,next,value,version,controller.current.signal)
+          else await writeConfiguration(id,cell,baseline,value,version,controller.current.signal)
+        }catch{
+          setError('A logo foi gravada, mas a cor não. Atualize a leitura e salve a cor de novo.')
+          onReload()
+          return
+        }
+        if(getConfigurationAttempt(id,cell)?.phase==='confirmed'){setEditing(false);onReload()}
+        return
       }
       // Color-only no-op when the footer was used just to flush the logo.
       if(value!==undefined&&(!dirty||valid)){onReload();return}

@@ -97,12 +97,12 @@ export async function previewLogoBackgroundRemoval(tenant: string, session: numb
   const form = new FormData()
   form.append('image', file)
   try {
+    // Nest POST defaults to 201 unless @HttpCode(200); accept either 2xx.
     const raw = await apiRequest<unknown>('/whitelabels/' + tenant + '/platform/assets/logo/remove-background', {
       method: 'POST',
       body: form,
       token,
       timeoutMs: 90_000,
-      successStatus: 200,
       signal,
     })
     currentSession(token, session)
@@ -135,15 +135,26 @@ export async function reprocessLogoBackground(tenant: string, session: number, r
   let accepted = false
   publish(tenant, slot, { phase: 'sending', operation: 'replace', ref, cell, session, slot })
   try {
+    // Nest POST defaults to 201 unless @HttpCode(200); do not require a single status.
     const raw = await apiRequest<unknown>(
       '/whitelabels/' + tenant + '/platform/assets/' + encodeURIComponent(ref) + '/remove-background',
-      { method: 'POST', token, timeoutMs: 90_000, successStatus: 200 },
+      { method: 'POST', token, timeoutMs: 90_000 },
     )
     accepted = true
     const receipt = parsePlatformAsset(raw, tenant, ref, slot)
     publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, ref: receipt.ref, receipt, status: 200 })
     currentSession(token, session)
-    const result = await readOutcome(tenant, ledger.get(ledgerKey(tenant, slot))!)
+    // Prefer a fresh signed URL from GET, but never discard a valid mutation receipt
+    // if readback drifts (updated_at precision / CDN).
+    let result = receipt
+    try {
+      const fresh = await getPlatformAsset(tenant, receipt.ref, undefined, slot)
+      if (fresh.ref === receipt.ref && fresh.slot === receipt.slot && fresh.mime === receipt.mime) {
+        result = fresh
+      }
+    } catch {
+      // receipt already confirms the write
+    }
     currentSession(token, session)
     publish(tenant, slot, { ...ledger.get(ledgerKey(tenant, slot))!, phase: 'confirmed' })
     return result

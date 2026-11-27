@@ -91,7 +91,7 @@ function LogoEditor ({
   const [localUrl, setLocalUrl] = useState<string | null>(null)
   const [processedUrl, setProcessedUrl] = useState<string | null>(null)
   const [removeBackground, setRemoveBackground] = useState(true)
-  const [bgPhase, setBgPhase] = useState<'idle' | 'removing' | 'removed' | 'failed'>('idle')
+  const [bgPhase, setBgPhase] = useState<'idle' | 'removing' | 'removed' | 'deferred' | 'failed'>('idle')
   const [loading, setLoading] = useState(false)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -187,11 +187,14 @@ function LogoEditor ({
         : 'Fundo removido')
     } catch (e) {
       if (controller.signal.aborted || isAbortError(e) || !alive()) return
-      setBgPhase('failed')
+      // Still allow save with remove_background — Core processes on upload.
+      setBgPhase('deferred')
       setProcessedUrl(null)
-      setError(e instanceof ApiError && e.message
-        ? e.message
-        : 'Não foi possível remover o fundo')
+      const detail = e instanceof ApiError
+        ? (e.code ? `${e.message} (${e.code})` : e.message)
+        : 'Não foi possível gerar a prévia'
+      setError(null)
+      setNotice(`Prévia indisponível: ${detail}. Ao salvar, o fundo será removido no servidor.`)
     }
   }
 
@@ -219,7 +222,7 @@ function LogoEditor ({
   async function uploadOrReplace (forceWithoutBg = false) {
     if (!file || !writable || working || locked) return
     if (bgPhase === 'removing') return
-    const applyBg = !forceWithoutBg && removeBackground && bgPhase === 'removed'
+    const applyBg = !forceWithoutBg && removeBackground && (bgPhase === 'removed' || bgPhase === 'deferred')
     if (!forceWithoutBg && removeBackground && bgPhase === 'failed') {
       setError('Não foi possível remover o fundo. Use “Salvar sem remover fundo” ou tente outro arquivo.')
       return
@@ -321,7 +324,7 @@ function LogoEditor ({
 
   const hasLogo = !!currentRef || !!externalUrl || !!asset
   const uploading = attempt?.phase === 'sending' || (working && !!file)
-  const canSaveWithBg = !!file && bgPhase === 'removed'
+  const canSaveWithBg = !!file && (bgPhase === 'removed' || bgPhase === 'deferred')
   const canSavePlain = !!file && bgPhase !== 'removing'
 
   return (
@@ -338,10 +341,12 @@ function LogoEditor ({
               ? 'Enviando…'
               : bgPhase === 'removed'
                 ? 'Fundo removido — pronto para salvar'
-                : bgPhase === 'failed'
-                  ? 'Não foi possível remover o fundo'
-                  : file
-                    ? 'Arquivo selecionado — salve para aplicar'
+                : bgPhase === 'deferred'
+                  ? 'Prévia indisponível — salve para remover o fundo no servidor'
+                  : bgPhase === 'failed'
+                    ? 'Não foi possível remover o fundo'
+                    : file
+                      ? 'Arquivo selecionado — salve para aplicar'
                     : currentRef
                       ? 'Logo por upload'
                       : externalUrl
@@ -376,7 +381,16 @@ function LogoEditor ({
               ? <img src={processedUrl} alt="Prévia sem fundo" style={{ objectFit: 'contain', background: 'repeating-conic-gradient(#808080 0% 25%, #c0c0c0 0% 50%) 50% / 16px 16px' }} />
               : (
                 <div>
-                  <p>{removeBackground ? (bgPhase === 'removing' ? 'Removendo fundo…' : bgPhase === 'failed' ? 'Falha na remoção' : 'Sem fundo') : 'Remoção desativada'}</p>
+                  <p>{removeBackground
+                    ? (bgPhase === 'removing'
+                      ? 'Removendo fundo…'
+                      : bgPhase === 'deferred'
+                        ? 'Prévia falhou — remoção no salvar'
+                        : bgPhase === 'failed'
+                          ? 'Falha na remoção'
+                          : 'Sem fundo')
+                    : 'Remoção desativada'}
+                  </p>
                 </div>
                 )}
             <p className={styles.caption}>Sem fundo</p>
@@ -440,7 +454,7 @@ function LogoEditor ({
               </p>
             )}
             <div className={styles.actions}>
-              {file && removeBackground && bgPhase === 'removed' && (
+              {file && removeBackground && (bgPhase === 'removed' || bgPhase === 'deferred') && (
                 <PrimaryButton disabled={!canSaveWithBg || working} onClick={() => { void uploadOrReplace(false) }}>
                   <Upload size={16} />
                   Salvar com fundo removido
@@ -451,6 +465,11 @@ function LogoEditor ({
                   <Upload size={16} />
                   Salvar logo
                 </PrimaryButton>
+              )}
+              {file && removeBackground && bgPhase === 'deferred' && (
+                <OutlineButton disabled={working} onClick={() => { void runBackgroundPreview(file, true) }}>
+                  Tentar prévia de novo
+                </OutlineButton>
               )}
               {file && removeBackground && bgPhase === 'failed' && (
                 <>
